@@ -2,18 +2,54 @@
   import '../app.css';
   export let data;
   import { goto } from '$app/navigation';
-  // Builder toggle: keep ?builder=1 in the URL
-  let builderOn = false;
-  $: builderOn = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('builder') === '1'
-    : false;
-
-  function toggleBuilder() {
-    const url = new URL(window.location.href);
-    if (builderOn) url.searchParams.delete('builder');
-    else url.searchParams.set('builder', '1');
-    window.location.href = url.toString();
-  }
+  import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
+  import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+  
+  // Project selector state
+  let projects = [];
+  let currentProject = null;
+  let projectSearch = '';
+  
+  onMount(async () => {
+    if (!browser) return;
+    
+    try {
+      const { supabase } = await import('$lib/supabase.js');
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, icon, color, brief_text, created_at')
+        .order('created_at');
+      
+      if (!error) {
+        projects = data || [];
+        // Try to get last selected project from localStorage
+        const lastId = localStorage.getItem('wiskr_last_project_id');
+        currentProject = projects.find(p => p.id === lastId) || projects[0] || null;
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+    
+    // Listen for project updates
+    window.addEventListener('projects:refresh', async (e) => {
+      try {
+        const { supabase } = await import('$lib/supabase.js');
+        const { data } = await supabase
+          .from('projects')
+          .select('id, name, icon, color, brief_text, created_at')
+          .order('created_at');
+        projects = data || [];
+        
+        // Select the new project if one was just created
+        if (e.detail?.id) {
+          currentProject = projects.find(p => p.id === e.detail.id) || currentProject;
+        }
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+      }
+    });
+  });
 
   // tiny helper
   function truncateEmail(email) {
@@ -65,7 +101,7 @@
       window.dispatchEvent(new CustomEvent('projects:refresh', { detail: { id: project.id } }));
 
       
-      await goto(`/projects?builder=1&pid=${project.id}`, { replaceState: true });
+      await goto(`/projects`, { replaceState: true });
 
 
     } catch (e) {
@@ -80,33 +116,62 @@
 
   <!-- Header -->
   <header class="h-16 border-b bg-white/80 backdrop-blur flex items-center">
-    <div class="mx-auto w-full max-w-6xl px-4 flex items-center justify-between gap-4">
-      <!-- Left: brand -->
-      <a href="/projects" class="flex items-center gap-2 font-semibold">
-        <span class="text-xl">🐈‍⬛ MrWiskr</span>
-        <span class="text-xs text-zinc-500">Projects</span>
-      </a>
-
-      <!-- Middle: builder toggle -->
-      <div class="hidden sm:flex items-center gap-3">
-        <button
-          class="text-sm border rounded px-3 py-1 bg-white hover:bg-zinc-50"
-          on:click={toggleBuilder}
-        >
-          {builderOn ? 'Builder mode: ON' : 'Builder mode: off'}
-        </button>
-		<button class="text-sm border rounded px-3 py-1 bg-white hover:bg-zinc-50" on:click={() => { showNew = true; newName=''; createErr=''; }}>
-          + New Project
-        </button>
+    <div class="w-full px-6 flex items-center gap-4">
+      <!-- Left: brand and project selector -->
+      <div class="flex items-center gap-4">
+        <a href="/projects" class="flex items-center gap-2 font-semibold">
+          <span class="text-xl">🐈‍⬛ MrWiskr</span>
+          <span class="text-xs text-zinc-500">Projects</span>
+        </a>
+        
+        <div class="max-w-sm">
+          <HeaderProjectSelector 
+            {projects}
+            current={currentProject}
+            bind:search={projectSearch}
+            on:select={(e) => {
+              currentProject = e.detail;
+              if (browser) {
+                localStorage.setItem('wiskr_last_project_id', e.detail.id);
+                // Dispatch event to notify the projects page
+                window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+              }
+            }}
+            on:create={() => showNew = true}
+            on:delete={async (e) => {
+              const project = e.detail;
+              if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
+              if (!confirm(`Delete "${project.name}"? This can\'t be undone.`)) return;
+              
+              try {
+                const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
+                if (res.ok) {
+                  // Refresh projects list
+                  window.dispatchEvent(new CustomEvent('projects:refresh'));
+                } else {
+                  alert('Delete failed.');
+                }
+              } catch (error) {
+                alert('Delete failed.');
+              }
+            }}
+            on:open-settings={(e) => {
+              // Navigate to settings or dispatch event
+              console.log('Open settings for:', e.detail);
+            }}
+          />
+        </div>
       </div>
 
-      <!-- Right: user -->
+      <!-- Right: spacer and user -->
+      <div class="flex-1"></div>
       <div class="flex items-center gap-3">
         {#if data?.user}
           <span class="text-sm text-zinc-600 hidden sm:inline">{truncateEmail(data.user.email)}</span>
           <a href="/logout" class="text-sm underline">Logout</a>
         {:else}
           <a href="/login" class="text-sm underline">Login</a>
+          <a href="/signup" class="text-sm underline">Sign Up</a>
         {/if}
       </div>
     </div>
@@ -120,7 +185,7 @@
 
   <!-- NEW PROJECT MODAL -->
   {#if showNew}
-    <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+    <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-md p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-semibold">Create Project</h3>

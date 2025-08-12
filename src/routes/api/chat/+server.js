@@ -7,7 +7,7 @@ import { OPENAI_API_KEY, DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
-  const { projectId, message, modelKey = 'speed', tz = 'UTC' } = body;
+  const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main' } = body;
 
   const { data: { user } } = await locals.supabase.auth.getUser();
   if (!user) return new Response('Unauthorized', { status: 401 });
@@ -21,7 +21,7 @@ export const POST = async ({ request, locals }) => {
   const modelConf = MODEL_MAP[modelKey] ?? MODEL_MAP.speed;
 
   // 1) Build base context
-  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, supabase: locals.supabase });
+  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, supabase: locals.supabase });
 
   // 2) One-time overrides
   const nowISO = new Date().toISOString();
@@ -86,11 +86,19 @@ export const POST = async ({ request, locals }) => {
   }
 
   // 4) Persist the user message once
-  await locals.supabase.from('messages').insert({
+  console.log('💾 Saving user message to DB:', { projectId, branchId, role: 'user', content: message.slice(0,50) + '...' });
+  const { data: userMsgResult, error: userMsgError } = await locals.supabase.from('messages').insert({
     project_id: projectId,
     role: 'user',
-    content: message
-  });
+    content: message,
+    branch_id: branchId
+  }).select();
+  
+  if (userMsgError) {
+    console.error('❌ Error saving user message:', userMsgError);
+  } else {
+    console.log('✅ User message saved:', userMsgResult);
+  }
 
   // 5) Stream from OpenAI (robust async-iterator pattern)
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
@@ -116,11 +124,19 @@ export const POST = async ({ request, locals }) => {
         }
 
         // 6) Save assistant message
-        await locals.supabase.from('messages').insert({
+        console.log('💾 Saving assistant message to DB:', { projectId, branchId, role: 'assistant', contentLength: full.length });
+        const { data: assistantMsgResult, error: assistantMsgError } = await locals.supabase.from('messages').insert({
           project_id: projectId,
           role: 'assistant',
-          content: full
-        });
+          content: full,
+          branch_id: branchId
+        }).select();
+        
+        if (assistantMsgError) {
+          console.error('❌ Error saving assistant message:', assistantMsgError);
+        } else {
+          console.log('✅ Assistant message saved:', assistantMsgResult);
+        }
 
         // 7) Log usage ONCE (after you have the full reply)
         const inTok  = Math.round(JSON.stringify(finalMessages).length / 4);
@@ -136,7 +152,7 @@ export const POST = async ({ request, locals }) => {
           cost_usd: cost
         };
         
-        console.log('Inserting usage log:', usagePayload);
+        // console.log('Inserting usage log:', usagePayload);
         const { data: usageResult, error: usageError } = await locals.supabase.from('usage_logs').insert(usagePayload).select();
         
         if (usageError) {

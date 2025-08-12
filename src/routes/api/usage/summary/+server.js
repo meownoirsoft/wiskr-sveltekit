@@ -42,21 +42,21 @@ export const GET = async ({ url, locals }) => {
   ]);
 
   // Debug logging
-  console.log('Usage Summary Debug:', {
-    projectId,
-    userId: user.id,
-    tz,
-    startOfToday,
-    todayRowsCount: todayRes.data?.length || 0,
-    todayRawData: todayRes.data,
-    todayError: todayRes.error
-  });
+  // console.log('Usage Summary Debug:', {
+  //   projectId,
+  //   userId: user.id,
+  //   tz,
+  //   startOfToday,
+  //   todayRowsCount: todayRes.data?.length || 0,
+  //   todayRawData: todayRes.data,
+  //   todayError: todayRes.error
+  // });
 
   const today = sumRows(todayRes.data);
   const week  = sumRows(weekRes.data);
   const month = sumRows(monthRes.data);
 
-  console.log('Usage Summary Totals:', { today, week, month });
+  // console.log('Usage Summary Totals:', { today, week, month });
 
   return new Response(JSON.stringify({ today, week, month, tz }), {
     headers: { 'Content-Type': 'application/json' }

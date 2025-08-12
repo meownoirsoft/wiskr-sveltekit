@@ -1,0 +1,153 @@
+// src/routes/api/generate-ideas/+server.js
+import OpenAI from 'openai';
+import { json } from '@sveltejs/kit';
+import { DateTime } from 'luxon';
+import { OPENAI_API_KEY, DAILY_TOKEN_LIMIT } from '$env/static/private';
+
+export const POST = async ({ request, locals }) => {
+  const body = await request.json();
+  const { projectId, facts = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [] } = body;
+
+  const { data: { user } } = await locals.supabase.auth.getUser();
+  if (!user) return new Response('Unauthorized', { status: 401 });
+  if (!projectId) return json({ message: 'Bad request' }, { status: 400 });
+
+  // Model configuration - use the faster model for idea generation
+  const modelConf = {
+    name: 'gpt-4o-mini',
+    inPerTok: 0.15/1_000_000,
+    outPerTok: 0.60/1_000_000
+  };
+
+  // Build context from project data
+  const contextParts = [];
+  
+  // Add facts to context
+  if (facts.length > 0) {
+    contextParts.push(
+      `PROJECT FACTS:\n` + 
+      facts.map(f => `- [${f.type || 'note'}] ${f.key}: ${f.value}`).join('\n')
+    );
+  }
+  
+  // Add docs to context  
+  if (docs.length > 0) {
+    contextParts.push(
+      `PROJECT DOCUMENTS:\n` + 
+      docs.map(d => `# ${d.title}\n${(d.content || '').slice(0, 500)}`).join('\n\n')
+    );
+  }
+  
+  // Add recent conversation context
+  if (recentMessages.length > 0) {
+    contextParts.push(
+      `RECENT CONVERSATION:\n` + 
+      recentMessages.map(m => `${m.role}: ${(m.content || '').slice(0, 200)}`).join('\n')
+    );
+  }
+
+  const contextString = contextParts.join('\n\n');
+  
+  // Calculate how many new ideas to generate (total target of 8, minus already liked ideas)
+  const maxIdeas = 8;
+  const newIdeasToGenerate = Math.max(1, maxIdeas - likedIdeasCount);
+
+  // Build system prompt with dismissed ideas context
+  let systemPrompt = `You are an AI assistant that generates related ideas for creative projects. Based on the provided project context, generate ${newIdeasToGenerate} concise, actionable ideas that could help expand or explore the project further.
+
+Each idea should be:
+- Specific and actionable
+- Related to the project context
+- Designed to spark curiosity or provide new directions
+- 1-2 sentences max
+
+Focus on practical next steps, interesting questions to explore, related concepts to investigate, or creative angles to consider.`;
+
+  // Add dismissed ideas context if any exist
+  if (dismissedIdeas.length > 0) {
+    systemPrompt += `\n\nIMPORTANT: The user has previously dismissed these ideas, so avoid generating anything similar in concept or approach:\n${dismissedIdeas.map((idea, i) => `${i+1}. ${idea}`).join('\n')}`;
+  }
+
+  const userPrompt = contextString.trim() 
+    ? `Based on this project context, suggest related ideas to explore:\n\n${contextString}`
+    : `Generate some general creative project ideas for exploration.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ];
+
+  // Check daily usage limit
+  const limit = Number(DAILY_TOKEN_LIMIT || 0) || 200_000;
+  const tz = 'UTC'; // Default timezone for this endpoint
+  const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
+  const { data: todayRows } = await locals.supabase
+    .from('usage_logs')
+    .select('tokens_in,tokens_out')
+    .eq('user_id', user.id)
+    .eq('project_id', projectId)
+    .gte('created_at', startOfToday);
+
+  const used = (todayRows ?? []).reduce((n, r) => n + (r.tokens_in || 0) + (r.tokens_out || 0), 0);
+  const estThisIn = Math.round(JSON.stringify(messages).length / 4);
+  if (used + estThisIn >= limit) {
+    return json({
+      error: 'limit',
+      message: `Daily cap reached. (${used.toLocaleString()}/${limit.toLocaleString()} tokens used today)`
+    }, { status: 429 });
+  }
+
+  try {
+    // Call OpenAI API
+    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: modelConf.name,
+      temperature: 0.9, // Higher creativity for idea generation
+      messages: messages,
+      max_tokens: 800 // Reasonable limit for ideas list
+    });
+
+    const content = response.choices[0]?.message?.content || '';
+    
+    // Parse the response into individual ideas
+    const ideas = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.match(/^#+\s/)) // Remove headers
+      .map(line => line.replace(/^[-*]\s*/, '')) // Remove bullet points
+      .filter(line => line.length > 10) // Filter out very short lines
+      .slice(0, newIdeasToGenerate); // Limit to requested number of new ideas
+
+    // Log usage
+    const inTok = Math.round(JSON.stringify(messages).length / 4);
+    const outTok = Math.round(content.length / 4);
+    const cost = +(inTok * modelConf.inPerTok + outTok * modelConf.outPerTok).toFixed(6);
+
+    const usagePayload = {
+      user_id: user.id,
+      project_id: projectId,
+      model: modelConf.name,
+      tokens_in: inTok,
+      tokens_out: outTok,
+      cost_usd: cost
+    };
+
+    await locals.supabase.from('usage_logs').insert(usagePayload);
+
+    return json({
+      ideas: ideas,
+      usage: {
+        tokens_in: inTok,
+        tokens_out: outTok,
+        cost_usd: cost
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generating ideas:', error);
+    return json({
+      error: 'generation_failed',
+      message: 'Failed to generate ideas. Please try again.'
+    }, { status: 500 });
+  }
+};

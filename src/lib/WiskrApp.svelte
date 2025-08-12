@@ -447,6 +447,7 @@
 									/>
 									<button 
 										class="action-btn tag-btn"
+										aria-label="Add tags"
 										on:click={(e) => {
 											const input = e.target.closest('.prompt-tagging').querySelector('.prompt-tag-input');
 											if (input.value.trim()) {
@@ -462,13 +463,13 @@
 							<div class="prompt-text">{prompt.text}</div>
 							<div class="prompt-response">{prompt.response}</div>
 							<div class="prompt-actions">
-								<button class="action-btn regenerate" on:click={() => regeneratePrompt(prompt.id)}>
+								<button aria-label="Regenerate prompt" class="action-btn regenerate" on:click={() => regeneratePrompt(prompt.id)}>
 									<i class="fas fa-redo"></i> Regenerate
 								</button>
-								<button class="action-btn format" on:click={() => openFormatModal(prompt.id)}>
+								<button aria-label="Format prompt" class="action-btn format" on:click={() => openFormatModal(prompt.id)}>
 									<i class="fas fa-magic"></i> Format
 								</button>
-								<button class="action-btn delete" on:click={() => deletePrompt(prompt.id)}>
+								<button aria-label="Delete prompt" class="action-btn delete" on:click={() => deletePrompt(prompt.id)}>
 									<i class="fas fa-trash"></i> Delete
 								</button>
 							</div>
@@ -496,14 +497,14 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h3>Format Output</h3>
-				<button class="close-modal" on:click={closeFormatModal}>
+				<button class="close-modal" on:click={closeFormatModal} aria-label="Close format modal">
 					<i class="fas fa-times"></i>
 				</button>
 			</div>
 			<div class="modal-body">
 				<div class="format-options">
 					{#each formatOptions as option}
-						<button class="format-btn" on:click={() => formatOutput(option.value)}>
+						<button aria-label={`Format output as ${option.label}`} class="format-btn" on:click={() => formatOutput(option.value)}>
 							<i class={option.icon}></i>
 							{option.label}
 						</button>
@@ -512,7 +513,7 @@
 				<div class="formatted-output">
 					<label for="formatted-text">Formatted Output:</label>
 					<textarea bind:value={formattedText} rows="8" readonly></textarea>
-					<button class="btn-secondary" on:click={() => copyToClipboard(formattedText)}>
+					<button aria-label="Copy formatted text" class="btn-secondary" on:click={() => copyToClipboard(formattedText)}>
 						<i class="fas fa-copy"></i> Copy
 					</button>
 				</div>

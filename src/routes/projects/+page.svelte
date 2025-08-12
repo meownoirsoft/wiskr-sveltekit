@@ -4,6 +4,29 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase.js';
+  import { marked } from 'marked';
+  
+  // Import components
+  import Sidebar from '$lib/components/Sidebar.svelte';
+  import IdeasColumn from '$lib/components/IdeasColumn.svelte';
+  import ChatInterface from '$lib/components/ChatInterface.svelte';
+  import FormatModal from '$lib/components/FormatModal.svelte';
+  import BranchModal from '$lib/components/BranchModal.svelte';
+  import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+  import SettingsModal from '$lib/components/SettingsModal.svelte';
+  import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+  
+  // Import Lucide icons
+  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash } from 'lucide-svelte';
+  
+  // Import styles
+  import '$lib/components/styles.css';
+  
+  // Configure marked for better rendering
+  marked.setOptions({
+    breaks: true, // Convert \n to <br>
+    gfm: true, // Enable GitHub flavored markdown
+  });
   
   export let data;
   let projects = data?.projects ?? [];
@@ -21,13 +44,6 @@
     const foundByStorage = lastSelectedId ? projects.find(p => p.id === lastSelectedId) : null;
     const selectedId = foundByStorage?.id || projects[0].id;
     
-    console.log('🎯 Project selection:', {
-      selectedId,
-      selectedName: projects.find(p => p.id === selectedId)?.name,
-      reason: foundByStorage ? 'localStorage' : 'fallback to first',
-      lastSelectedId
-    });
-    
     hasInit = true;
     await selectProjectById(selectedId);
   })();
@@ -44,11 +60,17 @@
       localStorage.setItem('wiskr_last_project_id', id);
     }
 
-    // load for this project
-    await loadMessages();
+    // Wait for reactive update to set current project
+    await tick();
+    
+    // load for this project (now that current is set)
+    await loadBranches();
+    await loadMessages(id);
     await loadContext();
     await loadUsage();
-    await tick();
+    
+    // Load questions for this project from database
+    await loadQuestions();
   }
 
   async function reloadProjects(selectId) {
@@ -70,20 +92,38 @@
     if (nextId) await selectProjectById(nextId);
   }
 
-  // Builder toggle via query param (?builder=1) - keeping this one for UI control
-  $: builder = ($page.url?.searchParams.get('builder') === '1') || false;
+  // Always show sidebar (removed builder mode)
 
   // Left column state
   let search = '';
-  $: filtered = projects.filter(p =>
-    !search.trim() ||
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    (p.brief_text ?? '').toLowerCase().includes(search.toLowerCase())
-  );
+
+  function clearSearch() {
+    search = '';
+  }
 
   // Chat state
   let input = '';
   let messages = [];
+  let loadingMessages = false;
+
+  // Platform formatting state
+  let showFormatModal = false;
+  let selectedText = '';
+  let selectedMessageIndex = -1;
+  let formattedContent = '';
+  let selectedPlatform = '';
+  let isFormatting = false;
+
+  // Branching state
+  let currentBranchId = 'main';
+  let currentBranch = null;
+  let branches = [];
+  let messageBranches = []; // Branches for the specific message being branched
+  let showBranchModal = false;
+  let branchModalMessageIndex = -1;
+  let newBranchName = '';
+  let isCreatingBranch = false;
+  let branchCreateError = '';
 
   // Context state
   let facts = [];
@@ -94,12 +134,37 @@
   let factType = 'character';
   let factKey = '';
   let factValue = '';
-  let factTags = '';
+  let showAddFactForm = false;
 
   // Add Doc form
   let docTitle = '';
   let docContent = '';
-  let docTags = '';
+  let showAddDocForm = false;
+
+  // Usage stats visibility
+  let showUsageStats = false;
+
+
+  // New Project modal state
+  let showNewProjectModal = false;
+  let newProjectName = '';
+  let newProjectIcon = '📁';
+  let newProjectColor = '#6366f1';
+  let creatingProject = false;
+  let createProjectErr = '';
+
+  // Settings modal state
+  let showSettingsModal = false;
+  let settingsProject = null;
+
+  // Ideas Column state
+  let goodQuestions = [];
+  let relatedIdeas = [];
+  let isGeneratingIdeas = false;
+  
+  // Sidebar tab state
+  let activeTab = 'facts';
+  
 
   // Store the handler reference so it can be properly cleaned up
   let projectsRefreshHandler;
@@ -117,6 +182,13 @@
     // Listen for "projects:refresh" after create (from +layout.svelte)
     projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
     window.addEventListener('projects:refresh', projectsRefreshHandler);
+    
+    // Listen for project selection from header
+    window.addEventListener('project:selected', (e) => {
+      if (e.detail?.id) {
+        selectProjectById(e.detail.id);
+      }
+    });
   });
 
   // Clean up event listener when component is destroyed
@@ -126,19 +198,46 @@
     }
   });
 
-
-  async function pickProject(p) {
-    await selectProjectById(p.id);
-  }
-
-  async function loadMessages() {
-    if (!current) return;
-    const { data } = await supabase
+  async function loadMessages(projectId = null) {
+    const id = projectId || current?.id;
+    if (!id) return;
+    
+    // For initial load, reset to main branch
+    if (projectId) {
+      currentBranchId = 'main';
+      // Set the main branch object properly
+      currentBranch = {
+        project_id: id,
+        branch_id: 'main',
+        branch_name: 'Main',
+        color_index: 0,
+        colorClass: 'bg-white border-gray-200'
+      };
+    }
+    
+    loadingMessages = true;
+    const startTime = Date.now();
+    
+    const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('project_id', current.id)
+      .eq('project_id', id)
+      .eq('branch_id', currentBranchId)
       .order('created_at');
-    messages = data ?? [];
+    
+    // Ensure minimum loading duration of 500ms so spinner is visible
+    const elapsed = Date.now() - startTime;
+    const minDuration = 500;
+    if (elapsed < minDuration) {
+      await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
+    }
+    
+    if (error) {
+      console.error('Error loading messages:', error);
+    } else {
+      messages = data ?? [];
+    }
+    loadingMessages = false;
   }
 
   async function loadContext() {
@@ -155,16 +254,34 @@
     loadingFacts = false;
   }
 
-  async function send() {
-    if (!current || !input.trim()) return;
-    const userMsg = input;
+  async function loadQuestions() {
+    if (!current) return;
+    
+    try {
+      const res = await fetch(`/api/projects/${current.id}/questions`);
+      if (res.ok) {
+        const data = await res.json();
+        goodQuestions = (data.questions || []).map(q => q.question);
+      } else {
+        console.error('Failed to load questions:', await res.text());
+        goodQuestions = [];
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      goodQuestions = [];
+    }
+  }
+
+  async function send(event) {
+    if (!current || !event.detail.message.trim()) return;
+    const userMsg = event.detail.message;
     input = '';
     messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '' }];
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: current.id, message: userMsg, modelKey, tz })
+      body: JSON.stringify({ projectId: current.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
     });
     if (res.status === 429) {
       const data = await res.json();
@@ -185,7 +302,7 @@
       messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText } : m);
       await loadUsage();
     }
-}
+  }
 
   async function regenerateBrief() {
     if (!current) return;
@@ -200,35 +317,59 @@
   const parseTags = (s) =>
     s.split(',').map(t => t.trim()).filter(Boolean);
 
+
   async function addFact() {
     if (!current) return;
-    if (!factKey.trim() || !factValue.trim()) return;
-    const payload = {
-      project_id: current.id,
-      type: factType.trim(),
-      key: factKey.trim(),
-      value: factValue.trim(),
-      tags: parseTags(factTags)
-    };
-    const { data, error } = await supabase.from('facts').insert(payload).select('*').single();
-    if (error) { alert(error.message); return; }
-    facts = [data, ...facts];
-    factKey = ''; factValue = ''; factTags = '';
+    if (!factKey?.trim() || !factValue?.trim()) return;
+
+    const res = await fetch('/api/facts/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: current.id,
+        type: factType || 'note',
+        key: factKey.trim(),
+        value: factValue.trim(),
+        pinned: false
+      })
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to save fact');
+      return;
+    }
+    // clear form and hide
+    factKey = ''; factValue = '';
+    showAddFactForm = false;
+
+    // reload lists
+    await loadContext();
   }
 
   async function addDoc() {
     if (!current) return;
-    if (!docTitle.trim() || !docContent.trim()) return;
-    const payload = {
-      project_id: current.id,
-      title: docTitle.trim(),
-      content: docContent.trim(),
-      tags: parseTags(docTags)
-    };
-    const { data, error } = await supabase.from('docs').insert(payload).select('*').single();
-    if (error) { alert(error.message); return; }
-    docs = [data, ...docs];
-    docTitle = ''; docContent = ''; docTags = '';
+    if (!docTitle?.trim()) return;
+
+    const res = await fetch('/api/docs/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: current.id,
+        title: docTitle.trim(),
+        content: docContent || '',
+        pinned: false
+      })
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to create doc');
+      return;
+    }
+    // clear and hide
+    docTitle = ''; docContent = '';
+    showAddDocForm = false;
+
+    await loadContext();
   }
 
   function startEditFact(f, i) {
@@ -237,74 +378,94 @@
   function cancelEditFact(f, i) {
     facts = facts.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
   }
-  async function saveFact(f, i) {
-    const { data, error } = await supabase.from('facts')
-      .update({ key: f._editKey.trim(), value: f._editValue.trim() })
-      .eq('id', f.id)
-      .select('*').single();
-    if (error) { alert(error.message); return; }
-    facts = facts.map((x, idx) => idx === i ? { ...data, _editing: false } : x);
+
+  async function saveFactEdit(f, { type, key, value, tags }) {
+    const res = await fetch(`/api/facts/create/${f.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type, key, value,
+        tags,
+        reembed: 'auto' // re-embed if text changed
+      })
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to update fact');
+      return;
+    }
+    // Refresh lists
+    await loadContext();
   }
+
   async function deleteFact(f, i) {
     if (!confirm('Delete this fact?')) return;
     const { error } = await supabase.from('facts').delete().eq('id', f.id);
     if (error) { alert(error.message); return; }
     facts = facts.filter((_, idx) => idx !== i);
   }
-  async function togglePin(f, i) {
-    const { data, error } = await supabase.from('facts').update({ pinned: !f.pinned }).eq('id', f.id).select('*').single();
-    if (error) { alert(error.message); return; }
-    facts = facts.map((x, idx) => idx === i ? data : x);
+
+async function toggleFactPin(f) {
+    console.log('Toggling fact pin for:', f.key, 'from', f.pinned, 'to', !f.pinned);
+    const res = await fetch(`/api/facts/create/${f.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pinned: !f.pinned, reembed: 'skip' }) // pin doesn't change meaning
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to toggle pin');
+      return;
+    }
+    await loadContext();
   }
 
   function startEditDoc(d, i) {
-  docs = docs.map((x, idx) =>
-    idx === i ? { ...x, _editing: true, _editTitle: x.title, _editContent: x.content, _editTags: (x.tags || []).join(', ') } : x
-  );
-}
+    docs = docs.map((x, idx) =>
+      idx === i ? { ...x, _editing: true, _editTitle: x.title, _editContent: x.content, _editTags: (x.tags || []).join(', ') } : x
+    );
+  }
 function cancelEditDoc(d, i) {
   docs = docs.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
 }
-async function saveDoc(d, i) {
-  const payload = {
-    title: d._editTitle.trim(),
-    content: d._editContent.trim(),
-    tags: d._editTags.split(',').map(t => t.trim()).filter(Boolean)
-  };
-  const { data, error } = await supabase.from('docs').update(payload).eq('id', d.id).select('*').single();
-  if (error) { alert(error.message); return; }
-  docs = docs.map((x, idx) => idx === i ? { ...data, _editing: false } : x);
-}
+async function saveDocEdit(d, { title, content, tags }) {
+    const res = await fetch(`/api/docs/${d.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title, content, tags,
+        reembed: 'auto' // only re-embed if text changed
+      })
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to update doc');
+      return;
+    }
+    await loadContext();
+  }
 async function deleteDoc(d, i) {
   if (!confirm('Delete this doc?')) return;
   const { error } = await supabase.from('docs').delete().eq('id', d.id);
   if (error) { alert(error.message); return; }
   docs = docs.filter((_, idx) => idx !== i);
 }
-async function togglePinDoc(d, i) {
-  const { data, error } = await supabase.from('docs').update({ pinned: !d.pinned }).eq('id', d.id).select('*').single();
-  if (error) { alert(error.message); return; }
-  docs = docs.map((x, idx) => idx === i ? data : x);
-}
 
-// RENAME / DELETE handlers
-async function renameProject(p) {
-  const name = window.prompt('Rename project:', p.name);
-  if (!name || name.trim() === p.name) return;
-  const res = await fetch(`/api/projects/${p.id}/rename`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: name.trim() })
-  });
-  if (!res.ok) {
-    console.error(await res.text());
-    alert('Rename failed.');
-    return;
+async function toggleDocPin(d) {
+    const res = await fetch(`/api/docs/${d.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pinned: !d.pinned, reembed: 'skip' })
+    });
+    if (!res.ok) {
+      console.error(await res.text());
+      alert('Failed to toggle pin');
+      return;
+    }
+    await loadContext();
   }
-  const { project } = await res.json();
-  // update local list
-  projects = projects.map(x => x.id === p.id ? project : x);
-}
+
+// DELETE handlers
 
 async function deleteProject(p) {
   if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -332,6 +493,257 @@ async function deleteProject(p) {
 }
 
 
+// Platform formatting functions
+function openFormatModal(messageIndex) {
+  selectedMessageIndex = messageIndex;
+  selectedText = messages[messageIndex].content;
+  showFormatModal = true;
+  formattedContent = '';
+  selectedPlatform = '';
+}
+
+function closeFormatModal() {
+  showFormatModal = false;
+  selectedText = '';
+  selectedMessageIndex = -1;
+  formattedContent = '';
+  selectedPlatform = '';
+}
+
+async function formatForPlatform(platform) {
+  if (!selectedText || isFormatting) return;
+  
+  isFormatting = true;
+  selectedPlatform = platform;
+  
+  try {
+    const res = await fetch('/api/format-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: selectedText,
+        platform: platform
+      })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      formattedContent = data.formatted || 'Error formatting content';
+    } else {
+      formattedContent = 'Error: Failed to format content';
+    }
+  } catch (error) {
+    console.error('Format error:', error);
+    formattedContent = 'Error: Network error';
+  } finally {
+    isFormatting = false;
+  }
+}
+
+async function copyToClipboard(text) {
+  if (!text) return;
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    // Could add a toast notification here
+  } catch (error) {
+    console.error('Failed to copy:', error);
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  }
+}
+
+// Conversation branching functions
+async function loadBranches() {
+  if (!current) return;
+  
+  try {
+    const res = await fetch('/api/branches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list', projectId: current.id })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      branches = data.branches || [];
+      
+      // Set current branch info
+      currentBranch = branches.find(b => b.branch_id === currentBranchId) || 
+                     branches.find(b => b.branch_id === 'main') || null;
+    }
+  } catch (error) {
+    console.error('Error loading branches:', error);
+  }
+}
+
+async function openBranchModal(messageIndex) {
+  branchModalMessageIndex = messageIndex;
+  newBranchName = '';
+  branchCreateError = ''; // Clear any previous errors
+  
+  // Load branches for this specific message
+  if (current && messages[messageIndex]?.id) {
+    const messageId = messages[messageIndex].id;
+    try {
+      const res = await fetch('/api/branches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'listForMessage', 
+          projectId: current.id,
+          messageId: messageId
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        messageBranches = data.branches || [];
+      } else {
+        console.error('Failed to load branches for message');
+        messageBranches = [];
+      }
+    } catch (error) {
+      console.error('Error loading message branches:', error);
+      messageBranches = [];
+    }
+  } else {
+    messageBranches = [];
+  }
+  
+  showBranchModal = true;
+}
+
+function closeBranchModal() {
+  showBranchModal = false;
+  branchModalMessageIndex = -1;
+  newBranchName = '';
+}
+
+async function createBranch() {
+  if (!current || branchModalMessageIndex < 0 || !newBranchName.trim() || isCreatingBranch) return;
+  
+  isCreatingBranch = true;
+  
+  try {
+    const messageId = messages[branchModalMessageIndex]?.id;
+    const res = await fetch('/api/branches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        projectId: current.id,
+        messageId: messageId,
+        branchName: newBranchName.trim()
+      })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      await loadBranches();
+      await switchToBranch(data.branch.branch_id);
+      closeBranchModal();
+      
+      // Reload message branch counts in the ChatInterface component
+      window.dispatchEvent(new CustomEvent('branches-updated'));
+    } else {
+      // Handle error response from server
+      try {
+        const errorData = await res.json();
+        branchCreateError = errorData.error || 'Failed to create branch. Please try again.';
+      } catch {
+        branchCreateError = 'Failed to create branch. Please try again.';
+      }
+      console.error('Failed to create branch:', branchCreateError);
+    }
+  } catch (error) {
+    console.error('Error creating branch:', error);
+    alert('Error creating branch. Please try again.');
+  } finally {
+    isCreatingBranch = false;
+  }
+}
+
+async function switchToBranch(branchId) {
+  console.log('Parent: switchToBranch called with:', branchId, 'current branchId:', currentBranchId);
+  console.log('Parent: current object:', current);
+  console.log('Parent: current.id:', JSON.stringify(current?.id), 'type:', typeof current?.id, 'length:', current?.id?.length);
+  if (!current || branchId === currentBranchId) {
+    console.log('Parent: switchToBranch early return - no current or same branch');
+    return;
+  }
+  
+  try {
+    console.log('Parent: Making API call to switch branch');
+    const requestBody = {
+      action: 'switch',
+      projectId: current.id,
+      branchId: branchId
+    };
+    console.log('Parent: Request body:', JSON.stringify(requestBody));
+    const res = await fetch('/api/branches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      console.log('Parent: API response:', data);
+      currentBranchId = branchId;
+      currentBranch = data.branch;
+      messages = data.messages || [];
+      console.log('Parent: Updated messages:', messages.length, 'messages');
+    } else {
+      console.error('Parent: API response not ok:', res.status, res.statusText);
+    }
+  } catch (error) {
+    console.error('Error switching branch:', error);
+  }
+}
+
+function getBranchColor(branch) {
+  if (!branch) return RAINBOW_COLORS[0];
+  return RAINBOW_COLORS[branch.color_index % RAINBOW_COLORS.length];
+}
+
+// Platform definitions with Lucide icons
+const platforms = [
+  { id: 'tiktok', name: 'TikTok', icon: 'Music' },
+  { id: 'instagram', name: 'Instagram', icon: 'Camera' },
+  { id: 'youtube', name: 'YouTube', icon: 'Video' },
+  { id: 'etsy', name: 'Etsy', icon: 'ShoppingBag' },
+  { id: 'twitter', name: 'X/Twitter', icon: 'MessageCircle' },
+  { id: 'linkedin', name: 'LinkedIn', icon: 'Briefcase' },
+  { id: 'teepublic', name: 'TeePublic', icon: 'Shirt' },
+  { id: 'pinterest', name: 'Pinterest', icon: 'MapPin' },
+  { id: 'facebook', name: 'Facebook', icon: 'Users' },
+  { id: 'reddit', name: 'Reddit', icon: 'MessageSquare' },
+  { id: 'plaintext', name: 'Plain Text', icon: 'FileText' },
+  { id: 'markdown', name: 'Markdown', icon: 'Hash' },
+];
+
+// Icon component mapping
+const iconComponents = {
+  Music,
+  Camera,
+  Video,
+  ShoppingBag,
+  MessageCircle,
+  Briefcase,
+  Shirt,
+  MapPin,
+  Users,
+  MessageSquare,
+  FileText,
+  Hash
+};
+
 let usage = { today:{in:0,out:0,cost:0}, week:{in:0,out:0,cost:0}, month:{in:0,out:0,cost:0}, tz:'UTC' };
 
 async function loadUsage() {
@@ -341,235 +753,431 @@ async function loadUsage() {
   if (res.ok) usage = await res.json();
 }
 
+// New Project creation function
+async function createProject() {
+  if (!newProjectName.trim()) { createProjectErr = 'Please enter a name.'; return; }
+  createProjectErr = '';
+  creatingProject = true;
+  try {
+    const res = await fetch('/api/projects/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newProjectName.trim(),
+        icon: newProjectIcon,
+        color: newProjectColor
+      })
+    });
+
+    if (!res.ok) {
+      const raw = await res.text();
+      console.error('Create project failed:', raw);
+      // Try to extract a short message
+      let msg = '';
+      try { msg = (JSON.parse(raw).message) || raw; } catch { msg = raw; }
+      // Strip tags and truncate
+      msg = msg.replace(/<[^>]+>/g, '').slice(0, 200);
+      createProjectErr = msg || 'Failed to create project';
+      creatingProject = false;
+      return;
+    }
+
+    const { project } = await res.json();
+    showNewProjectModal = false;
+    newProjectName = ''; createProjectErr = '';
+
+    // Refresh projects and select the new one
+    await reloadProjects(project.id);
+
+  } catch (e) {
+    createProjectErr = e.message || 'Failed to create project';
+    creatingProject = false;
+  }
+}
+
+// Rainbow colors for branches
+const RAINBOW_COLORS = [
+  { bg: 'bg-white', border: 'border-gray-200', name: 'Main' },        // Main branch
+  { bg: 'bg-red-50', border: 'border-red-200', name: 'Red' },         // Red
+  { bg: 'bg-orange-50', border: 'border-orange-200', name: 'Orange' }, // Orange  
+  { bg: 'bg-yellow-50', border: 'border-yellow-200', name: 'Yellow' }, // Yellow
+  { bg: 'bg-green-50', border: 'border-green-200', name: 'Green' },    // Green
+  { bg: 'bg-blue-50', border: 'border-blue-200', name: 'Blue' },       // Blue
+  { bg: 'bg-indigo-50', border: 'border-indigo-200', name: 'Indigo' }, // Indigo
+  { bg: 'bg-purple-50', border: 'border-purple-200', name: 'Purple' }, // Purple
+  { bg: 'bg-pink-50', border: 'border-pink-200', name: 'Pink' }        // Pink
+];
+
+
+// Event handlers for components
+function handleProjectSelect(event) {
+  selectProjectById(event.detail.id);
+}
+
+
+function handleProjectDelete(event) {
+  deleteProject(event.detail);
+}
+
+function handleFactAdd(event) {
+  const { type, key, value } = event.detail;
+  factType = type;
+  factKey = key;
+  factValue = value;
+  addFact();
+}
+
+function handleFactStartEdit(event) {
+  startEditFact(event.detail.fact, event.detail.index);
+}
+
+function handleFactCancelEdit(event) {
+  cancelEditFact(event.detail.fact, event.detail.index);
+}
+
+function handleFactSaveEdit(event) {
+  saveFactEdit(event.detail.fact, event.detail.editData);
+}
+
+function handleFactDelete(event) {
+  deleteFact(event.detail.fact, event.detail.index);
+}
+
+function handleFactTogglePin(event) {
+  toggleFactPin(event.detail);
+}
+
+function handleDocAdd(event) {
+  const { title, content } = event.detail;
+  docTitle = title;
+  docContent = content;
+  addDoc();
+}
+
+function handleDocStartEdit(event) {
+  startEditDoc(event.detail.doc, event.detail.index);
+}
+
+function handleDocCancelEdit(event) {
+  cancelEditDoc(event.detail.doc, event.detail.index);
+}
+
+function handleDocSaveEdit(event) {
+  saveDocEdit(event.detail.doc, event.detail.editData);
+}
+
+function handleDocDelete(event) {
+  deleteDoc(event.detail.doc, event.detail.index);
+}
+
+function handleDocTogglePin(event) {
+  toggleDocPin(event.detail);
+}
+
+function handleSwitchToBranch(event) {
+  console.log('Parent: handleSwitchToBranch called with event.detail:', event.detail);
+  switchToBranch(event.detail);
+}
+
+function handleOpenFormatModal(event) {
+  openFormatModal(event.detail);
+}
+
+function handleOpenBranchModal(event) {
+  openBranchModal(event.detail);
+}
+
+function handleFormatModalClose() {
+  closeFormatModal();
+}
+
+function handleFormatForPlatform(event) {
+  formatForPlatform(event.detail);
+}
+
+function handleCopyToClipboard(event) {
+  copyToClipboard(event.detail);
+}
+
+function handleBranchModalClose() {
+  closeBranchModal();
+}
+
+function handleCreateBranch(event) {
+  newBranchName = event.detail;
+  createBranch();
+}
+
+function handleNewProjectModalClose() {
+  showNewProjectModal = false;
+  newProjectName = '';
+  createProjectErr = '';
+}
+
+function handleCreateProject(event) {
+  const { name, icon, color } = event.detail;
+  newProjectName = name;
+  newProjectIcon = icon;
+  newProjectColor = color;
+  createProject();
+}
+
+function handleProjectOpenSettings(event) {
+  settingsProject = event.detail;
+  showSettingsModal = true;
+}
+
+function handleSettingsModalClose() {
+  showSettingsModal = false;
+  settingsProject = null;
+}
+
+async function handleBranchRenamed(event) {
+  // Reload branches to get updated branch info
+  await loadBranches();
+}
+
+async function handleBranchDeleted(event) {
+  // Switch to main branch and reload branches
+  await switchToBranch('main');
+  await loadBranches();
+}
+
+// Ideas Column event handlers
+async function handleQuestionsUpdate(event) {
+  goodQuestions = event.detail.questions;
+  // Save to database
+  if (current) {
+    try {
+      const res = await fetch(`/api/projects/${current.id}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_all',
+          questions: goodQuestions
+        })
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to save questions:', await res.text());
+        // Could show user notification here
+      }
+    } catch (error) {
+      console.error('Error saving questions:', error);
+      // Could show user notification here
+    }
+  }
+}
+
+function handleInsertText(event) {
+  // Insert text into the chat input
+  const textToInsert = event.detail.text;
+  if (input) {
+    input += (input ? ' ' : '') + textToInsert;
+  } else {
+    input = textToInsert;
+  }
+  
+  // Focus the chat input (we'll need to dispatch this to ChatInterface)
+  window.dispatchEvent(new CustomEvent('focus-chat-input'));
+}
+
+async function handleGenerateIdeas() {
+  if (!current || isGeneratingIdeas) return;
+  
+  isGeneratingIdeas = true;
+  
+  try {
+    // Get count of liked ideas and dismissed ideas from localStorage
+    let likedIdeasCount = 0;
+    let dismissedIdeas = [];
+    try {
+      const liked = localStorage.getItem(`liked_ideas_${current.id}`);
+      if (liked) {
+        const likedIdeas = JSON.parse(liked);
+        likedIdeasCount = likedIdeas.length;
+      }
+      
+      const dismissed = localStorage.getItem(`dismissed_ideas_${current.id}`);
+      if (dismissed) {
+        dismissedIdeas = JSON.parse(dismissed);
+      }
+    } catch (error) {
+      console.error('Error reading ideas from localStorage:', error);
+    }
+    
+    const res = await fetch('/api/generate-ideas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: current.id,
+        facts: facts.slice(0, 10), // Send first 10 facts for context
+        docs: docs.slice(0, 5),    // Send first 5 docs for context
+        recentMessages: messages.slice(-5), // Send last 5 messages for context
+        likedIdeasCount: likedIdeasCount, // Send count of already liked ideas
+        dismissedIdeas: dismissedIdeas // Send dismissed ideas to avoid regenerating
+      })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      relatedIdeas = data.ideas || [];
+    } else {
+      console.error('Failed to generate ideas:', await res.text());
+      relatedIdeas = ['Error generating ideas. Please try again.'];
+    }
+  } catch (error) {
+    console.error('Error generating ideas:', error);
+    relatedIdeas = ['Network error. Please try again.'];
+  } finally {
+    isGeneratingIdeas = false;
+  }
+}
+
+// Text selection handlers from ChatInterface
+function handleTextAddToFacts(event) {
+  const text = event.detail.text;
+  // Auto-populate fact form with selected text
+  factKey = text.length > 50 ? text.substring(0, 50) + '...' : text;
+  factValue = text;
+  factType = 'note'; // Default type for selected text
+  showAddFactForm = true;
+  // Switch to facts tab
+  activeTab = 'facts';
+}
+
+function handleTextAddToDocs(event) {
+  const text = event.detail.text;
+  // Auto-populate doc form with selected text
+  docTitle = text.length > 100 ? text.substring(0, 100) + '...' : text;
+  docContent = text;
+  showAddDocForm = true;
+  // Switch to docs tab
+  activeTab = 'docs';
+}
+
+function handleTextAddToQuestions(event) {
+  const text = event.detail.text;
+  // Add to good questions list
+  if (text && !goodQuestions.includes(text)) {
+    goodQuestions = [...goodQuestions, text];
+    // Save to database
+    if (current) {
+      handleQuestionsUpdate({ detail: { questions: goodQuestions } });
+    }
+  }
+}
 </script>
 
 <!-- Layout -->
- <div class="grid grid-cols-1 md:grid-cols-3 md:[grid-template-columns:240px_320px_1fr] h-[calc(100vh-4rem)]">
+<div class="grid grid-cols-1 lg:grid-cols-3 lg:[grid-template-columns:280px_200px_1fr] h-[calc(100vh-4rem)]">
+  
+  <!-- LEFT: Facts/Docs Sidebar -->
+  <Sidebar 
+    {current}
+    {facts}
+    {docs}
+    {loadingFacts}
+    bind:showAddFactForm
+    bind:factType
+    bind:factKey
+    bind:factValue
+    bind:showAddDocForm
+    bind:docTitle
+    bind:docContent
+    bind:activeTab
+    on:brief-regenerate={regenerateBrief}
+    on:fact-add={handleFactAdd}
+    on:fact-cancel-add={() => { factKey = ''; factValue = ''; }}
+    on:fact-start-edit={handleFactStartEdit}
+    on:fact-cancel-edit={handleFactCancelEdit}
+    on:fact-save-edit={handleFactSaveEdit}
+    on:fact-delete={handleFactDelete}
+    on:fact-toggle-pin={handleFactTogglePin}
+    on:doc-add={handleDocAdd}
+    on:doc-cancel-add={() => { docTitle = ''; docContent = ''; }}
+    on:doc-start-edit={handleDocStartEdit}
+    on:doc-cancel-edit={handleDocCancelEdit}
+    on:doc-save-edit={handleDocSaveEdit}
+    on:doc-delete={handleDocDelete}
+    on:doc-toggle-pin={handleDocTogglePin}
+  />
 
-  <!-- LEFT: Project list -->
-  <aside class="border-r p-3 overflow-auto bg-white">
-    <input
-      class="border rounded p-2 w-full mb-3"
-      placeholder="Search projects..."
-      bind:value={search}
-    />
-    <ul class="space-y-2">
-      {#each filtered as project}
-        <li>
-          <div class="p-2 rounded hover:bg-zinc-100">
-            <div class="flex items-start justify-between gap-2">
-              <button
-                class={`w-full text-left p-2 rounded hover:bg-zinc-100 ${current?.id === project.id ? 'bg-zinc-200' : ''}`}
-                on:click={() => pickProject(project)}
-              >
-                <div class="font-semibold flex items-center gap-2">
-                  <span>{project.icon ?? '📁'}</span>
-                  <span>{project.name}</span>
-                </div>
-                {#if project.brief_text}
-                  <div class="text-xs text-zinc-600 line-clamp-2 mt-1">
-                    {project.brief_text}
-                  </div>
-                {/if}
-              </button>
-              <div class="shrink-0 flex items-center gap-2">
-                <button class="text-xs underline" title="Rename" on:click={() => renameProject(project)}>Rename</button>
-                <button class="text-xs underline text-red-600" title="Delete" on:click={() => deleteProject(project)}>Delete</button>
-              </div>
-            </div>
-          </div>
-        </li>
-      {/each}
-      {#if !filtered.length}
-        <li class="text-sm text-zinc-500">No projects found.</li>
-      {/if}
-    </ul>
-  </aside>
-
-  <!-- MIDDLE: Brief + Facts/Docs (builder mode only) -->
-  {#if builder}
-    <section class="border-r p-3 overflow-auto bg-gray-50">
-      {#if current}
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold">Brief</h3>
-          <button class="text-sm underline" on:click={regenerateBrief}>Regenerate</button>
-        </div>
-        <pre class="text-sm whitespace-pre-wrap bg-white border rounded p-2">{current.brief_text || 'No brief yet.'}</pre>
-
-        <!-- Add Fact -->
-        <div class="mt-4 border rounded p-3 bg-white">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold">Add Fact</h3>
-            <span class="text-xs text-zinc-500">Short, atomic facts work best</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <select class="border rounded p-2" bind:value={factType}>
-              <option value="character">character</option>
-              <option value="location">location</option>
-              <option value="mechanic">mechanic</option>
-              <option value="glossary">glossary</option>
-              <option value="entity">entity</option>
-            </select>
-            <input class="border rounded p-2" placeholder="Key (e.g., Cheddar)" bind:value={factKey} />
-            <input class="border rounded p-2 col-span-2" placeholder="Tags (comma-separated)" bind:value={factTags} />
-            <textarea class="border rounded p-2 col-span-2" rows="3" placeholder="Value (≤120 words)" bind:value={factValue}></textarea>
-          </div>
-          <div class="mt-2">
-            <button class="border rounded px-3 py-1" on:click={addFact}>Save Fact</button>
-          </div>
-        </div>
-
-        <h3 class="font-semibold mt-4">Facts</h3>
-        {#if loadingFacts}<div class="text-sm text-zinc-500">Loading…</div>{/if}
-        <ul class="mt-1 space-y-1">
-          {#each facts as f, i}
-            <li class="text-sm border rounded p-2 bg-white">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <b>[{f.type}] {f.key}</b>{f.pinned ? ' 🌟' : ''}: {f.value}
-                  {#if f.tags?.length}
-                    <div class="text-xs text-zinc-500 mt-1">Tags: {f.tags.join(', ')}</div>
-                  {/if}
-                </div>
-                <div class="shrink-0 flex gap-2">
-                  <button class="text-xs underline" on:click={() => togglePin(f, i)}>{f.pinned ? 'Unpin' : 'Pin'}</button>
-                  <button class="text-xs underline" on:click={() => startEditFact(f, i)}>Edit</button>
-                  <button class="text-xs underline text-red-600" on:click={() => deleteFact(f, i)}>Delete</button>
-                </div>
-              </div>
-
-              {#if f._editing}
-                <div class="mt-2 grid gap-2">
-                  <input class="border rounded p-2" bind:value={f._editKey} />
-                  <textarea class="border rounded p-2" rows="3" bind:value={f._editValue}></textarea>
-                  <div class="flex gap-2">
-                    <button class="border rounded px-2" on:click={() => saveFact(f, i)}>Save</button>
-                    <button class="border rounded px-2" on:click={() => cancelEditFact(f, i)}>Cancel</button>
-                  </div>
-                </div>
-              {/if}
-            </li>
-          {/each}
-          {#if !facts.length && !loadingFacts}<li class="text-sm text-zinc-500">No facts.</li>{/if}
-        </ul>
-
-
-        <!-- Add Doc -->
-        <div class="mt-6 border rounded p-3 bg-white">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold">Add Doc</h3>
-            <span class="text-xs text-zinc-500">Longer notes, lore, specs</span>
-          </div>
-          <div class="grid gap-2">
-            <input class="border rounded p-2" placeholder="Title" bind:value={docTitle} />
-            <input class="border rounded p-2" placeholder="Tags (comma-separated)" bind:value={docTags} />
-            <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={docContent}></textarea>
-          </div>
-          <div class="mt-2">
-            <button class="border rounded px-3 py-1" on:click={addDoc}>Save Doc</button>
-          </div>
-        </div>
-
-        <h3 class="font-semibold mt-4">Docs</h3>
-        <ul class="mt-1 space-y-2">
-          {#each docs as d, i}
-            <li class="text-sm border rounded p-2 bg-white">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="font-medium">
-                    {d.title}{d.pinned ? ' 🌟' : ''}
-                  </div>
-                  <div class="mt-1 text-xs whitespace-pre-wrap">
-                    {d.content.slice(0, 400)}{d.content.length > 400 ? '…' : ''}
-                  </div>
-                  {#if d.tags?.length}
-                    <div class="mt-1 text-[10px] text-zinc-500">Tags: {d.tags.join(', ')}</div>
-                  {/if}
-                </div>
-                <div class="shrink-0 flex gap-2">
-                  <button class="text-xs underline" on:click={() => togglePinDoc(d, i)}>{d.pinned ? 'Unpin' : 'Pin'}</button>
-                  <button class="text-xs underline" on:click={() => startEditDoc(d, i)}>Edit</button>
-                  <button class="text-xs underline text-red-600" on:click={() => deleteDoc(d, i)}>Delete</button>
-                </div>
-              </div>
-
-              {#if d._editing}
-                <div class="mt-2 grid gap-2">
-                  <input class="border rounded p-2" placeholder="Title" bind:value={d._editTitle} />
-                  <input class="border rounded p-2" placeholder="Tags (comma-separated)" bind:value={d._editTags} />
-                  <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={d._editContent}></textarea>
-                  <div class="flex gap-2">
-                    <button class="border rounded px-2" on:click={() => saveDoc(d, i)}>Save</button>
-                    <button class="border rounded px-2" on:click={() => cancelEditDoc(d, i)}>Cancel</button>
-                  </div>
-                </div>
-              {/if}
-            </li>
-          {/each}
-          {#if !docs.length}<li class="text-sm text-zinc-500">No docs.</li>{/if}
-        </ul>
-
-      {:else}
-        <p>Select a project</p>
-      {/if}
-    </section>
-  {:else}
-    <!-- keep the 3 columns aligned on md+ even when builder panel is off -->
-    <section class="hidden md:block border-r bg-gray-50"></section>
-  {/if}
+  <!-- MIDDLE: Ideas Column -->
+  <IdeasColumn 
+    {goodQuestions}
+    {relatedIdeas}
+    {isGeneratingIdeas}
+    projectId={current?.id}
+    on:questions-update={handleQuestionsUpdate}
+    on:insert-text={handleInsertText}
+    on:generate-ideas={handleGenerateIdeas}
+  />
 
   <!-- RIGHT: Chat -->
-  <main class="flex flex-col bg-white">
-    <div class="flex-1 overflow-auto p-4 space-y-3">
-      {#if !current}
-        <p>Select a project to start chatting.</p>
-      {:else}
-        {#each messages as m}
-          <div class="max-w-prose">
-            <div class="text-xs text-zinc-500 mb-1">{m.role}</div>
-            <div class="rounded-lg p-3 border whitespace-pre-wrap">{m.content}</div>
-          </div>
-        {/each}
-      {/if}
-    </div>
-
-    <!-- Ask box -->
-     <form class="p-3 border-t flex gap-2 items-center" on:submit|preventDefault={send}>
-      <input class="border rounded p-2 w-full" bind:value={input} placeholder={current ? "Ask…" : "Pick a project"} disabled={!current}/>
-      <select class="border rounded p-2" bind:value={modelKey} disabled={!current}>
-        <option value="speed">Speed (4o-mini)</option>
-        <option value="quality">Quality (4o)</option>
-      </select>
-      <button class="border rounded px-3" type="submit" disabled={!current || !input.trim()}>Send</button>
-    </form>
-    <!-- <form class="p-3 border-t flex gap-2" on:submit|preventDefault={send}>
-
-      <input
-        class="border rounded p-2 w-full"
-        bind:value={input}
-        placeholder={current ? "Ask or say what’s next…" : "Pick a project first"}
-        disabled={!current}
-      />
-      <button class="border rounded px-3" type="submit" disabled={!current || !input.trim()}>
-        Send
-      </button>
-    </form> -->
-    {#if usage}
-      <div class="px-3 pb-3 text-xs text-zinc-500 space-y-1">
-        <div class="text-zinc-600 font-medium mb-1">Total Usage (All Projects):</div>
-        <div>Today: {usage.today.in.toLocaleString()} in / {usage.today.out.toLocaleString()} out · ${usage.today.cost.toFixed(4)}</div>
-        <div>Last 7 days: {usage.week.in.toLocaleString()} in / {usage.week.out.toLocaleString()} out · ${usage.week.cost.toFixed(4)}</div>
-        <div>This month: {usage.month.in.toLocaleString()} in / {usage.month.out.toLocaleString()} out · ${usage.month.cost.toFixed(4)}</div>
-      </div>
-    {/if}
-  </main>
+  <ChatInterface 
+    {current}
+    {messages}
+    {loadingMessages}
+    bind:input
+    {modelKey}
+    {branches}
+    {currentBranch}
+    {currentBranchId}
+    {usage}
+    bind:showUsageStats
+    on:send={send}
+    on:switch-branch={handleSwitchToBranch}
+    on:open-format-modal={handleOpenFormatModal}
+    on:open-branch-modal={handleOpenBranchModal}
+    on:branch-renamed={handleBranchRenamed}
+    on:branch-deleted={handleBranchDeleted}
+    on:add-to-facts={handleTextAddToFacts}
+    on:add-to-docs={handleTextAddToDocs}
+    on:add-to-questions={handleTextAddToQuestions}
+  />
 </div>
 
-<style>
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-</style>
+<!-- Modals -->
+<FormatModal 
+  {showFormatModal}
+  {selectedText}
+  {selectedPlatform}
+  {formattedContent}
+  {isFormatting}
+  on:close={handleFormatModalClose}
+  on:format={handleFormatForPlatform}
+  on:copy={handleCopyToClipboard}
+/>
+
+<BranchModal
+  {showBranchModal}
+  {branchModalMessageIndex}
+  {newBranchName}
+  {isCreatingBranch}
+  {messages}
+  branches={messageBranches}
+  {currentBranchId}
+  createError={branchCreateError}
+  on:close={handleBranchModalClose}
+  on:create={handleCreateBranch}
+  on:switch-branch={handleSwitchToBranch}
+/>
+
+<NewProjectModal
+  {showNewProjectModal}
+  {newProjectName}
+  {newProjectIcon}
+  {newProjectColor}
+  {creatingProject}
+  {createProjectErr}
+  on:close={handleNewProjectModalClose}
+  on:create={handleCreateProject}
+/>
+
+<SettingsModal
+  {showSettingsModal}
+  project={settingsProject}
+  on:close={handleSettingsModalClose}
+/>
+
