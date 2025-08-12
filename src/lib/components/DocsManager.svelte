@@ -1,11 +1,13 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Pin, PinOff, Pencil, Trash } from 'lucide-svelte';
+  import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
 
   export let docs = [];
   export let showAddDocForm = false;
   export let docTitle = '';
   export let docContent = '';
+  export let docTags = '';
+  let openMenuIndex = -1; // Track which doc menu is open
 
   const dispatch = createEventDispatcher();
 
@@ -14,12 +16,19 @@
   }
 
   function addDoc() {
-    dispatch('add', { title: docTitle, content: docContent });
+    // Parse comma-separated tags
+    const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    dispatch('add', { title: docTitle, content: docContent, tags });
   }
 
   function cancelAdd() {
     showAddDocForm = false;
+    docTags = '';
     dispatch('cancel-add');
+  }
+  
+  function handleTagClick(tag) {
+    dispatch('tag-click', tag);
   }
 
   function startEditDoc(doc, index) {
@@ -40,6 +49,14 @@
 
   function toggleDocPin(doc) {
     dispatch('toggle-pin', doc);
+  }
+
+  function toggleMenu(index) {
+    openMenuIndex = openMenuIndex === index ? -1 : index;
+  }
+
+  function closeMenu() {
+    openMenuIndex = -1;
   }
 </script>
 
@@ -67,6 +84,14 @@
         <div class="grid gap-2">
           <input class="border rounded p-2" placeholder="Title" bind:value={docTitle} />
           <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={docContent}></textarea>
+          <input 
+            class="border rounded p-2" 
+            placeholder="Tags (comma-separated)" 
+            bind:value={docTags}
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+          />
         </div>
         <div class="mt-2 flex gap-2">
           <button class="bg-green-500 text-white rounded px-3 py-1 hover:bg-green-600 cursor-pointer" on:click={addDoc}>Save Doc</button>
@@ -92,20 +117,49 @@
             <span class="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700">doc</span>
           </div>
         </div>
-        <div class="flex gap-1 flex-shrink-0 ml-2">
-          <button class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" on:click={() => toggleDocPin(d)} title={d.pinned ? 'Unpin' : 'Pin'}>
-            {#if d.pinned}
-              <PinOff size="18" />
-            {:else}
-              <Pin size="18" />
-            {/if}
+        <!-- Triple-dot menu -->
+        <div class="relative flex-shrink-0 ml-2">
+          <button 
+            class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
+            on:click={() => toggleMenu(i)}
+            title="More actions"
+          >
+            <MoreHorizontal size="18" />
           </button>
-          <button class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" on:click={() => startEditDoc(d, i)} title="Edit">
-            <Pencil size="18" />
-          </button>
-          <button class="text-xs text-red-500 hover:text-red-700 cursor-pointer p-1" on:click={() => deleteDoc(d, i)} title="Delete">
-            <Trash size="18" />
-          </button>
+          
+          {#if openMenuIndex === i}
+            <!-- Overlay to close menu when clicking outside -->
+            <div class="dropdown-overlay" on:click={closeMenu}></div>
+            <!-- Dropdown menu -->
+            <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 flex items-center gap-2" 
+                on:click={() => { toggleDocPin(d); closeMenu(); }}
+              >
+                {#if d.pinned}
+                  <PinOff size="14" />
+                  Unpin
+                {:else}
+                  <Pin size="14" />
+                  Pin
+                {/if}
+              </button>
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 flex items-center gap-2" 
+                on:click={() => { startEditDoc(d, i); closeMenu(); }}
+              >
+                <Pencil size="14" />
+                Edit
+              </button>
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-red-50 text-red-600 flex items-center gap-2" 
+                on:click={() => { deleteDoc(d, i); closeMenu(); }}
+              >
+                <Trash size="14" />
+                Delete
+              </button>
+            </div>
+          {/if}
         </div>
       </div>
       
@@ -114,13 +168,36 @@
         {d.content.slice(0, 400)}{d.content.length > 400 ? '…' : ''}
       </div>
       
+      <!-- Row 3: Tags (if any) -->
+      {#if d.tags && d.tags.length > 0}
+        <div class="flex flex-wrap gap-1 mb-1">
+          {#each d.tags as tag}
+            <button
+              class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+              on:click={() => handleTagClick(tag)}
+              title="Filter by tag: {tag}"
+            >
+              {tag}
+            </button>
+          {/each}
+        </div>
+      {/if}
+      
 
       {#if d._editing}
         <div class="mt-2 grid gap-2">
           <input class="border rounded p-2" placeholder="Title" bind:value={d._editTitle} />
           <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={d._editContent}></textarea>
+          <input 
+            class="border rounded p-2" 
+            placeholder="Tags (comma-separated)" 
+            bind:value={d._editTags}
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+          />
           <div class="flex gap-2">
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveDocEdit(d, { title: d._editTitle, content: d._editContent })}>Save</button>
+            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveDocEdit(d, { title: d._editTitle, content: d._editContent, tags: d._editTags ? d._editTags.split(',').map(t => t.trim()).filter(Boolean) : [] })}>Save</button>
             <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => cancelEditDoc(d, i)}>Cancel</button>
           </div>
         </div>

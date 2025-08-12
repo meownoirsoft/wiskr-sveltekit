@@ -140,11 +140,13 @@
   let factType = 'character';
   let factKey = '';
   let factValue = '';
+  let factTags = '';
   let showAddFactForm = false;
 
   // Add Doc form
   let docTitle = '';
   let docContent = '';
+  let docTags = '';
   let showAddDocForm = false;
 
   // Usage stats visibility
@@ -171,9 +173,30 @@
   // Sidebar tab state
   let activeTab = 'facts';
   
+  // Panel visibility state - responsive defaults
+  let showLeftPanel = false;   // Facts/Docs panel
+  let showRightPanel = false;  // Questions/Ideas panel
+  let isDesktop = false;       // Track if we're on desktop
+  
 
   // Store the handler reference so it can be properly cleaned up
   let projectsRefreshHandler;
+
+  // Responsive screen detection
+  function checkScreenSize() {
+    if (browser) {
+      isDesktop = window.innerWidth >= 1024; // lg breakpoint
+      // On desktop, show both panels by default
+      if (isDesktop) {
+        showLeftPanel = true;
+        showRightPanel = true;
+      } else {
+        // On mobile/tablet, collapse both panels by default
+        showLeftPanel = false;
+        showRightPanel = false;
+      }
+    }
+  }
 
   onMount(async () => {
     // If the server didn't preload, fetch projects
@@ -194,6 +217,10 @@
       // Enable localStorage saving now that we've loaded the initial value
       modelKeyLoaded = true;
     }
+
+    // Setup responsive detection
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
 
     // Listen for "projects:refresh" after create (from +layout.svelte)
     projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
@@ -338,6 +365,9 @@
     if (!current) return;
     if (!factKey?.trim() || !factValue?.trim()) return;
 
+    // Parse tags
+    const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+
     const res = await fetch('/api/facts/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -346,6 +376,7 @@
         type: factType || 'note',
         key: factKey.trim(),
         value: factValue.trim(),
+        tags: tags,
         pinned: false
       })
     });
@@ -355,7 +386,7 @@
       return;
     }
     // clear form and hide
-    factKey = ''; factValue = '';
+    factKey = ''; factValue = ''; factTags = '';
     showAddFactForm = false;
 
     // reload lists
@@ -366,6 +397,9 @@
     if (!current) return;
     if (!docTitle?.trim()) return;
 
+    // Parse tags
+    const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+
     const res = await fetch('/api/docs/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -373,6 +407,7 @@
         project_id: current.id,
         title: docTitle.trim(),
         content: docContent || '',
+        tags: tags,
         pinned: false
       })
     });
@@ -382,14 +417,14 @@
       return;
     }
     // clear and hide
-    docTitle = ''; docContent = '';
+    docTitle = ''; docContent = ''; docTags = '';
     showAddDocForm = false;
 
     await loadContext();
   }
 
   function startEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.key, _editValue: x.value } : x);
+    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.key, _editValue: x.value, _editTags: (x.tags || []).join(', ') } : x);
   }
   function cancelEditFact(f, i) {
     facts = facts.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
@@ -836,10 +871,11 @@ function handleProjectDelete(event) {
 }
 
 function handleFactAdd(event) {
-  const { type, key, value } = event.detail;
+  const { type, key, value, tags } = event.detail;
   factType = type;
   factKey = key;
   factValue = value;
+  factTags = tags ? tags.join(', ') : '';
   addFact();
 }
 
@@ -864,9 +900,10 @@ function handleFactTogglePin(event) {
 }
 
 function handleDocAdd(event) {
-  const { title, content } = event.detail;
+  const { title, content, tags } = event.detail;
   docTitle = title;
   docContent = content;
+  docTags = tags ? tags.join(', ') : '';
   addDoc();
 }
 
@@ -1072,86 +1109,178 @@ function handleTextAddToDocs(event) {
   activeTab = 'docs';
 }
 
-function handleTextAddToQuestions(event) {
-  const text = event.detail.text;
-  // Add to good questions list
-  if (text && !goodQuestions.includes(text)) {
-    goodQuestions = [...goodQuestions, text];
-    // Save to database
-    if (current) {
-      handleQuestionsUpdate({ detail: { questions: goodQuestions } });
+  function handleTextAddToQuestions(event) {
+    const text = event.detail.text;
+    // Add to good questions list
+    if (text && !goodQuestions.includes(text)) {
+      goodQuestions = [...goodQuestions, text];
+      // Save to database
+      if (current) {
+        handleQuestionsUpdate({ detail: { questions: goodQuestions } });
+      }
     }
   }
-}
+
+  function handleFormatText(event) {
+    const text = event.detail.text;
+    // Open format modal with selected text
+    selectedText = text;
+    showFormatModal = true;
+    formattedContent = '';
+    selectedPlatform = '';
+    selectedMessageIndex = -1; // Since this is selected text, not a full message
+  }
+
+  // Panel toggle functions - independent on mobile, desktop shows both by default
+  function toggleLeftPanel() {
+    showLeftPanel = !showLeftPanel;
+    // Only close right panel on mobile/tablet (not desktop)
+    if (!isDesktop && showLeftPanel && showRightPanel) {
+      showRightPanel = false;
+    }
+  }
+
+  function toggleRightPanel() {
+    showRightPanel = !showRightPanel;
+    // Only close left panel on mobile/tablet (not desktop)
+    if (!isDesktop && showRightPanel && showLeftPanel) {
+      showLeftPanel = false;
+    }
+  }
 </script>
 
 <!-- Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-3 lg:[grid-template-columns:280px_200px_1fr] h-[calc(100vh-4rem)]">
+<div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
-  <!-- LEFT: Facts/Docs Sidebar -->
-  <Sidebar 
-    {current}
-    {facts}
-    {docs}
-    {loadingFacts}
-    bind:showAddFactForm
-    bind:factType
-    bind:factKey
-    bind:factValue
-    bind:showAddDocForm
-    bind:docTitle
-    bind:docContent
-    bind:activeTab
-    on:brief-regenerate={regenerateBrief}
-    on:fact-add={handleFactAdd}
-    on:fact-cancel-add={() => { factKey = ''; factValue = ''; }}
-    on:fact-start-edit={handleFactStartEdit}
-    on:fact-cancel-edit={handleFactCancelEdit}
-    on:fact-save-edit={handleFactSaveEdit}
-    on:fact-delete={handleFactDelete}
-    on:fact-toggle-pin={handleFactTogglePin}
-    on:doc-add={handleDocAdd}
-    on:doc-cancel-add={() => { docTitle = ''; docContent = ''; }}
-    on:doc-start-edit={handleDocStartEdit}
-    on:doc-cancel-edit={handleDocCancelEdit}
-    on:doc-save-edit={handleDocSaveEdit}
-    on:doc-delete={handleDocDelete}
-    on:doc-toggle-pin={handleDocTogglePin}
-  />
+  <!-- LEFT PANEL: Facts/Docs -->
+  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out bg-gray-50 border-r overflow-hidden flex-shrink-0">
+    {#if showLeftPanel}
+      <Sidebar 
+        {current}
+        {facts}
+        {docs}
+        {loadingFacts}
+        bind:showAddFactForm
+        bind:factType
+        bind:factKey
+        bind:factValue
+        bind:factTags
+        bind:showAddDocForm
+        bind:docTitle
+        bind:docContent
+        bind:docTags
+        bind:activeTab
+        on:brief-regenerate={regenerateBrief}
+        on:fact-add={handleFactAdd}
+        on:fact-cancel-add={() => { factKey = ''; factValue = ''; factTags = ''; }}
+        on:fact-start-edit={handleFactStartEdit}
+        on:fact-cancel-edit={handleFactCancelEdit}
+        on:fact-save-edit={handleFactSaveEdit}
+        on:fact-delete={handleFactDelete}
+        on:fact-toggle-pin={handleFactTogglePin}
+        on:doc-add={handleDocAdd}
+        on:doc-cancel-add={() => { docTitle = ''; docContent = ''; docTags = ''; }}
+        on:doc-start-edit={handleDocStartEdit}
+        on:doc-cancel-edit={handleDocCancelEdit}
+        on:doc-save-edit={handleDocSaveEdit}
+        on:doc-delete={handleDocDelete}
+        on:doc-toggle-pin={handleDocTogglePin}
+      />
+    {/if}
+  </div>
 
-  <!-- MIDDLE: Ideas Column -->
-  <IdeasColumn 
-    {goodQuestions}
-    {relatedIdeas}
-    {isGeneratingIdeas}
-    projectId={current?.id}
-    on:questions-update={handleQuestionsUpdate}
-    on:insert-text={handleInsertText}
-    on:generate-ideas={handleGenerateIdeas}
-  />
+  <!-- Left Toggle Button (Mobile/Tablet Only) -->
+  <div class="absolute left-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
+    <button 
+      class="bg-white border border-gray-300 rounded-r-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showLeftPanel ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}" 
+      on:click={toggleLeftPanel}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showLeftPanel ? 'text-blue-600' : 'text-gray-600'}">
+        {#if showLeftPanel}
+          <path d="M15 18l-6-6 6-6"/>
+        {:else}
+          <path d="M9 18l6-6-6-6"/>
+        {/if}
+      </svg>
+      <div class="text-xs font-medium text-center leading-tight {showLeftPanel ? 'text-blue-700' : 'text-gray-700'}">
+        Facts<br/>& Docs
+      </div>
+      {#if !showLeftPanel && (facts.length > 0 || docs.length > 0)}
+        <div class="text-xs text-gray-500 font-normal">
+          {facts.length}F {docs.length}D
+        </div>
+      {/if}
+    </button>
+  </div>
 
-  <!-- RIGHT: Chat -->
-  <ChatInterface 
-    {current}
-    {messages}
-    {loadingMessages}
-    bind:input
-    bind:modelKey
-    {branches}
-    {currentBranch}
-    {currentBranchId}
-    {usage}
-    bind:showUsageStats
-    on:send={send}
-    on:switch-branch={handleSwitchToBranch}
-    on:open-format-modal={handleOpenFormatModal}
-    on:open-branch-modal={handleOpenBranchModal}
-    on:branch-renamed={handleBranchRenamed}
-    on:branch-deleted={handleBranchDeleted}
-    on:add-to-facts={handleTextAddToFacts}
-    on:add-to-docs={handleTextAddToDocs}
-    on:add-to-questions={handleTextAddToQuestions}
-  />
+  <!-- Right Toggle Button (Mobile/Tablet Only) -->
+  <div class="absolute right-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
+    <button 
+      class="bg-white border border-gray-300 rounded-l-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showRightPanel ? 'bg-purple-50 border-purple-200' : 'hover:bg-gray-50'}" 
+      on:click={toggleRightPanel}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showRightPanel ? 'text-purple-600' : 'text-gray-600'}">
+        {#if showRightPanel}
+          <path d="M9 18l6-6-6-6"/>
+        {:else}
+          <path d="M15 18l-6-6 6-6"/>
+        {/if}
+      </svg>
+      <div class="text-xs font-medium text-center leading-tight {showRightPanel ? 'text-purple-700' : 'text-gray-700'}">
+        Ideas<br/>& Tips
+      </div>
+      {#if !showRightPanel && goodQuestions.length > 0}
+        <div class="text-xs text-gray-500 font-normal">
+          {goodQuestions.length}Q
+        </div>
+      {/if}
+    </button>
+  </div>
+
+  <!-- MAIN AREA: Chat (Center) -->
+  <div class="flex-1 flex justify-center relative">
+    <!-- Constrained Chat Container -->
+    <div class="w-full max-w-3xl flex flex-col relative {isDesktop ? 'mx-8' : 'mx-16'}">
+
+    <ChatInterface 
+      {current}
+      {messages}
+      {loadingMessages}
+      bind:input
+      bind:modelKey
+      {branches}
+      {currentBranch}
+      {currentBranchId}
+      {usage}
+      bind:showUsageStats
+      on:send={send}
+      on:switch-branch={handleSwitchToBranch}
+      on:open-format-modal={handleOpenFormatModal}
+      on:open-branch-modal={handleOpenBranchModal}
+      on:branch-renamed={handleBranchRenamed}
+      on:branch-deleted={handleBranchDeleted}
+      on:add-to-facts={handleTextAddToFacts}
+      on:add-to-docs={handleTextAddToDocs}
+      on:add-to-questions={handleTextAddToQuestions}
+      on:format-text={handleFormatText}
+    />
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Questions/Ideas -->
+  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out bg-zinc-50 border-l overflow-hidden flex-shrink-0">
+    {#if showRightPanel}
+      <IdeasColumn 
+        {goodQuestions}
+        {relatedIdeas}
+        {isGeneratingIdeas}
+        projectId={current?.id}
+        on:questions-update={handleQuestionsUpdate}
+        on:insert-text={handleInsertText}
+        on:generate-ideas={handleGenerateIdeas}
+      />
+    {/if}
+  </div>
 </div>
 
 <!-- Modals -->

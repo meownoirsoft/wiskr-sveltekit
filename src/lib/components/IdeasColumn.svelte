@@ -26,7 +26,7 @@
   }
 </script>
 
-<div class="flex flex-col h-full bg-zinc-50 border-r overflow-hidden">
+<div class="flex flex-col h-full bg-zinc-50 border-r overflow-hidden mobile-ideas-column">
   <div class="p-4 h-full flex flex-col min-h-0">
     <!-- Good Questions - Upper half (fixed height) -->
     <div class="flex flex-col overflow-hidden" style="height: 40%;">

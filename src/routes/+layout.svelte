@@ -121,7 +121,7 @@
       <div class="flex items-center gap-4">
         <a href="/projects" class="flex items-center gap-2 font-semibold">
           <span class="text-xl">🐈‍⬛ MrWiskr</span>
-          <span class="text-xs text-zinc-500">Projects</span>
+          <!-- <span class="text-xs text-zinc-500">Projects</span> -->
         </a>
         
         <div class="max-w-sm">

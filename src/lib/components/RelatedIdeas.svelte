@@ -2,7 +2,7 @@
 <script>
 import { createEventDispatcher, onMount } from 'svelte';
 import { 
-  RefreshCw, Lightbulb, ChevronsRight, HeartCrack, Heart,
+  RefreshCw, Lightbulb, ChevronsLeft, HeartCrack, Heart,
   BookOpen, Users, Target, Zap, Settings, Palette, Code, 
   TrendingUp, MessageSquare, Search, Camera, Music, 
   ShoppingBag, Globe, Shield, Database, Brain
@@ -444,22 +444,35 @@ import { browser } from '$app/environment';
     <!-- Scrollable content container -->
     <div class="h-full overflow-y-auto pr-1">
     
-    <ul class="space-y-1">
+    <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
       {#each visibleIdeas as idea, i (typeof idea === 'object' ? idea.id : idea)}
         {@const ideaText = typeof idea === 'object' ? idea.text : idea}
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}
         {@const isLikedForDisplay = likedIdeasSet.has(ideaId)}
-        <li class="text-sm border rounded px-1.5 py-1.5 bg-white group hover:bg-blue-50 border-l-4 border-l-blue-200 {likedIdeasSet.has(ideaId) ? 'ring-1 ring-green-200 bg-green-50' : ''}">
+        <li class="relative text-sm border rounded px-1.5 py-1.5 bg-white group hover:bg-blue-50 border-l-4 border-l-blue-200 {likedIdeasSet.has(ideaId) ? 'ring-1 ring-green-200 bg-green-50' : ''}">
+          <!-- Chevron button outside card on the left, always visible -->
+          <button 
+            class="absolute text-blue-500 hover:text-blue-700 p-2 flex-shrink-0 cursor-pointer z-10" 
+            style="left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%);"
+            on:click={() => insertIdea(ideaText)}
+            title="Add to chat input"
+          >
+            <ChevronsLeft size="20" />
+          </button>
+          
           <!-- Title row with action buttons -->
-          <div class="flex items-start justify-between gap-2 mb-1">
+          <div class="flex items-start gap-2 mb-1">
+            <!-- Center section: icon and title -->
             <div class="flex items-start gap-2 flex-1">
               <div class="text-blue-600 flex-shrink-0 mt-0.5">
                 <svelte:component this={getIconForIdea(ideaText)} size="16" />
               </div>
-              <div class="font-semibold text-gray-800 leading-tight text-sm">
+              <div class="font-semibold text-gray-800 leading-snug text-sm">
                 {parseIdea(ideaText).title}
               </div>
             </div>
+            
+            <!-- Right section: action buttons -->
             <div class="flex items-center gap-1 flex-shrink-0">
               <!-- Always visible like button when liked, otherwise show on hover -->
               <button 
@@ -478,27 +491,20 @@ import { browser } from '$app/environment';
                 >
                   <HeartCrack size="16" />
                 </button>
-                <button 
-                  class="text-blue-500 hover:text-blue-700 p-1 cursor-pointer" 
-                  on:click={() => insertIdea(ideaText)}
-                  title="Add to chat input"
-                >
-                  <ChevronsRight size="18" />
-                </button>
               </div>
             </div>
           </div>
           
           <!-- Description row (if exists) -->
           {#if parseIdea(ideaText).description}
-            <div class="text-gray-600 text-sm leading-relaxed prose prose-sm max-w-none">
+            <div class="text-gray-600 text-sm leading-snug prose prose-sm max-w-none">
               {@html renderMarkdown(parseIdea(ideaText).description)}
             </div>
           {/if}
         </li>
       {/each}
       {#if !visibleIdeas.length && !isGenerating}
-        <li class="text-sm text-zinc-500 italic border rounded p-2 bg-gray-50">
+        <li class="text-sm text-zinc-500 italic border rounded p-2 bg-gray-50 ml-0"> <!-- Reset margin for empty state -->
           <div>No ideas yet. Click "Refresh" to generate AI-powered suggestions based on your project context!</div>
         </li>
       {/if}

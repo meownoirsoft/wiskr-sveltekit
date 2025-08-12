@@ -2,7 +2,7 @@
 <script>
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import { Plus, FileText, HelpCircle } from 'lucide-svelte';
+  import { Plus, FileText, HelpCircle, Clipboard } from 'lucide-svelte';
 
   export let projectId = null;
 
@@ -82,6 +82,13 @@
     }
   }
 
+  function formatText() {
+    if (selectedText) {
+      dispatch('format-text', { text: selectedText });
+      hideMenu();
+    }
+  }
+
   onMount(() => {
     if (browser) {
       document.addEventListener('mouseup', handleMouseUp);
@@ -122,6 +129,13 @@
     >
       <HelpCircle size="14" />
       <span>Add to Questions</span>
+    </button>
+    <button
+      class="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 transition-colors text-left cursor-pointer"
+      on:click={formatText}
+    >
+      <Clipboard size="14" />
+      <span>Format for Posts</span>
     </button>
   </div>
 {/if}

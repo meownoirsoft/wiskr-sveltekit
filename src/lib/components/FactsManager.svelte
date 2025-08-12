@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Pin, PinOff, Pencil, Trash } from 'lucide-svelte';
+  import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
 
   export let facts = [];
   export let loadingFacts = false;
@@ -8,10 +8,12 @@
   export let factType = 'person';
   export let factKey = '';
   export let factValue = '';
+  export let factTags = '';
   export let projectId = null;
   
   let projectFactTypes = [];
   let loadingFactTypes = false;
+  let openMenuIndex = -1; // Track which fact menu is open
 
   const dispatch = createEventDispatcher();
 
@@ -63,12 +65,19 @@
   }
 
   function addFact() {
-    dispatch('add', { type: factType, key: factKey, value: factValue });
+    // Parse comma-separated tags
+    const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    dispatch('add', { type: factType, key: factKey, value: factValue, tags });
   }
 
   function cancelAdd() {
     showAddFactForm = false;
+    factTags = '';
     dispatch('cancel-add');
+  }
+  
+  function handleTagClick(tag) {
+    dispatch('tag-click', tag);
   }
 
   function startEditFact(fact, index) {
@@ -119,6 +128,14 @@
     const projectType = projectFactTypes.find(ft => ft.type_key === type);
     return projectType ? projectType.display_name : type;
   }
+
+  function toggleMenu(index) {
+    openMenuIndex = openMenuIndex === index ? -1 : index;
+  }
+
+  function closeMenu() {
+    openMenuIndex = -1;
+  }
 </script>
 
 <div class="flex flex-col h-full">
@@ -160,6 +177,17 @@
           </select>
           <input class="border rounded p-2" placeholder="Key (e.g., Cheddar)" bind:value={factKey} />
           <textarea class="border rounded p-2" rows="3" placeholder="Value (≤120 words)" bind:value={factValue}></textarea>
+          <input 
+            class="border rounded p-2" 
+            placeholder="Tags (comma-separated)" 
+            value={factTags}
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            on:input={(e) => {
+              factTags = e.target.value;
+            }}
+          />
         </div>
         <div class="mt-2 flex gap-2">
           <button class="bg-green-500 text-white rounded px-3 py-1 hover:bg-green-600 cursor-pointer" on:click={addFact}>Save Fact</button>
@@ -189,20 +217,49 @@
             <span class="text-xs px-2 py-1 rounded-full font-medium {getTypeTagClass(f.type)}">{getTypeDisplayName(f.type)}</span>
           </div>
         </div>
-        <div class="flex gap-1 flex-shrink-0 ml-2">
-          <button class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" on:click={() => toggleFactPin(f)} title={f.pinned ? 'Unpin' : 'Pin'}>
-            {#if f.pinned}
-              <PinOff size="18" />
-            {:else}
-              <Pin size="18" />
-            {/if}
+        <!-- Triple-dot menu -->
+        <div class="relative flex-shrink-0 ml-2">
+          <button 
+            class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
+            on:click={() => toggleMenu(i)}
+            title="More actions"
+          >
+            <MoreHorizontal size="18" />
           </button>
-          <button class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" on:click={() => startEditFact(f, i)} title="Edit">
-            <Pencil size="18" />
-          </button>
-          <button class="text-xs text-red-500 hover:text-red-700 cursor-pointer p-1" on:click={() => deleteFact(f, i)} title="Delete">
-            <Trash size="18" />
-          </button>
+          
+          {#if openMenuIndex === i}
+            <!-- Overlay to close menu when clicking outside -->
+            <div class="dropdown-overlay" on:click={closeMenu}></div>
+            <!-- Dropdown menu -->
+            <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 flex items-center gap-2" 
+                on:click={() => { toggleFactPin(f); closeMenu(); }}
+              >
+                {#if f.pinned}
+                  <PinOff size="14" />
+                  Unpin
+                {:else}
+                  <Pin size="14" />
+                  Pin
+                {/if}
+              </button>
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 flex items-center gap-2" 
+                on:click={() => { startEditFact(f, i); closeMenu(); }}
+              >
+                <Pencil size="14" />
+                Edit
+              </button>
+              <button 
+                class="w-full px-3 py-2 text-xs text-left hover:bg-red-50 text-red-600 flex items-center gap-2" 
+                on:click={() => { deleteFact(f, i); closeMenu(); }}
+              >
+                <Trash size="14" />
+                Delete
+              </button>
+            </div>
+          {/if}
         </div>
       </div>
       
@@ -211,13 +268,39 @@
         {f.value}
       </div>
       
+      <!-- Row 3: Tags (if any) -->
+      {#if f.tags && f.tags.length > 0}
+        <div class="flex flex-wrap gap-1 mb-1">
+          {#each f.tags as tag}
+            <button
+              class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+              on:click={() => handleTagClick(tag)}
+              title="Filter by tag: {tag}"
+            >
+              {tag}
+            </button>
+          {/each}
+        </div>
+      {/if}
+      
 
       {#if f._editing}
         <div class="mt-2 grid gap-2">
           <input class="border rounded p-2" bind:value={f._editKey} />
           <textarea class="border rounded p-2" rows="3" bind:value={f._editValue}></textarea>
+          <input 
+            class="border rounded p-2" 
+            placeholder="Tags (comma-separated)" 
+            value={f._editTags}
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            on:input={(e) => {
+              f._editTags = e.target.value;
+            }}
+          />
           <div class="flex gap-2">
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveFactEdit(f, { type: f.type, key: f._editKey, value: f._editValue, tags: (f.tags || []) })}>Save</button>
+            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveFactEdit(f, { type: f.type, key: f._editKey, value: f._editValue, tags: f._editTags ? f._editTags.split(',').map(t => t.trim()).filter(Boolean) : [] })}>Save</button>
             <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => cancelEditFact(f, i)}>Cancel</button>
           </div>
         </div>

@@ -73,7 +73,7 @@
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
       <!-- Modal Header -->
       <div class="border-b px-6 py-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Format for Platforms</h3>
+        <h3 class="text-lg font-semibold text-gray-900">Format for Posts</h3>
         <button
           class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           on:click={closeModal}
@@ -85,14 +85,15 @@
       
       <!-- Modal Content -->
       <div class="p-6 overflow-y-auto max-h-[70vh]">
-        <!-- Selected Text Preview -->
+        <!-- Editable Text Area -->
         <div class="mb-6">
-          <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Content:</h4>
-          <div class="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto border">
-            <div class="prose prose-sm max-w-none text-gray-700">
-              {@html renderMarkdown(selectedText)}
-            </div>
-          </div>
+          <h4 class="text-sm font-medium text-gray-700 mb-2">Content to Format:</h4>
+          <textarea
+            bind:value={selectedText}
+            class="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter text to format..."
+          ></textarea>
+          <p class="text-xs text-gray-500 mt-1">You can edit this text before formatting it for different platforms.</p>
         </div>
         
         <!-- Platform Grid -->

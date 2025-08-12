@@ -1,7 +1,7 @@
 <!-- src/lib/components/GoodQuestions.svelte -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, X, ChevronsRight, Edit } from 'lucide-svelte';
+  import { Plus, X, ChevronsLeft, Edit } from 'lucide-svelte';
   import { browser } from '$app/environment';
 
   export let goodQuestions = [];
@@ -187,9 +187,19 @@
   <!-- Questions List -->
   <div class="flex-1 min-h-0 overflow-hidden">
     <div class="h-full overflow-y-auto pr-1">
-      <ul class="space-y-1">
+      <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
       {#each goodQuestions as question, i}
-        <li class="text-sm border rounded p-2 bg-white group hover:bg-gray-50">
+        <li class="relative text-sm border rounded p-2 bg-white group hover:bg-gray-50">
+          <!-- Chevron button outside card on the left, always visible -->
+          <button 
+            class="absolute text-blue-500 hover:text-blue-700 p-2 flex-shrink-0 cursor-pointer z-10" 
+            style="left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%);"
+            on:click={() => insertQuestion(question)}
+            title="Add to chat input"
+          >
+            <ChevronsLeft size="20" />
+          </button>
+          
           {#if editingIndex === i}
             <!-- Edit mode -->
             <div class="flex gap-2">
@@ -219,46 +229,35 @@
           {:else}
             <!-- View mode -->
             <div class="flex gap-2">
-              <!-- Left column: checkbox and edit/delete buttons -->
-              <div class="flex flex-col items-center gap-1">
-                <input 
-                  type="checkbox" 
-                  class="rounded cursor-pointer"
-                  checked={completedQuestions[i] || false}
-                  on:change={() => toggleCompleted(i)}
-                  title="Mark as answered"
-                />
-                <!-- Edit and Delete buttons below checkbox -->
-                <div class="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    class="text-gray-500 hover:text-gray-700 p-0.5 cursor-pointer" 
-                    on:click={() => startEdit(i)}
-                    title="Edit question"
-                  >
-                    <Edit size="14" />
-                  </button>
-                  <button 
-                    class="text-red-500 hover:text-red-700 p-0.5 cursor-pointer" 
-                    on:click={() => removeQuestion(i)}
-                    title="Remove question"
-                  >
-                    <X size="14" />
-                  </button>
-                </div>
+              <!-- Left section: checkbox -->
+              <input 
+                type="checkbox" 
+                class="rounded cursor-pointer mt-0.5 flex-shrink-0"
+                checked={completedQuestions[i] || false}
+                on:change={() => toggleCompleted(i)}
+                title="Mark as answered"
+              />
+              
+              <!-- Center section: question text -->
+              <div class="flex-1 leading-snug {completedStates[i] ? 'text-gray-400' : 'text-gray-900'}" style={completedStates[i] ? 'text-decoration: line-through !important;' : 'text-decoration: none;'}>
+                {question}
               </div>
               
-              <!-- Right section: text and chevron -->
-              <div class="flex-1 flex items-start justify-between gap-2">
-                <div class="flex-1 leading-relaxed {completedStates[i] ? 'text-gray-400' : 'text-gray-900'}" style={completedStates[i] ? 'text-decoration: line-through !important;' : 'text-decoration: none;'}>
-                  {question}
-                </div>
-                <!-- Chevron button in top right -->
+              <!-- Right section: edit and delete buttons -->
+              <div class="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
-                  class="text-blue-500 hover:text-blue-700 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 cursor-pointer" 
-                  on:click={() => insertQuestion(question)}
-                  title="Add to chat input"
+                  class="text-gray-500 hover:text-gray-700 p-0.5 cursor-pointer" 
+                  on:click={() => startEdit(i)}
+                  title="Edit question"
                 >
-                  <ChevronsRight size="16" />
+                  <Edit size="14" />
+                </button>
+                <button 
+                  class="text-red-500 hover:text-red-700 p-0.5 cursor-pointer" 
+                  on:click={() => removeQuestion(i)}
+                  title="Remove question"
+                >
+                  <X size="14" />
                 </button>
               </div>
             </div>
@@ -266,7 +265,7 @@
         </li>
       {/each}
       {#if !goodQuestions.length}
-        <li class="text-sm text-zinc-500 italic">
+        <li class="text-sm text-zinc-500 italic ml-0"> <!-- Reset margin for empty state -->
           No questions yet. Add some thoughts to explore later!
         </li>
       {/if}

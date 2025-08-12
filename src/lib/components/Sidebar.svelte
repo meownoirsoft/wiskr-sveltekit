@@ -3,6 +3,7 @@
   import ContextSummary from './ContextSummary.svelte';
   import FactsManager from './FactsManager.svelte';
   import DocsManager from './DocsManager.svelte';
+  import { Search, X, ToggleLeft, ToggleRight } from 'lucide-svelte';
 
   export let current = null;
   export let facts = [];
@@ -12,14 +13,92 @@
   export let factType = 'character';
   export let factKey = '';
   export let factValue = '';
+  export let factTags = '';
   export let showAddDocForm = false;
   export let docTitle = '';
   export let docContent = '';
+  export let docTags = '';
 
   const dispatch = createEventDispatcher();
   
   // Tab state - exported so parent can control it
   export let activeTab = 'facts'; // 'summary', 'facts', or 'docs'
+  
+  // Tag filtering state
+  let tagSearch = '';
+  let selectedTags = [];
+  let tagFilterMode = 'AND'; // 'AND' or 'OR'
+  let showTagAutocomplete = false;
+  let tagSearchInput;
+  
+  // Get all available tags for current tab
+  $: availableTags = activeTab === 'facts' 
+    ? [...new Set(facts.flatMap(f => f.tags || []))].sort()
+    : activeTab === 'docs'
+    ? [...new Set(docs.flatMap(d => d.tags || []))].sort()
+    : [];
+  
+  // Filter suggestions based on search and exclude already selected tags
+  $: tagSuggestions = availableTags
+    .filter(tag => 
+      tag.toLowerCase().includes(tagSearch.toLowerCase()) && 
+      !selectedTags.includes(tag)
+    )
+    .slice(0, 10);
+  
+  // Filter facts/docs based on selected tags
+  $: filteredFacts = selectedTags.length === 0 ? facts : facts.filter(fact => {
+    const factTags = fact.tags || [];
+    if (tagFilterMode === 'AND') {
+      return selectedTags.every(tag => factTags.includes(tag));
+    } else {
+      return selectedTags.some(tag => factTags.includes(tag));
+    }
+  });
+  
+  $: filteredDocs = selectedTags.length === 0 ? docs : docs.filter(doc => {
+    const docTags = doc.tags || [];
+    if (tagFilterMode === 'AND') {
+      return selectedTags.every(tag => docTags.includes(tag));
+    } else {
+      return selectedTags.some(tag => docTags.includes(tag));
+    }
+  });
+  
+  function addTagFilter(tag) {
+    if (!selectedTags.includes(tag)) {
+      selectedTags = [...selectedTags, tag];
+    }
+    tagSearch = '';
+    showTagAutocomplete = false;
+  }
+  
+  function removeTagFilter(index) {
+    selectedTags = selectedTags.filter((_, i) => i !== index);
+  }
+  
+  function clearAllFilters() {
+    selectedTags = [];
+    tagSearch = '';
+  }
+  
+  function toggleFilterMode() {
+    tagFilterMode = tagFilterMode === 'AND' ? 'OR' : 'AND';
+  }
+  
+  function handleTagSearchKeydown(event) {
+    if (event.key === 'Enter' && tagSuggestions.length > 0) {
+      event.preventDefault();
+      addTagFilter(tagSuggestions[0]);
+    } else if (event.key === 'Escape') {
+      showTagAutocomplete = false;
+      tagSearch = '';
+    }
+  }
+  
+  function handleTagClick(event) {
+    addTagFilter(event.detail);
+  }
 
   // Context summary events
   function handleBriefRegenerate() {
@@ -85,12 +164,96 @@
   }
 </script>
 
-<section class="border-r p-3 overflow-auto bg-gray-50 flex flex-col">
+<section class="h-full border-r p-3 bg-gray-50 flex flex-col mobile-sidebar">
   <h2 class="text-lg font-semibold mb-4">Project Overview</h2>
 
   {#if current}
     <!-- Three-Tab Interface: Summary, Facts, Docs -->
     <div class="flex flex-col min-h-0 flex-1">
+      <!-- Tag Search Bar (only show for facts/docs tabs) -->
+      {#if activeTab !== 'summary'}
+        <div class="mb-3 space-y-2">
+          <!-- Search Input -->
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size="16" class="text-gray-400" />
+            </div>
+            <input
+              bind:this={tagSearchInput}
+              bind:value={tagSearch}
+              on:keydown={handleTagSearchKeydown}
+              on:focus={() => showTagAutocomplete = true}
+              on:blur={() => setTimeout(() => showTagAutocomplete = false, 200)}
+              class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Search tags..."
+            />
+            
+            <!-- Autocomplete Dropdown -->
+            {#if showTagAutocomplete && tagSuggestions.length > 0}
+              <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto">
+                {#each tagSuggestions as suggestion}
+                  <button
+                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    on:mousedown|preventDefault={() => addTagFilter(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+          
+          <!-- Selected Tags & Controls -->
+          {#if selectedTags.length > 0}
+            <div class="space-y-2">
+              <!-- Filter Mode Toggle -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <button
+                    on:click={toggleFilterMode}
+                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    title={`Currently using ${tagFilterMode} logic`}
+                  >
+                    {#if tagFilterMode === 'AND'}
+                      <ToggleRight size="14" class="text-blue-600" />
+                      <span class="font-medium text-blue-700">AND</span>
+                    {:else}
+                      <ToggleLeft size="14" class="text-green-600" />
+                      <span class="font-medium text-green-700">OR</span>
+                    {/if}
+                  </button>
+                  <span class="text-xs text-gray-500">
+                    {tagFilterMode === 'AND' ? 'All tags required' : 'Any tag matches'}
+                  </span>
+                </div>
+                <button
+                  on:click={clearAllFilters}
+                  class="text-xs text-red-600 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors"
+                >
+                  Clear all
+                </button>
+              </div>
+              
+              <!-- Tag Breadcrumbs -->
+              <div class="flex flex-wrap gap-1">
+                {#each selectedTags as tag, index}
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    {tag}
+                    <button
+                      on:click={() => removeTagFilter(index)}
+                      class="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      title="Remove tag"
+                    >
+                      <X size="12" />
+                    </button>
+                  </span>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+      
       <!-- Tab Headers -->
       <div class="flex border-b mb-3">
         <button
@@ -101,7 +264,7 @@
           }"
           on:click={() => activeTab = 'facts'}
         >
-          Facts ({facts.length})
+          Facts ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
         </button>
         <button
           class="px-3 py-2 font-medium text-sm border-b-2 transition-colors {
@@ -111,7 +274,7 @@
           }"
           on:click={() => activeTab = 'docs'}
         >
-          Docs ({docs.length})
+          Docs ({selectedTags.length > 0 ? filteredDocs.length : docs.length})
         </button>
         <button
           class="px-3 py-2 font-medium text-sm border-b-2 transition-colors {
@@ -126,7 +289,7 @@
       </div>
       
       <!-- Tab Content -->
-      <div class="flex-1 min-h-0 {activeTab === 'summary' ? '' : 'overflow-hidden'}">
+      <div class="flex-1 min-h-0 overflow-auto">
         {#if activeTab === 'summary'}
           <ContextSummary 
             {current}
@@ -134,13 +297,14 @@
           />
         {:else if activeTab === 'facts'}
           <FactsManager
-            {facts}
+            facts={filteredFacts}
             {loadingFacts}
             projectId={current?.id}
             bind:showAddFactForm
             bind:factType
             bind:factKey
             bind:factValue
+            bind:factTags
             on:add={handleFactAdd}
             on:cancel-add={handleFactCancelAdd}
             on:start-edit={handleFactStartEdit}
@@ -148,13 +312,15 @@
             on:save-edit={handleFactSaveEdit}
             on:delete={handleFactDelete}
             on:toggle-pin={handleFactTogglePin}
+            on:tag-click={handleTagClick}
           />
         {:else if activeTab === 'docs'}
           <DocsManager
-            {docs}
+            docs={filteredDocs}
             bind:showAddDocForm
             bind:docTitle
             bind:docContent
+            bind:docTags
             on:add={handleDocAdd}
             on:cancel-add={handleDocCancelAdd}
             on:start-edit={handleDocStartEdit}
@@ -162,6 +328,7 @@
             on:save-edit={handleDocSaveEdit}
             on:delete={handleDocDelete}
             on:toggle-pin={handleDocTogglePin}
+            on:tag-click={handleTagClick}
           />
         {/if}
       </div>

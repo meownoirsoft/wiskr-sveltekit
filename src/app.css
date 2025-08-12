@@ -8,6 +8,13 @@ body {
   flex-direction: column;
 }
 
+/* Fix for backwards text in inputs */
+input[type="text"], textarea {
+  direction: ltr !important;
+  unicode-bidi: embed !important;
+  text-align: left !important;
+}
+
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";

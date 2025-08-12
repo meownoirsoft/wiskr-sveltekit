@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher, tick } from 'svelte';
   import { marked } from 'marked';
-  import { Clipboard, GitBranch, Edit2, Trash2, Check, X } from 'lucide-svelte';
+  import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2 } from 'lucide-svelte';
   import TextSelectionMenu from './TextSelectionMenu.svelte';
   import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 
@@ -264,18 +264,26 @@
   function handleAddToQuestions(event) {
     dispatch('add-to-questions', event.detail);
   }
+
+  function handleFormatText(event) {
+    dispatch('format-text', event.detail);
+  }
+
+  function selectAllMessage(messageIndex) {
+    const message = messages[messageIndex];
+    if (message && message.role === 'assistant' && message.content.trim()) {
+      // Dispatch the format-text event directly with the full message content
+      dispatch('format-text', { text: message.content.trim() });
+    }
+  }
 </script>
 
-<main class="flex flex-col bg-white h-full overflow-hidden">
+<main class="flex flex-col bg-white h-full overflow-hidden mobile-chat">
   <!-- Branch Navigation Bar -->
   {#if current && branches.length > 0}
     <div class="bg-gray-50 border-gray-200 border-b px-4 py-2 flex-shrink-0">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          {#if current}
-            <span class="text-sm font-medium text-gray-900">{current.name}</span>
-            <span class="text-gray-400">•</span>
-          {/if}
+        <div class="flex items-center gap-2">
           <span class="text-sm font-medium text-gray-700">Branch:</span>
           
           {#if isEditingBranch}
@@ -350,9 +358,9 @@
           {/if}
         </div>
         
-        <div class="text-xs text-gray-600">
+        <!-- <div class="text-xs text-gray-600">
           {branches.length} branch{branches.length === 1 ? '' : 'es'}
-        </div>
+        </div> -->
       </div>
     </div>
   {/if}
@@ -376,7 +384,7 @@
     {:else}
       {#each messages as m, index}
         {@const branchColor = getBranchColor(currentBranch)}
-        <div class="{m.role === 'user' ? 'max-w-2xl ml-auto' : 'max-w-4xl'}">
+        <div class="{m.role === 'user' ? 'max-w-2xl ml-auto' : 'max-w-4xl group'}">
           <div class="text-sm font-medium text-zinc-600 mb-1 {m.role === 'user' ? 'text-right' : ''}">
             {#if m.role === 'user'}
               You
@@ -387,11 +395,20 @@
               <span class="text-xs text-zinc-400 font-normal ml-2">• conversation start</span>
             {/if}
           </div>
-          <div class="rounded-lg p-3 border border-l-4 transition-colors {m.role === 'user' ? `bg-blue-50 border-blue-200 ml-8 whitespace-pre-wrap ${branchColor.accent}` : `bg-gray-50 border-gray-200 mr-8 assistant-message ${branchColor.accent}`}">
+          <div class="rounded-lg p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `bg-blue-50 border-blue-200 ml-8 whitespace-pre-wrap ${branchColor.accent}` : `bg-gray-50 border-gray-200 mr-8 assistant-message ${branchColor.accent}`}">
             {#if m.role === 'assistant'}
               <div class="prose prose-sm max-w-none">
                 {@html renderMarkdown(m.content)}
               </div>
+              <!-- Select All button for assistant messages (bottom right) -->
+              <button
+                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 shadow-sm"
+                on:click={() => selectAllMessage(index)}
+                title="Select all and format & post"
+              >
+                <MousePointer2 size="12" class="inline mr-1" />
+                Select All
+              </button>
             {:else}
               {m.content}
             {/if}
@@ -399,24 +416,15 @@
           <div class="flex justify-between items-center {m.role === 'user' ? '' : 'mr-8'} mt-2 gap-2">
             <!-- Highlight-to-add feature hint (only for assistant messages) -->
             {#if m.role === 'assistant' && m.content.trim()}
-              <div class="text-xs text-gray-400 italic">
-                💡 Highlight any text above to add it to Facts, Docs, or Questions
+              <div class="flex items-center gap-2 text-sm text-gray-500 italic">
+                <Type size="16" />
+                Highlight text to capture, or format & post
               </div>
             {:else}
               <div></div>
             {/if}
             
             <div class="flex gap-2">
-              {#if m.role === 'assistant' && m.content.trim()}
-                <button
-                  class="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition-colors"
-                  on:click={() => openFormatModal(index)}
-                  title="Format for platforms"
-                >
-                  <Clipboard size="12" />
-                  Format
-                </button>
-              {/if}
               {#if m.content.trim() && currentBranchId === 'main'}
                 {@const messageBranchCount = messageBranchCounts[m.id] || 0}
                 <button
@@ -525,5 +533,6 @@
   on:add-to-facts={handleAddToFacts}
   on:add-to-docs={handleAddToDocs}
   on:add-to-questions={handleAddToQuestions}
+  on:format-text={handleFormatText}
 />
 

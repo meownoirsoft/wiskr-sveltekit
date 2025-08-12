@@ -93,3 +93,358 @@
 .prose a:hover {
   color: #1d4ed8;
 }
+
+/* New collapsible panel layout improvements */
+.collapsible-layout {
+  /* On mobile, make panels full-width when open */
+  @media (max-width: 1023px) {
+    /* Left and right panels take full width on mobile when open */
+    .w-80 {
+      width: 100% !important;
+    }
+    
+    /* Adjust toggle button positions on mobile */
+    .absolute.left-2 {
+      left: 4px;
+    }
+    
+    .absolute.right-2 {
+      right: 4px;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    /* Make toggle buttons slightly larger on small screens */
+    .rounded-full.p-2 {
+      padding: 8px;
+    }
+  }
+}
+
+/* Mobile-specific section styling */
+@media (max-width: 1023px) {
+  /* Sidebar adjustments */
+  section.border-r {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    min-height: 350px;
+  }
+  
+  /* Ideas column adjustments */
+  .flex.flex-col.h-full.bg-zinc-50.border-r {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    min-height: 250px;
+  }
+  
+  /* Chat interface adjustments */
+  main.flex.flex-col.bg-white.h-full {
+    min-height: 400px;
+  }
+  
+  /* Form elements should be more touch-friendly */
+  textarea, input[type="text"], select {
+    min-height: 44px; /* Apple's recommended touch target size */
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  button {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+  
+  /* Improve text readability on mobile */
+  .prose {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Smaller sections on small mobile */
+  section.border-r {
+    min-height: 300px;
+  }
+  
+  .flex.flex-col.h-full.bg-zinc-50.border-r {
+    min-height: 200px;
+  }
+  
+  main.flex.flex-col.bg-white.h-full {
+    min-height: 350px;
+  }
+  
+  /* Adjust padding for smaller screens */
+  .p-4 {
+    padding: 12px;
+  }
+  
+  .p-3 {
+    padding: 8px;
+  }
+  
+  /* Make buttons and form elements slightly smaller but still touch-friendly */
+  button {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  textarea, input[type="text"], select {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Further adjustments for very small screens */
+  section.border-r {
+    min-height: 280px;
+  }
+  
+  .flex.flex-col.h-full.bg-zinc-50.border-r {
+    min-height: 180px;
+  }
+  
+  main.flex.flex-col.bg-white.h-full {
+    min-height: 320px;
+  }
+  
+  /* Tighter spacing */
+  .space-y-3 > * + * {
+    margin-top: 8px;
+  }
+  
+  .gap-2 {
+    gap: 6px;
+  }
+  
+  .gap-3 {
+    gap: 8px;
+  }
+}
+
+/* Improve scrolling on mobile */
+@media (max-width: 1023px) {
+  .overflow-auto, .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Ensure minimum content area for scrollable sections */
+  .min-h-0 {
+    min-height: 120px;
+  }
+}
+
+/* Tab navigation improvements on mobile */
+@media (max-width: 640px) {
+  .flex.border-b button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
+
+/* Model selector dropdown improvements on mobile */
+@media (max-width: 640px) {
+  select.min-w-\[280px\] {
+    min-width: 200px;
+    font-size: 13px;
+  }
+}
+
+/* Message bubble improvements on mobile */
+@media (max-width: 640px) {
+  .max-w-2xl {
+    max-width: 95%;
+  }
+  
+  .max-w-4xl {
+    max-width: 95%;
+  }
+  
+  .ml-8, .mr-8 {
+    margin-left: 4px;
+    margin-right: 4px;
+  }
+}
+
+/* Branch navigation improvements on mobile */
+@media (max-width: 640px) {
+  .bg-gray-50.border-gray-200.border-b.px-4.py-2 {
+    padding: 8px 12px;
+  }
+  
+  .bg-gray-50.border-gray-200.border-b.px-4.py-2 .text-sm {
+    font-size: 12px;
+  }
+}
+
+/* Component-specific mobile improvements */
+.mobile-sidebar {
+  @media (max-width: 1023px) {
+    min-height: 350px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @media (max-width: 640px) {
+    min-height: 300px;
+  }
+  
+  @media (max-width: 480px) {
+    min-height: 280px;
+  }
+}
+
+.mobile-ideas-column {
+  @media (max-width: 1023px) {
+    min-height: 250px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @media (max-width: 640px) {
+    min-height: 200px;
+  }
+  
+  @media (max-width: 480px) {
+    min-height: 180px;
+  }
+}
+
+.mobile-chat {
+  @media (max-width: 1023px) {
+    min-height: 400px;
+  }
+  
+  @media (max-width: 640px) {
+    min-height: 350px;
+  }
+  
+  @media (max-width: 480px) {
+    min-height: 320px;
+  }
+}
+
+/* Mobile keyboard navigation improvements */
+@media (max-width: 1023px) {
+  /* Focus states should be more prominent on mobile */
+  textarea:focus, input:focus, select:focus, button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  /* Make sure interactive elements have enough spacing */
+  .flex.gap-2 {
+    gap: 12px;
+  }
+  
+  .flex.gap-3 {
+    gap: 16px;
+  }
+  
+  /* Ensure minimum tap target size for all buttons */
+  .text-xs.px-2.py-1 {
+    min-height: 32px;
+    padding: 8px 12px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 1023px) and (orientation: landscape) {
+  .mobile-layout {
+    grid-template-rows: minmax(250px, 30vh) minmax(200px, 25vh) minmax(300px, 1fr);
+  }
+  
+  .mobile-sidebar {
+    min-height: 250px;
+  }
+  
+  .mobile-ideas-column {
+    min-height: 200px;
+  }
+  
+  .mobile-chat {
+    min-height: 300px;
+  }
+}
+
+/* Tighter line heights for RelatedIdeas markdown content */
+.prose.prose-sm.max-w-none {
+  line-height: 1.375 !important; /* Override default prose line-height */
+}
+
+.prose.prose-sm.max-w-none p {
+  line-height: 1.375 !important;
+  margin-bottom: 0.5em !important; /* Reduce paragraph spacing */
+}
+
+.prose.prose-sm.max-w-none p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.prose.prose-sm.max-w-none ul,
+.prose.prose-sm.max-w-none ol {
+  line-height: 1.375 !important;
+  margin: 0.5em 0 !important; /* Reduce list spacing */
+}
+
+.prose.prose-sm.max-w-none li {
+  line-height: 1.375 !important;
+  margin-bottom: 0.25em !important; /* Reduce list item spacing */
+}
+
+.prose.prose-sm.max-w-none li:last-child {
+  margin-bottom: 0 !important;
+}
+
+.prose.prose-sm.max-w-none strong {
+  line-height: inherit !important;
+}
+
+.prose.prose-sm.max-w-none em {
+  line-height: inherit !important;
+}
+
+/* Make sure code blocks also follow tighter spacing */
+.prose.prose-sm.max-w-none code {
+  line-height: 1.375 !important;
+}
+
+.prose.prose-sm.max-w-none pre {
+  line-height: 1.375 !important;
+  margin: 0.5em 0 !important;
+}
+
+/* Dropdown menu styling for Facts and Docs */
+.dropdown-menu {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Ensure dropdown menus stack properly */
+.dropdown-menu {
+  z-index: 50;
+}
+
+/* Mobile-friendly dropdown adjustments */
+@media (max-width: 640px) {
+  .dropdown-menu {
+    min-width: 100px;
+    font-size: 11px;
+  }
+  
+  .dropdown-menu button {
+    padding: 8px 12px;
+  }
+}
+
+/* Click outside to close dropdown - add overlay */
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: transparent;
+}
