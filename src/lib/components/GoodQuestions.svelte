@@ -149,7 +149,7 @@
   <!-- Header -->
   <div class="flex-shrink-0">
     <div class="flex items-center justify-between mb-2">
-      <h3 class="font-semibold text-gray-800">Good Questions (to ask next)</h3>
+      <h3 class="font-semibold text-gray-800">Questions to ask next</h3>
       <button 
         class="flex items-center gap-1 text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 cursor-pointer" 
         on:click={() => showAddForm = !showAddForm}

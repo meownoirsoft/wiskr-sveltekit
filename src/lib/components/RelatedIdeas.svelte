@@ -1,6 +1,6 @@
 <!-- src/lib/components/RelatedIdeas.svelte -->
 <script>
-import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onMount } from 'svelte';
 import { 
   RefreshCw, Lightbulb, ChevronsRight, HeartCrack, Heart,
   BookOpen, Users, Target, Zap, Settings, Palette, Code, 
@@ -29,14 +29,22 @@ import { browser } from '$app/environment';
   let visibleIdeas = [];
   let likedIdeasSet = new Set();
   
-  // Create reactive liked ideas set for better reactivity
-  $: likedIdeasSet = new Set(likedIdeas);
+  // Load feedback and stored ideas from localStorage on mount (proper timing)
+  onMount(() => {
+    if (browser && projectId) {
+      loadIdeaFeedback();
+      loadStoredIdeas();
+    }
+  });
   
-  // Load feedback and stored ideas from localStorage on mount
+  // Also load when projectId changes
   $: if (browser && projectId) {
     loadIdeaFeedback();
     loadStoredIdeas();
   }
+  
+  // Create reactive liked ideas set AFTER localStorage loads
+  $: likedIdeasSet = new Set(likedIdeas);
   
   function loadIdeaFeedback() {
     try {
@@ -110,10 +118,8 @@ import { browser } from '$app/environment';
   }
   
   function dismissIdea(ideaId) {
-    console.log('dismissIdea called for:', ideaId, 'current dismissed:', dismissedIdeas);
     if (!dismissedIdeas.includes(ideaId)) {
       dismissedIdeas = [...dismissedIdeas, ideaId];
-      console.log('Dismissed idea, new dismissedIdeas:', dismissedIdeas);
       saveIdeaFeedback();
       // Force reactivity by reassigning the array
       dismissedIdeas = [...dismissedIdeas];
@@ -121,16 +127,12 @@ import { browser } from '$app/environment';
   }
   
   function toggleLikeIdea(ideaId) {
-    console.log('toggleLikeIdea called for:', ideaId, 'current liked state:', likedIdeas.includes(ideaId));
-    
     if (likedIdeas.includes(ideaId)) {
       // Unlike the idea - remove it from liked ideas
       likedIdeas = likedIdeas.filter(likedId => likedId !== ideaId);
-      console.log('Unliked idea, new likedIdeas:', likedIdeas);
     } else {
       // Like the idea - add it to liked ideas
       likedIdeas = [...likedIdeas, ideaId];
-      console.log('Liked idea, new likedIdeas:', likedIdeas);
     }
     
     // Force reactivity by reassigning the array
@@ -180,12 +182,6 @@ import { browser } from '$app/environment';
       
       // Combine: existing liked ideas + new ideas
       storedIdeas = [...existingLikedIdeas, ...newIdeasFiltered];
-      console.log('🔄 Merged new ideas with existing liked ideas:', {
-        existingLikedIdeas: existingLikedIdeas.length,
-        newIdeasFiltered: newIdeasFiltered.length,
-        totalStoredIdeas: storedIdeas.length
-      });
-      
       saveStoredIdeas();
     }
   }
@@ -207,55 +203,25 @@ import { browser } from '$app/environment';
   
   // Filter out dismissed ideas and add liked ideas that aren't already visible
   $: {
-    console.log('Reactive visibility update triggered.');
-    console.log('  dismissedIdeas:', dismissedIdeas);
-    console.log('  likedIdeas:', likedIdeas);
-    console.log('  storedIdeas:', storedIdeas.map(idea => ({ id: idea.id, text: idea.text.substring(0, 50) + '...' })));
-    console.log('  displayIdeas:', displayIdeas.map(idea => ({ id: idea.id, text: idea.text.substring(0, 50) + '...' })));
-    
     // Filter current/stored ideas to exclude dismissed ones
     const filteredCurrentIdeas = displayIdeas.filter(idea => !isIdeaDismissed(idea));
-    console.log('  filteredCurrentIdeas:', filteredCurrentIdeas.length);
     
     // Get ALL liked ideas from stored ideas that match liked IDs and aren't dismissed
-    console.log('  Looking for liked ideas. likedIdeas array:', likedIdeas);
-    console.log('  Available storedIdeas IDs:', storedIdeas.map(idea => idea.id));
-    
     const likedIdeaObjects = storedIdeas.filter(idea => {
       const isLiked = likedIdeas.includes(idea.id);
       const isDismissed = isIdeaDismissed(idea);
-      console.log(`    Idea "${idea.text.substring(0, 30)}..." (${idea.id}): liked=${isLiked}, dismissed=${isDismissed}`);
       return isLiked && !isDismissed;
     });
-    console.log('  likedIdeaObjects found:', likedIdeaObjects.length);
-    
-    // Debug: Check if liked IDs are missing from storedIdeas (but don't clean up here to avoid cycles)
-    const missingLikedIds = likedIdeas.filter(likedId => !storedIdeas.find(idea => idea.id === likedId));
-    if (missingLikedIds.length > 0) {
-      console.log('  ⚠️  Missing liked idea objects for IDs:', missingLikedIds);
-      // Note: Cleanup moved to separate function to avoid cyclical dependency
-    }
     
     // Combine current ideas with liked ideas (avoiding duplicates)
     const currentIds = new Set(filteredCurrentIdeas.map(idea => idea.id));
     const additionalLikedIdeas = likedIdeaObjects.filter(idea => !currentIds.has(idea.id));
-    console.log('  additionalLikedIdeas to add:', additionalLikedIdeas.length);
     
     // Sort: liked ideas first, then neutral ideas
     const likedIdeasFromCurrent = filteredCurrentIdeas.filter(idea => likedIdeas.includes(idea.id));
     const neutralIdeasFromCurrent = filteredCurrentIdeas.filter(idea => !likedIdeas.includes(idea.id));
     
     visibleIdeas = [...likedIdeasFromCurrent, ...additionalLikedIdeas, ...neutralIdeasFromCurrent];
-    console.log('  Sorted order: liked from current + additional liked + neutral');
-    console.log('  Final counts: { likedFromCurrent:', likedIdeasFromCurrent.length, ', additionalLiked:', additionalLikedIdeas.length, ', neutral:', neutralIdeasFromCurrent.length, '}');
-    
-    console.log('Final visibleIdeas:', {
-      displayIdeas: displayIdeas.length,
-      dismissedCount: dismissedIdeas.length,
-      filteredCurrentIdeas: filteredCurrentIdeas.length,
-      additionalLikedIdeas: additionalLikedIdeas.length,
-      newTotal: visibleIdeas.length
-    });
   }
   
   // Parse idea into number, title and description
@@ -483,7 +449,6 @@ import { browser } from '$app/environment';
         {@const ideaText = typeof idea === 'object' ? idea.text : idea}
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}
         {@const isLikedForDisplay = likedIdeasSet.has(ideaId)}
-        {@const isInLikedArray = likedIdeas.includes(ideaId)}
         <li class="text-sm border rounded px-1.5 py-1.5 bg-white group hover:bg-blue-50 border-l-4 border-l-blue-200 {likedIdeasSet.has(ideaId) ? 'ring-1 ring-green-200 bg-green-50' : ''}">
           <!-- Title row with action buttons -->
           <div class="flex items-start justify-between gap-2 mb-1">
