@@ -1,9 +1,9 @@
 // src/routes/api/chat/+server.js
-import OpenAI from 'openai';
 import { json } from '@sveltejs/kit';
 import { DateTime } from 'luxon';
 import { buildContext } from '$lib/server/context/buildContext.js';
-import { OPENAI_API_KEY, DAILY_TOKEN_LIMIT } from '$env/static/private';
+import { getModelConfig } from '$lib/server/openrouter.js';
+import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
@@ -13,12 +13,8 @@ export const POST = async ({ request, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!projectId || !message?.trim()) return json({ message: 'Bad request' }, { status: 400 });
 
-  // Models + pricing
-  const MODEL_MAP = {
-    speed:   { name: 'gpt-4o-mini', inPerTok: 0.15/1_000_000, outPerTok: 0.60/1_000_000 },
-    quality: { name: 'gpt-4o',      inPerTok: 2.50/1_000_000, outPerTok: 10.00/1_000_000 }
-  };
-  const modelConf = MODEL_MAP[modelKey] ?? MODEL_MAP.speed;
+  // Get model configuration (OpenRouter or fallback to OpenAI)
+  const { config: modelConf, client: openai } = getModelConfig(modelKey);
 
   // 1) Build base context
   const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, supabase: locals.supabase });
@@ -100,8 +96,7 @@ export const POST = async ({ request, locals }) => {
     console.log('✅ User message saved:', userMsgResult);
   }
 
-  // 5) Stream from OpenAI (robust async-iterator pattern)
-  const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+  // 5) Stream from OpenRouter/OpenAI (robust async-iterator pattern)
   const stream = await openai.chat.completions.create({
     model: modelConf.name,
     temperature: 0.8,
@@ -124,12 +119,13 @@ export const POST = async ({ request, locals }) => {
         }
 
         // 6) Save assistant message
-        console.log('💾 Saving assistant message to DB:', { projectId, branchId, role: 'assistant', contentLength: full.length });
+        console.log('💾 Saving assistant message to DB:', { projectId, branchId, role: 'assistant', contentLength: full.length, modelKey });
         const { data: assistantMsgResult, error: assistantMsgError } = await locals.supabase.from('messages').insert({
           project_id: projectId,
           role: 'assistant',
           content: full,
-          branch_id: branchId
+          branch_id: branchId,
+          model_key: modelKey
         }).select();
         
         if (assistantMsgError) {

@@ -1,7 +1,6 @@
 // src/routes/api/brief/regenerate/+server.js
 import { json } from '@sveltejs/kit';
-import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { getModelConfig } from '$lib/server/openrouter.js';
 
 export const POST = async ({ request, locals }) => {
   const { data: { user } } = await locals.supabase.auth.getUser();
@@ -15,7 +14,8 @@ export const POST = async ({ request, locals }) => {
   const factsText = (facts || []).map(f => `- [${f.type}] ${f.key}: ${f.value}`).join('\n');
   const docsText = (docs || []).map(d => `# ${d.title}\n${d.content}`).join('\n\n');
 
-  const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+  // Get OpenRouter client - use micro model for brief generation (cheapest)
+  const { config: modelConf, client: openai } = getModelConfig('micro');
   const prompt = `
 Summarize the essential, stable facts of this project for reuse by an AI assistant.
 Keep 300–800 tokens. Prefer lists. No fluff.
@@ -28,7 +28,7 @@ ${docsText}
 `;
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: modelConf.name,
     temperature: 0.2,
     messages: [{ role: 'system', content: 'You compress project knowledge crisply.' }, { role: 'user', content: prompt }]
   });

@@ -1,8 +1,8 @@
 // src/routes/api/generate-ideas/+server.js
-import OpenAI from 'openai';
 import { json } from '@sveltejs/kit';
 import { DateTime } from 'luxon';
-import { OPENAI_API_KEY, DAILY_TOKEN_LIMIT } from '$env/static/private';
+import { getModelConfig } from '$lib/server/openrouter.js';
+import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
@@ -12,12 +12,8 @@ export const POST = async ({ request, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!projectId) return json({ message: 'Bad request' }, { status: 400 });
 
-  // Model configuration - use the faster model for idea generation
-  const modelConf = {
-    name: 'gpt-4o-mini',
-    inPerTok: 0.15/1_000_000,
-    outPerTok: 0.60/1_000_000
-  };
+  // Get model configuration - use micro model for idea generation (cheapest)
+  const { config: modelConf, client: openai } = getModelConfig('micro');
 
   // Build context from project data
   const contextParts = [];
@@ -98,8 +94,7 @@ Focus on practical next steps, interesting questions to explore, related concept
   }
 
   try {
-    // Call OpenAI API
-    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    // Call OpenRouter/OpenAI API
     const response = await openai.chat.completions.create({
       model: modelConf.name,
       temperature: 0.9, // Higher creativity for idea generation

@@ -33,7 +33,13 @@
   let selectedId = null;
   let current = null;
   let hasInit = false;
-  let modelKey = 'speed'; // 'speed' | 'quality'
+  let modelKey = 'speed'; // 'speed' | 'quality' | 'micro' | etc.
+  let modelKeyLoaded = false; // Flag to prevent saving before loading
+
+  // Save modelKey to localStorage whenever it changes (but only after initial load)
+  $: if (browser && modelKey && modelKeyLoaded) {
+    localStorage.setItem('wiskr_model_key', modelKey);
+  }
 
   // init once - simple localStorage-only approach
   $: (async () => {
@@ -178,6 +184,16 @@
 
     // Load usage once on page load
     await loadUsage();
+    
+    // Load persisted model key from localStorage
+    if (browser) {
+      const savedModelKey = localStorage.getItem('wiskr_model_key');
+      if (savedModelKey) {
+        modelKey = savedModelKey;
+      }
+      // Enable localStorage saving now that we've loaded the initial value
+      modelKeyLoaded = true;
+    }
 
     // Listen for "projects:refresh" after create (from +layout.svelte)
     projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
@@ -276,7 +292,7 @@
     if (!current || !event.detail.message.trim()) return;
     const userMsg = event.detail.message;
     input = '';
-    messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '' }];
+    messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '', model_key: modelKey }];
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const res = await fetch('/api/chat', {
       method: 'POST',
@@ -1120,7 +1136,7 @@ function handleTextAddToQuestions(event) {
     {messages}
     {loadingMessages}
     bind:input
-    {modelKey}
+    bind:modelKey
     {branches}
     {currentBranch}
     {currentBranchId}

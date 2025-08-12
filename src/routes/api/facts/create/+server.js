@@ -1,9 +1,6 @@
 // src/routes/api/facts/create
 import { json } from '@sveltejs/kit';
-import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
-
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+import { createOpenAIClient } from '$lib/server/openrouter.js';
 
 export const POST = async ({ request, locals }) => {
   const { data: { user } } = await locals.supabase.auth.getUser();
@@ -25,6 +22,8 @@ export const POST = async ({ request, locals }) => {
 
   // 2) Create embedding (text to embed = a compact concatenation)
   const text = `[${type}] ${key}: ${value}`;
+  // For embeddings, we need to use OpenAI directly (OpenRouter doesn't support embeddings yet)
+  const openai = createOpenAIClient();
   let embedding = null;
   try {
     const emb = await openai.embeddings.create({

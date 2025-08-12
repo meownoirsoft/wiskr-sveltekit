@@ -3,6 +3,7 @@
   import { marked } from 'marked';
   import { Clipboard, GitBranch, Edit2, Trash2, Check, X } from 'lucide-svelte';
   import TextSelectionMenu from './TextSelectionMenu.svelte';
+  import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 
   export let current = null;
   export let messages = [];
@@ -18,6 +19,7 @@
   const dispatch = createEventDispatcher();
   let chatContainer;
   let messageBranchCounts = {}; // Store branch counts per message
+  let availableModels = []; // Store available AI models
   
   // Branch management state
   let isEditingBranch = false;
@@ -89,6 +91,31 @@
     showUsageStats = !showUsageStats;
   }
 
+  // Load available AI models from the API
+  async function loadAvailableModels() {
+    try {
+      const res = await fetch('/api/models');
+      if (res.ok) {
+        const data = await res.json();
+        availableModels = data.models || [];
+      } else {
+        console.error('Failed to load models');
+        // Fallback to hardcoded options
+        availableModels = [
+          { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai' },
+          { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai' }
+        ];
+      }
+    } catch (error) {
+      console.error('Error loading models:', error);
+      // Fallback to hardcoded options
+      availableModels = [
+        { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai' },
+        { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai' }
+      ];
+    }
+  }
+
   // Load branch counts for all messages in a single efficient API call
   async function loadMessageBranchCounts() {
     if (!current) {
@@ -132,6 +159,9 @@
   // Add event listener for branch updates on mount
   import { onMount as onMountChatInterface } from 'svelte';
   onMountChatInterface(() => {
+    // Load available models on mount
+    loadAvailableModels();
+    
     window.addEventListener('branches-updated', handleBranchesUpdated);
     return () => {
       window.removeEventListener('branches-updated', handleBranchesUpdated);
@@ -347,10 +377,14 @@
       {#each messages as m, index}
         {@const branchColor = getBranchColor(currentBranch)}
         <div class="{m.role === 'user' ? 'max-w-2xl ml-auto' : 'max-w-4xl'}">
-          <div class="text-xs text-zinc-500 mb-1 {m.role === 'user' ? 'text-right' : ''}">
-            {m.role === 'user' ? 'You' : 'Assistant'}
+          <div class="text-sm font-medium text-zinc-600 mb-1 {m.role === 'user' ? 'text-right' : ''}">
+            {#if m.role === 'user'}
+              You
+            {:else}
+              {m.model_key ? getModelFriendlyName(m.model_key) : 'Assistant'}
+            {/if}
             {#if index === 0}
-              <span class="text-zinc-400">• conversation start</span>
+              <span class="text-xs text-zinc-400 font-normal ml-2">• conversation start</span>
             {/if}
           </div>
           <div class="rounded-lg p-3 border border-l-4 transition-colors {m.role === 'user' ? `bg-blue-50 border-blue-200 ml-8 whitespace-pre-wrap ${branchColor.accent}` : `bg-gray-50 border-gray-200 mr-8 assistant-message ${branchColor.accent}`}">
@@ -438,9 +472,40 @@
         
         <div class="flex items-center gap-2">
           <label for="model-select" class="text-xs text-zinc-500">Model:</label>
-          <select class="border rounded p-1 text-xs w-40" bind:value={modelKey} disabled={!current}>
-            <option value="speed">Speed (4o-mini)</option>
-            <option value="quality">Quality (4o)</option>
+          <select class="border rounded p-1 text-xs min-w-[280px]" bind:value={modelKey} disabled={!current}>
+            {#if availableModels.length > 0}
+              {#each availableModels as model}
+                <option value={model.key} title={`${model.name} (${model.provider})\n${model.category}\nInput: $${model.costPer1kTokens.input}/1k • Output: $${model.costPer1kTokens.output}/1k`}>
+                  {#if model.key === 'speed'}
+                    🚀 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key === 'quality'}
+                    ⭐ {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key === 'micro'}
+                    💰 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key === 'claude-opus'}
+                    👑 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('gpt')}
+                    🤖 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('llama')}
+                    🦙 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('gemini')}
+                    💎 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('mistral')}
+                    🌪️ {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('qwen')}
+                    🏮 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else if model.key.startsWith('deepseek')}
+                    🌊 {model.name.split('/')[1] || model.name} • {model.tier}
+                  {:else}
+                    🔬 {model.name.split('/')[1] || model.name} • {model.tier || 'Standard'}
+                  {/if}
+                </option>
+              {/each}
+            {:else}
+              <!-- Fallback options while models are loading -->
+              <option value="speed">🚀 Loading models...</option>
+              <option value="quality">⭐ Loading models...</option>
+            {/if}
           </select>
         </div>
       </div>

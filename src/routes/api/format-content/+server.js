@@ -1,9 +1,6 @@
 // src/routes/api/format-content/+server.js
 import { json } from '@sveltejs/kit';
-import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
-
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+import { getModelConfig } from '$lib/server/openrouter.js';
 
 // Platform-specific formatting rules
 const PLATFORM_RULES = {
@@ -203,6 +200,9 @@ export async function POST({ request }) {
       return json({ error: 'Unsupported platform' }, { status: 400 });
     }
     
+    // Get OpenRouter client - use micro model for formatting (cheapest)
+    const { config: modelConf, client: openai } = getModelConfig('micro');
+    
     const systemPrompt = `You are a social media content formatter specializing in ${platformConfig.name}. 
 
 Your task is to reformat the given content to be optimized for ${platformConfig.name} while maintaining the core message and value.
@@ -223,7 +223,7 @@ Important guidelines:
 Format the content to be ready to post on ${platformConfig.name}.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: modelConf.name,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Please format this content for ${platformConfig.name}:\n\n${content}` }
@@ -238,7 +238,7 @@ Format the content to be ready to post on ${platformConfig.name}.`;
     if (formatted.length > platformConfig.maxLength) {
       // Try to get a shorter version
       const shortenCompletion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: modelConf.name,
         messages: [
           { role: 'system', content: systemPrompt + `\n\nIMPORTANT: The content MUST be under ${platformConfig.maxLength} characters. The previous attempt was too long.` },
           { role: 'user', content: `Please format this content for ${platformConfig.name}, keeping it under ${platformConfig.maxLength} characters:\n\n${content}` }
