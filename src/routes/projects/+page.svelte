@@ -164,6 +164,9 @@
   // Settings modal state
   let showSettingsModal = false;
   let settingsProject = null;
+  
+  // Component references
+  let sidebarComponent;
 
   // Ideas Column state
   let goodQuestions = [];
@@ -218,26 +221,48 @@
       modelKeyLoaded = true;
     }
 
-    // Setup responsive detection
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+    // Setup responsive detection (browser-only)
+    if (browser) {
+      checkScreenSize();
+      window.addEventListener('resize', checkScreenSize);
 
-    // Listen for "projects:refresh" after create (from +layout.svelte)
-    projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
-    window.addEventListener('projects:refresh', projectsRefreshHandler);
-    
-    // Listen for project selection from header
-    window.addEventListener('project:selected', (e) => {
-      if (e.detail?.id) {
-        selectProjectById(e.detail.id);
-      }
-    });
+      // Listen for "projects:refresh" after create (from +layout.svelte)
+      projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
+      window.addEventListener('projects:refresh', projectsRefreshHandler);
+      
+      // Listen for project selection from header
+      window.addEventListener('project:selected', (e) => {
+        if (e.detail?.id) {
+          selectProjectById(e.detail.id);
+        }
+      });
+      
+      // Listen for project settings from header
+      window.addEventListener('project:open-settings', (e) => {
+        if (e.detail) {
+          handleProjectOpenSettings({ detail: e.detail });
+        }
+      });
+      
+      // Listen for search events from global search
+      window.addEventListener('search:activate-tab', handleSearchActivateTab);
+      window.addEventListener('search:filter', handleSearchFilter);
+      window.addEventListener('search:navigate-chat', handleSearchNavigateChat);
+      window.addEventListener('search:clear', handleSearchClear);
+    }
   });
 
   // Clean up event listener when component is destroyed
   onDestroy(() => {
-    if (projectsRefreshHandler) {
-      window.removeEventListener('projects:refresh', projectsRefreshHandler);
+    if (browser) {
+      if (projectsRefreshHandler) {
+        window.removeEventListener('projects:refresh', projectsRefreshHandler);
+      }
+      // Clean up search event listeners
+      window.removeEventListener('search:activate-tab', handleSearchActivateTab);
+      window.removeEventListener('search:filter', handleSearchFilter);
+      window.removeEventListener('search:navigate-chat', handleSearchNavigateChat);
+      window.removeEventListener('search:clear', handleSearchClear);
     }
   });
 
@@ -701,7 +726,9 @@ async function createBranch() {
       closeBranchModal();
       
       // Reload message branch counts in the ChatInterface component
-      window.dispatchEvent(new CustomEvent('branches-updated'));
+      if (browser) {
+        window.dispatchEvent(new CustomEvent('branches-updated'));
+      }
     } else {
       // Handle error response from server
       try {
@@ -981,8 +1008,14 @@ function handleProjectOpenSettings(event) {
 }
 
 function handleSettingsModalClose() {
+  // Close the modal
   showSettingsModal = false;
   settingsProject = null;
+  
+  // Refresh fact types in the Sidebar to ensure they are up-to-date
+  if (sidebarComponent && activeTab === 'facts') {
+    sidebarComponent.refreshFactTypes();
+  }
 }
 
 async function handleBranchRenamed(event) {
@@ -1032,7 +1065,9 @@ function handleInsertText(event) {
   }
   
   // Focus the chat input (we'll need to dispatch this to ChatInterface)
-  window.dispatchEvent(new CustomEvent('focus-chat-input'));
+  if (browser) {
+    window.dispatchEvent(new CustomEvent('focus-chat-input'));
+  }
 }
 
 async function handleGenerateIdeas() {
@@ -1147,6 +1182,72 @@ function handleTextAddToDocs(event) {
       showLeftPanel = false;
     }
   }
+  
+  // Global search event handlers
+  function handleSearchActivateTab(event) {
+    const tabName = event.detail;
+    if (tabName === 'facts' || tabName === 'docs') {
+      activeTab = tabName;
+      showLeftPanel = true;
+      // On mobile, close right panel if both are open
+      if (!isDesktop && showRightPanel) {
+        showRightPanel = false;
+      }
+    } else if (tabName === 'questions' || tabName === 'ideas') {
+      showRightPanel = true;
+      // On mobile, close left panel if both are open
+      if (!isDesktop && showLeftPanel) {
+        showLeftPanel = false;
+      }
+    }
+  }
+  
+  function handleSearchFilter(event) {
+    const { type, query } = event.detail;
+    
+    // Set the search term for all components
+    search = query;
+    
+    if (type === 'facts') {
+      activeTab = 'facts';
+      showLeftPanel = true;
+      if (!isDesktop && showRightPanel) {
+        showRightPanel = false;
+      }
+    } else if (type === 'docs') {
+      activeTab = 'docs';
+      showLeftPanel = true;
+      if (!isDesktop && showRightPanel) {
+        showRightPanel = false;
+      }
+    } else if (type === 'questions') {
+      showRightPanel = true;
+      if (!isDesktop && showLeftPanel) {
+        showLeftPanel = false;
+      }
+    } else if (type === 'ideas') {
+      showRightPanel = true;
+      if (!isDesktop && showLeftPanel) {
+        showLeftPanel = false;
+      }
+    }
+  }
+  
+  function handleSearchNavigateChat(event) {
+    const { messageId, branchId } = event.detail;
+    // Switch to the appropriate branch if needed
+    if (branchId && branchId !== currentBranchId) {
+      switchToBranch(branchId);
+    }
+    // Scroll to the message (we could enhance ChatInterface to support this)
+    // For now, just ensure the message is visible by switching branches
+  }
+  
+  function handleSearchClear(event) {
+    // Clear any active search filters
+    search = '';
+    // Could also clear filters in other components if needed
+  }
 </script>
 
 <!-- Layout -->
@@ -1156,10 +1257,12 @@ function handleTextAddToDocs(event) {
   <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out bg-gray-50 border-r overflow-hidden flex-shrink-0">
     {#if showLeftPanel}
       <Sidebar 
+        bind:this={sidebarComponent}
         {current}
         {facts}
         {docs}
         {loadingFacts}
+        {search}
         bind:showAddFactForm
         bind:factType
         bind:factKey
@@ -1205,11 +1308,6 @@ function handleTextAddToDocs(event) {
       <div class="text-xs font-medium text-center leading-tight {showLeftPanel ? 'text-blue-700' : 'text-gray-700'}">
         Facts<br/>& Docs
       </div>
-      {#if !showLeftPanel && (facts.length > 0 || docs.length > 0)}
-        <div class="text-xs text-gray-500 font-normal">
-          {facts.length}F {docs.length}D
-        </div>
-      {/if}
     </button>
   </div>
 
@@ -1227,20 +1325,15 @@ function handleTextAddToDocs(event) {
         {/if}
       </svg>
       <div class="text-xs font-medium text-center leading-tight {showRightPanel ? 'text-purple-700' : 'text-gray-700'}">
-        Ideas<br/>& Tips
+        Questions & Ideas
       </div>
-      {#if !showRightPanel && goodQuestions.length > 0}
-        <div class="text-xs text-gray-500 font-normal">
-          {goodQuestions.length}Q
-        </div>
-      {/if}
     </button>
   </div>
 
   <!-- MAIN AREA: Chat (Center) -->
   <div class="flex-1 flex justify-center relative">
-    <!-- Constrained Chat Container -->
-    <div class="w-full max-w-3xl flex flex-col relative {isDesktop ? 'mx-8' : 'mx-16'}">
+    <!-- Chat Container -->
+    <div class="w-full flex flex-col relative">
 
     <ChatInterface 
       {current}
@@ -1274,6 +1367,7 @@ function handleTextAddToDocs(event) {
         {goodQuestions}
         {relatedIdeas}
         {isGeneratingIdeas}
+        {search}
         projectId={current?.id}
         on:questions-update={handleQuestionsUpdate}
         on:insert-text={handleInsertText}

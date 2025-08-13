@@ -1,6 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
+  import EditFactModal from './EditFactModal.svelte';
+  import AddFactModal from './AddFactModal.svelte';
 
   export let facts = [];
   export let loadingFacts = false;
@@ -14,11 +16,25 @@
   let projectFactTypes = [];
   let loadingFactTypes = false;
   let openMenuIndex = -1; // Track which fact menu is open
+  let showEditModal = false;
+  let editingFact = null;
+  let showAddModal = false;
 
   const dispatch = createEventDispatcher();
 
   // Load project fact types when projectId changes
   $: if (projectId) {
+    loadProjectFactTypes();
+  }
+  
+  // Force re-render when projectFactTypes change to update display names
+  $: if (projectFactTypes && facts) {
+    // This reactive statement ensures the UI updates when fact types are refreshed
+    facts = facts; // Trigger reactivity
+  }
+
+  // Export function to refresh fact types from parent component
+  export function refreshFactTypes() {
     loadProjectFactTypes();
   }
 
@@ -60,18 +76,19 @@
     ];
   }
 
-  function toggleAddForm() {
-    showAddFactForm = !showAddFactForm;
+  function openAddModal() {
+    showAddModal = true;
   }
 
-  function addFact() {
-    // Parse comma-separated tags
-    const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-    dispatch('add', { type: factType, key: factKey, value: factValue, tags });
+  function handleAddModalSave(event) {
+    dispatch('add', event.detail);
   }
 
-  function cancelAdd() {
-    showAddFactForm = false;
+  function handleAddModalClose() {
+    showAddModal = false;
+    // Clear form values
+    factKey = '';
+    factValue = '';
     factTags = '';
     dispatch('cancel-add');
   }
@@ -79,17 +96,26 @@
   function handleTagClick(tag) {
     dispatch('tag-click', tag);
   }
+  
+  function handleTypeClick(type) {
+    // Get the display name for the type to use as filter
+    const displayName = getTypeDisplayName(type);
+    dispatch('type-click', displayName);
+  }
 
   function startEditFact(fact, index) {
-    dispatch('start-edit', { fact, index });
+    editingFact = fact;
+    showEditModal = true;
+    closeMenu();
   }
 
-  function cancelEditFact(fact, index) {
-    dispatch('cancel-edit', { fact, index });
+  function handleModalSave(event) {
+    dispatch('save-edit', event.detail);
   }
 
-  function saveFactEdit(fact, editData) {
-    dispatch('save-edit', { fact, editData });
+  function handleModalClose() {
+    showEditModal = false;
+    editingFact = null;
   }
 
   function deleteFact(fact, index) {
@@ -128,6 +154,42 @@
     const projectType = projectFactTypes.find(ft => ft.type_key === type);
     return projectType ? projectType.display_name : type;
   }
+  
+  function getTypeBorderClass(type) {
+    // First check if we have project-specific fact types loaded
+    const projectType = projectFactTypes.find(ft => ft.type_key === type);
+    if (projectType && projectType.color_class) {
+      // Convert background color classes to border color classes
+      const colorMap = {
+        'bg-blue-100 text-blue-700': 'border-blue-200',
+        'bg-green-100 text-green-700': 'border-green-200',
+        'bg-purple-100 text-purple-700': 'border-purple-200',
+        'bg-orange-100 text-orange-700': 'border-orange-200',
+        'bg-red-100 text-red-700': 'border-red-200',
+        'bg-yellow-100 text-yellow-700': 'border-yellow-200',
+        'bg-pink-100 text-pink-700': 'border-pink-200',
+        'bg-indigo-100 text-indigo-700': 'border-indigo-200',
+        'bg-gray-100 text-gray-700': 'border-gray-200'
+      };
+      return colorMap[projectType.color_class] || 'border-gray-200';
+    }
+    
+    // Fallback to hardcoded border colors for legacy support
+    const borderStyles = {
+      person: 'border-blue-200',
+      place: 'border-green-200',
+      process: 'border-purple-200',
+      term: 'border-orange-200',
+      thing: 'border-red-200',
+      // Legacy support for existing data
+      character: 'border-blue-200',
+      location: 'border-green-200',
+      mechanic: 'border-purple-200',
+      glossary: 'border-orange-200',
+      entity: 'border-red-200'
+    };
+    return borderStyles[type] || 'border-gray-200';
+  }
 
   function toggleMenu(index) {
     openMenuIndex = openMenuIndex === index ? -1 : index;
@@ -145,56 +207,13 @@
       <h3 class="font-semibold">Facts</h3>
       <button 
         class="flex items-center gap-1 text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 cursor-pointer" 
-        on:click={toggleAddForm}
-        title={showAddFactForm ? "Hide form" : "Add new fact"}
+        on:click={openAddModal}
+        title="Add new fact"
       >
         <Plus size="16" />
-        {showAddFactForm ? "Hide" : "Add Fact"}
+        Add Fact
       </button>
     </div>
-    
-    {#if showAddFactForm}
-      <div class="border rounded p-3 bg-white mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700">New Fact</span>
-          <span class="text-xs text-zinc-500">Short, atomic facts work best</span>
-        </div>
-        <div class="grid gap-2">
-          <select class="border rounded p-2" bind:value={factType} disabled={loadingFactTypes}>
-            {#if loadingFactTypes}
-              <option>Loading types...</option>
-            {:else if projectFactTypes.length > 0}
-              {#each projectFactTypes as factTypeOption}
-                <option value={factTypeOption.type_key}>{factTypeOption.display_name}</option>
-              {/each}
-            {:else}
-              <option value="person">person</option>
-              <option value="place">place</option>
-              <option value="process">process</option>
-              <option value="term">term</option>
-              <option value="thing">thing</option>
-            {/if}
-          </select>
-          <input class="border rounded p-2" placeholder="Key (e.g., Cheddar)" bind:value={factKey} />
-          <textarea class="border rounded p-2" rows="3" placeholder="Value (≤120 words)" bind:value={factValue}></textarea>
-          <input 
-            class="border rounded p-2" 
-            placeholder="Tags (comma-separated)" 
-            value={factTags}
-            type="text"
-            autocomplete="off"
-            spellcheck="false"
-            on:input={(e) => {
-              factTags = e.target.value;
-            }}
-          />
-        </div>
-        <div class="mt-2 flex gap-2">
-          <button class="bg-green-500 text-white rounded px-3 py-1 hover:bg-green-600 cursor-pointer" on:click={addFact}>Save Fact</button>
-          <button class="border rounded px-3 py-1 hover:bg-gray-50 cursor-pointer" on:click={cancelAdd}>Cancel</button>
-        </div>
-      </div>
-    {/if}
 
     {#if loadingFacts}
       <div class="text-sm text-zinc-500">Loading…</div>
@@ -203,29 +222,36 @@
 
   <!-- Scrollable Facts List -->
   <div class="flex-1 overflow-y-auto pr-1">
-    <ul class="space-y-1">
-  {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i}
-    <li class="text-sm border rounded p-2 bg-white">
-      <!-- Row 1: Key, Type Tag, and Icons -->
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-2 flex-1 min-w-0">
+    <div class="grid grid-cols-3 gap-2">
+  {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
+    <div class="text-xs border rounded p-2 bg-white {getTypeBorderClass(f.type)}">
+      <!-- Header: Title, Type Tag, and Menu -->
+      <div class="mb-2">
+        <!-- Top row: Pin icon + Title (can wrap) -->
+        <div class="flex items-start gap-2 mb-1">
           {#if f.pinned}
-            <Pin size="14" class="text-blue-600 flex-shrink-0" />
+            <Pin size="14" class="text-blue-600 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold flex-shrink-0">{f.key}</div>
-          <div class="flex-1 flex justify-end">
-            <span class="text-xs px-2 py-1 rounded-full font-medium {getTypeTagClass(f.type)}">{getTypeDisplayName(f.type)}</span>
-          </div>
+          <div class="font-semibold leading-tight break-words min-w-0 flex-1">{f.key}</div>
         </div>
-        <!-- Triple-dot menu -->
-        <div class="relative flex-shrink-0 ml-2">
+        <!-- Bottom row: Type tag and menu -->
+        <div class="flex items-center justify-between">
           <button 
-            class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
-            on:click={() => toggleMenu(i)}
-            title="More actions"
+            class="text-xs px-2 py-1 rounded-full font-medium {getTypeTagClass(f.type)} hover:opacity-80 transition-opacity cursor-pointer"
+            on:click={() => handleTypeClick(f.type)}
+            title="Filter by type: {getTypeDisplayName(f.type)}"
           >
-            <MoreHorizontal size="18" />
+            {getTypeDisplayName(f.type)}
           </button>
+          <!-- Triple-dot menu -->
+          <div class="relative flex-shrink-0">
+            <button 
+              class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
+              on:click={() => toggleMenu(i)}
+              title="More actions"
+            >
+              <MoreHorizontal size="18" />
+            </button>
           
           {#if openMenuIndex === i}
             <!-- Overlay to close menu when clicking outside -->
@@ -260,11 +286,12 @@
               </button>
             </div>
           {/if}
+          </div>
         </div>
       </div>
       
       <!-- Row 2: Content -->
-      <div class="text-sm text-gray-700 mb-2">
+      <div class="text-xs text-gray-700 mb-2">
         {f.value}
       </div>
       
@@ -284,32 +311,32 @@
       {/if}
       
 
-      {#if f._editing}
-        <div class="mt-2 grid gap-2">
-          <input class="border rounded p-2" bind:value={f._editKey} />
-          <textarea class="border rounded p-2" rows="3" bind:value={f._editValue}></textarea>
-          <input 
-            class="border rounded p-2" 
-            placeholder="Tags (comma-separated)" 
-            value={f._editTags}
-            type="text"
-            autocomplete="off"
-            spellcheck="false"
-            on:input={(e) => {
-              f._editTags = e.target.value;
-            }}
-          />
-          <div class="flex gap-2">
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveFactEdit(f, { type: f.type, key: f._editKey, value: f._editValue, tags: f._editTags ? f._editTags.split(',').map(t => t.trim()).filter(Boolean) : [] })}>Save</button>
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => cancelEditFact(f, i)}>Cancel</button>
-          </div>
-        </div>
-      {/if}
-    </li>
+    </div>
   {/each}
   {#if !facts.length && !loadingFacts}
-    <li class="text-sm text-zinc-500">No facts.</li>
+    <div class="col-span-3 text-sm text-zinc-500 text-center py-8">No facts.</div>
   {/if}
-    </ul>
+    </div>
   </div>
 </div>
+
+<!-- Edit Fact Modal -->
+<EditFactModal 
+  bind:showModal={showEditModal}
+  fact={editingFact}
+  {projectFactTypes}
+  on:save={handleModalSave}
+  on:close={handleModalClose}
+/>
+
+<!-- Add Fact Modal -->
+<AddFactModal 
+  bind:showModal={showAddModal}
+  {projectFactTypes}
+  bind:factType
+  bind:factKey
+  bind:factValue
+  bind:factTags
+  on:add={handleAddModalSave}
+  on:close={handleAddModalClose}
+/>

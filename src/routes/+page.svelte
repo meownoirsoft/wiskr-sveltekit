@@ -1,13 +1,9 @@
-<script>
-	import { onMount } from 'svelte';
-	import WiskrApp from '$lib/WiskrApp.svelte';
-</script>
-
 <svelte:head>
-	<title>Wiskr - AI Prompt Manager</title>
-	<meta name="description" content="A modern, responsive web application for managing AI prompts and conversations across multiple AI models." />
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+	<title>Wiskr</title>
 </svelte:head>
 
-<WiskrApp />
+<!-- Empty home page -->
+<div>
+	<h1 class="text-xl">Welcome to Mr Wiskr!</h1>
+	View your projects here: <a href="/projects" class="text-blue-500 underline">Projects</a>
+</div>

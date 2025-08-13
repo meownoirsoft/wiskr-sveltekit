@@ -1,12 +1,13 @@
 // src/routes/projects/+page.server.js
+import { redirect } from '@sveltejs/kit';
+
 export const load = async ({ locals }) => {
   // locals.supabase + locals.user should be set in your hooks.server.js (@supabase/ssr)
   const { data: { user } } = await locals.supabase.auth.getUser();
 
   if (!user) {
-    // Not signed in — render page with empty list (or redirect if you prefer)
-    return { projects: [] };
-    // or: throw redirect(302, '/login')
+    // Redirect to login if not authenticated
+    throw redirect(302, '/login');
   }
 
   const { data: projects, error } = await locals.supabase

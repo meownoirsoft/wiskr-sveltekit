@@ -18,7 +18,7 @@ export const OPENROUTER_MODELS = {
   // High quality models
   quality: {
     name: 'anthropic/claude-3-5-sonnet',
-    friendlyName: 'My Pretty Floral Sonnet (Claude 3.5)',
+    friendlyName: 'Pretty Floral Sonnet (Claude 3.5)',
     inPerTok: 3.00/1_000_000,
     outPerTok: 15.00/1_000_000,
     provider: 'openrouter',
@@ -61,7 +61,7 @@ export const OPENROUTER_MODELS = {
   
   'claude-opus': {
     name: 'anthropic/claude-3-opus',
-    friendlyName: 'Mr. Holland (Claude Opus',
+    friendlyName: 'Mr. Holland (Claude Opus)',
     inPerTok: 15.00/1_000_000,
     outPerTok: 75.00/1_000_000,
     provider: 'openrouter',

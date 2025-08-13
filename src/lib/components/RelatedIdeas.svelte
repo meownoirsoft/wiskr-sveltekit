@@ -406,7 +406,7 @@ import { browser } from '$app/environment';
 <div class="flex flex-col h-full max-h-full overflow-hidden">
   <!-- Header -->
   <div class="flex-shrink-0">
-    <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between mb-2" style="margin-left: 32px; margin-right: 4px;">
       <h3 class="font-semibold text-gray-800">Related Ideas</h3>
       <button 
         class="flex items-center gap-1 text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 cursor-pointer disabled:opacity-50" 
@@ -418,7 +418,7 @@ import { browser } from '$app/environment';
         {isGenerating ? "Generating..." : "Refresh"}
       </button>
     </div>
-    <div class="text-xs text-zinc-500 mb-2">
+    <div class="text-xs text-zinc-500 mb-2" style="margin-left: 32px;">
       {#if isGenerating}
         <span class="text-blue-600 font-medium">🤖 AI is thinking...</span>
       {:else}

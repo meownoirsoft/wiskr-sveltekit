@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Search, ChevronDown, Settings, Trash, X } from 'lucide-svelte';
+  import { Plus, Search, ChevronDown, Trash, X } from 'lucide-svelte';
 
   export let projects = [];
   export let current = null;
@@ -44,12 +44,6 @@
     closeDropdown();
   }
 
-  function openProjectSettings(project, event) {
-    event.stopPropagation();
-    dispatch('open-settings', project);
-    closeDropdown();
-  }
-
   function deleteProject(project, event) {
     event.stopPropagation();
     dispatch('delete', project);
@@ -89,7 +83,7 @@
 
   <!-- Dropdown -->
   {#if showDropdown}
-    <div class="absolute top-full left-0 mt-1 w-80 bg-white border rounded-lg shadow-lg z-50">
+    <div class="absolute top-full left-0 mt-1 w-80 bg-white border rounded-lg shadow-lg z-[100]">
       <!-- Header with search and new button -->
       <div class="p-3 border-b">
         <div class="flex items-center gap-2 mb-2">
@@ -137,13 +131,6 @@
               {/if}
             </button>
             <div class="flex items-center gap-1 px-2">
-              <button
-                class="p-1 text-gray-400 hover:text-gray-600"
-                title="Settings"
-                on:click={(e) => openProjectSettings(project, e)}
-              >
-                <Settings size="14" />
-              </button>
               <button
                 class="p-1 text-gray-400 hover:text-red-600"
                 title="Delete"

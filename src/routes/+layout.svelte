@@ -3,13 +3,19 @@
   export let data;
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+  import GlobalSearch from '$lib/components/GlobalSearch.svelte';
+  import { Settings } from 'lucide-svelte';
   
   // Project selector state
   let projects = [];
   let currentProject = null;
   let projectSearch = '';
+  
+  // Check if we're on the projects page
+  $: isProjectsPage = $page.url.pathname === '/projects';
   
   onMount(async () => {
     if (!browser) return;
@@ -115,57 +121,94 @@
 <div class="flex flex-col min-h-screen bg-zinc-50 text-zinc-900">
 
   <!-- Header -->
-  <header class="h-16 border-b bg-white/80 backdrop-blur flex items-center">
-    <div class="w-full px-6 flex items-center gap-4">
+  <header class="h-16 border-b bg-white/80 backdrop-blur flex items-center relative z-50">
+    <div class="w-full px-6 flex items-center gap-4 relative">
       <!-- Left: brand and project selector -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-4 flex-shrink-0">
         <a href="/projects" class="flex items-center gap-2 font-semibold">
           <span class="text-xl">🐈‍⬛ MrWiskr</span>
           <!-- <span class="text-xs text-zinc-500">Projects</span> -->
         </a>
         
-        <div class="max-w-sm">
-          <HeaderProjectSelector 
-            {projects}
-            current={currentProject}
-            bind:search={projectSearch}
-            on:select={(e) => {
-              currentProject = e.detail;
-              if (browser) {
-                localStorage.setItem('wiskr_last_project_id', e.detail.id);
-                // Dispatch event to notify the projects page
-                window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
-              }
+        {#if isProjectsPage}
+          <div class="flex items-center gap-2">
+            <div class="max-w-sm">
+              <HeaderProjectSelector 
+                {projects}
+                current={currentProject}
+                bind:search={projectSearch}
+                on:select={(e) => {
+                  currentProject = e.detail;
+                  if (browser) {
+                    localStorage.setItem('wiskr_last_project_id', e.detail.id);
+                    // Dispatch event to notify the projects page
+                    window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                  }
+                }}
+                on:create={() => showNew = true}
+                on:delete={async (e) => {
+                  const project = e.detail;
+                  if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
+                  if (!confirm(`Delete "${project.name}"? This can\'t be undone.`)) return;
+                  
+                  try {
+                    const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
+                    if (res.ok) {
+                      // Refresh projects list
+                      window.dispatchEvent(new CustomEvent('projects:refresh'));
+                    } else {
+                      alert('Delete failed.');
+                    }
+                  } catch (error) {
+                    alert('Delete failed.');
+                  }
+                }}
+              />
+            </div>
+            <!-- Settings button for current project -->
+            {#if currentProject}
+              <button
+                class="flex items-center justify-center w-8 h-8 bg-white rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-800"
+                title="Project Settings: {currentProject.name}"
+                on:click={() => {
+                  // Dispatch event that the projects page can listen to
+                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
+                }}
+              >
+                <Settings size="20" />
+              </button>
+            {/if}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Center: Global Search - Absolutely positioned to center above chat -->
+      {#if isProjectsPage}
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 pointer-events-auto z-10">
+          <GlobalSearch 
+            projectId={currentProject?.id}
+            on:activate-tab={(e) => {
+              // Dispatch event for the projects page to handle tab activation
+              window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
             }}
-            on:create={() => showNew = true}
-            on:delete={async (e) => {
-              const project = e.detail;
-              if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
-              if (!confirm(`Delete "${project.name}"? This can\'t be undone.`)) return;
-              
-              try {
-                const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
-                if (res.ok) {
-                  // Refresh projects list
-                  window.dispatchEvent(new CustomEvent('projects:refresh'));
-                } else {
-                  alert('Delete failed.');
-                }
-              } catch (error) {
-                alert('Delete failed.');
-              }
+            on:filter={(e) => {
+              // Dispatch event for the projects page to handle filtering
+              window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
             }}
-            on:open-settings={(e) => {
-              // Navigate to settings or dispatch event
-              console.log('Open settings for:', e.detail);
+            on:navigate-chat={(e) => {
+              // Dispatch event for the projects page to handle chat navigation
+              window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+            }}
+            on:clear={(e) => {
+              // Dispatch event for the projects page to handle clearing
+              window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
             }}
           />
         </div>
-      </div>
+      {/if}
 
-      <!-- Right: spacer and user -->
-      <div class="flex-1"></div>
-      <div class="flex items-center gap-3">
+      <!-- Right: user -->
+      <div class="flex items-center gap-3 flex-shrink-0 ml-auto">
         {#if data?.user}
           <span class="text-sm text-zinc-600 hidden sm:inline">{truncateEmail(data.user.email)}</span>
           <a href="/logout" class="text-sm underline">Logout</a>

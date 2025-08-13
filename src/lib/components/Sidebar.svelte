@@ -18,8 +18,12 @@
   export let docTitle = '';
   export let docContent = '';
   export let docTags = '';
+  export let search = ''; // Search term from global search
 
   const dispatch = createEventDispatcher();
+  
+  // Reference to FactsManager component
+  let factsManagerComponent;
   
   // Tab state - exported so parent can control it
   export let activeTab = 'facts'; // 'summary', 'facts', or 'docs'
@@ -30,6 +34,49 @@
   let tagFilterMode = 'AND'; // 'AND' or 'OR'
   let showTagAutocomplete = false;
   let tagSearchInput;
+  
+  // Project fact types for filtering
+  let projectFactTypes = [];
+  
+  // Load project fact types when current project changes
+  $: if (current?.id) {
+    loadProjectFactTypes();
+  }
+  
+  async function loadProjectFactTypes() {
+    if (!current?.id) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${current.id}/fact-types`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        projectFactTypes = data.factTypes || [];
+      } else {
+        console.error('Failed to load fact types:', data.error);
+        projectFactTypes = getDefaultFactTypes();
+      }
+    } catch (error) {
+      console.error('Error loading fact types:', error);
+      projectFactTypes = getDefaultFactTypes();
+    }
+  }
+  
+  function getDefaultFactTypes() {
+    return [
+      { type_key: 'person', display_name: 'person', color_class: 'bg-blue-100 text-blue-700', sort_order: 1 },
+      { type_key: 'place', display_name: 'place', color_class: 'bg-green-100 text-green-700', sort_order: 2 },
+      { type_key: 'process', display_name: 'process', color_class: 'bg-purple-100 text-purple-700', sort_order: 3 },
+      { type_key: 'term', display_name: 'term', color_class: 'bg-orange-100 text-orange-700', sort_order: 4 },
+      { type_key: 'thing', display_name: 'thing', color_class: 'bg-red-100 text-red-700', sort_order: 5 }
+    ];
+  }
+  
+  // Helper function to get fact type display name
+  function getFactTypeDisplayName(type) {
+    const projectType = projectFactTypes.find(ft => ft.type_key === type);
+    return projectType ? projectType.display_name : type;
+  }
   
   // Get all available tags for current tab
   $: availableTags = activeTab === 'facts' 
@@ -46,17 +93,45 @@
     )
     .slice(0, 10);
   
-  // Filter facts/docs based on selected tags
-  $: filteredFacts = selectedTags.length === 0 ? facts : facts.filter(fact => {
+  // Filter facts/docs based on selected tags and search term
+  $: filteredFacts = facts.filter(fact => {
+    // First apply search term filter
+    const searchTerm = search.toLowerCase().trim();
+    const matchesSearch = !searchTerm || 
+      fact.key.toLowerCase().includes(searchTerm) ||
+      fact.value.toLowerCase().includes(searchTerm) ||
+      (fact.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
+    
+    if (!matchesSearch) return false;
+    
+    // Then apply tag filters if any
+    if (selectedTags.length === 0) return true;
+    
     const factTags = fact.tags || [];
+    const factTypeDisplayName = getFactTypeDisplayName(fact.type);
+    // Combine regular tags with the fact type display name for filtering
+    const allFilterableItems = [...factTags, factTypeDisplayName];
+    
     if (tagFilterMode === 'AND') {
-      return selectedTags.every(tag => factTags.includes(tag));
+      return selectedTags.every(tag => allFilterableItems.includes(tag));
     } else {
-      return selectedTags.some(tag => factTags.includes(tag));
+      return selectedTags.some(tag => allFilterableItems.includes(tag));
     }
   });
   
-  $: filteredDocs = selectedTags.length === 0 ? docs : docs.filter(doc => {
+  $: filteredDocs = docs.filter(doc => {
+    // First apply search term filter
+    const searchTerm = search.toLowerCase().trim();
+    const matchesSearch = !searchTerm || 
+      doc.title.toLowerCase().includes(searchTerm) ||
+      (doc.content || '').toLowerCase().includes(searchTerm) ||
+      (doc.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
+    
+    if (!matchesSearch) return false;
+    
+    // Then apply tag filters if any
+    if (selectedTags.length === 0) return true;
+    
     const docTags = doc.tags || [];
     if (tagFilterMode === 'AND') {
       return selectedTags.every(tag => docTags.includes(tag));
@@ -97,6 +172,10 @@
   }
   
   function handleTagClick(event) {
+    addTagFilter(event.detail);
+  }
+  
+  function handleTypeClick(event) {
     addTagFilter(event.detail);
   }
 
@@ -162,10 +241,19 @@
   function handleDocTogglePin(event) {
     dispatch('doc-toggle-pin', event.detail);
   }
+  
+  // Export function to refresh fact types from parent component
+  export function refreshFactTypes() {
+    // Refresh fact types in both the Sidebar and FactsManager
+    loadProjectFactTypes();
+    if (factsManagerComponent) {
+      factsManagerComponent.refreshFactTypes();
+    }
+  }
 </script>
 
 <section class="h-full border-r p-3 bg-gray-50 flex flex-col mobile-sidebar">
-  <h2 class="text-lg font-semibold mb-4">Project Overview</h2>
+  <h2 class="text-lg font-semibold mb-4">Project Context</h2>
 
   {#if current}
     <!-- Three-Tab Interface: Summary, Facts, Docs -->
@@ -297,6 +385,7 @@
           />
         {:else if activeTab === 'facts'}
           <FactsManager
+            bind:this={factsManagerComponent}
             facts={filteredFacts}
             {loadingFacts}
             projectId={current?.id}
@@ -313,6 +402,7 @@
             on:delete={handleFactDelete}
             on:toggle-pin={handleFactTogglePin}
             on:tag-click={handleTagClick}
+            on:type-click={handleTypeClick}
           />
         {:else if activeTab === 'docs'}
           <DocsManager

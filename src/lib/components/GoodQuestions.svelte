@@ -148,8 +148,8 @@
 <div class="flex flex-col h-full max-h-full overflow-hidden">
   <!-- Header -->
   <div class="flex-shrink-0">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="font-semibold text-gray-800">Questions to ask next</h3>
+    <div class="flex items-center justify-between mb-2" style="margin-left: 32px; margin-right: 4px;">
+      <h3 class="font-semibold text-gray-800">Next Questions</h3>
       <button 
         class="flex items-center gap-1 text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 cursor-pointer" 
         on:click={() => showAddForm = !showAddForm}

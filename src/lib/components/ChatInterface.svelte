@@ -279,94 +279,96 @@
 </script>
 
 <main class="flex flex-col bg-white h-full overflow-hidden mobile-chat">
-  <!-- Branch Navigation Bar -->
-  {#if current && branches.length > 0}
-    <div class="bg-gray-50 border-gray-200 border-b px-4 py-2 flex-shrink-0">
+  <!-- Chat Header -->
+  {#if current}
+    <div class="bg-gray-50 border-gray-200 border-b px-4 py-3 flex-shrink-0">
+      <!-- Title and Branch Controls Row -->
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-gray-700">Branch:</span>
-          
-          {#if isEditingBranch}
-            <!-- Edit mode -->
-            <div class="flex items-center gap-2">
-              <input 
-                type="text" 
-                bind:value={editBranchName}
-                class="bg-white border border-gray-300 rounded px-2 py-1 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                maxlength="100"
-                disabled={isSavingBranchName}
-              />
-              <button
-                class="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
-                on:click={saveBranchName}
-                disabled={isSavingBranchName || !editBranchName.trim()}
-                title="Save"
-              >
-                {#if isSavingBranchName}
-                  <div class="animate-spin rounded-full h-3 w-3 border-2 border-green-600 border-t-transparent"></div>
-                {:else}
-                  <Check size="16" />
-                {/if}
-              </button>
-              <button
-                class="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                on:click={cancelEditingBranch}
-                disabled={isSavingBranchName}
-                title="Cancel"
-              >
-                <X size="16" />
-              </button>
-            </div>
-          {:else}
-            <!-- Normal mode -->
-            <select 
-              class="bg-transparent border-none text-sm font-medium text-gray-800 cursor-pointer focus:outline-none"
-              bind:value={currentBranchId} 
-              on:change={switchToBranch}
-              disabled={isDeletingBranch}
-            >
-              {#each branches as branch}
-                <option value={branch.branch_id}>{branch.branch_name}</option>
-              {/each}
-            </select>
+        <h2 class="text-lg font-semibold text-gray-900">Wiskr Chat</h2>
+        
+        <!-- Branch Controls (only show if branches exist) -->
+        {#if branches.length > 0}
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600">Branch:</span>
             
-            <!-- Branch management buttons (only show for non-main branches) -->
-            {#if currentBranch && currentBranchId !== 'main'}
-              <div class="flex items-center gap-1">
+            {#if isEditingBranch}
+              <!-- Edit mode -->
+              <div class="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  bind:value={editBranchName}
+                  class="bg-white border border-gray-300 rounded px-2 py-1 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxlength="100"
+                  disabled={isSavingBranchName}
+                />
                 <button
-                  class="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                  on:click={startEditingBranch}
-                  disabled={isDeletingBranch}
-                  title="Edit branch name"
+                  class="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
+                  on:click={saveBranchName}
+                  disabled={isSavingBranchName || !editBranchName.trim()}
+                  title="Save"
                 >
-                  <Edit2 size="14" />
-                </button>
-                <button
-                  class="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
-                  on:click={deleteBranch}
-                  disabled={isDeletingBranch}
-                  title="Delete branch"
-                >
-                  {#if isDeletingBranch}
-                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-red-600 border-t-transparent"></div>
+                  {#if isSavingBranchName}
+                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-green-600 border-t-transparent"></div>
                   {:else}
-                    <Trash2 size="14" />
+                    <Check size="16" />
                   {/if}
                 </button>
+                <button
+                  class="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                  on:click={cancelEditingBranch}
+                  disabled={isSavingBranchName}
+                  title="Cancel"
+                >
+                  <X size="16" />
+                </button>
               </div>
+            {:else}
+              <!-- Normal mode -->
+              <select 
+                class="w-48 bg-white border border-gray-300 rounded px-2 py-1 text-sm font-medium text-gray-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                bind:value={currentBranchId} 
+                on:change={switchToBranch}
+                disabled={isDeletingBranch}
+              >
+                {#each branches as branch}
+                  <option value={branch.branch_id}>{branch.branch_name}</option>
+                {/each}
+              </select>
+              
+              <!-- Branch management buttons (only show for non-main branches) -->
+              {#if currentBranch && currentBranchId !== 'main'}
+                <div class="flex items-center gap-1">
+                  <button
+                    class="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                    on:click={startEditingBranch}
+                    disabled={isDeletingBranch}
+                    title="Edit branch name"
+                  >
+                    <Edit2 size="14" />
+                  </button>
+                  <button
+                    class="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                    on:click={deleteBranch}
+                    disabled={isDeletingBranch}
+                    title="Delete branch"
+                  >
+                    {#if isDeletingBranch}
+                      <div class="animate-spin rounded-full h-3 w-3 border-2 border-red-600 border-t-transparent"></div>
+                    {:else}
+                      <Trash2 size="14" />
+                    {/if}
+                  </button>
+                </div>
+              {/if}
             {/if}
-          {/if}
-        </div>
-        
-        <!-- <div class="text-xs text-gray-600">
-          {branches.length} branch{branches.length === 1 ? '' : 'es'}
-        </div> -->
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
   
   <!-- Chat Messages (scrollable) -->
-  <div class="flex-1 overflow-y-auto p-4 space-y-3" bind:this={chatContainer}>
+  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3" bind:this={chatContainer}>
     {#if !current}
       <p>Select a project to start chatting.</p>
     {:else if loadingMessages}
@@ -391,9 +393,6 @@
             {:else}
               {m.model_key ? getModelFriendlyName(m.model_key) : 'Assistant'}
             {/if}
-            {#if index === 0}
-              <span class="text-xs text-zinc-400 font-normal ml-2">• conversation start</span>
-            {/if}
           </div>
           <div class="rounded-lg p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `bg-blue-50 border-blue-200 ml-8 whitespace-pre-wrap ${branchColor.accent}` : `bg-gray-50 border-gray-200 mr-8 assistant-message ${branchColor.accent}`}">
             {#if m.role === 'assistant'}
@@ -404,7 +403,7 @@
               <button
                 class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 shadow-sm"
                 on:click={() => selectAllMessage(index)}
-                title="Select all and format & post"
+                title="Select all and format for posts"
               >
                 <MousePointer2 size="12" class="inline mr-1" />
                 Select All
@@ -418,7 +417,7 @@
             {#if m.role === 'assistant' && m.content.trim()}
               <div class="flex items-center gap-2 text-sm text-gray-500 italic">
                 <Type size="16" />
-                Highlight text to capture, or format & post
+                Highlight text to capture, or format for posts
               </div>
             {:else}
               <div></div>
@@ -480,7 +479,7 @@
         
         <div class="flex items-center gap-2">
           <label for="model-select" class="text-xs text-zinc-500">Model:</label>
-          <select class="border rounded p-1 text-xs min-w-[280px]" bind:value={modelKey} disabled={!current}>
+          <select class="border rounded p-1 text-xs min-w-[200px]" bind:value={modelKey} disabled={!current}>
             {#if availableModels.length > 0}
               {#each availableModels as model}
                 <option value={model.key} title={`${model.name} (${model.provider})\n${model.category}\nInput: $${model.costPer1kTokens.input}/1k • Output: $${model.costPer1kTokens.output}/1k`}>
@@ -521,7 +520,7 @@
       <!-- Input and Send -->
       <form class="px-3 pb-3 flex gap-2 items-start" on:submit|preventDefault={send}>
         <textarea class="border rounded p-2 w-full resize-none" rows="3" bind:value={input} placeholder={current ? "Ask…" : "Pick a project"} disabled={!current}></textarea>
-        <button class="border rounded px-3 py-2" type="submit" disabled={!current || !input.trim()}>Wisk Away!</button>
+        <button class="border rounded px-3 py-2" type="submit" disabled={!current || !input.trim()}>Wiskr <br />&raquo;&nbsp;Me&nbsp;&laquo;<br />Away!</button>
       </form>
     </div>
   </div>

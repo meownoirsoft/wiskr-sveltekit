@@ -1,6 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
+  import EditDocModal from './EditDocModal.svelte';
+  import AddDocModal from './AddDocModal.svelte';
 
   export let docs = [];
   export let showAddDocForm = false;
@@ -8,23 +10,23 @@
   export let docContent = '';
   export let docTags = '';
   let openMenuIndex = -1; // Track which doc menu is open
+  let showEditModal = false;
+  let editingDoc = null;
+  let showAddModal = false;
 
   const dispatch = createEventDispatcher();
 
-  function toggleAddForm() {
-    showAddDocForm = !showAddDocForm;
+  function openAddModal() {
+    showAddModal = true;
   }
 
-  function addDoc() {
-    // Parse comma-separated tags
-    const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-    dispatch('add', { title: docTitle, content: docContent, tags });
+  function handleAddModalSave(event) {
+    dispatch('add', event.detail);
+    showAddModal = false;
   }
 
-  function cancelAdd() {
-    showAddDocForm = false;
-    docTags = '';
-    dispatch('cancel-add');
+  function handleAddModalClose() {
+    showAddModal = false;
   }
   
   function handleTagClick(tag) {
@@ -32,15 +34,18 @@
   }
 
   function startEditDoc(doc, index) {
-    dispatch('start-edit', { doc, index });
+    editingDoc = doc;
+    showEditModal = true;
+    closeMenu();
   }
 
-  function cancelEditDoc(doc, index) {
-    dispatch('cancel-edit', { doc, index });
+  function handleModalSave(event) {
+    dispatch('save-edit', event.detail);
   }
 
-  function saveDocEdit(doc, editData) {
-    dispatch('save-edit', { doc, editData });
+  function handleModalClose() {
+    showEditModal = false;
+    editingDoc = null;
   }
 
   function deleteDoc(doc, index) {
@@ -67,65 +72,41 @@
       <h3 class="font-semibold">Docs</h3>
       <button 
         class="flex items-center gap-1 text-sm bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 cursor-pointer" 
-        on:click={toggleAddForm}
-        title={showAddDocForm ? "Hide form" : "Add new doc"}
+        on:click={openAddModal}
+        title="Add new doc"
       >
         <Plus size="16" />
-        {showAddDocForm ? "Hide" : "Add Doc"}
+        Add Doc
       </button>
     </div>
-    
-    {#if showAddDocForm}
-      <div class="border rounded p-3 bg-white mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700">New Doc</span>
-          <span class="text-xs text-zinc-500">Longer notes, lore, specs</span>
-        </div>
-        <div class="grid gap-2">
-          <input class="border rounded p-2" placeholder="Title" bind:value={docTitle} />
-          <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={docContent}></textarea>
-          <input 
-            class="border rounded p-2" 
-            placeholder="Tags (comma-separated)" 
-            bind:value={docTags}
-            type="text"
-            autocomplete="off"
-            spellcheck="false"
-          />
-        </div>
-        <div class="mt-2 flex gap-2">
-          <button class="bg-green-500 text-white rounded px-3 py-1 hover:bg-green-600 cursor-pointer" on:click={addDoc}>Save Doc</button>
-          <button class="border rounded px-3 py-1 hover:bg-gray-50 cursor-pointer" on:click={cancelAdd}>Cancel</button>
-        </div>
-      </div>
-    {/if}
   </div>
 
   <!-- Scrollable Docs List -->
   <div class="flex-1 overflow-y-auto pr-1">
-    <ul class="space-y-2">
+    <div class="grid grid-cols-3 gap-2">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
-    <li class="text-sm border rounded p-2 bg-white">
-      <!-- Row 1: Title, Type Tag, and Icons -->
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-2 flex-1 min-w-0">
+    <div class="text-sm border border-purple-200 rounded p-2 bg-white">
+      <!-- Header: Title, Type Tag, and Menu -->
+      <div class="mb-2">
+        <!-- Top row: Pin icon + Title (can wrap) -->
+        <div class="flex items-start gap-2 mb-1">
           {#if d.pinned}
-            <Pin size="14" class="text-purple-600 flex-shrink-0" />
+            <Pin size="14" class="text-purple-600 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold flex-shrink-0">{d.title}</div>
-          <div class="flex-1 flex justify-end">
-            <span class="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700">doc</span>
-          </div>
+          <div class="font-semibold leading-tight break-words min-w-0 flex-1">{d.title}</div>
         </div>
-        <!-- Triple-dot menu -->
-        <div class="relative flex-shrink-0 ml-2">
-          <button 
-            class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
-            on:click={() => toggleMenu(i)}
-            title="More actions"
-          >
-            <MoreHorizontal size="18" />
-          </button>
+        <!-- Bottom row: Type tag and menu -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-700">doc</span>
+          <!-- Triple-dot menu -->
+          <div class="relative flex-shrink-0">
+            <button 
+              class="text-xs text-zinc-500 hover:text-zinc-700 cursor-pointer p-1" 
+              on:click={() => toggleMenu(i)}
+              title="More actions"
+            >
+              <MoreHorizontal size="18" />
+            </button>
           
           {#if openMenuIndex === i}
             <!-- Overlay to close menu when clicking outside -->
@@ -160,6 +141,7 @@
               </button>
             </div>
           {/if}
+          </div>
         </div>
       </div>
       
@@ -184,29 +166,26 @@
       {/if}
       
 
-      {#if d._editing}
-        <div class="mt-2 grid gap-2">
-          <input class="border rounded p-2" placeholder="Title" bind:value={d._editTitle} />
-          <textarea class="border rounded p-2" rows="6" placeholder="Content" bind:value={d._editContent}></textarea>
-          <input 
-            class="border rounded p-2" 
-            placeholder="Tags (comma-separated)" 
-            bind:value={d._editTags}
-            type="text"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <div class="flex gap-2">
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => saveDocEdit(d, { title: d._editTitle, content: d._editContent, tags: d._editTags ? d._editTags.split(',').map(t => t.trim()).filter(Boolean) : [] })}>Save</button>
-            <button class="border rounded px-2 hover:bg-gray-50 cursor-pointer" on:click={() => cancelEditDoc(d, i)}>Cancel</button>
-          </div>
-        </div>
-      {/if}
-    </li>
+    </div>
   {/each}
   {#if !docs.length}
-    <li class="text-sm text-zinc-500">No docs.</li>
+    <div class="col-span-3 text-sm text-zinc-500 text-center py-8">No docs.</div>
   {/if}
-    </ul>
+    </div>
   </div>
 </div>
+
+<!-- Edit Doc Modal -->
+<EditDocModal 
+  bind:showModal={showEditModal}
+  doc={editingDoc}
+  on:save={handleModalSave}
+  on:close={handleModalClose}
+/>
+
+<!-- Add Doc Modal -->
+<AddDocModal 
+  bind:showModal={showAddModal}
+  on:save={handleAddModalSave}
+  on:close={handleAddModalClose}
+/>

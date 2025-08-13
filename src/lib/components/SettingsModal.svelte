@@ -146,7 +146,8 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-2">General Settings</h3>
               <p class="text-gray-600">Basic project configuration options.</p>
             </div>
-            
+            <div class="space-y-6">
+              <div>
                 <label for="project-name" class="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
                 <input 
                   id="project-name"
@@ -155,8 +156,9 @@
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter project name"
                 />
-                  placeholder="Enter project name"
-                />
+              </div>
+              
+              <div>
                 <label for="project-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea 
                   id="project-description"
@@ -166,6 +168,7 @@
                   placeholder="Project description (optional)"
                 ></textarea>
               </div>
+            </div>
               
               <div class="flex justify-between items-center pt-6 border-t">
                 <p class="text-sm text-gray-500">More general settings will be added here in future updates.</p>
@@ -178,6 +181,7 @@
                   {savingGeneral ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
+          </div>
         {/if}
       </div>
     </div>
