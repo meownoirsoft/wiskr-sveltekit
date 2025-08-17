@@ -1,13 +1,14 @@
 // src/lib/server/openrouter.js
 import OpenAI from 'openai';
 import { OPENROUTER_API_KEY, OPENAI_API_KEY } from '$env/static/private';
+import { getAIName } from '$lib/config/aiAvatars.js';
 
 // OpenRouter model configurations with pricing
 export const OPENROUTER_MODELS = {
   // Fast and cheap models
   speed: {
     name: 'anthropic/claude-3-haiku',
-    friendlyName: 'Highland Coo (Haiku)',
+    friendlyName: getAIName('claude-3-haiku'),
     inPerTok: 0.25/1_000_000,
     outPerTok: 1.25/1_000_000,
     provider: 'openrouter',
@@ -18,7 +19,7 @@ export const OPENROUTER_MODELS = {
   // High quality models
   quality: {
     name: 'anthropic/claude-3-5-sonnet',
-    friendlyName: 'Pretty Floral Sonnet (Claude 3.5)',
+    friendlyName: getAIName('claude-3-5-sonnet'),
     inPerTok: 3.00/1_000_000,
     outPerTok: 15.00/1_000_000,
     provider: 'openrouter',
@@ -29,7 +30,7 @@ export const OPENROUTER_MODELS = {
   // Alternative quality option
   gpt4: {
     name: 'openai/gpt-4o',
-    friendlyName: 'Hawaii 4o (GPT-4o)',
+    friendlyName: getAIName('gpt-4o'),
     inPerTok: 2.50/1_000_000,
     outPerTok: 10.00/1_000_000,
     provider: 'openrouter',
@@ -40,7 +41,7 @@ export const OPENROUTER_MODELS = {
   // Ultra cheap for simple tasks
   micro: {
     name: 'google/gemini-flash-1.5',
-    friendlyName: 'The Flash (Gemini)',
+    friendlyName: getAIName('gemini-flash-1.5'),
     inPerTok: 0.075/1_000_000,
     outPerTok: 0.30/1_000_000,
     provider: 'openrouter',
@@ -48,10 +49,21 @@ export const OPENROUTER_MODELS = {
     category: 'Ultra Efficient'
   },
   
+  // Free GPT model
+  'gpt-oss': {
+    name: 'openai/gpt-4o-mini-2024-07-18',
+    friendlyName: getAIName('gpt-4o-mini-2024-07-18'),
+    inPerTok: 0.00/1_000_000,
+    outPerTok: 0.00/1_000_000,
+    provider: 'openrouter',
+    tier: 'Free',
+    category: 'Open Source'
+  },
+  
   // Additional popular models
   'gpt4-turbo': {
     name: 'openai/gpt-4-turbo',
-    friendlyName: 'Turbo Man (GPT 4 Turbo)',
+    friendlyName: getAIName('gpt-4-turbo'),
     inPerTok: 10.00/1_000_000,
     outPerTok: 30.00/1_000_000,
     provider: 'openrouter',
@@ -61,7 +73,7 @@ export const OPENROUTER_MODELS = {
   
   'claude-opus': {
     name: 'anthropic/claude-3-opus',
-    friendlyName: 'Mr. Holland (Claude Opus)',
+    friendlyName: getAIName('claude-3-opus'),
     inPerTok: 15.00/1_000_000,
     outPerTok: 75.00/1_000_000,
     provider: 'openrouter',
@@ -71,7 +83,7 @@ export const OPENROUTER_MODELS = {
   
   'gemini-pro': {
     name: 'google/gemini-pro-1.5',
-    friendlyName: 'Gemini (Pro)',
+    friendlyName: getAIName('gemini-pro-1.5'),
     inPerTok: 1.25/1_000_000,
     outPerTok: 5.00/1_000_000,
     provider: 'openrouter',
@@ -81,7 +93,7 @@ export const OPENROUTER_MODELS = {
   
   'llama-70b': {
     name: 'meta-llama/llama-3.1-70b-instruct',
-    friendlyName: 'Tina (Llama 3.1)',
+    friendlyName: getAIName('llama-3.1-70b-instruct'),
     inPerTok: 0.52/1_000_000,
     outPerTok: 0.75/1_000_000,
     provider: 'openrouter',
@@ -91,7 +103,7 @@ export const OPENROUTER_MODELS = {
   
   'llama-405b': {
     name: 'meta-llama/llama-3.1-405b-instruct',
-    friendlyName: 'Bigger Tina (Llama XL)',
+    friendlyName: getAIName('llama-3.1-405b-instruct'),
     inPerTok: 2.70/1_000_000,
     outPerTok: 2.70/1_000_000,
     provider: 'openrouter',
@@ -101,7 +113,7 @@ export const OPENROUTER_MODELS = {
   
   'mistral-large': {
     name: 'mistralai/mistral-large',
-    friendlyName: 'Mistral',
+    friendlyName: getAIName('mistral-large'),
     inPerTok: 2.00/1_000_000,
     outPerTok: 6.00/1_000_000,
     provider: 'openrouter',
@@ -111,7 +123,7 @@ export const OPENROUTER_MODELS = {
   
   'qwen-72b': {
     name: 'qwen/qwen-2.5-72b-instruct',
-    friendlyName: 'Qwen',
+    friendlyName: getAIName('qwen-2.5-72b-instruct'),
     inPerTok: 0.40/1_000_000,
     outPerTok: 0.40/1_000_000,
     provider: 'openrouter',
@@ -121,7 +133,7 @@ export const OPENROUTER_MODELS = {
   
   'deepseek-v3': {
     name: 'deepseek/deepseek-v3',
-    friendlyName: 'DeepSeek',
+    friendlyName: getAIName('deepseek-v3'),
     inPerTok: 0.27/1_000_000,
     outPerTok: 1.10/1_000_000,
     provider: 'openrouter',
@@ -213,6 +225,7 @@ export function getAvailableModels() {
   
   // Define tier priority order (most common user needs first)
   const tierPriority = {
+    'Free': 0,      // Free models - best value
     'Budget': 1,    // Ultra affordable - great starting point
     'Speed': 2,     // Fast and reliable - most popular
     'Value': 3,     // Great performance per dollar

@@ -7,6 +7,7 @@ export const MODEL_FRIENDLY_NAMES = {
   'quality': 'Sonnet',
   'gpt4': 'GPT-4o',
   'micro': 'Flash',
+  'gpt-oss': 'GPT OSS',
   'gpt4-turbo': 'Turbo',
   'claude-opus': 'Opus',
   'gemini-pro': 'Gemini',

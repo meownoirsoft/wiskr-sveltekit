@@ -37,10 +37,10 @@
   }
 </script>
 
-<div class="flex flex-col h-full bg-zinc-50 border-r overflow-hidden mobile-ideas-column">
+<div class="flex flex-col h-full border-r border-gray-200 dark:border-gray-700 overflow-hidden mobile-ideas-column">
   <!-- Header -->
-  <div class="p-4 border-b border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-900">Prompt Add-Ins</h2>
+  <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Prompt Add-Ins</h2>
   </div>
   
   <div class="p-4 h-full flex flex-col min-h-0">
@@ -55,7 +55,7 @@
     </div>
 
     <!-- Divider -->
-    <div class="border-t border-gray-200 my-2 flex-shrink-0" style="height: 1px;"></div>
+    <div class="border-t border-gray-200 dark:border-gray-600 my-2 flex-shrink-0" style="height: 1px;"></div>
 
     <!-- Related Ideas - Lower half (takes remaining space) -->
     <div class="flex-1 flex flex-col overflow-hidden min-h-0">

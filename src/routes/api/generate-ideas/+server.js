@@ -44,8 +44,24 @@ export const POST = async ({ request, locals }) => {
 
   const contextString = contextParts.join('\n\n');
   
-  // Calculate how many new ideas to generate (total target of 8, minus already liked ideas)
-  const maxIdeas = 8;
+  // Get user's preferred max ideas setting (default to 8 if not found)
+  let maxIdeas = 8;
+  try {
+    const { data: preferences } = await locals.supabase
+      .from('user_preferences')
+      .select('max_related_ideas')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (preferences && preferences.max_related_ideas) {
+      maxIdeas = preferences.max_related_ideas;
+    }
+  } catch (error) {
+    // If there's an error fetching preferences, use default
+    console.log('Using default maxIdeas due to preferences error:', error.message);
+  }
+  
+  // Calculate how many new ideas to generate (total target based on user preference, minus already liked ideas)
   const newIdeasToGenerate = Math.max(1, maxIdeas - likedIdeasCount);
 
   // Build system prompt with dismissed ideas context

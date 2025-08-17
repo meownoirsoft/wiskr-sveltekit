@@ -3,6 +3,7 @@ import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
 
 export default {
+  darkMode: 'class',
   content: [
     './src/**/*.{svelte,js,ts}',
     './src/routes/**/*.{svelte,js,ts}',

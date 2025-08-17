@@ -1,7 +1,8 @@
 <!-- src/lib/components/GoodQuestions.svelte -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, X, ChevronsLeft, Edit } from 'lucide-svelte';
+  import { Plus, X, ChevronsLeft, Edit, Info } from 'lucide-svelte';
+  import InfoPopup from './InfoPopup.svelte';
   import { browser } from '$app/environment';
 
   export let goodQuestions = [];
@@ -149,32 +150,45 @@
   <!-- Header -->
   <div class="flex-shrink-0">
     <div class="flex items-center justify-between mb-2" style="margin-left: 32px; margin-right: 4px;">
-      <h3 class="font-semibold text-gray-800">Next Questions</h3>
+      <div class="flex items-center gap-2">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-200">Next Questions</h3>
+        <InfoPopup
+          title="Next Questions"
+          content="<p><strong>Next Questions</strong> help you plan and track your project exploration.</p><p>This is your personal question queue for:</p><ul><li><strong>Follow-up inquiries</strong> - Things you want to ask the AI later</li><li><strong>Research reminders</strong> - Topics to investigate further</li><li><strong>Progress tracking</strong> - Check off questions as you explore them</li></ul><p><strong>How to use:</strong></p><ul><li>Click the <strong>left arrow</strong> to instantly add any question to your chat input</li><li>Use the <strong>checkbox</strong> to mark questions as answered</li><li><strong>Edit or delete</strong> questions as your project evolves</li></ul><p>Keep your curiosity organized and never lose track of what you wanted to explore!</p>"
+          buttonTitle="Learn about Next Questions"
+        />
+      </div>
       <button 
-        class="flex items-center gap-1 text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 cursor-pointer" 
+        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer" 
+        style="background-color: var(--color-accent); transition: background-color 0.2s ease;" 
+        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         on:click={() => showAddForm = !showAddForm}
         title={showAddForm ? "Cancel" : "Add question"}
       >
         <Plus size="16" />
-        {showAddForm ? "Cancel" : "Add"}
+        {showAddForm ? "Cancel" : "Question"}
       </button>
     </div>
 
     {#if showAddForm}
-      <div class="border rounded p-3 bg-white mb-3">
+      <div class="border border-gray-200 dark:border-gray-600 rounded p-3 mb-3" style="background-color: var(--bg-card);">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700">New Question</span>
-          <span class="text-xs text-zinc-500">What do you want to explore next?</span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">New Question</span>
+          <span class="text-xs text-zinc-500 dark:text-zinc-400">What do you want to explore next?</span>
         </div>
         <div class="flex gap-2">
           <input 
-            class="border rounded p-2 flex-1" 
+            class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded p-2 flex-1" 
             placeholder="What if...? How does...? Why might...?" 
             bind:value={newQuestion}
             on:keydown={handleKeydown}
           />
           <button 
-            class="bg-green-500 text-white rounded px-3 py-1 hover:bg-green-600 cursor-pointer" 
+            class="text-white rounded px-3 py-1 cursor-pointer" 
+            style="background-color: var(--color-accent); transition: background-color 0.2s ease;" 
+            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
             on:click={addQuestion}
           >
             Add
@@ -189,11 +203,13 @@
     <div class="h-full overflow-y-auto pr-1">
       <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
       {#each goodQuestions as question, i}
-        <li class="relative text-sm border rounded p-2 bg-white group hover:bg-gray-50">
+        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded p-2 group hover:bg-gray-50 dark:hover:bg-gray-600" style="background-color: var(--bg-card);">
           <!-- Chevron button outside card on the left, always visible -->
           <button 
-            class="absolute text-blue-500 hover:text-blue-700 p-2 flex-shrink-0 cursor-pointer z-10" 
-            style="left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%);"
+            class="absolute p-2 flex-shrink-0 cursor-pointer z-10" 
+            style="left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%); color: var(--color-accent); transition: color 0.2s ease;" 
+            on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
+            on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
             on:click={() => insertQuestion(question)}
             title="Add to chat input"
           >
@@ -204,7 +220,7 @@
             <!-- Edit mode -->
             <div class="flex gap-2">
               <textarea 
-                class="flex-1 border rounded px-2 py-1 text-sm resize-none" 
+                class="flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded px-2 py-1 text-sm resize-none" 
                 rows="3"
                 bind:value={editingText}
                 on:keydown={handleEditKeydown}
@@ -239,7 +255,7 @@
               />
               
               <!-- Center section: question text -->
-              <div class="flex-1 leading-snug {completedStates[i] ? 'text-gray-400' : 'text-gray-900'}" style={completedStates[i] ? 'text-decoration: line-through !important;' : 'text-decoration: none;'}>
+              <div class="flex-1 leading-snug {completedStates[i] ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}" style={completedStates[i] ? 'text-decoration: line-through !important;' : 'text-decoration: none;'}>
                 {question}
               </div>
               
@@ -265,7 +281,7 @@
         </li>
       {/each}
       {#if !goodQuestions.length}
-        <li class="text-sm text-zinc-500 italic ml-0"> <!-- Reset margin for empty state -->
+        <li class="text-sm text-zinc-500 dark:text-zinc-400 italic ml-0"> <!-- Reset margin for empty state -->
           No questions yet. Add some thoughts to explore later!
         </li>
       {/if}

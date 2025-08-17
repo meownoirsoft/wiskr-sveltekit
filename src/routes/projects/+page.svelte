@@ -15,6 +15,8 @@
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
   import SettingsModal from '$lib/components/SettingsModal.svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+  import SessionNavigator from '$lib/components/SessionNavigator.svelte';
+  import MrWiskrModal from '$lib/components/MrWiskrModal.svelte';
   
   // Import Lucide icons
   import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash } from 'lucide-svelte';
@@ -69,9 +71,16 @@
     // Wait for reactive update to set current project
     await tick();
     
+    // Reset branch state when switching projects
+    currentBranchId = 'main';
+    currentBranch = null;
+    branches = [];
+    
+    // Load sessions first, then select active session
+    await loadSessions();
+    
     // load for this project (now that current is set)
     await loadBranches();
-    await loadMessages(id);
     await loadContext();
     await loadUsage();
     
@@ -149,8 +158,10 @@
   let docTags = '';
   let showAddDocForm = false;
 
-  // Usage stats visibility
+  // Usage stats visibility and popover
   let showUsageStats = false;
+  let showUsagePopover = false;
+  let usageButtonElement;
 
 
   // New Project modal state
@@ -165,6 +176,11 @@
   let showSettingsModal = false;
   let settingsProject = null;
   
+  // Mr Wiskr modal state
+  let showMrWiskrModal = false;
+  let mrWiskrLoading = false;
+  let mrWiskrModalRef;
+  
   // Component references
   let sidebarComponent;
 
@@ -176,6 +192,12 @@
   // Sidebar tab state
   let activeTab = 'facts';
   
+  // Session management state
+  let sessions = [];
+  let currentSession = null;
+  let showSessionNavigator = false;
+  let sessionNavigatorElement;
+  
   // Panel visibility state - responsive defaults
   let showLeftPanel = false;   // Facts/Docs panel
   let showRightPanel = false;  // Questions/Ideas panel
@@ -184,6 +206,7 @@
 
   // Store the handler reference so it can be properly cleaned up
   let projectsRefreshHandler;
+  let usageToggleHandler;
 
   // Responsive screen detection
   function checkScreenSize() {
@@ -249,6 +272,18 @@
       window.addEventListener('search:filter', handleSearchFilter);
       window.addEventListener('search:navigate-chat', handleSearchNavigateChat);
       window.addEventListener('search:clear', handleSearchClear);
+      
+      // Listen for usage toggle from header
+      usageToggleHandler = () => {
+        showUsagePopover = !showUsagePopover;
+      };
+      window.addEventListener('usage:toggle', usageToggleHandler);
+      
+      // Listen for Mr Wiskr button from header
+      window.addEventListener('mrwiskr:open', handleMrWiskrOpen);
+      
+      // Add click outside listener for sessions panel
+      document.addEventListener('click', handleClickOutside);
     }
   });
 
@@ -258,11 +293,20 @@
       if (projectsRefreshHandler) {
         window.removeEventListener('projects:refresh', projectsRefreshHandler);
       }
+      if (usageToggleHandler) {
+        window.removeEventListener('usage:toggle', usageToggleHandler);
+      }
       // Clean up search event listeners
       window.removeEventListener('search:activate-tab', handleSearchActivateTab);
       window.removeEventListener('search:filter', handleSearchFilter);
       window.removeEventListener('search:navigate-chat', handleSearchNavigateChat);
       window.removeEventListener('search:clear', handleSearchClear);
+      
+      // Clean up Mr Wiskr event listener
+      window.removeEventListener('mrwiskr:open', handleMrWiskrOpen);
+      
+      // Remove click outside listener
+      document.removeEventListener('click', handleClickOutside);
     }
   });
 
@@ -341,7 +385,7 @@
   }
 
   async function send(event) {
-    if (!current || !event.detail.message.trim()) return;
+    if (!current || !currentSession || !event.detail.message.trim()) return;
     const userMsg = event.detail.message;
     input = '';
     messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '', model_key: modelKey }];
@@ -349,7 +393,7 @@
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: current.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
+      body: JSON.stringify({ projectId: current.id, sessionId: currentSession.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
     });
     if (res.status === 429) {
       const data = await res.json();
@@ -482,7 +526,6 @@
   }
 
 async function toggleFactPin(f) {
-    console.log('Toggling fact pin for:', f.key, 'from', f.pinned, 'to', !f.pinned);
     const res = await fetch(`/api/facts/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -664,7 +707,7 @@ async function openBranchModal(messageIndex) {
   branchCreateError = ''; // Clear any previous errors
   
   // Load branches for this specific message
-  if (current && messages[messageIndex]?.id) {
+  if (current && currentSession && messages[messageIndex]?.id) {
     const messageId = messages[messageIndex].id;
     try {
       const res = await fetch('/api/branches', {
@@ -673,6 +716,7 @@ async function openBranchModal(messageIndex) {
         body: JSON.stringify({ 
           action: 'listForMessage', 
           projectId: current.id,
+          sessionId: currentSession.id,
           messageId: messageId
         })
       });
@@ -748,22 +792,16 @@ async function createBranch() {
 }
 
 async function switchToBranch(branchId) {
-  console.log('Parent: switchToBranch called with:', branchId, 'current branchId:', currentBranchId);
-  console.log('Parent: current object:', current);
-  console.log('Parent: current.id:', JSON.stringify(current?.id), 'type:', typeof current?.id, 'length:', current?.id?.length);
   if (!current || branchId === currentBranchId) {
-    console.log('Parent: switchToBranch early return - no current or same branch');
     return;
   }
   
   try {
-    console.log('Parent: Making API call to switch branch');
     const requestBody = {
       action: 'switch',
       projectId: current.id,
       branchId: branchId
     };
-    console.log('Parent: Request body:', JSON.stringify(requestBody));
     const res = await fetch('/api/branches', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -772,13 +810,11 @@ async function switchToBranch(branchId) {
     
     if (res.ok) {
       const data = await res.json();
-      console.log('Parent: API response:', data);
       currentBranchId = branchId;
       currentBranch = data.branch;
       messages = data.messages || [];
-      console.log('Parent: Updated messages:', messages.length, 'messages');
     } else {
-      console.error('Parent: API response not ok:', res.status, res.statusText);
+      console.error('Failed to switch branch:', res.status, res.statusText);
     }
   } catch (error) {
     console.error('Error switching branch:', error);
@@ -955,7 +991,6 @@ function handleDocTogglePin(event) {
 }
 
 function handleSwitchToBranch(event) {
-  console.log('Parent: handleSwitchToBranch called with event.detail:', event.detail);
   switchToBranch(event.detail);
 }
 
@@ -1248,13 +1283,237 @@ function handleTextAddToDocs(event) {
     search = '';
     // Could also clear filters in other components if needed
   }
+
+  // Session Management Functions
+  async function loadSessions() {
+    if (!current) return;
+    
+    try {
+      // Clear current session when loading for a new project
+      // This ensures we don't show sessions from the previous project
+      currentSession = null;
+      sessions = [];
+      messages = [];
+      
+      const res = await fetch(`/api/sessions?projectId=${current.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        sessions = data.sessions || [];
+        
+        // Select the active session or the first one if available
+        if (sessions.length > 0) {
+          const activeSession = sessions.find(s => s.is_active) || sessions[0];
+          currentSession = activeSession;
+          
+          // Load messages and branches for the selected session
+          if (currentSession) {
+            await loadSessionMessages(currentSession.id);
+            await loadSessionBranches(currentSession.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  }
+
+  async function selectSession(session) {
+    if (session.id === currentSession?.id) return;
+    
+    try {
+      // Activate this session
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'activate',
+          projectId: current.id,
+          sessionId: session.id
+        })
+      });
+      
+      if (res.ok) {
+        currentSession = session;
+        // Load messages and branches for this session
+        await loadSessionMessages(session.id);
+        await loadSessionBranches(session.id);
+      }
+    } catch (error) {
+      console.error('Error selecting session:', error);
+    }
+  }
+
+  async function loadSessionMessages(sessionId) {
+    if (!current || !sessionId) return;
+    
+    loadingMessages = true;
+    const startTime = Date.now();
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('branch_id', currentBranchId)
+        .order('created_at');
+      
+      // Ensure minimum loading duration
+      const elapsed = Date.now() - startTime;
+      const minDuration = 500;
+      if (elapsed < minDuration) {
+        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
+      }
+      
+      if (error) {
+        console.error('Error loading session messages:', error);
+      } else {
+        messages = data || [];
+      }
+    } catch (error) {
+      console.error('Error loading session messages:', error);
+    } finally {
+      loadingMessages = false;
+    }
+  }
+
+  async function loadSessionBranches(sessionId) {
+    if (!current || !sessionId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('conversation_branches')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at');
+      
+      if (error) {
+        console.error('Error loading session branches:', error);
+      } else {
+        branches = data || [];
+        // Set current branch info
+        currentBranch = branches.find(b => b.branch_id === currentBranchId) || 
+                       branches.find(b => b.branch_id === 'main') || null;
+      }
+    } catch (error) {
+      console.error('Error loading session branches:', error);
+    }
+  }
+
+  // Session event handlers
+  function handleSessionSelect(event) {
+    selectSession(event.detail);
+    // Close the session navigator panel after selecting a session
+    showSessionNavigator = false;
+  }
+
+  async function handleSessionCreated(event) {
+    // Reload sessions and select the new one
+    await loadSessions();
+    if (event.detail) {
+      await selectSession(event.detail);
+    }
+  }
+
+  async function handleSessionUpdated() {
+    // Reload sessions to get updated data
+    await loadSessions();
+  }
+
+  async function handleSessionDeleted(event) {
+    // Remove from local array and select another
+    sessions = sessions.filter(s => s.id !== event.detail.id);
+    
+    if (currentSession?.id === event.detail.id) {
+      // Select another session if available
+      if (sessions.length > 0) {
+        await selectSession(sessions[0]);
+      } else {
+        currentSession = null;
+        messages = [];
+        branches = [];
+      }
+    }
+  }
+
+  function handleToggleSessionNavigator() {
+    showSessionNavigator = !showSessionNavigator;
+  }
+
+  // Click outside handler for sessions panel
+  function handleClickOutside(event) {
+    if (showSessionNavigator && sessionNavigatorElement && !sessionNavigatorElement.contains(event.target)) {
+      // Check if click is not on the Sessions button in the header
+      const isSessionsButton = event.target.closest('[data-sessions-button]');
+      if (!isSessionsButton) {
+        showSessionNavigator = false;
+      }
+    }
+  }
+  
+  // Mr Wiskr modal event handlers
+  function handleMrWiskrOpen() {
+    showMrWiskrModal = true;
+  }
+  
+  function handleMrWiskrClose() {
+    showMrWiskrModal = false;
+  }
+  
+  async function handleMrWiskrAsk(event) {
+    const { question } = event.detail;
+    
+    if (!question || mrWiskrLoading) return;
+    
+    mrWiskrLoading = true;
+    
+    try {
+      // Simulate Mr Wiskr's helpful response (you can replace this with actual API call)
+      const responses = [
+        "Purr-fect question! 🐱 Here's what I'd recommend based on my experience helping users with Wiskr...",
+        "Meow! That's a great question. Let me share some wisdom from my digital catnap observations...",
+        "*stretches paws* Ah yes, I've seen this before! Here's how you can tackle that...",
+        "*adjusts wizard hat* Excellent question, human! Based on my extensive cat-alog of user interactions...",
+        "*purrs thoughtfully* I've helped many users with similar issues. Here's my feline-tuned advice..."
+      ];
+      
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      
+      // Add some context-specific help
+      let contextHelp = "";
+      if (question.toLowerCase().includes('bug') || question.toLowerCase().includes('error')) {
+        contextHelp = "\n\nFor bugs, I recommend checking the browser console (F12) for error messages and noting exactly what steps led to the issue. You can also try refreshing the page or clearing your browser cache.";
+      } else if (question.toLowerCase().includes('project') || question.toLowerCase().includes('organize')) {
+        contextHelp = "\n\nFor project organization, remember that you can use tags in facts and docs to categorize information, and the branch system lets you explore different conversation paths without losing your main thread.";
+      } else if (question.toLowerCase().includes('ai') || question.toLowerCase().includes('model')) {
+        contextHelp = "\n\nWhen working with AI models, try the Speed model for quick questions and Quality model for complex tasks. If an AI starts hallucinating, try rephrasing your question or breaking it into smaller parts.";
+      }
+      
+      const fullResponse = randomResponse + "\n\n" + question + contextHelp + "\n\n*whiskers twitch with satisfaction* 😸";
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+      
+      // Set response in the modal
+      if (mrWiskrModalRef) {
+        mrWiskrModalRef.setResponse(fullResponse);
+      }
+    } catch (error) {
+      console.error('Error asking Mr Wiskr:', error);
+      if (mrWiskrModalRef) {
+        mrWiskrModalRef.setResponse("*ears droop* Oops! Something went wrong with my whisker-net connection. Please try asking again! 🙀");
+      }
+    } finally {
+      mrWiskrLoading = false;
+    }
+  }
+
 </script>
 
 <!-- Layout -->
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out bg-gray-50 border-r overflow-hidden flex-shrink-0">
+  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar" style="background-color: var(--bg-panel-left);">
     {#if showLeftPanel}
       <Sidebar 
         bind:this={sidebarComponent}
@@ -1292,20 +1551,23 @@ function handleTextAddToDocs(event) {
     {/if}
   </div>
 
+
   <!-- Left Toggle Button (Mobile/Tablet Only) -->
   <div class="absolute left-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
     <button 
-      class="bg-white border border-gray-300 rounded-r-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showLeftPanel ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}" 
+      class="border border-gray-300 dark:border-gray-600 rounded-r-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showLeftPanel ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : ''}" style="background-color: var(--bg-modal, white);"
+      on:mouseenter={(e) => !showLeftPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-button-secondary-hover)')} 
+      on:mouseleave={(e) => !showLeftPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-modal)')}
       on:click={toggleLeftPanel}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showLeftPanel ? 'text-blue-600' : 'text-gray-600'}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showLeftPanel ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}">
         {#if showLeftPanel}
           <path d="M15 18l-6-6 6-6"/>
         {:else}
           <path d="M9 18l6-6-6-6"/>
         {/if}
       </svg>
-      <div class="text-xs font-medium text-center leading-tight {showLeftPanel ? 'text-blue-700' : 'text-gray-700'}">
+      <div class="text-xs font-medium text-center leading-tight {showLeftPanel ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
         Facts<br/>& Docs
       </div>
     </button>
@@ -1314,17 +1576,18 @@ function handleTextAddToDocs(event) {
   <!-- Right Toggle Button (Mobile/Tablet Only) -->
   <div class="absolute right-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
     <button 
-      class="bg-white border border-gray-300 rounded-l-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showRightPanel ? 'bg-purple-50 border-purple-200' : 'hover:bg-gray-50'}" 
+      class="border border-gray-300 dark:border-gray-600 rounded-l-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showRightPanel ? 'bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700' : ''}" style="background-color: var(--bg-modal, white);" on:mouseenter={(e) => !showRightPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-button-secondary-hover)')} 
+      on:mouseleave={(e) => !showRightPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-modal)')}
       on:click={toggleRightPanel}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showRightPanel ? 'text-purple-600' : 'text-gray-600'}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showRightPanel ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}">
         {#if showRightPanel}
           <path d="M9 18l6-6-6-6"/>
         {:else}
           <path d="M15 18l-6-6 6-6"/>
         {/if}
       </svg>
-      <div class="text-xs font-medium text-center leading-tight {showRightPanel ? 'text-purple-700' : 'text-gray-700'}">
+      <div class="text-xs font-medium text-center leading-tight {showRightPanel ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'}">
         Questions & Ideas
       </div>
     </button>
@@ -1346,6 +1609,9 @@ function handleTextAddToDocs(event) {
       {currentBranchId}
       {usage}
       bind:showUsageStats
+      {showSessionNavigator}
+      {sessions}
+      {currentSession}
       on:send={send}
       on:switch-branch={handleSwitchToBranch}
       on:open-format-modal={handleOpenFormatModal}
@@ -1356,12 +1622,30 @@ function handleTextAddToDocs(event) {
       on:add-to-docs={handleTextAddToDocs}
       on:add-to-questions={handleTextAddToQuestions}
       on:format-text={handleFormatText}
+      on:toggle-session-navigator={handleToggleSessionNavigator}
     />
+    
+    <!-- SESSION NAVIGATOR (overlays chat below header) -->
+    <div 
+      bind:this={sessionNavigatorElement}
+      class="absolute left-0 top-16 bottom-0 z-50 transition-all duration-300 ease-in-out {showSessionNavigator ? 'translate-x-0 visible opacity-100' : '-translate-x-full invisible opacity-0'}"
+    >
+      <SessionNavigator 
+        {sessions}
+        {currentSession}
+        projectId={current?.id}
+        isVisible={showSessionNavigator}
+        on:select-session={handleSessionSelect}
+        on:session-created={handleSessionCreated}
+        on:session-updated={handleSessionUpdated}
+        on:session-deleted={handleSessionDeleted}
+      />
+    </div>
     </div>
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out bg-zinc-50 border-l overflow-hidden flex-shrink-0">
+  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar" style="background-color: var(--bg-panel-right);">
     {#if showRightPanel}
       <IdeasColumn 
         {goodQuestions}
@@ -1376,6 +1660,46 @@ function handleTextAddToDocs(event) {
     {/if}
   </div>
 </div>
+
+<!-- Usage Popover -->
+{#if showUsagePopover && usage}
+  <div class="fixed inset-0 backdrop-blur-sm bg-black/50 dark:bg-black/70 z-40 flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
+    <div class="bg-white border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 min-w-[300px]" style="background-color: var(--bg-modal, white);" on:click|stopPropagation>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Usage Stats</h3>
+        <button 
+          on:click={() => showUsagePopover = false}
+          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+          title="Close"
+        >
+          ✕
+        </button>
+      </div>
+      
+      <div class="text-xs text-gray-600 dark:text-gray-400 space-y-2">
+        <div class="text-gray-700 dark:text-gray-300 font-medium mb-2">Total Usage (All Projects):</div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
+          <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">Today</div>
+          <div class="text-gray-600 dark:text-gray-400">{usage.today.in.toLocaleString()} in / {usage.today.out.toLocaleString()} out</div>
+          <div class="font-medium text-gray-700 dark:text-gray-300">${usage.today.cost.toFixed(4)}</div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
+          <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">Last 7 days</div>
+          <div class="text-gray-600 dark:text-gray-400">{usage.week.in.toLocaleString()} in / {usage.week.out.toLocaleString()} out</div>
+          <div class="font-medium text-gray-700 dark:text-gray-300">${usage.week.cost.toFixed(4)}</div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
+          <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">This month</div>
+          <div>{usage.month.in.toLocaleString()} in / {usage.month.out.toLocaleString()} out</div>
+          <div class="font-medium">${usage.month.cost.toFixed(4)}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <!-- Modals -->
 <FormatModal 
@@ -1418,5 +1742,13 @@ function handleTextAddToDocs(event) {
   {showSettingsModal}
   project={settingsProject}
   on:close={handleSettingsModalClose}
+/>
+
+<MrWiskrModal
+  bind:this={mrWiskrModalRef}
+  showModal={showMrWiskrModal}
+  loading={mrWiskrLoading}
+  on:close={handleMrWiskrClose}
+  on:ask={handleMrWiskrAsk}
 />
 

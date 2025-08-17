@@ -36,6 +36,7 @@
 		"vite": "^7.0.4"
 	},
 	"dependencies": {
+		"@floating-ui/dom": "^1.7.3",
 		"@supabase/auth-helpers-sveltekit": "^0.13.0",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.54.0",

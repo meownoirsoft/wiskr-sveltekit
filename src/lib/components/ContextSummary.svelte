@@ -19,7 +19,11 @@
   <div class="flex flex-col h-full">
     <div class="flex justify-end mb-2 flex-shrink-0">
       <button 
-        class="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors" 
+        id="regenerate-summary"
+        class="flex items-center gap-2 px-3 py-1 text-sm rounded border transition-colors" 
+        style="color: var(--color-accent);"
+        on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.color = 'var(--color-accent-hover)'; }}
+        on:mouseleave={(e) => { e.target.style.backgroundColor = ''; e.target.style.color = 'var(--color-accent)'; }}
         on:click={regenerateBrief} 
         title="Regenerate Summary"
       >

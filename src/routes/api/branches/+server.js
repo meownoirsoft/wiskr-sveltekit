@@ -19,23 +19,23 @@ export async function POST({ request, locals }) {
 
   try {
     const body = await request.json();
-    const { action, projectId, messageId, branchName, branchId, newName } = body;
+    const { action, projectId, sessionId, messageId, branchName, branchId, newName } = body;
     
     switch (action) {
       case 'create':
-        return await createBranch(locals.supabase, projectId, messageId, branchName);
+        return await createBranch(locals.supabase, projectId, sessionId, messageId, branchName);
       case 'list':
-        return await listBranches(locals.supabase, projectId);
+        return await listBranches(locals.supabase, projectId, sessionId);
       case 'listForMessage':
-        return await listBranchesForMessage(locals.supabase, projectId, messageId);
+        return await listBranchesForMessage(locals.supabase, projectId, sessionId, messageId);
       case 'switch':
-        return await switchBranch(locals.supabase, projectId, branchId);
+        return await switchBranch(locals.supabase, projectId, sessionId, branchId);
       case 'rename':
-        return await renameBranch(locals.supabase, projectId, branchId, newName);
+        return await renameBranch(locals.supabase, projectId, sessionId, branchId, newName);
       case 'delete':
-        return await deleteBranch(locals.supabase, projectId, branchId);
+        return await deleteBranch(locals.supabase, projectId, sessionId, branchId);
       case 'getBranchCounts':
-        return await getBranchCounts(locals.supabase, projectId);
+        return await getBranchCounts(locals.supabase, projectId, sessionId);
       default:
         return json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -45,13 +45,14 @@ export async function POST({ request, locals }) {
   }
 }
 
-async function createBranch(supabase, projectId, parentMessageId, branchName) {
+async function createBranch(supabase, projectId, sessionId, parentMessageId, branchName) {
   // Check for duplicate branch name within the same parent message
   if (parentMessageId && branchName) {
     const { data: existingBranch } = await supabase
       .from('conversation_branches')
       .select('branch_name')
       .eq('project_id', projectId)
+      .eq('session_id', sessionId)
       .eq('parent_message_id', parentMessageId)
       .eq('branch_name', branchName.trim())
       .single();
@@ -70,7 +71,8 @@ async function createBranch(supabase, projectId, parentMessageId, branchName) {
   const { data: existingBranches } = await supabase
     .from('conversation_branches')
     .select('color_index')
-    .eq('project_id', projectId);
+    .eq('project_id', projectId)
+    .eq('session_id', sessionId);
   
   const colorIndex = existingBranches?.length % RAINBOW_COLORS.length || 0;
   
@@ -79,6 +81,7 @@ async function createBranch(supabase, projectId, parentMessageId, branchName) {
     .from('conversation_branches')
     .insert({
       project_id: projectId,
+      session_id: sessionId,
       branch_id: branchId,
       branch_name: branchName || `Branch ${existingBranches?.length + 1}`,
       parent_message_id: parentMessageId,
@@ -137,62 +140,38 @@ async function createBranch(supabase, projectId, parentMessageId, branchName) {
   });
 }
 
-async function listBranches(supabase, projectId) {
-  // First check if main branch has messages
-  const { data: mainMessages } = await supabase
-    .from('messages')
-    .select('id')
-    .eq('project_id', projectId)
-    .eq('branch_id', 'main')
-    .limit(1);
-
+async function listBranches(supabase, projectId, sessionId) {
   const { data: branches, error } = await supabase
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .order('created_at');
     
   if (error) {
     return json({ error: 'Failed to fetch branches' }, { status: 500 });
   }
   
-  // Add other branches with color classes first
+  console.log('Raw branches from DB for project', projectId, ':', branches);
+  
+  // Add color classes to branches
   const branchesWithColors = branches?.map(branch => ({
     ...branch,
     colorClass: RAINBOW_COLORS[branch.color_index % RAINBOW_COLORS.length]
   })) || [];
   
-  let allBranches = branchesWithColors;
+  console.log('Branches with colors:', branchesWithColors);
   
-  // Only add automatic "Main" branch if:
-  // 1. There are messages in the main branch, AND
-  // 2. There's no existing custom branch with a similar name
-  const hasMainLikeBranch = branchesWithColors.some(b => 
-    b.branch_name?.toLowerCase().includes('main') || 
-    b.branch_name?.toLowerCase().includes('conversation')
-  );
-  
-  if (mainMessages && mainMessages.length > 0 && !hasMainLikeBranch) {
-    // Add main branch at the beginning only if no similar branch exists
-    allBranches.unshift({
-      project_id: projectId,
-      branch_id: 'main',
-      branch_name: 'Main',
-      color_index: 0,
-      created_at: new Date().toISOString(),
-      colorClass: 'bg-white border-gray-200'
-    });
-  }
-  
-  return json({ branches: allBranches });
+  return json({ branches: branchesWithColors });
 }
 
-async function listBranchesForMessage(supabase, projectId, messageId) {
+async function listBranchesForMessage(supabase, projectId, sessionId, messageId) {
   // Get branches that were created from this specific message
   const { data: branches, error } = await supabase
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .eq('parent_message_id', messageId)
     .order('created_at');
     
@@ -209,7 +188,7 @@ async function listBranchesForMessage(supabase, projectId, messageId) {
   return json({ branches: branchesWithColors });
 }
 
-async function switchBranch(supabase, projectId, branchId) {
+async function switchBranch(supabase, projectId, sessionId, branchId) {
   // Fetch messages for the specified branch
   const { data: messages, error } = await supabase
     .from('messages')
@@ -223,32 +202,19 @@ async function switchBranch(supabase, projectId, branchId) {
     return json({ error: 'Failed to fetch branch messages' }, { status: 500 });
   }
   
-  let branch = null;
-  
-  if (branchId === 'main') {
-    // Handle main branch specially
-    branch = {
-      project_id: projectId,
-      branch_id: 'main',
-      branch_name: 'Main',
-      color_index: 0,
-      created_at: new Date().toISOString(),
-      colorClass: 'bg-white border-gray-200'
-    };
-  } else {
-    // Fetch branch info from conversation_branches table
-    const { data: branchData } = await supabase
-      .from('conversation_branches')
-      .select('*')
-      .eq('project_id', projectId)
-      .eq('branch_id', branchId)
-      .single();
-      
-    branch = branchData ? {
-      ...branchData,
-      colorClass: RAINBOW_COLORS[branchData.color_index % RAINBOW_COLORS.length]
-    } : null;
-  }
+  // Fetch branch info from conversation_branches table for all branches (including main)
+  const { data: branchData } = await supabase
+    .from('conversation_branches')
+    .select('*')
+    .eq('project_id', projectId)
+    .eq('session_id', sessionId)
+    .eq('branch_id', branchId)
+    .single();
+    
+  const branch = branchData ? {
+    ...branchData,
+    colorClass: RAINBOW_COLORS[branchData.color_index % RAINBOW_COLORS.length]
+  } : null;
     
   return json({ 
     success: true, 
@@ -257,7 +223,7 @@ async function switchBranch(supabase, projectId, branchId) {
   });
 }
 
-async function renameBranch(supabase, projectId, branchId, newName) {
+async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
   // Don't allow renaming the main branch
   if (branchId === 'main') {
     return json({ error: 'Cannot rename the main branch' }, { status: 400 });
@@ -272,6 +238,7 @@ async function renameBranch(supabase, projectId, branchId, newName) {
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .eq('branch_id', branchId)
     .single();
     
@@ -285,6 +252,7 @@ async function renameBranch(supabase, projectId, branchId, newName) {
       .from('conversation_branches')
       .select('branch_id')
       .eq('project_id', projectId)
+      .eq('session_id', sessionId)
       .eq('parent_message_id', existingBranch.parent_message_id)
       .eq('branch_name', newName.trim())
       .neq('branch_id', branchId)
@@ -302,6 +270,7 @@ async function renameBranch(supabase, projectId, branchId, newName) {
     .from('conversation_branches')
     .update({ branch_name: newName.trim() })
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .eq('branch_id', branchId);
     
   if (updateError) {
@@ -312,7 +281,7 @@ async function renameBranch(supabase, projectId, branchId, newName) {
   return json({ success: true });
 }
 
-async function deleteBranch(supabase, projectId, branchId) {
+async function deleteBranch(supabase, projectId, sessionId, branchId) {
   // Don't allow deleting the main branch
   if (branchId === 'main') {
     return json({ error: 'Cannot delete the main branch' }, { status: 400 });
@@ -323,6 +292,7 @@ async function deleteBranch(supabase, projectId, branchId) {
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .eq('branch_id', branchId)
     .single();
     
@@ -347,6 +317,7 @@ async function deleteBranch(supabase, projectId, branchId) {
     .from('conversation_branches')
     .delete()
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .eq('branch_id', branchId);
     
   if (branchError) {
@@ -357,12 +328,13 @@ async function deleteBranch(supabase, projectId, branchId) {
   return json({ success: true });
 }
 
-async function getBranchCounts(supabase, projectId) {
+async function getBranchCounts(supabase, projectId, sessionId) {
   // Get count of branches for each message in a single query
   const { data: branchCounts, error } = await supabase
     .from('conversation_branches')
     .select('parent_message_id')
     .eq('project_id', projectId)
+    .eq('session_id', sessionId)
     .not('parent_message_id', 'is', null);
     
   if (error) {

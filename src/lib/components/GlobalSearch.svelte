@@ -58,8 +58,8 @@
   
   // Handle search input changes
   function handleSearchInput() {
-    // Immediately filter content based on current search term
-    if (searchTerm.length >= 1) {
+    // Only filter and highlight if search term is 3+ characters
+    if (searchTerm.length >= 3) {
       // Dispatch real-time filtering for all content types
       dispatch('filter', { type: 'facts', query: searchTerm });
       dispatch('filter', { type: 'docs', query: searchTerm });
@@ -82,7 +82,7 @@
         applyHighlighting();
       }, 1000);
     } else {
-      // Clear filters when search is empty
+      // Clear filters when search is less than 3 characters
       dispatch('clear');
       removeHighlights();
     }
@@ -252,9 +252,21 @@
       highlightedContainers.push(...containers);
     });
     
-    // Apply container highlighting and word highlighting within containers
-    highlightedContainers.forEach(container => {
+    // Filter containers to only highlight the most immediate ones (remove nested highlighting)
+    const immediateContainers = highlightedContainers.filter(container => {
+      // Check if this container is nested inside another container in our list
+      return !highlightedContainers.some(otherContainer => {
+        return otherContainer !== container && otherContainer.contains(container);
+      });
+    });
+    
+    // Apply container highlighting only to immediate containers, but word highlighting to all
+    immediateContainers.forEach(container => {
       container.classList.add('search-highlight-container');
+    });
+    
+    // Apply word highlighting to all containers (even nested ones)
+    highlightedContainers.forEach(container => {
       highlightTextInElement(container, highlightedTerm);
     });
     
@@ -364,66 +376,91 @@
     const containers = [];
     const regex = new RegExp(escapeRegex(searchTerm), 'gi');
     
-    // Check if this is the right column (ideas column)
-    const isRightColumn = element.classList && element.classList.contains('mobile-ideas-column');
-    // Check if this is the chat area
-    const isChatArea = element.classList && element.classList.contains('mobile-chat');
-    
-    let containerSelectors;
-    
-    if (isRightColumn) {
-      // For right column, only target individual li elements (questions and ideas)
-      containerSelectors = ['li'];
-    } else if (isChatArea) {
-      // For chat area, target individual message containers
-      // Look for the specific message div structure: rounded-lg p-3 border border-l-4
-      containerSelectors = [
-        '.rounded-lg.p-3.border.border-l-4', // Exact message container class combination
-        '.assistant-message', // Assistant message class
-        '[class*="message"]' // Fallback for any message-like elements
-      ];
-    } else {
-      // For sidebar (facts/docs), target individual fact and doc cards
-      containerSelectors = [
-        '.text-xs.border.rounded.p-2.bg-white', // Exact fact card class combination
-        '[class*="card"]',
-        '[class*="fact"]',
-        '[class*="doc"]',
-        'li', // List items in sidebar
-        '.p-3', '.p-4', '.p-6' // Common card padding classes
-      ];
+    // Find all text nodes that contain the search term
+    function findTextNodesWithTerm(node) {
+      const textNodes = [];
+      
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (regex.test(node.textContent)) {
+          textNodes.push(node);
+        }
+      } else {
+        // Skip script and style elements
+        if (node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+          Array.from(node.childNodes).forEach(child => {
+            textNodes.push(...findTextNodesWithTerm(child));
+          });
+        }
+      }
+      
+      return textNodes;
     }
     
-    containerSelectors.forEach(selector => {
-      const elements = element.querySelectorAll(selector);
-      elements.forEach(el => {
-        // Skip column containers themselves
-        if ((isRightColumn && el.classList.contains('mobile-ideas-column')) ||
-            (isChatArea && el.classList.contains('mobile-chat'))) {
-          return;
+    // Get all text nodes containing the search term
+    const matchingTextNodes = findTextNodesWithTerm(element);
+    
+    // For each text node, find its most appropriate container parent
+    matchingTextNodes.forEach(textNode => {
+      let container = textNode.parentElement;
+      
+      // Walk up the DOM to find a suitable container
+      // Stop at elements that look like individual content items
+      while (container && container !== element) {
+        const tagName = container.tagName.toLowerCase();
+        const classList = Array.from(container.classList || []);
+        
+        // Check if this looks like an individual content container
+        const isContentContainer = (
+          // List items
+          tagName === 'li' ||
+          // Elements with border/card-like styling
+          classList.some(cls => cls.includes('border') || cls.includes('card') || cls.includes('rounded')) ||
+          // Elements with specific padding that suggest content blocks
+          classList.some(cls => cls.match(/^p-[2-6]$/)) ||
+          // Message containers in chat
+          classList.some(cls => cls.includes('message')) ||
+          // Common content wrapper classes
+          classList.some(cls => ['bg-white', 'bg-gray-50', 'bg-gray-100'].includes(cls)) ||
+          // Fact and doc cards with borders and background colors
+          (classList.some(cls => cls.includes('border-blue-') || cls.includes('border-green-') || 
+                                cls.includes('border-purple-') || cls.includes('border-orange-') || 
+                                cls.includes('border-red-') || cls.includes('border-yellow-') ||
+                                cls.includes('border-pink-') || cls.includes('border-indigo-') ||
+                                cls.includes('border-gray-'))) ||
+          // Grid items that look like cards (common in fact/doc layouts)
+          (classList.some(cls => cls.includes('bg-white') || cls.includes('dark:bg-gray-700')) && 
+           classList.some(cls => cls.includes('border') && cls.includes('rounded')))
+        );
+        
+        if (isContentContainer) {
+          // Found a suitable container, add it if not already added
+          if (!containers.includes(container)) {
+            containers.push(container);
+          }
+          break;
         }
         
-        // Only highlight if this element contains the search term
-        if (regex.test(el.textContent) && !containers.includes(el)) {
-          containers.push(el);
-        }
-      });
-    });
-    
-    // If no specific containers found in right column or chat, don't fall back
-    // This prevents highlighting the entire column/area
-    if (containers.length === 0 && !isRightColumn && !isChatArea) {
-      // Only for sidebar, look for broader matches as fallback
-      const allElements = element.querySelectorAll('*');
-      allElements.forEach(el => {
-        if (el.children.length === 0 || (el.textContent.trim().length > 10 && regex.test(el.textContent))) {
-          const parent = el.parentElement;
-          if (parent && regex.test(parent.textContent) && !containers.includes(parent)) {
-            containers.push(parent);
+        // Check if we've reached a column container - don't go further
+        if (classList.some(cls => cls.includes('column') || cls.includes('sidebar') || cls.includes('chat'))) {
+          // Fall back to the previous container if we haven't found anything suitable
+          const fallbackContainer = textNode.parentElement;
+          if (fallbackContainer && !containers.includes(fallbackContainer)) {
+            containers.push(fallbackContainer);
           }
+          break;
         }
-      });
-    }
+        
+        container = container.parentElement;
+      }
+      
+      // If we didn't find a suitable container, use the immediate parent
+      if (!containers.some(c => c.contains(textNode))) {
+        const immediateParent = textNode.parentElement;
+        if (immediateParent && !containers.includes(immediateParent)) {
+          containers.push(immediateParent);
+        }
+      }
+    });
     
     return containers;
   }
@@ -621,7 +658,7 @@
   <!-- Search Input -->
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <Search class="h-4 w-4 text-gray-400" />
+      <Search class="h-4 w-4 text-gray-400 dark:text-gray-500" />
     </div>
     <input
       bind:this={searchInput}
@@ -629,8 +666,8 @@
       on:focus={handleInputFocus}
       on:click={handleInputClick}
       type="text"
-      class="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-      placeholder="Search facts, docs, messages..."
+      class="block w-full pl-10 pr-12 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" style="background-color: var(--bg-input, white);"
+      placeholder="Search facts, docs, chat messages..."
       autocomplete="off"
     />
     
@@ -643,7 +680,7 @@
       {:else if searchTerm}
         <button
           on:click={clearSearch}
-          class="mr-3 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+          class="mr-3 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
           <X class="h-4 w-4" />
         </button>
@@ -651,10 +688,10 @@
       
       <!-- Navigation Controls with Highlighted Counter -->
       {#if showNavigationControls && totalHighlights > 0}
-        <div class="mr-3 flex items-center gap-1 text-xs bg-gray-100 rounded px-2 py-1">
+        <div class="mr-3 flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
           <button
             on:click={prevHighlight}
-            class="p-1 text-gray-600 hover:text-gray-700 transition-colors rounded"
+            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
             disabled={totalHighlights === 0}
             title="Previous highlight"
           >
@@ -662,14 +699,14 @@
           </button>
           <button
             on:click={handleCounterClick}
-            class="px-2 py-1 bg-blue-500 text-white font-mono text-xs rounded font-medium shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
+            class="px-2 py-1 bg-pink-500 text-white font-mono text-xs rounded font-medium shadow-sm hover:bg-pink-600 transition-colors cursor-pointer"
             title="Close search dropdown"
           >
             {currentHighlightIndex + 1}/{totalHighlights}
           </button>
           <button
             on:click={nextHighlight}
-            class="p-1 text-gray-600 hover:text-gray-700 transition-colors rounded"
+            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
             disabled={totalHighlights === 0}
             title="Next highlight"
           >
@@ -682,18 +719,18 @@
 
   <!-- Search Results Dropdown -->
   {#if showDropdown && hasResults()}
-    <div class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+    <div class="absolute z-50 w-full mt-1 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal);">
       <!-- Facts Results (Left Column) -->
       {#if searchResults.facts.length > 0}
-        <div class="p-3 border-b border-gray-100">
-          <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Facts</h4>
+        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Facts</h4>
           {#each searchResults.facts.slice(0, 5) as fact}
             <button
               on:click={() => selectResult(fact, 'facts')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors block"
+              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
             >
-              <div class="font-medium text-sm truncate">{fact.key}</div>
-              <div class="text-xs text-gray-600 truncate">{fact.value}</div>
+              <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{fact.key}</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{fact.value}</div>
             </button>
           {/each}
         </div>
@@ -701,16 +738,16 @@
       
       <!-- Docs Results (Left Column) -->
       {#if searchResults.docs.length > 0}
-        <div class="p-3 border-b border-gray-100">
-          <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Documents</h4>
+        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Documents</h4>
           {#each searchResults.docs.slice(0, 5) as doc}
             <button
               on:click={() => selectResult(doc, 'docs')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors block"
+              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
             >
-              <div class="font-medium text-sm truncate">{doc.title}</div>
+              <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.title}</div>
               {#if doc.content}
-                <div class="text-xs text-gray-600 truncate">{doc.content.substring(0, 80)}...</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{doc.content.substring(0, 80)}...</div>
               {/if}
             </button>
           {/each}
@@ -719,15 +756,15 @@
       
       <!-- Chat Messages Results (Middle Column) -->
       {#if searchResults.chatMessages.length > 0}
-        <div class="p-3 border-b border-gray-100">
-          <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Chat Messages</h4>
+        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Chat Messages</h4>
           {#each searchResults.chatMessages.slice(0, 5) as message}
             <button
               on:click={() => selectResult(message, 'chatMessages')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors block"
+              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
             >
-              <div class="text-sm truncate">{message.content.substring(0, 60)}...</div>
-              <div class="text-xs text-gray-500">in {message.branch_name || 'Main'}</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 60)}...</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'}</div>
             </button>
           {/each}
         </div>
@@ -736,13 +773,13 @@
       <!-- Questions Results (Right Column) -->
       {#if searchResults.questions.length > 0}
         <div class="p-3">
-          <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Questions</h4>
+          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Questions</h4>
           {#each searchResults.questions.slice(0, 5) as question}
             <button
               on:click={() => selectResult(question, 'questions')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors block"
+              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
             >
-              <div class="text-sm">{question.question}</div>
+              <div class="text-sm text-gray-900 dark:text-gray-100">{question.question}</div>
             </button>
           {/each}
         </div>
@@ -754,29 +791,41 @@
 <style>
   /* Search highlighting styles for individual words */
   :global(.search-highlight) {
-    background-color: #3b82f6;
+    background-color: #db2777;
     color: white;
     padding: 1px 2px;
     border-radius: 2px;
   }
   
   :global(.search-highlight.current) {
-    background-color: #1d4ed8;
-    box-shadow: 0 0 0 1px #1d4ed8;
+    background-color: #be185d;
+    box-shadow: 0 0 0 1px #be185d;
   }
   
   /* Container highlighting styles */
   :global(.search-highlight-container) {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background-color: rgba(219, 39, 119, 0.1);
+    border: 1px solid rgba(219, 39, 119, 0.3);
     border-radius: 4px;
     transition: all 0.2s ease-in-out;
   }
   
   :global(.search-highlight-container.current) {
-    background-color: rgba(29, 78, 216, 0.15);
-    border-color: rgba(29, 78, 216, 0.5);
-    box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.2);
+    background-color: rgba(190, 24, 93, 0.15);
+    border-color: rgba(190, 24, 93, 0.5);
+    box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.2);
+  }
+  
+  /* Dark mode container highlighting with increased opacity */
+  :global(.dark .search-highlight-container) {
+    background-color: rgba(219, 39, 119, 0.7);
+    border: 1px solid rgba(219, 39, 119, 0.8);
+  }
+  
+  :global(.dark .search-highlight-container.current) {
+    background-color: rgba(190, 24, 93, 0.7);
+    border-color: rgba(190, 24, 93, 0.8);
+    box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.8);
   }
   
   /* Flashing animation for current highlight containers */
@@ -785,19 +834,19 @@
   }
   
   :global(.search-highlight.flash-highlight) {
-    animation: flash-blue 1s ease-in-out;
+    animation: flash-pink 1s ease-in-out;
   }
   
-  @keyframes flash-blue {
+  @keyframes flash-pink {
     0% {
-      background-color: #1d4ed8;
+      background-color: #be185d;
     }
     50% {
-      background-color: #60a5fa;
-      box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+      background-color: #f472b6;
+      box-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
     }
     100% {
-      background-color: #1d4ed8;
+      background-color: #be185d;
     }
   }
   

@@ -5,12 +5,85 @@
     box-sizing: border-box;
 }
 
+/* CSS Custom Properties for Theme Support */
+:root {
+    /* Light Theme Colors */
+    --bg-gradient-start: #667eea;
+    --bg-gradient-end: #764ba2;
+    --bg-primary: #ffffff;
+    --bg-secondary: rgba(255, 255, 255, 0.95);
+    --bg-tertiary: #f8f9fa;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-input: #ffffff;
+    --bg-modal: white;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.5);
+    
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --text-inverse: #ffffff;
+    --text-muted: #555555;
+    
+    --border-primary: #e1e5e9;
+    --border-secondary: #d1d5db;
+    --border-accent: rgba(102, 126, 234, 0.3);
+    
+    --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --shadow-accent: 0 8px 25px rgba(102, 126, 234, 0.3);
+    
+    --accent-primary: #667eea;
+    --accent-secondary: #764ba2;
+    --accent-success: #28a745;
+    --accent-warning: #ffc107;
+    --accent-error: #dc3545;
+    --accent-info: #17a2b8;
+}
+
+/* Dark Theme Colors */
+:global(.dark),
+:global(html.dark) {
+    --bg-gradient-start: #4c51bf;
+    --bg-gradient-end: #5a67d8;
+    --bg-primary: #1a202c;
+    --bg-secondary: rgba(26, 32, 44, 0.95);
+    --bg-tertiary: #2d3748;
+    --bg-card: rgba(45, 55, 72, 0.95);
+    --bg-input: #2d3748;
+    --bg-modal: #1b1b1e;
+    --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+    
+    --text-primary: #f7fafc;
+    --text-secondary: #cbd5e0;
+    --text-tertiary: #a0aec0;
+    --text-inverse: #1a202c;
+    --text-muted: #e2e8f0;
+    
+    --border-primary: #4a5568;
+    --border-secondary: #718096;
+    --border-accent: rgba(76, 81, 191, 0.4);
+    
+    --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --shadow-accent: 0 8px 25px rgba(76, 81, 191, 0.4);
+    
+    --accent-primary: #4c51bf;
+    --accent-secondary: #5a67d8;
+    --accent-success: #38a169;
+    --accent-warning: #d69e2e;
+    --accent-error: #e53e3e;
+    --accent-info: #3182ce;
+}
+
 :global(body) {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     min-height: 100vh;
-    color: #333;
+    color: var(--text-primary);
     line-height: 1.6;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .app-container {
@@ -63,11 +136,11 @@
 /* Section Styles */
 .new-prompt-section,
 .past-prompts-section {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-card);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .past-prompts-section {
@@ -82,16 +155,16 @@
 /* Results Box */
 .results-box {
     margin-top: 30px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
     border-radius: 16px;
-    border: 2px solid #667eea;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+    border: 2px solid var(--accent-primary);
+    box-shadow: var(--shadow-accent);
     overflow: hidden;
 }
 
 .results-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    color: var(--text-inverse);
     padding: 20px 25px;
     display: flex;
     justify-content: space-between;
@@ -119,7 +192,7 @@
 
 .results-actions .btn-secondary {
     background: rgba(255, 255, 255, 0.2);
-    color: white;
+    color: var(--text-inverse);
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 8px 16px;
     font-size: 0.9rem;
@@ -131,7 +204,7 @@
 }
 
 .results-content {
-    background: white;
+    background: var(--bg-primary);
     padding: 25px;
     white-space: pre-wrap;
     line-height: 1.7;
@@ -139,7 +212,7 @@
     overflow-y: auto;
     font-family: 'Inter', sans-serif;
     font-size: 1rem;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .section-header {
@@ -154,14 +227,14 @@
 .section-header h2 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .section-header h2 i {
-    color: #667eea;
+    color: var(--accent-primary);
 }
 
 /* Form Styles */
@@ -205,24 +278,25 @@ label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    color: #555;
+    color: var(--text-muted);
 }
 
 input, textarea, select {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e1e5e9;
+    border: 2px solid var(--border-primary);
     border-radius: 12px;
     font-size: 1rem;
     font-family: inherit;
     transition: all 0.3s ease;
-    background: #fff;
+    background: var(--bg-input);
+    color: var(--text-primary);
 }
 
 input:focus, textarea:focus, select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--border-accent);
 }
 
 textarea {
@@ -246,13 +320,13 @@ textarea {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    color: var(--text-inverse);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--shadow-accent);
 }
 
 .btn-primary:disabled {
@@ -262,15 +336,15 @@ textarea {
 }
 
 .btn-secondary {
-    background: #f8f9fa;
-    color: #667eea;
-    border: 2px solid #e1e5e9;
+    background: var(--bg-tertiary);
+    color: var(--accent-primary);
+    border: 2px solid var(--border-primary);
 }
 
 .btn-secondary:hover {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+    border-color: var(--accent-primary);
 }
 
 /* Button Group */
@@ -313,7 +387,7 @@ textarea {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #999;
+    color: var(--text-tertiary);
 }
 
 /* Tags Styles */
@@ -337,22 +411,23 @@ textarea {
 .prompt-tag-input {
     flex: 1;
     padding: 6px 10px;
-    border: 1px solid #e1e5e9;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 0.8rem;
-    background: white;
+    background: var(--bg-input);
+    color: var(--text-primary);
     min-width: 120px;
 }
 
 .prompt-tag-input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--border-accent);
 }
 
 .action-btn.tag-btn {
-    background: #667eea;
-    color: white;
+    background: var(--accent-primary);
+    color: var(--text-inverse);
     padding: 6px 8px;
     font-size: 0.7rem;
     white-space: nowrap;
@@ -360,7 +435,7 @@ textarea {
 }
 
 .action-btn.tag-btn:hover {
-    background: #5a6fd8;
+    background: var(--accent-secondary);
 }
 
 /* Prompts List */
@@ -371,17 +446,17 @@ textarea {
 }
 
 .prompt-item {
-    background: #f8f9fa;
+    background: var(--bg-tertiary);
     border-radius: 12px;
     padding: 20px 30px 20px 20px;
     margin-bottom: 15px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid var(--accent-primary);
     transition: all 0.3s ease;
 }
 
 .prompt-item:hover {
     transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .prompt-header {
@@ -401,8 +476,8 @@ textarea {
 }
 
 .prompt-model {
-    background: #667eea;
-    color: white;
+    background: var(--accent-primary);
+    color: var(--text-inverse);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -410,7 +485,7 @@ textarea {
 }
 
 .prompt-date {
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
@@ -421,8 +496,8 @@ textarea {
 }
 
 .tag {
-    background: #e1e5e9;
-    color: #555;
+    background: var(--border-primary);
+    color: var(--text-muted);
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
@@ -431,16 +506,17 @@ textarea {
 .prompt-text {
     font-weight: 500;
     margin-bottom: 15px;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .prompt-response {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 15px;
-    border: 1px solid #e1e5e9;
+    border: 1px solid var(--border-primary);
     white-space: pre-wrap;
+    color: var(--text-primary);
 }
 
 .prompt-actions {

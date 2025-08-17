@@ -47,11 +47,11 @@
 </script>
 
 {#if showBranchModal}
-  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+  <div class="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-25 dark:bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->
-      <div class="border-b px-6 py-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {#if existingBranches.length > 0}
             Conversation Branches
           {:else}
@@ -59,7 +59,7 @@
           {/if}
         </h3>
         <button
-          class="text-gray-400 hover:text-gray-600 transition-colors"
+          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           on:click={closeModal}
           title="Close"
         >
@@ -72,7 +72,7 @@
         {#if existingBranches.length > 0}
           <!-- Show existing branches -->
           <div class="mb-4">
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Switch to an existing branch or create a new one from message #{branchModalMessageIndex + 1}:
             </p>
             
@@ -80,13 +80,13 @@
             <div class="space-y-2 mb-4">
               {#each existingBranches as branch}
                 <button
-                  class="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                   on:click={() => switchToBranch(branch.branch_id)}
                 >
-                  <GitBranch size="16" class="text-gray-500" />
+                  <GitBranch size="16" class="text-gray-500 dark:text-gray-400" />
                   <div class="flex-1">
-                    <div class="font-medium text-gray-900">{branch.branch_name}</div>
-                    <div class="text-xs text-gray-500">Branch ID: {branch.branch_id}</div>
+                    <div class="font-medium text-gray-900 dark:text-gray-100">{branch.branch_name}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Branch ID: {branch.branch_id}</div>
                   </div>
                   <div class="w-4 h-4 rounded-full {branch.colorClass?.split(' ')[0] || 'bg-gray-100'}"></div>
                 </button>
@@ -94,14 +94,14 @@
             </div>
             
             <!-- Divider -->
-            <div class="border-t pt-4 mb-4">
-              <p class="text-sm font-medium text-gray-700 mb-2">Or create a new branch:</p>
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Or create a new branch:</p>
             </div>
           </div>
         {:else}
           <!-- No existing branches, show creation form -->
           <div class="mb-4">
-            <p class="text-sm text-gray-600 mb-3">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
               Create a new conversation branch starting from message #{branchModalMessageIndex + 1}. 
               This lets you explore alternative conversation paths!
             </p>
@@ -109,11 +109,11 @@
         {/if}
         
         {#if branchModalMessageIndex >= 0 && messages[branchModalMessageIndex]}
-          <div class="bg-gray-50 rounded-lg p-4 mb-4">
-            <div class="text-xs text-gray-500 mb-2">
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
               Branching from:
             </div>
-            <div class="prose prose-sm max-w-none text-gray-800 max-h-40 overflow-y-auto">
+            <div class="prose prose-sm max-w-none text-gray-800 dark:text-gray-200 max-h-40 overflow-y-auto">
               {@html renderMarkdown(messages[branchModalMessageIndex].content.slice(0, 600))}
               {#if messages[branchModalMessageIndex].content.length > 600}
                 <div class="text-gray-500 italic mt-2">...content truncated</div>
@@ -123,20 +123,20 @@
         {/if}
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2" for="branch-name-input">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="branch-name-input">
             Branch Name
           </label>
           <div class="flex gap-2">
             <input
               id="branch-name-input"
               type="text"
-              class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 {createError ? 'border-red-300' : ''}"
+              class="flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 {createError ? 'border-red-300 dark:border-red-600' : ''}"
               placeholder="e.g., Alternative approach, Creative version..."
               bind:value={newBranchName}
               maxlength="100"
             />
             <button
-              class="px-3 py-2 text-sm border rounded hover:bg-gray-50 transition-colors"
+              class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               on:click={closeModal}
               disabled={isCreatingBranch}
             >

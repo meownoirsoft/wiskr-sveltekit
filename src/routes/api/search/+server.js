@@ -34,23 +34,53 @@ export async function POST({ request, locals }) {
       return json({ error: 'Project not found or access denied' }, { status: 404 });
     }
     
-    // Search facts
-    const { data: facts, error: factsError } = await supabase
+    // Search facts (search in key, value, and type)
+    const { data: factsMain, error: factsError1 } = await supabase
       .from('facts')
       .select('*')
       .eq('project_id', projectId)
-      .or(`key.ilike.%${query}%,value.ilike.%${query}%,tags.cs.{${query}}`)
+      .or(`key.ilike.%${query}%,value.ilike.%${query}%,type.ilike.%${query}%`)
       .order('created_at', { ascending: false })
       .limit(20);
     
-    // Search docs
-    const { data: docs, error: docsError } = await supabase
+    // Search facts by partial tag matches using custom function
+    const { data: factsFromPartialTags, error: factsError2 } = await supabase
+      .rpc('search_facts_by_tags', { 
+        p_project_id: projectId, 
+        p_query: query 
+      })
+      .limit(20);
+    
+    // Combine and deduplicate facts results
+    const allFacts = [...(factsMain || []), ...(factsFromPartialTags || [])];
+    const uniqueFacts = allFacts.filter((fact, index, self) =>
+      index === self.findIndex(f => f.id === fact.id)
+    );
+    const facts = uniqueFacts.slice(0, 20);
+    
+    // Search docs (search in title and content)
+    const { data: docsMain, error: docsError1 } = await supabase
       .from('docs')
       .select('*')
       .eq('project_id', projectId)
-      .or(`title.ilike.%${query}%,content.ilike.%${query}%,tags.cs.{${query}}`)
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
       .order('created_at', { ascending: false })
       .limit(20);
+      
+    // Search docs by partial tag matches using custom function
+    const { data: docsFromPartialTags, error: docsError2 } = await supabase
+      .rpc('search_docs_by_tags', { 
+        p_project_id: projectId, 
+        p_query: query 
+      })
+      .limit(20);
+    
+    // Combine and deduplicate docs results
+    const allDocs = [...(docsMain || []), ...(docsFromPartialTags || [])];
+    const uniqueDocs = allDocs.filter((doc, index, self) =>
+      index === self.findIndex(d => d.id === doc.id)
+    );
+    const docs = uniqueDocs.slice(0, 20);
     
     // Search chat messages
     const { data: chatMessages, error: messagesError } = await supabase
@@ -98,10 +128,19 @@ export async function POST({ request, locals }) {
     // Note: Related ideas are generated on-demand and not stored in the database,
     // so we don't search for them here
     
-    if (factsError || docsError || messagesError || questionsError) {
-      console.error('Search errors:', { factsError, docsError, messagesError, questionsError });
+    if (factsError1 || factsError2 || docsError1 || docsError2 || messagesError || questionsError) {
+      console.error('Search errors:', { factsError1, factsError2, docsError1, docsError2, messagesError, questionsError });
       return json({ error: 'Error performing search' }, { status: 500 });
     }
+    
+    // Debug logging
+    console.log('Search results:', {
+      query,
+      factsCount: facts?.length || 0,
+      docsCount: docs?.length || 0,
+      chatMessagesCount: formattedMessages?.length || 0,
+      questionsCount: questions?.length || 0
+    });
     
     // Return the search results
     return json({

@@ -3,7 +3,8 @@
   import ContextSummary from './ContextSummary.svelte';
   import FactsManager from './FactsManager.svelte';
   import DocsManager from './DocsManager.svelte';
-  import { Search, X, ToggleLeft, ToggleRight } from 'lucide-svelte';
+  import { Search, X, ToggleLeft, ToggleRight, Info } from 'lucide-svelte';
+  import InfoPopup from './InfoPopup.svelte';
 
   export let current = null;
   export let facts = [];
@@ -29,11 +30,8 @@
   export let activeTab = 'facts'; // 'summary', 'facts', or 'docs'
   
   // Tag filtering state
-  let tagSearch = '';
   let selectedTags = [];
   let tagFilterMode = 'AND'; // 'AND' or 'OR'
-  let showTagAutocomplete = false;
-  let tagSearchInput;
   
   // Project fact types for filtering
   let projectFactTypes = [];
@@ -85,21 +83,36 @@
     ? [...new Set(docs.flatMap(d => d.tags || []))].sort()
     : [];
   
-  // Filter suggestions based on search and exclude already selected tags
-  $: tagSuggestions = availableTags
-    .filter(tag => 
-      tag.toLowerCase().includes(tagSearch.toLowerCase()) && 
-      !selectedTags.includes(tag)
-    )
-    .slice(0, 10);
+  // Auto-populate selectedTags based on global search (only for 3+ characters)
+  $: {
+    if (search && search.trim() && search.trim().length >= 3) {
+      const searchTerm = search.toLowerCase().trim();
+      const matchingTags = availableTags.filter(tag => 
+        tag.toLowerCase().includes(searchTerm)
+      );
+      
+      // Also check fact types
+      const matchingTypes = projectFactTypes
+        .filter(ft => ft.display_name.toLowerCase().includes(searchTerm))
+        .map(ft => ft.display_name);
+      
+      // Set selectedTags to only the matching tags and types (replace, don't accumulate)
+      selectedTags = [...matchingTags, ...matchingTypes];
+    } else {
+      // Clear selected tags when search is less than 3 characters or empty
+      selectedTags = [];
+    }
+  }
   
   // Filter facts/docs based on selected tags and search term
   $: filteredFacts = facts.filter(fact => {
     // First apply search term filter
     const searchTerm = search.toLowerCase().trim();
+    const factTypeDisplayName = getFactTypeDisplayName(fact.type);
     const matchesSearch = !searchTerm || 
       fact.key.toLowerCase().includes(searchTerm) ||
       fact.value.toLowerCase().includes(searchTerm) ||
+      factTypeDisplayName.toLowerCase().includes(searchTerm) ||
       (fact.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
     
     if (!matchesSearch) return false;
@@ -108,7 +121,6 @@
     if (selectedTags.length === 0) return true;
     
     const factTags = fact.tags || [];
-    const factTypeDisplayName = getFactTypeDisplayName(fact.type);
     // Combine regular tags with the fact type display name for filtering
     const allFilterableItems = [...factTags, factTypeDisplayName];
     
@@ -144,8 +156,6 @@
     if (!selectedTags.includes(tag)) {
       selectedTags = [...selectedTags, tag];
     }
-    tagSearch = '';
-    showTagAutocomplete = false;
   }
   
   function removeTagFilter(index) {
@@ -154,21 +164,10 @@
   
   function clearAllFilters() {
     selectedTags = [];
-    tagSearch = '';
   }
   
   function toggleFilterMode() {
     tagFilterMode = tagFilterMode === 'AND' ? 'OR' : 'AND';
-  }
-  
-  function handleTagSearchKeydown(event) {
-    if (event.key === 'Enter' && tagSuggestions.length > 0) {
-      event.preventDefault();
-      addTagFilter(tagSuggestions[0]);
-    } else if (event.key === 'Escape') {
-      showTagAutocomplete = false;
-      tagSearch = '';
-    }
   }
   
   function handleTagClick(event) {
@@ -242,6 +241,39 @@
     dispatch('doc-toggle-pin', event.detail);
   }
   
+  // Bulk pin/unpin functions
+  function bulkPinFiltered() {
+    if (activeTab === 'facts') {
+      filteredFacts.forEach(fact => {
+        if (!fact.pinned) {
+          dispatch('fact-toggle-pin', fact);
+        }
+      });
+    } else if (activeTab === 'docs') {
+      filteredDocs.forEach(doc => {
+        if (!doc.pinned) {
+          dispatch('doc-toggle-pin', doc);
+        }
+      });
+    }
+  }
+  
+  function bulkUnpinFiltered() {
+    if (activeTab === 'facts') {
+      filteredFacts.forEach(fact => {
+        if (fact.pinned) {
+          dispatch('fact-toggle-pin', fact);
+        }
+      });
+    } else if (activeTab === 'docs') {
+      filteredDocs.forEach(doc => {
+        if (doc.pinned) {
+          dispatch('doc-toggle-pin', doc);
+        }
+      });
+    }
+  }
+  
   // Export function to refresh fact types from parent component
   export function refreshFactTypes() {
     // Refresh fact types in both the Sidebar and FactsManager
@@ -252,45 +284,22 @@
   }
 </script>
 
-<section class="h-full border-r p-3 bg-gray-50 flex flex-col mobile-sidebar">
-  <h2 class="text-lg font-semibold mb-4">Project Context</h2>
+<section class="h-full border-r border-gray-200 dark:border-gray-700 p-3 flex flex-col mobile-sidebar">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
+    <InfoPopup
+      title="Project Context"
+      content="<p><strong>Project Context</strong> is your AI assistant's memory system for each project.</p><p>It consists of three main components:</p><ul><li><strong>Facts</strong> - Key information about people, places, processes, terms, and things in your project. These help the AI understand your domain.</li><li><strong>Docs</strong> - Longer form documents, notes, and references that provide detailed background information.</li><li><strong>Summary</strong> - An AI-generated overview of your project based on facts and docs.</li></ul><p><strong>Pinning</strong> prioritizes important items for AI context. Use <strong>filtering</strong> to focus on specific topics or tags.</p><p>The AI uses pinned items first, then pulls from the broader context as needed for each conversation.</p>"
+      buttonTitle="Learn about Project Context"
+    />
+  </div>
 
   {#if current}
     <!-- Three-Tab Interface: Summary, Facts, Docs -->
     <div class="flex flex-col min-h-0 flex-1">
-      <!-- Tag Search Bar (only show for facts/docs tabs) -->
+      <!-- Selected Tags & Controls (triggered by global search) -->
       {#if activeTab !== 'summary'}
         <div class="mb-3 space-y-2">
-          <!-- Search Input -->
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size="16" class="text-gray-400" />
-            </div>
-            <input
-              bind:this={tagSearchInput}
-              bind:value={tagSearch}
-              on:keydown={handleTagSearchKeydown}
-              on:focus={() => showTagAutocomplete = true}
-              on:blur={() => setTimeout(() => showTagAutocomplete = false, 200)}
-              class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Search tags..."
-            />
-            
-            <!-- Autocomplete Dropdown -->
-            {#if showTagAutocomplete && tagSuggestions.length > 0}
-              <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto">
-                {#each tagSuggestions as suggestion}
-                  <button
-                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                    on:mousedown|preventDefault={() => addTagFilter(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-          
           <!-- Selected Tags & Controls -->
           {#if selectedTags.length > 0}
             <div class="space-y-2">
@@ -299,18 +308,18 @@
                 <div class="flex items-center gap-2">
                   <button
                     on:click={toggleFilterMode}
-                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
                     title={`Currently using ${tagFilterMode} logic`}
                   >
                     {#if tagFilterMode === 'AND'}
                       <ToggleRight size="14" class="text-blue-600" />
-                      <span class="font-medium text-blue-700">AND</span>
+                      <span class="font-medium" style="color: var(--color-accent);">AND</span>
                     {:else}
                       <ToggleLeft size="14" class="text-green-600" />
                       <span class="font-medium text-green-700">OR</span>
                     {/if}
                   </button>
-                  <span class="text-xs text-gray-500">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
                     {tagFilterMode === 'AND' ? 'All tags required' : 'Any tag matches'}
                   </span>
                 </div>
@@ -322,14 +331,40 @@
                 </button>
               </div>
               
+              <!-- Bulk Pin/Unpin Controls -->
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                <div class="flex items-center gap-2">
+                  <button
+                    on:click={bulkPinFiltered}
+                    class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
+                    title="Pin all filtered {activeTab}"
+                  >
+                    📌 Pin all ({activeTab === 'facts' ? filteredFacts.length : filteredDocs.length})
+                  </button>
+                  <button
+                    on:click={bulkUnpinFiltered}
+                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                    title="Unpin all filtered {activeTab}"
+                  >
+                    📍 Unpin all ({activeTab === 'facts' ? filteredFacts.filter(f => f.pinned).length : filteredDocs.filter(d => d.pinned).length})
+                  </button>
+                </div>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                  {activeTab === 'facts' 
+                    ? `${filteredFacts.filter(f => f.pinned).length} of ${filteredFacts.length} pinned`
+                    : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
+                  }
+                </span>
+              </div>
+              
               <!-- Tag Breadcrumbs -->
               <div class="flex flex-wrap gap-1">
                 {#each selectedTags as tag, index}
-                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full" style="background-color: var(--color-accent-light); color: var(--color-accent);">
                     {tag}
                     <button
                       on:click={() => removeTagFilter(index)}
-                      class="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      class="hover:opacity-80 rounded-full p-0.5 transition-opacity"
                       title="Remove tag"
                     >
                       <X size="12" />
@@ -343,33 +378,36 @@
       {/if}
       
       <!-- Tab Headers -->
-      <div class="flex border-b mb-3">
+      <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3">
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors {
+          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          style="{
             activeTab === 'facts' 
-              ? 'border-blue-500 text-blue-600 bg-blue-50' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }"
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
+              : 'border-color: transparent;'
+          } {activeTab !== 'facts' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'facts'}
         >
           Facts ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
         </button>
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors {
+          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          style="{
             activeTab === 'docs' 
-              ? 'border-blue-500 text-blue-600 bg-blue-50' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }"
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
+              : 'border-color: transparent;'
+          } {activeTab !== 'docs' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'docs'}
         >
           Docs ({selectedTags.length > 0 ? filteredDocs.length : docs.length})
         </button>
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors {
+          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          style="{
             activeTab === 'summary' 
-              ? 'border-blue-500 text-blue-600 bg-blue-50' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }"
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
+              : 'border-color: transparent;'
+          } {activeTab !== 'summary' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'summary'}
         >
           Summary
@@ -424,6 +462,6 @@
       </div>
     </div>
   {:else}
-    <p>Select a project</p>
+    <p class="text-gray-600 dark:text-gray-400">Select a project</p>
   {/if}
 </section>

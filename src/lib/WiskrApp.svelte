@@ -305,7 +305,9 @@
 	}
 
 	function handleKeydown(event) {
-		if (event.key === 'Enter' && event.ctrlKey) {
+		// Submit on Enter (without Shift), allow Shift+Enter for new lines
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
 			sendPrompt();
 		}
 	}

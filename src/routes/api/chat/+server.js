@@ -7,7 +7,7 @@ import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
-  const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main' } = body;
+  const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main', sessionId } = body;
 
   const { data: { user } } = await locals.supabase.auth.getUser();
   if (!user) return new Response('Unauthorized', { status: 401 });
@@ -82,9 +82,10 @@ export const POST = async ({ request, locals }) => {
   }
 
   // 4) Persist the user message once
-  console.log('💾 Saving user message to DB:', { projectId, branchId, role: 'user', content: message.slice(0,50) + '...' });
+  console.log('💾 Saving user message to DB:', { projectId, sessionId, branchId, role: 'user', content: message.slice(0,50) + '...' });
   const { data: userMsgResult, error: userMsgError } = await locals.supabase.from('messages').insert({
     project_id: projectId,
+    session_id: sessionId,
     role: 'user',
     content: message,
     branch_id: branchId
@@ -119,9 +120,10 @@ export const POST = async ({ request, locals }) => {
         }
 
         // 6) Save assistant message
-        console.log('💾 Saving assistant message to DB:', { projectId, branchId, role: 'assistant', contentLength: full.length, modelKey });
+        console.log('💾 Saving assistant message to DB:', { projectId, sessionId, branchId, role: 'assistant', contentLength: full.length, modelKey });
         const { data: assistantMsgResult, error: assistantMsgError } = await locals.supabase.from('messages').insert({
           project_id: projectId,
+          session_id: sessionId,
           role: 'assistant',
           content: full,
           branch_id: branchId,

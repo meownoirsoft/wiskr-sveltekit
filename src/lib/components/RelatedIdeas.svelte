@@ -5,8 +5,9 @@ import {
   RefreshCw, Lightbulb, ChevronsLeft, HeartCrack, Heart,
   BookOpen, Users, Target, Zap, Settings, Palette, Code, 
   TrendingUp, MessageSquare, Search, Camera, Music, 
-  ShoppingBag, Globe, Shield, Database, Brain
+  ShoppingBag, Globe, Shield, Database, Brain, Info
 } from 'lucide-svelte';
+import InfoPopup from './InfoPopup.svelte';
 import { marked } from 'marked';
 import { browser } from '$app/environment';
 
@@ -115,6 +116,16 @@ import { browser } from '$app/environment';
     saveStoredIdeas();
     
     dispatch('generate-ideas');
+  }
+  
+  function handleRefreshHover(e) {
+    if (!isGenerating) {
+      e.target.style.backgroundColor = 'var(--color-accent-hover)';
+    }
+  }
+  
+  function handleRefreshLeave(e) {
+    e.target.style.backgroundColor = 'var(--color-accent)';
   }
   
   function dismissIdea(ideaId) {
@@ -407,9 +418,20 @@ import { browser } from '$app/environment';
   <!-- Header -->
   <div class="flex-shrink-0">
     <div class="flex items-center justify-between mb-2" style="margin-left: 32px; margin-right: 4px;">
-      <h3 class="font-semibold text-gray-800">Related Ideas</h3>
+      <div class="flex items-center gap-2">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-200">Related Ideas</h3>
+        <InfoPopup
+          title="Related Ideas"
+          content="<p><strong>Related Ideas</strong> use AI to suggest concepts that could expand your project knowledge.</p><p>The AI analyzes your project context to suggest:</p><ul><li><strong>Adjacent concepts</strong> - Related topics you might not have considered</li><li><strong>Expansion opportunities</strong> - Areas to grow your project scope</li><li><strong>Research directions</strong> - New avenues to explore</li></ul><p><strong>How to use:</strong></p><ul><li>Click the <strong>left arrow</strong> to instantly add any idea to your chat input</li><li>Use the <strong>heart button</strong> to save ideas you love (they'll persist through refreshes)</li><li>Click the <strong>broken heart</strong> to dismiss ideas you don't want to see again</li><li>Hit <strong>Refresh</strong> to generate new ideas (liked ideas stay visible)</li></ul><p>Perfect for brainstorming and discovering new angles for your project!</p>"
+          buttonTitle="Learn about Related Ideas"
+        />
+      </div>
       <button 
-        class="flex items-center gap-1 text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 cursor-pointer disabled:opacity-50" 
+        id="related-ideas-refresh"
+        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer disabled:opacity-50" 
+        style="background-color: var(--color-accent); transition: background-color 0.2s ease;"
+        on:mouseenter={handleRefreshHover}
+        on:mouseleave={handleRefreshLeave}
         on:click={generateIdeas}
         disabled={isGenerating}
         title="Generate new related ideas"
@@ -418,9 +440,9 @@ import { browser } from '$app/environment';
         {isGenerating ? "Generating..." : "Refresh"}
       </button>
     </div>
-    <div class="text-xs text-zinc-500 mb-2" style="margin-left: 32px;">
+    <div class="text-xs text-zinc-500 dark:text-zinc-400 mb-2" style="margin-left: 32px;">
       {#if isGenerating}
-        <span class="text-blue-600 font-medium">🤖 AI is thinking...</span>
+        <span class="font-medium" style="color: var(--color-accent);">🤖 AI is thinking...</span>
       {:else}
         AI-suggested concepts to expand your knowledge base
       {/if}
@@ -431,12 +453,12 @@ import { browser } from '$app/environment';
   <div class="flex-1 min-h-0 overflow-hidden relative">
     <!-- Loading Overlay -->
     {#if isGenerating}
-      <div class="absolute inset-0 bg-white bg-opacity-85 flex items-center justify-center z-50 rounded">
+      <div class="absolute inset-0 bg-white bg-opacity-85 flex items-center justify-center z-50 rounded" style="background-color: rgba(27, 27, 30, 0.9);">
         <div class="text-center">
-          <RefreshCw size="28" class="animate-spin mx-auto mb-3 text-blue-500" />
-          <div class="text-base font-medium text-gray-700">Generating Ideas...</div>
-          <div class="text-sm text-gray-500 mt-1">Using AI to analyze your project</div>
-          <div class="text-xs text-green-600 mt-2 font-medium">💚 Any ideas you've liked will stay visible</div>
+          <RefreshCw size="28" class="animate-spin mx-auto mb-3" style="color: var(--color-accent);" />
+          <div class="text-base font-medium text-gray-700 dark:text-gray-300">Generating Ideas...</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Using AI to analyze your project</div>
+          <div class="text-xs mt-2 font-medium" style="color: var(--color-accent);">💙 Any ideas you've liked will stay visible</div>
         </div>
       </div>
     {/if}
@@ -449,11 +471,14 @@ import { browser } from '$app/environment';
         {@const ideaText = typeof idea === 'object' ? idea.text : idea}
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}
         {@const isLikedForDisplay = likedIdeasSet.has(ideaId)}
-        <li class="relative text-sm border rounded px-1.5 py-1.5 bg-white group hover:bg-blue-50 border-l-4 border-l-blue-200 {likedIdeasSet.has(ideaId) ? 'ring-1 ring-green-200 bg-green-50' : ''}">
+        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 group hover:bg-gray-50 dark:hover:bg-gray-700" style="background-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-light)' : 'var(--bg-card)'}; border-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-border)' : ''};">
           <!-- Chevron button outside card on the left, always visible -->
           <button 
-            class="absolute text-blue-500 hover:text-blue-700 p-2 flex-shrink-0 cursor-pointer z-10" 
-            style="left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%);"
+            id="idea-insert-{ideaId}"
+            class="absolute p-2 flex-shrink-0 cursor-pointer z-10 transition-colors"
+            style="color: var(--color-accent); left: -20px; top: 50%; transform: translateX(-50%) translateY(-50%);"
+            on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
+            on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
             on:click={() => insertIdea(ideaText)}
             title="Add to chat input"
           >
@@ -464,10 +489,10 @@ import { browser } from '$app/environment';
           <div class="flex items-start gap-2 mb-1">
             <!-- Center section: icon and title -->
             <div class="flex items-start gap-2 flex-1">
-              <div class="text-blue-600 flex-shrink-0 mt-0.5">
+              <div class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5">
                 <svelte:component this={getIconForIdea(ideaText)} size="16" />
               </div>
-              <div class="font-semibold text-gray-800 leading-snug text-sm">
+              <div class="font-semibold text-gray-800 dark:text-gray-200 leading-snug text-sm">
                 {parseIdea(ideaText).title}
               </div>
             </div>
@@ -476,7 +501,11 @@ import { browser } from '$app/environment';
             <div class="flex items-center gap-1 flex-shrink-0">
               <!-- Always visible like button when liked, otherwise show on hover -->
               <button 
-                class="text-red-500 hover:text-red-700 p-1 cursor-pointer {likedIdeasSet.has(ideaId) ? 'text-green-500 hover:text-green-700' : 'opacity-0 group-hover:opacity-100'}" 
+                id="idea-like-{ideaId}"
+                class="p-1 cursor-pointer {likedIdeasSet.has(ideaId) ? '' : 'opacity-0 group-hover:opacity-100'}" 
+                style="color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent)' : 'var(--color-accent)'}"
+                on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
+                on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
                 on:click={() => toggleLikeIdea(ideaId)}
                 title={likedIdeasSet.has(ideaId) ? 'Unlike this idea' : 'Love this idea!'}
               >
@@ -485,7 +514,11 @@ import { browser } from '$app/environment';
               <!-- Hover-only buttons -->
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
-                  class="text-red-500 hover:text-red-700 p-1 cursor-pointer" 
+                  id="idea-dismiss-{ideaId}"
+                  class="p-1 cursor-pointer" 
+                  style="color: var(--color-accent)"
+                  on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
+                  on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
                   on:click={() => dismissIdea(ideaId)}
                   title="Don't like this idea"
                 >
@@ -497,34 +530,34 @@ import { browser } from '$app/environment';
           
           <!-- Description row (if exists) -->
           {#if parseIdea(ideaText).description}
-            <div class="text-gray-600 text-sm leading-snug prose prose-sm max-w-none">
+            <div class="text-gray-600 dark:text-gray-400 text-sm leading-snug prose prose-sm max-w-none">
               {@html renderMarkdown(parseIdea(ideaText).description)}
             </div>
           {/if}
         </li>
       {/each}
       {#if !visibleIdeas.length && !isGenerating}
-        <li class="text-sm text-zinc-500 italic border rounded p-2 bg-gray-50 ml-0"> <!-- Reset margin for empty state -->
+        <li class="text-sm text-zinc-500 dark:text-zinc-400 italic border border-gray-200 dark:border-gray-600 rounded p-2 ml-0" style="background-color: var(--bg-card);"> <!-- Reset margin for empty state -->
           <div>No ideas yet. Click "Refresh" to generate AI-powered suggestions based on your project context!</div>
         </li>
       {/if}
       {#if isGenerating}
         <!-- Loading message -->
-        <li class="text-sm text-zinc-600 border rounded p-2 bg-blue-50 border-l-4 border-l-blue-300">
+        <li class="text-sm text-zinc-600 dark:text-zinc-300 border border-gray-200 dark:border-gray-600 rounded p-2" style="background-color: var(--color-accent-light);">
           <div class="flex items-center gap-2">
-            <RefreshCw size="14" class="animate-spin text-blue-500" />
+            <RefreshCw size="14" class="animate-spin" style="color: var(--color-accent);" />
             <div>Generating related ideas based on your current context...</div>
           </div>
         </li>
         
         <!-- Loading skeleton placeholders -->
         {#each Array(3) as _, i}
-          <li class="text-sm border rounded p-2 bg-gray-100 animate-pulse border-l-4 border-l-gray-200">
+          <li class="text-sm border border-gray-200 dark:border-gray-600 rounded p-2 animate-pulse border-l-4 border-l-gray-200 dark:border-l-gray-600" style="background-color: var(--bg-card);">
             <div class="flex items-start gap-2">
-              <div class="w-3.5 h-3.5 bg-gray-300 rounded mt-0.5 flex-shrink-0"></div>
+              <div class="w-3.5 h-3.5 bg-gray-300 dark:bg-gray-600 rounded mt-0.5 flex-shrink-0"></div>
               <div class="flex-1 space-y-1">
-                <div class="h-3 bg-gray-300 rounded w-full"></div>
-                <div class="h-3 bg-gray-300 rounded w-{i === 0 ? '3/4' : i === 1 ? '5/6' : '2/3'}"></div>
+                <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-{i === 0 ? '3/4' : i === 1 ? '5/6' : '2/3'}"></div>
               </div>
             </div>
           </li>
