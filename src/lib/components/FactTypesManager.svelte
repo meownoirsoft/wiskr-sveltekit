@@ -258,7 +258,7 @@
               class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
               title="Remove fact type"
             >
-              <Trash2 size="14" />
+              <Trash2 size="1416" />
             </button>
           </div>
         </div>
@@ -331,7 +331,7 @@
               on:click={addFactType}
               class="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
             >
-              <Save size="14" />
+              <Save size="16" />
               Add Fact Type
             </button>
             
@@ -339,7 +339,7 @@
               on:click={() => showAddForm = false}
               class="flex items-center gap-2 px-3 py-1.5 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
             >
-              <X size="14" />
+              <X size="16" />
               Cancel
             </button>
           </div>

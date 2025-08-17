@@ -134,6 +134,7 @@
 html, body {
   height: 100%;
   margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 body {
@@ -213,4 +214,85 @@ textarea::placeholder {
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #6b7280 !important; /* Darker gray for dark mode */
+}
+
+/* JetBrains Mono font for code and monospace text */
+code,
+pre,
+.code,
+.monospace,
+tt,
+samp,
+kbd,
+var,
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', monospace !important;
+  font-variant-ligatures: common-ligatures;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+}
+
+/* Specific styling for code blocks */
+pre {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+}
+
+/* Specific styling for inline code */
+code {
+  font-size: 0.9em;
+  letter-spacing: 0.025em;
+}
+
+/* Terminal/console styling */
+.terminal,
+.console {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', monospace !important;
+  font-variant-ligatures: common-ligatures;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  letter-spacing: 0.025em;
+}
+
+/* Reduced line height for facts and docs content */
+.fact-content,
+.doc-content {
+  line-height: 1.3 !important;
+}
+
+/* Even tighter line height for facts and docs when in compact view */
+.fact-content.compact,
+.doc-content.compact {
+  line-height: 1.2 !important;
+}
+
+/* Ensure fact and doc cards in grid use available height */
+.grid .fact-card,
+.grid .doc-card {
+  min-height: 200px;
+}
+
+/* Better content scrolling for facts and docs */
+.content-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.content-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 2px;
+}
+
+.content-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
+
+.content-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }

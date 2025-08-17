@@ -83,7 +83,7 @@
                   class="w-full flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                   on:click={() => switchToBranch(branch.branch_id)}
                 >
-                  <GitBranch size="16" class="text-gray-500 dark:text-gray-400" />
+                  <GitBranch size="20" class="text-gray-500 dark:text-gray-400" />
                   <div class="flex-1">
                     <div class="font-medium text-gray-900 dark:text-gray-100">{branch.branch_name}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Branch ID: {branch.branch_id}</div>
@@ -143,7 +143,8 @@
               Cancel
             </button>
             <button
-              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              class="px-3 py-2 text-sm txt-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              style="background-color: var(--color-accent);"
               on:click={createBranch}
               disabled={isCreatingBranch || !newBranchName.trim()}
             >

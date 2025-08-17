@@ -3,6 +3,7 @@
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
   import EditDocModal from './EditDocModal.svelte';
   import AddDocModal from './AddDocModal.svelte';
+  import InfoPopup from './InfoPopup.svelte';
 
   export let docs = [];
   export let showAddDocForm = false;
@@ -15,6 +16,9 @@
   let showAddModal = false;
 
   const dispatch = createEventDispatcher();
+  
+  // Configuration for scrollable content
+  const CONTENT_SCROLL_THRESHOLD = 150; // Characters
 
   function openAddModal() {
     showAddModal = true;
@@ -69,14 +73,25 @@
   <!-- Fixed Header -->
   <div class="flex-shrink-0">
     <div class="flex items-center justify-between mb-2">
-      <h3 class="font-semibold text-gray-900 dark:text-gray-100">Docs</h3>
+      <div class="flex items-center gap-2">
+        <h3 class="font-semibold text-gray-900 dark:text-gray-100">Docs</h3>
+        <InfoPopup 
+          title="Documentation" 
+          content={`Docs are longer text documents that provide detailed information about your project. 
+          They can include background information, specifications, guidelines, or any other contextual information that will help the AI understand your project better.
+          <br /><br />
+          If you find the AI has a hard time grasping a concept, you should add docs or add detail to them to improve understanding.`}
+          buttonTitle="Learn about Documentation"
+        />
+      </div>
       <button 
-        class="flex items-center gap-1 text-sm bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 cursor-pointer" 
+        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer" 
+        style="background-color: var(--color-accent);"
         on:click={openAddModal}
         title="Add new doc"
       >
         <Plus size="16" />
-        Add Doc
+        Doc
       </button>
     </div>
   </div>
@@ -85,19 +100,19 @@
   <div class="flex-1 overflow-y-auto pr-1">
     <div class="grid grid-cols-3 gap-2">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
-    <div class="text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
+    <div class="doc-card flex flex-col h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
       <!-- Header: Title and Menu -->
-      <div class="mb-2">
+      <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
-        <div class="flex items-start gap-2 mb-2">
+        <div class="flex items-start gap-2">
           {#if d.pinned}
-            <Pin size="14" class="text-purple-600 flex-shrink-0 mt-0.5" />
+            <Pin size="20" class="text-purple-600 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-tight break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{d.title}</div>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{d.title}</div>
           <!-- Triple-dot menu - fixed to top right -->
           <div class="relative flex-shrink-0">
             <button 
-              class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-1" 
+              class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-0" 
               on:click={() => toggleMenu(i)}
               title="More actions"
             >
@@ -142,12 +157,12 @@
       </div>
       
       <!-- Content Preview -->
-      <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2">
-        {d.content.slice(0, 400)}{d.content.length > 400 ? '…' : ''}
+      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 flex-1 {d.content?.length > CONTENT_SCROLL_THRESHOLD ? 'min-h-0 max-h-32 overflow-y-auto content-scrollbar' : ''}" title="Length: {d.content?.length || 0} chars (threshold: {CONTENT_SCROLL_THRESHOLD})">
+        {d.content?.length > CONTENT_SCROLL_THRESHOLD ? d.content : (d.content?.slice(0, 400) + (d.content?.length > 400 ? '…' : ''))}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->
-      <div class="flex flex-wrap gap-1">
+      <div class="flex-shrink-0 flex flex-wrap gap-1">
         <span class="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">doc</span>
         {#if d.tags && d.tags.length > 0}
           {#each d.tags as tag}

@@ -266,14 +266,14 @@
                   on:click={() => startEdit(i)}
                   title="Edit question"
                 >
-                  <Edit size="14" />
+                  <Edit size="16" />
                 </button>
                 <button 
                   class="text-red-500 hover:text-red-700 p-0.5 cursor-pointer" 
                   on:click={() => removeQuestion(i)}
                   title="Remove question"
                 >
-                  <X size="14" />
+                  <X size="16" />
                 </button>
               </div>
             </div>

@@ -246,10 +246,10 @@
                 {/if}
 
                 <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  <Calendar size="12" />
+                  <Calendar size="16" />
                   <span>{formatDate(session.session_date)}</span>
                   <span>•</span>
-                  <MessageSquare size="12" />
+                  <MessageSquare size="16" />
                   <span>{session.message_count} msg{session.message_count !== 1 ? 's' : ''}</span>
                 </div>
 
@@ -267,14 +267,14 @@
                   title="Edit Session"
                   on:click|stopPropagation={() => startEditSession(session)}
                 >
-                  <Edit3 size="12" />
+                  <Edit3 size="16" />
                 </button>
                 <button
                   class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
                   title="Delete Session"
                   on:click|stopPropagation={() => deleteSession(session)}
                 >
-                  <Trash2 size="12" />
+                  <Trash2 size="16" />
                 </button>
               </div>
             </div>

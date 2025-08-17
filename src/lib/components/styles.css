@@ -259,6 +259,32 @@
   }
 }
 
+/* Custom scrollbar for content areas */
+.content-scrollbar {
+  /* WebKit browsers (Chrome, Safari, Edge) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.content-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+.content-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+  border: 1px solid var(--scrollbar-track);
+}
+
+.content-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
 /* Improve scrolling on mobile */
 @media (max-width: 1023px) {
   .overflow-auto, .overflow-y-auto {

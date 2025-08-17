@@ -7,7 +7,6 @@
   import { onMount } from 'svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
-  import MrWiskrModal from '$lib/components/MrWiskrModal.svelte';
   import { Settings, Settings2, Moon, Sun, BarChart3, LogOut } from 'lucide-svelte';
   
   // Project selector state
@@ -340,8 +339,7 @@
             <!-- Settings button for current project -->
             {#if currentProject}
               <button
-                class="flex items-center justify-center w-8 h-8 rounded-lg border text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
-                style="background-color: var(--bg-input); border-color: var(--border-input);"
+                class="flex items-center justify-center w-8 h-8 text-gray-300 hover:text-gray-100 transition-colors"
                 title="Project Settings: {currentProject.name}"
                 on:click={() => {
                   // Dispatch event that the projects page can listen to

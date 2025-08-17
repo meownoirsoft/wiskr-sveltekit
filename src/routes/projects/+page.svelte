@@ -16,7 +16,7 @@
   import SettingsModal from '$lib/components/SettingsModal.svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import SessionNavigator from '$lib/components/SessionNavigator.svelte';
-  import MrWiskrModal from '$lib/components/MrWiskrModal.svelte';
+
   
   // Import Lucide icons
   import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash } from 'lucide-svelte';
@@ -58,6 +58,7 @@
 
   // keep current derived from id
   $: current = projects.find(p => p.id === selectedId) || null;
+  
 
   async function selectProjectById(id) {
     if (!id || selectedId === id) return;
@@ -80,12 +81,16 @@
     await loadSessions();
     
     // load for this project (now that current is set)
-    await loadBranches();
     await loadContext();
     await loadUsage();
     
     // Load questions for this project from database
     await loadQuestions();
+    
+    // Load branches for the current session (if we have one)
+    if (currentSession) {
+      await loadSessionBranches(currentSession.id);
+    }
   }
 
   async function reloadProjects(selectId) {
@@ -426,6 +431,25 @@
     await loadContext();
   }
 
+  // Helper function for auto-regenerating summary when content changes
+  async function autoRegenerateSummary() {
+    if (!current) return;
+    
+    try {
+      // Call regeneration and wait for it to complete
+      await fetch('/api/brief/regenerate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ projectId: current.id })
+      });
+      
+      // Reload context to refresh the UI with the new summary
+      await loadContext();
+    } catch (error) {
+      console.log('Auto-regeneration failed (not critical):', error);
+    }
+  }
+
   const parseTags = (s) =>
     s.split(',').map(t => t.trim()).filter(Boolean);
 
@@ -460,6 +484,9 @@
 
     // reload lists
     await loadContext();
+    
+    // Auto-regenerate summary since facts content changed
+    await autoRegenerateSummary();
   }
 
   async function addDoc() {
@@ -490,6 +517,9 @@
     showAddDocForm = false;
 
     await loadContext();
+    
+    // Auto-regenerate summary since docs content changed
+    await autoRegenerateSummary();
   }
 
   function startEditFact(f, i) {
@@ -516,6 +546,9 @@
     }
     // Refresh lists
     await loadContext();
+    
+    // Auto-regenerate summary since fact content changed
+    await autoRegenerateSummary();
   }
 
   async function deleteFact(f, i) {
@@ -523,6 +556,9 @@
     const { error } = await supabase.from('facts').delete().eq('id', f.id);
     if (error) { alert(error.message); return; }
     facts = facts.filter((_, idx) => idx !== i);
+    
+    // Auto-regenerate summary since fact was deleted
+    await autoRegenerateSummary();
   }
 
 async function toggleFactPin(f) {
@@ -562,12 +598,18 @@ async function saveDocEdit(d, { title, content, tags }) {
       return;
     }
     await loadContext();
+    
+    // Auto-regenerate summary since doc content changed
+    await autoRegenerateSummary();
   }
 async function deleteDoc(d, i) {
   if (!confirm('Delete this doc?')) return;
   const { error } = await supabase.from('docs').delete().eq('id', d.id);
   if (error) { alert(error.message); return; }
   docs = docs.filter((_, idx) => idx !== i);
+  
+  // Auto-regenerate summary since doc was deleted
+  await autoRegenerateSummary();
 }
 
 async function toggleDocPin(d) {
@@ -678,26 +720,14 @@ async function copyToClipboard(text) {
 }
 
 // Conversation branching functions
+// Legacy function - now replaced by loadSessionBranches
 async function loadBranches() {
-  if (!current) return;
-  
-  try {
-    const res = await fetch('/api/branches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'list', projectId: current.id })
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      branches = data.branches || [];
-      
-      // Set current branch info
-      currentBranch = branches.find(b => b.branch_id === currentBranchId) || 
-                     branches.find(b => b.branch_id === 'main') || null;
-    }
-  } catch (error) {
-    console.error('Error loading branches:', error);
+  // This function is now deprecated in favor of loadSessionBranches
+  // We keep it for backward compatibility but redirect to loadSessionBranches
+  if (currentSession) {
+    await loadSessionBranches(currentSession.id);
+  } else {
+    console.warn('loadBranches called without currentSession - branches may not load correctly');
   }
 }
 
@@ -765,7 +795,7 @@ async function createBranch() {
     
     if (res.ok) {
       const data = await res.json();
-      await loadBranches();
+      await loadSessionBranches(currentSession.id);
       await switchToBranch(data.branch.branch_id);
       closeBranchModal();
       
@@ -800,8 +830,10 @@ async function switchToBranch(branchId) {
     const requestBody = {
       action: 'switch',
       projectId: current.id,
+      sessionId: currentSession?.id,
       branchId: branchId
     };
+    
     const res = await fetch('/api/branches', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -810,6 +842,7 @@ async function switchToBranch(branchId) {
     
     if (res.ok) {
       const data = await res.json();
+      
       currentBranchId = branchId;
       currentBranch = data.branch;
       messages = data.messages || [];
@@ -1055,13 +1088,25 @@ function handleSettingsModalClose() {
 
 async function handleBranchRenamed(event) {
   // Reload branches to get updated branch info
-  await loadBranches();
+  if (currentSession) {
+    await loadSessionBranches(currentSession.id);
+    
+    // Also update the current branch object with the new name
+    if (currentBranch && event.branchId === currentBranch.branch_id) {
+      const updatedBranch = branches.find(b => b.branch_id === currentBranch.branch_id);
+      if (updatedBranch) {
+        currentBranch = updatedBranch;
+      }
+    }
+  }
 }
 
 async function handleBranchDeleted(event) {
   // Switch to main branch and reload branches
   await switchToBranch('main');
-  await loadBranches();
+  if (currentSession) {
+    await loadSessionBranches(currentSession.id);
+  }
 }
 
 // Ideas Column event handlers
@@ -1336,7 +1381,7 @@ function handleTextAddToDocs(event) {
         currentSession = session;
         // Load messages and branches for this session
         await loadSessionMessages(session.id);
-        await loadSessionBranches(session.id);
+        await loadSessionBranches(session.id, true); // Skip currentBranch updates to prevent conflicts
       }
     } catch (error) {
       console.error('Error selecting session:', error);
@@ -1376,7 +1421,7 @@ function handleTextAddToDocs(event) {
     }
   }
 
-  async function loadSessionBranches(sessionId) {
+  async function loadSessionBranches(sessionId, skipCurrentBranchUpdate = false) {
     if (!current || !sessionId) return;
     
     try {
@@ -1389,10 +1434,23 @@ function handleTextAddToDocs(event) {
       if (error) {
         console.error('Error loading session branches:', error);
       } else {
-        branches = data || [];
-        // Set current branch info
-        currentBranch = branches.find(b => b.branch_id === currentBranchId) || 
-                       branches.find(b => b.branch_id === 'main') || null;
+        const sessionBranches = data || [];
+        
+        // Always update branches array to ensure names are fresh (not just when IDs change)
+        branches = sessionBranches;
+        
+        // IMPORTANT: Only update currentBranch if specifically requested (not during reactive calls)
+        // This prevents conflicts when switchToBranch() has already set the correct branch state
+        if (!skipCurrentBranchUpdate && (!currentBranch || currentBranch.branch_id === 'main')) {
+          const foundBranch = branches.find(b => b.branch_id === currentBranchId);
+          const mainBranch = branches.find(b => b.branch_id === 'main');
+          const newCurrentBranch = foundBranch || mainBranch || null;
+          
+          // Only update if we actually need to (prevents unnecessary resets)
+          if (!currentBranch || (newCurrentBranch && currentBranch.branch_id !== newCurrentBranch.branch_id)) {
+            currentBranch = newCurrentBranch;
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading session branches:', error);
@@ -1742,13 +1800,5 @@ function handleTextAddToDocs(event) {
   {showSettingsModal}
   project={settingsProject}
   on:close={handleSettingsModalClose}
-/>
-
-<MrWiskrModal
-  bind:this={mrWiskrModalRef}
-  showModal={showMrWiskrModal}
-  loading={mrWiskrLoading}
-  on:close={handleMrWiskrClose}
-  on:ask={handleMrWiskrAsk}
 />
 

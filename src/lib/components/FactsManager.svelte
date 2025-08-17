@@ -3,6 +3,7 @@
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
   import EditFactModal from './EditFactModal.svelte';
   import AddFactModal from './AddFactModal.svelte';
+  import InfoPopup from './InfoPopup.svelte';
 
   export let facts = [];
   export let loadingFacts = false;
@@ -21,6 +22,9 @@
   let showAddModal = false;
 
   const dispatch = createEventDispatcher();
+  
+  // Configuration for scrollable content
+  const CONTENT_SCROLL_THRESHOLD = 150; // Characters
 
   // Load project fact types when projectId changes
   $: if (projectId) {
@@ -207,7 +211,15 @@
   <!-- Fixed Header -->
   <div class="flex-shrink-0">
     <div class="flex items-center justify-between mb-2">
-      <h3 class="font-semibold text-gray-900 dark:text-gray-100">Facts</h3>
+      <div class="flex items-center gap-2">
+        <h3 class="font-semibold text-gray-900 dark:text-gray-100">Facts</h3>
+        <InfoPopup 
+          title="Facts" 
+          content={`Key-value pairs that define important information about your project. They can be people, places, processes, terms, or other important entities. 
+          Facts are used to provide context for AI interactions and help the AI understand your domain.<br /><br /> <strong>Fact Types</strong> can be updated in the project settings. Click the button in the header next to the project selector.`}
+          buttonTitle="Learn about Facts"
+        />
+      </div>
       <button 
         class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer" 
         style="background-color: var(--color-accent);"
@@ -217,7 +229,7 @@
         title="Add new fact"
       >
         <Plus size="16" />
-        Add Fact
+        Fact
       </button>
     </div>
 
@@ -230,15 +242,15 @@
   <div class="flex-1 overflow-y-auto pr-1">
     <div class="grid grid-cols-3 gap-2">
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
-    <div class="text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
+    <div class="fact-card flex flex-col h-full text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
       <!-- Header: Title and Menu -->
-      <div class="mb-2">
+      <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
-        <div class="flex items-start gap-2 mb-2">
+        <div class="flex items-start gap-2">
           {#if f.pinned}
-            <Pin size="14" class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5" />
+            <Pin size="16" class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-tight break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{f.key}</div>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{f.key}</div>
           <!-- Triple-dot menu - fixed to top right -->
           <div class="relative flex-shrink-0">
             <button 
@@ -287,14 +299,14 @@
       </div>
       
       <!-- Content -->
-      <div class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 flex-1 {f.value?.length > CONTENT_SCROLL_THRESHOLD ? 'min-h-0 max-h-32 overflow-y-auto content-scrollbar' : ''}" title="Length: {f.value?.length || 0} chars (threshold: {CONTENT_SCROLL_THRESHOLD})">
         {f.value}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->
-      <div class="flex flex-wrap gap-1">
+      <div class="flex-shrink-0 flex flex-wrap gap-1">
         <button 
-          class="text-xs px-2 py-1 rounded-full font-medium {getTypeTagClass(f.type)} hover:opacity-80 transition-opacity cursor-pointer"
+          class="text-xs px-1 py-1 rounded font-medium {getTypeTagClass(f.type)} hover:opacity-80 transition-opacity cursor-pointer"
           on:click={() => handleTypeClick(f.type)}
           title="Filter by type: {getTypeDisplayName(f.type)}"
         >
@@ -303,7 +315,7 @@
         {#if f.tags && f.tags.length > 0}
           {#each f.tags as tag}
             <button
-              class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
+              class="text-xs px-1 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
               on:click={() => handleTagClick(tag)}
               title="Filter by tag: {tag}"
             >

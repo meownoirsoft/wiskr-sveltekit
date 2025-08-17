@@ -189,6 +189,8 @@ async function listBranchesForMessage(supabase, projectId, sessionId, messageId)
 }
 
 async function switchBranch(supabase, projectId, sessionId, branchId) {
+  console.log('🔧 API switchBranch called with:', { projectId, sessionId, branchId });
+  
   // Fetch messages for the specified branch
   const { data: messages, error } = await supabase
     .from('messages')
@@ -202,19 +204,56 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
     return json({ error: 'Failed to fetch branch messages' }, { status: 500 });
   }
   
-  // Fetch branch info from conversation_branches table for all branches (including main)
-  const { data: branchData } = await supabase
-    .from('conversation_branches')
-    .select('*')
-    .eq('project_id', projectId)
-    .eq('session_id', sessionId)
-    .eq('branch_id', branchId)
-    .single();
+  console.log('📨 Messages found:', messages?.length || 0);
+  
+  let branch = null;
+  
+  // Handle main branch specially - it doesn't have a record in conversation_branches
+  if (branchId === 'main') {
+    branch = {
+      project_id: projectId,
+      session_id: sessionId,
+      branch_id: 'main',
+      branch_name: 'Main Conversation',
+      parent_message_id: null,
+      color_index: 0,
+      colorClass: 'bg-white border-gray-200',
+      created_at: new Date().toISOString()
+    };
+  } else {
+    // Fetch branch info from conversation_branches table for non-main branches
+    const { data: branchData, error: branchError } = await supabase
+      .from('conversation_branches')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('session_id', sessionId)
+      .eq('branch_id', branchId)
+      .single();
+      
+    if (branchError) {
+      console.error('Error fetching branch data:', branchError);
+      // If branch doesn't exist in conversation_branches, return error
+      return json({ error: 'Branch not found' }, { status: 404 });
+    }
     
-  const branch = branchData ? {
-    ...branchData,
-    colorClass: RAINBOW_COLORS[branchData.color_index % RAINBOW_COLORS.length]
-  } : null;
+    if (branchData) {
+      branch = {
+        ...branchData,
+        colorClass: RAINBOW_COLORS[branchData.color_index % RAINBOW_COLORS.length]
+      };
+    }
+  }
+  
+  console.log('API switchBranch returning:', {
+    success: true,
+    messagesCount: messages?.length || 0,
+    branch: branch ? {
+      branch_id: branch.branch_id,
+      branch_name: branch.branch_name,
+      colorClass: branch.colorClass
+    } : null,
+    branchId
+  });
     
   return json({ 
     success: true, 

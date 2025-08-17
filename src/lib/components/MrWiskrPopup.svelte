@@ -4,6 +4,7 @@
   import { browser } from '$app/environment';
   import { marked } from 'marked';
   import { getAIName } from '$lib/config/aiAvatars.js';
+  import { X } from 'lucide-svelte';
 
   export let visible = false;
   export let x = 0;
@@ -151,10 +152,20 @@
 {#if visible}
   <div
     bind:this={popupElement}
-    class="fixed z-50 bg-white border-2 border-purple-400 dark:border-purple-500 rounded-xl shadow-2xl"
-    style="left: {adjustedX}px; top: {adjustedY}px; width: 520px; border-color: #5D60DD; background-color: var(--bg-popup, white);"
+    class="fixed z-50 border-2 rounded-xl shadow-2xl"
+    style="left: {adjustedX}px; top: {adjustedY}px; width: 520px; border-color: #5D60DD; background-color: var(--bg-modal, white);"
   >
     <div class="relative">
+      <!-- Close X button in top right -->
+      <button
+        class="absolute top-3 right-3 z-20 p-1 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+        style="color: #5D60DD;"
+        on:click={handleDismiss}
+        title="Close"
+      >
+        <X size={20} />
+      </button>
+      
       <!-- Mr Wiskr Image - positioned to pop out of the left side -->
       <div class="absolute -left-10 top-3 z-10">
         <img 
@@ -233,7 +244,7 @@
         
         <!-- Dismiss Button -->
         <button
-          class="w-full text-sm font-medium rounded-lg py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-white dark:hover:text-white border-t border-gray-200 dark:border-gray-600 pt-3 mt-3"
+          class="w-full text-sm font-medium rounded-lg py-2 transition-colors hover:text-white dark:hover:text-white border-t border-gray-200 dark:border-gray-600 pt-3 mt-3"
           style="color: #5D60DD;"
           on:click={handleDismiss}
         >

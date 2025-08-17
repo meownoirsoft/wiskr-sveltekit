@@ -48,7 +48,7 @@
       on:click={createNewProject}
       title="Create new project"
     >
-      <Plus size="14" />
+      <Plus size="16" />
       New Project
     </button>
   </div>

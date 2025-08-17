@@ -436,7 +436,7 @@ import { browser } from '$app/environment';
         disabled={isGenerating}
         title="Generate new related ideas"
       >
-        <RefreshCw size="14" class={isGenerating ? "animate-spin" : ""} />
+        <RefreshCw size="16" class={isGenerating ? "animate-spin" : ""} />
         {isGenerating ? "Generating..." : "Refresh"}
       </button>
     </div>
@@ -545,7 +545,7 @@ import { browser } from '$app/environment';
         <!-- Loading message -->
         <li class="text-sm text-zinc-600 dark:text-zinc-300 border border-gray-200 dark:border-gray-600 rounded p-2" style="background-color: var(--color-accent-light);">
           <div class="flex items-center gap-2">
-            <RefreshCw size="14" class="animate-spin" style="color: var(--color-accent);" />
+            <RefreshCw size="16" class="animate-spin" style="color: var(--color-accent);" />
             <div>Generating related ideas based on your current context...</div>
           </div>
         </li>

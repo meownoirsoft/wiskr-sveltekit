@@ -35,6 +35,20 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
   let isSavingBranchName = false;
   let isDeletingBranch = false;
   
+  // Debug: Track branch state changes
+  $: {
+    console.log('🔄 ChatInterface branch state changed:', {
+      currentBranchId,
+      currentBranch: currentBranch ? {
+        branch_id: currentBranch.branch_id,
+        branch_name: currentBranch.branch_name
+      } : null,
+      branchesLength: branches.length,
+      showIcons: !!(currentBranch && currentBranchId !== 'main'),
+      timestamp: new Date().toISOString()
+    });
+  }
+  
   // Mr Wiskr state
   let mrWiskrVisible = false;
   let mrWiskrX = 0;
@@ -238,6 +252,7 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
         body: JSON.stringify({
           action: 'rename',
           projectId: current.id,
+          sessionId: currentSession?.id,
           branchId: currentBranchId,
           newName: editBranchName.trim()
         })
@@ -277,6 +292,7 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
         body: JSON.stringify({
           action: 'delete',
           projectId: current.id,
+          sessionId: currentSession?.id,
           branchId: currentBranchId
         })
       });
@@ -641,6 +657,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               {/if}
               
               <!-- Branch management buttons (only show for non-main branches) -->
+              <!-- DEBUG: currentBranch={currentBranch?.branch_name}, currentBranchId={currentBranchId} -->
               {#if currentBranch && currentBranchId !== 'main'}
                 <div class="flex items-center gap-1">
                   <button
@@ -649,7 +666,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
                     disabled={isDeletingBranch}
                     title="Edit branch name"
                   >
-                    <Edit2 size="14" />
+                    <Edit2 size="20" />
                   </button>
                   <button
                     class="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
@@ -660,7 +677,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
                     {#if isDeletingBranch}
                       <div class="animate-spin rounded-full h-3 w-3 border-2 border-red-600 border-t-transparent"></div>
                     {:else}
-                      <Trash2 size="14" />
+                      <Trash2 size="20" />
                     {/if}
                   </button>
                 </div>
@@ -830,14 +847,14 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               on:click={() => input = ''}
               title="Clear input"
             >
-              <X size="16" />
+              <X size="20" />
             </button>
           {/if}
         </div>
         <button class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded px-3 py-2 mt-3 transition-colors" type="submit" disabled={!current || !input.trim()} 
-        style="background-color: var(--bg-button-secondary);" 
-        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
-        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
+        style="background-color: var(--color-accent);" 
+        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
+        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         >
           &gt;&gt;&nbsp;Wiskr&nbsp;&lt;&lt;<br />Away
         </button>
