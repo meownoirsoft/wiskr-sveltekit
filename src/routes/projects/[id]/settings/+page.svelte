@@ -12,11 +12,14 @@
   let projectName = '';
   let projectDescription = '';
   let savingGeneral = false;
+  let saveSuccess = false;
   
   // Initialize form values when project changes
   $: if (project) {
     projectName = project.name || '';
     projectDescription = project.description || '';
+    console.log('Project loaded:', project);
+    console.log('Description set to:', projectDescription);
   }
   
   const tabs = [
@@ -45,7 +48,16 @@
         const updatedProject = await response.json();
         // Update the local project object
         project = { ...project, ...updatedProject };
-        console.log('General settings saved successfully');
+        // Explicitly update the form fields to ensure they reflect the saved data
+        projectName = updatedProject.name || '';
+        projectDescription = updatedProject.description || '';
+        console.log('General settings saved successfully', updatedProject);
+        
+        // Show success message
+        saveSuccess = true;
+        setTimeout(() => {
+          saveSuccess = false;
+        }, 3000);
       } else {
         const error = await response.json();
         console.error('Failed to save general settings:', error);
@@ -127,14 +139,57 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2" for="project-description">Description</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2" for="project-description">
+              Project Description
+              <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Most Important</span>
+            </label>
+            <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-blue-800">🎯 Critical for AI Performance</h3>
+                  <div class="mt-1 text-sm text-blue-700">
+                    <p>This description is the <strong>most important context</strong> for your AI assistant. It should clearly define:</p>
+                    <ul class="mt-2 ml-4 list-disc space-y-1">
+                      <li>Your project's main goals and objectives</li>
+                      <li>What you're trying to achieve or build</li>
+                      <li>The scope and focus areas</li>
+                      <li>Any specific requirements or constraints</li>
+                    </ul>
+                    <p class="mt-2"><strong>The AI uses this as its "north star"</strong> to provide more targeted and relevant assistance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             <textarea 
-              rows="3"
+              rows="4"
               bind:value={projectDescription}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Project description (optional)"
+              placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps the AI provide more targeted assistance."
             ></textarea>
+            <p class="mt-2 text-sm text-gray-500">
+              💡 <strong>Tip:</strong> A well-written description dramatically improves AI response quality. Take a moment to explain your project's purpose and goals.
+            </p>
           </div>
+          
+          {#if saveSuccess}
+            <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-green-800">✅ Settings saved successfully!</p>
+                </div>
+              </div>
+            </div>
+          {/if}
           
           <div class="flex justify-end pt-6 border-t">
             <button
@@ -143,13 +198,13 @@
               class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save size="16" />
-              {savingGeneral ? 'Saving...' : 'Save Changes'}
+              {savingGeneral ? 'Saving...' : 'Save'}
             </button>
           </div>
           
-          <div class="pt-4">
+          <!-- <div class="pt-4">
             <p class="text-sm text-gray-500 mb-4">More general settings will be added here in future updates.</p>
-          </div>
+          </div> -->
         </div>
       </div>
     {/if}

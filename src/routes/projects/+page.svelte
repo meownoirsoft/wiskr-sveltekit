@@ -13,7 +13,7 @@
   import FormatModal from '$lib/components/FormatModal.svelte';
   import BranchModal from '$lib/components/BranchModal.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
-  import SettingsModal from '$lib/components/SettingsModal.svelte';
+  import ProjectSettingsModal from '$lib/components/ProjectSettingsModal.svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import SessionNavigator from '$lib/components/SessionNavigator.svelte';
 
@@ -96,7 +96,7 @@
   async function reloadProjects(selectId) {
     const { data: p, error } = await supabase
       .from('projects')
-      .select('id, name, icon, color, brief_text, created_at')
+      .select('id, name, icon, color, brief_text, description, created_at')
       .order('created_at');
     if (error) {
       console.error('reloadProjects error', error);
@@ -172,14 +172,13 @@
   // New Project modal state
   let showNewProjectModal = false;
   let newProjectName = '';
-  let newProjectIcon = '📁';
-  let newProjectColor = '#6366f1';
+  let newProjectDescription = '';
   let creatingProject = false;
   let createProjectErr = '';
 
-  // Settings modal state
-  let showSettingsModal = false;
-  let settingsProject = null;
+  // Project Settings modal state
+  let showProjectSettingsModal = false;
+  let projectSettingsProject = null;
   
   // Mr Wiskr modal state
   let showMrWiskrModal = false;
@@ -911,8 +910,7 @@ async function createProject() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: newProjectName.trim(),
-        icon: newProjectIcon,
-        color: newProjectColor
+        description: newProjectDescription.trim()
       })
     });
 
@@ -931,7 +929,9 @@ async function createProject() {
 
     const { project } = await res.json();
     showNewProjectModal = false;
-    newProjectName = ''; createProjectErr = '';
+    newProjectName = '';
+    newProjectDescription = '';
+    createProjectErr = '';
 
     // Refresh projects and select the new one
     await reloadProjects(project.id);
@@ -1063,22 +1063,21 @@ function handleNewProjectModalClose() {
 }
 
 function handleCreateProject(event) {
-  const { name, icon, color } = event.detail;
+  const { name, description } = event.detail;
   newProjectName = name;
-  newProjectIcon = icon;
-  newProjectColor = color;
+  newProjectDescription = description || '';
   createProject();
 }
 
 function handleProjectOpenSettings(event) {
-  settingsProject = event.detail;
-  showSettingsModal = true;
+  projectSettingsProject = event.detail;
+  showProjectSettingsModal = true;
 }
 
-function handleSettingsModalClose() {
+function handleProjectSettingsModalClose() {
   // Close the modal
-  showSettingsModal = false;
-  settingsProject = null;
+  showProjectSettingsModal = false;
+  projectSettingsProject = null;
   
   // Refresh fact types in the Sidebar to ensure they are up-to-date
   if (sidebarComponent && activeTab === 'facts') {
@@ -1721,7 +1720,7 @@ function handleTextAddToDocs(event) {
 
 <!-- Usage Popover -->
 {#if showUsagePopover && usage}
-  <div class="fixed inset-0 backdrop-blur-sm bg-black/50 dark:bg-black/70 z-40 flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
+  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 z-40 flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
     <div class="bg-white border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 min-w-[300px]" style="background-color: var(--bg-modal, white);" on:click|stopPropagation>
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Usage Stats</h3>
@@ -1788,17 +1787,15 @@ function handleTextAddToDocs(event) {
 <NewProjectModal
   {showNewProjectModal}
   {newProjectName}
-  {newProjectIcon}
-  {newProjectColor}
   {creatingProject}
   {createProjectErr}
   on:close={handleNewProjectModalClose}
   on:create={handleCreateProject}
 />
 
-<SettingsModal
-  {showSettingsModal}
-  project={settingsProject}
-  on:close={handleSettingsModalClose}
+<ProjectSettingsModal
+  {showProjectSettingsModal}
+  project={projectSettingsProject}
+  on:close={handleProjectSettingsModalClose}
 />
 

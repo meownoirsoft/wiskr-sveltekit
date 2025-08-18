@@ -1,11 +1,13 @@
 <script>
 import { createEventDispatcher, tick } from 'svelte';
 import { marked } from 'marked';
-import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info } from 'lucide-svelte';
+import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw } from 'lucide-svelte';
 import TextSelectionMenu from './TextSelectionMenu.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import MrWiskrPopup from './MrWiskrPopup.svelte';
 import ModelDropdown from './ModelDropdown.svelte';
+import TLDRModal from './TLDRModal.svelte';
+import TLDRButton from './TLDRButton.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 
@@ -56,6 +58,11 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
   let mrWiskrThinking = false;
   let mrWiskrResponse = '';
   let mrWiskrError = '';
+  
+  // TL;DR state
+  let showTLDRModal = false;
+  let tldrOriginalText = '';
+  let tldrFieldType = 'ask-prompt';
 
   // Configure marked for better rendering
   marked.setOptions({
@@ -219,6 +226,11 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
     loadAvailableModels();
     loadUserPreferences();
     
+    // Scroll to bottom on mount (helpful for page reloads/hot reloads)
+    if (messages && messages.length > 0) {
+      scrollToBottom();
+    }
+    
     window.addEventListener('branches-updated', handleBranchesUpdated);
     window.addEventListener('user-preferences-updated', handleUserPreferencesUpdated);
     return () => {
@@ -375,6 +387,7 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
     try {
       // Build project context for Mr Wiskr
       const projectContext = current ? {
+        id: current.id,
         name: current.name,
         description: current.description,
         currentFocus: 'AI chat assistance and simplification'
@@ -564,6 +577,67 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
   function handleAccentLeave(event) {
     event.target.style.color = 'var(--color-accent)';
   }
+  
+  // TL;DR handlers
+  function handleTLDRClick() {
+    if (!input.trim()) return;
+    tldrOriginalText = input;
+    tldrFieldType = 'ask-prompt';
+    showTLDRModal = true;
+  }
+  
+  function handleTLDRModalClose() {
+    showTLDRModal = false;
+    tldrOriginalText = '';
+  }
+  
+  function handleTLDRReplace(event) {
+    const { tldrText } = event.detail;
+    input = tldrText;
+    showTLDRModal = false;
+    tldrOriginalText = '';
+  }
+  
+  function handleTLDRCopy(event) {
+    const { tldrText } = event.detail;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(tldrText).then(() => {
+        // Optional: show success feedback
+      });
+    }
+    showTLDRModal = false;
+    tldrOriginalText = '';
+  }
+  
+  // ReAsk functionality - get the last user message from current conversation
+  function getLastUserMessage() {
+    if (!messages || messages.length === 0) return null;
+    
+    // Find the last user message in the current conversation
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user' && messages[i].content.trim()) {
+        return messages[i].content.trim();
+      }
+    }
+    return null;
+  }
+  
+  // ReAsk function - copy last user question to input
+  function reAskLastQuestion() {
+    const lastQuestion = getLastUserMessage();
+    if (lastQuestion) {
+      input = lastQuestion;
+      // Focus the textarea after a brief delay to ensure it's rendered
+      setTimeout(() => {
+        const textarea = document.getElementById('ask-box');
+        if (textarea) {
+          textarea.focus();
+          // Move cursor to end
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+      }, 50);
+    }
+  }
 </script>
 
 <main class="flex flex-col h-full overflow-hidden mobile-chat" style="background-color: var(--bg-chat);">
@@ -576,12 +650,12 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
         <div class="flex items-center gap-2">
           <button 
             data-sessions-button
-class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-chat-controls)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''};"
+class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-sessions-button)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''};"
             title="{showSessionNavigator ? 'Hide Sessions' : 'Show Sessions'}"
             on:click={toggleSessionNavigator}
           >
             <MessageSquare size="16" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};" class="{showSessionNavigator ? '' : 'text-gray-600 dark:text-gray-400'}" />
-            <span class="text-sm font-medium {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-300'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">Sessions</span>
+            <span class="text-sm font-medium {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-100'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">Sessions</span>
             {#if currentSession}
               <span class="text-xs text-gray-500 dark:text-gray-400">• {currentSession.session_name}</span>
             {/if}
@@ -726,7 +800,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               {/if}
             {/if}
           </div>
-          <div class="rounded-lg p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `ml-8 whitespace-pre-wrap text-white ${branchColor.accent}` : `mr-8 assistant-message text-white ${branchColor.accent}`}" style="background-color: {m.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {m.role === 'user' ? '#5a5a66' : '#4a4a52'};">
+          <div class="rounded-lg p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `ml-8 whitespace-pre-wrap ${branchColor.accent}` : `mr-8 assistant-message ${branchColor.accent}`}" style="background-color: {m.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {m.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {m.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {m.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
             {#if m.role === 'assistant'}
               <div class="prose prose-sm max-w-none prose-gray dark:prose-invert">
                 {@html renderMarkdown(m.content)}
@@ -817,8 +891,8 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     
     <!-- Ask Form -->
     <div class="border-t border-gray-200 dark:border-gray-700">
-      <!-- Top Row: Model Selection -->
-      <div class="px-3 pt-2 pb-1 flex justify-start items-center">
+      <!-- Top Row: Model Selection and ReAsk -->
+      <div class="px-3 pt-2 pb-1 flex justify-between items-center">
         
         <div class="flex items-center gap-2 pb-2">
           <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400">Model:</label>
@@ -834,6 +908,35 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
             buttonTitle="Learn about AI Models"
           />
         </div>
+        
+        <!-- TL;DR Button and ReAsk Button -->
+        <div class="pb-2 flex gap-2">
+          {#if input.trim()}
+            <TLDRButton
+              on:tldr={handleTLDRClick}
+              disabled={!current || !input.trim()}
+              size="sm"
+            />
+          {/if}
+        </div>
+        
+        <!-- ReAsk Button (always visible when there's a last message) -->
+        {#if getLastUserMessage()}
+          <div class="pb-2">
+            <button
+              class="flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition-colors font-medium"
+              style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light);"
+              on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.borderColor = 'var(--color-accent)'; }}
+              on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
+              on:click={reAskLastQuestion}
+              disabled={!current}
+              title="Copy your last question to the input box"
+            >
+              <RotateCcw size="14" />
+              ReAsk
+            </button>
+          </div>
+        {/if}
       </div>
       
       <!-- Input and Send -->
@@ -851,7 +954,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
             </button>
           {/if}
         </div>
-        <button class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded px-3 py-2 mt-3 transition-colors" type="submit" disabled={!current || !input.trim()} 
+        <button class="border border-gray-300 dark:border-gray-600 text-white rounded px-3 py-2 mt-3 transition-colors" type="submit" disabled={!current || !input.trim()} 
         style="background-color: var(--color-accent);" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
@@ -883,5 +986,16 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     error={mrWiskrError}
     on:dismiss={dismissMrWiskr}
     on:follow-up={handleMrWiskrFollowUp}
+  />
+  
+  <!-- TL;DR Modal -->
+  <TLDRModal 
+    bind:visible={showTLDRModal}
+    originalText={tldrOriginalText}
+    fieldType={tldrFieldType}
+    projectContext={current ? { name: current.name, description: current.description } : null}
+    on:close={handleTLDRModalClose}
+    on:replace={handleTLDRReplace}
+    on:copy={handleTLDRCopy}
   />
 

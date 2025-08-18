@@ -1,6 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { X } from 'lucide-svelte';
+  import TLDRModal from './TLDRModal.svelte';
+  import TLDRButton from './TLDRButton.svelte';
   
   export let showModal = false;
   export let projectFactTypes = [];
@@ -10,6 +12,11 @@
   export let factTags = '';
   
   const dispatch = createEventDispatcher();
+  
+  // TL;DR state
+  let showTLDRModal = false;
+  let tldrOriginalText = '';
+  let tldrFieldType = 'fact';
   
   function handleSave() {
     // Validate that a fact type is selected (not empty or placeholder)
@@ -59,15 +66,35 @@
     };
     return tagStyles[type] || 'bg-gray-100 text-gray-700';
   }
+  
+  // TL;DR handlers
+  function handleTLDRClick() {
+    if (!factValue.trim()) return;
+    tldrOriginalText = factValue;
+    tldrFieldType = 'fact';
+    showTLDRModal = true;
+  }
+  
+  function handleTLDRModalClose() {
+    showTLDRModal = false;
+    tldrOriginalText = '';
+  }
+  
+  function handleTLDRReplace(event) {
+    const { newText } = event.detail;
+    factValue = newText;
+    showTLDRModal = false;
+    tldrOriginalText = '';
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
 {#if showModal}
   <!-- Modal Overlay -->
-  <div class="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-25 dark:bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <!-- Modal Content -->
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md" style="background-color: var(--bg-modal, white);">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
@@ -91,7 +118,7 @@
         <!-- Type Selection -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type">Type</label>
-          <select class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" bind:value={factType}>
+          <select class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" bind:value={factType}>
             <option value="" disabled class="text-gray-500">Select a fact type...</option>
             {#if projectFactTypes.length > 0}
               {#each projectFactTypes as factTypeOption}
@@ -111,7 +138,7 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-key">Name/Title</label>
           <input 
-            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., Cheddar"
             bind:value={factKey}
           />
@@ -119,9 +146,18 @@
         
         <!-- Value Input -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-value">Content</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="fact-value">Content</label>
+            {#if factValue.trim()}
+              <TLDRButton
+                on:tldr={handleTLDRClick}
+                disabled={!factValue.trim()}
+                size="sm"
+              />
+            {/if}
+          </div>
           <textarea 
-            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             rows="4"
             placeholder="Enter the fact details... (≤120 words work best)"
             bind:value={factValue}
@@ -132,7 +168,7 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-tags">Tags</label>
           <input 
-            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="comma, separated, tags"
             bind:value={factTags}
           />
@@ -157,4 +193,15 @@
       </div>
     </div>
   </div>
+{/if}
+
+<!-- TL;DR Modal -->
+{#if showTLDRModal}
+  <TLDRModal
+    bind:visible={showTLDRModal}
+    originalText={tldrOriginalText}
+    fieldType={tldrFieldType}
+    on:close={handleTLDRModalClose}
+    on:replace={handleTLDRReplace}
+  />
 {/if}

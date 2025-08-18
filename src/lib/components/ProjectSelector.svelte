@@ -74,7 +74,7 @@
   <!-- Compact project list -->
   <div class="space-y-1 max-h-32 overflow-y-auto border rounded p-2 bg-white">
     {#each filtered as project}
-      <div class="flex items-center justify-between gap-2 p-1 rounded hover:bg-zinc-50 {current?.id === project.id ? 'bg-blue-50 border border-blue-200' : ''}">
+      <div class="flex items-center justify-between gap-2 p-1 rounded hover:bg-zinc-50 {current?.id === project.id ? 'bg-blue-500 text-white' : ''}">
         <button
           class="flex items-center gap-2 flex-1 text-left text-sm"
           on:click={() => pickProject(project)}

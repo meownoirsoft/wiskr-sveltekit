@@ -258,7 +258,7 @@
               class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
               title="Remove fact type"
             >
-              <Trash2 size="1416" />
+              <Trash2 size="16" />
             </button>
           </div>
         </div>
@@ -360,7 +360,7 @@
         on:blur={() => { this.style.backgroundColor='var(--color-accent)'; }}
       >
         <Save size="16" />
-        {saving ? 'Saving...' : 'Save Changes'}
+        {saving ? 'Saving...' : 'Save'}
       </button>
     </div>
   {/if}

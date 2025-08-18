@@ -92,10 +92,10 @@
     
     // Add appropriate border classes based on side - we need to hide the borders that would be inside the popup
     const borderClasses = {
-      top: 'border-l-0 border-t-0 border-r border-b border-gray-600',
-      right: 'border-t-0 border-r-0 border-b border-l border-gray-600', 
-      bottom: 'border-r-0 border-b-0 border-t border-l border-gray-600',
-      left: 'border-b-0 border-l-0 border-t border-r border-gray-600'
+      top: 'border-l-0 border-t-0 border-r border-b border-gray-300 dark:border-gray-600',
+      right: 'border-t-0 border-r-0 border-b border-l border-gray-300 dark:border-gray-600', 
+      bottom: 'border-r-0 border-b-0 border-t border-l border-gray-300 dark:border-gray-600',
+      left: 'border-b-0 border-l-0 border-t border-r border-gray-300 dark:border-gray-600'
     };
     
     arrowElement.className += ` ${borderClasses[side] || borderClasses.bottom}`;
@@ -156,14 +156,14 @@
   {#if isOpen}
     <div 
       bind:this={popupElement}
-      class="info-popup-content fixed z-[60] w-96 rounded-lg shadow-xl border border-gray-600"
-      style="background-color: var(--bg-info-popup); max-height: calc(100vh - 32px);"
+      class="info-popup-content fixed z-[60] w-96 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+      style="max-height: calc(100vh - 32px);"
     >
       <!-- Header with close button -->
       <div class="flex-shrink-0 flex items-center justify-between p-4 pb-2">
-        <h3 class="text-sm font-semibold text-white">{title}</h3>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
         <button 
-          class="text-gray-300 hover:text-white transition-colors"
+          class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors"
           on:click|stopPropagation={close}
           title="Close"
         >
@@ -172,15 +172,15 @@
       </div>
       
       <!-- Content with scrolling -->
-      <div class="flex-1 px-4 pb-4 text-sm text-white leading-relaxed overflow-y-auto" style="max-height: calc(100vh - 120px);">
+      <div class="flex-1 px-4 pb-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed overflow-y-auto" style="max-height: calc(100vh - 120px);">
         {@html content}
       </div>
       
       <!-- Arrow pointing to button -->
       <div 
         bind:this={arrowElement}
-        class="absolute w-4 h-4 transform rotate-45 border border-gray-600"
-        style="background-color: var(--bg-info-popup); z-index: -1;"
+        class="absolute w-4 h-4 transform rotate-45 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+        style="z-index: -1;"
       ></div>
     </div>
   {/if}

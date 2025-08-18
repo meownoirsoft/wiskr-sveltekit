@@ -59,21 +59,21 @@
 {#if visible && aiInfo && model}
   <div
     bind:this={tooltipElement}
-    class="fixed z-[60] bg-gray-900 text-white text-sm rounded-lg shadow-xl border border-gray-700 p-3 pointer-events-none max-w-xs"
+    class="fixed z-[60] bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm rounded-lg shadow-xl border border-gray-300 dark:border-gray-700 p-3 pointer-events-none max-w-xs"
     style="left: {position.x}px; top: {position.y}px;"
   >
     <!-- AI Name -->
-    <div class="font-semibold text-white mb-1">
+    <div class="font-semibold text-gray-900 dark:text-white mb-1">
       {aiInfo.name}
     </div>
     
     <!-- Technical Model Name -->
-    <div class="text-gray-300 text-xs mb-2 font-mono">
+    <div class="text-gray-600 dark:text-gray-300 text-xs mb-2 font-mono">
       {model.name}
     </div>
     
     <!-- Pricing -->
-    <div class="text-gray-400 text-xs space-y-1">
+    <div class="text-gray-500 dark:text-gray-400 text-xs space-y-1">
       <div class="flex justify-between">
         <span>Input:</span>
         <span class="font-mono">${model.costPer1kTokens.input}/1k</span>
@@ -86,13 +86,13 @@
     
     <!-- Category/Tier -->
     {#if model.category}
-      <div class="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-700">
+      <div class="text-gray-500 dark:text-gray-400 text-xs mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
         {model.category}
       </div>
     {/if}
 
     <!-- Tooltip arrow pointing to the target -->
-    <div class="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 border-l border-b border-gray-700 rotate-45 -left-1"></div>
+    <div class="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-white dark:bg-gray-900 border-l border-b border-gray-300 dark:border-gray-700 rotate-45 -left-1"></div>
   </div>
 {/if}
 

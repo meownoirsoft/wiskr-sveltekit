@@ -229,7 +229,7 @@
                 <button 
                   class="text-green-600 hover:text-green-700 p-1 cursor-pointer" 
                   on:click={saveEdit}
-                  title="Save changes"
+                  title="Save"
                 >
                   ✓
                 </button>

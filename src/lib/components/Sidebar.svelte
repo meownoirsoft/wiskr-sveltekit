@@ -285,7 +285,7 @@
 </script>
 
 <section class="h-full border-r border-gray-200 dark:border-gray-700 p-3 flex flex-col mobile-sidebar">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
     <InfoPopup
       title="Project Context"
@@ -297,85 +297,83 @@
   {#if current}
     <!-- Three-Tab Interface: Summary, Facts, Docs -->
     <div class="flex flex-col min-h-0 flex-1">
-      <!-- Selected Tags & Controls (triggered by global search) -->
-      {#if activeTab !== 'summary'}
-        <div class="mb-3 space-y-2">
+      <!-- Selected Tags & Controls (reserve space on all tabs) -->
+      <div class="mb-3 space-y-2 transition-all duration-200">
+        {#if activeTab !== 'summary' && selectedTags.length > 0}
           <!-- Selected Tags & Controls -->
-          {#if selectedTags.length > 0}
-            <div class="space-y-2">
-              <!-- Filter Mode Toggle -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <button
-                    on:click={toggleFilterMode}
-                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
-                    title={`Currently using ${tagFilterMode} logic`}
-                  >
-                    {#if tagFilterMode === 'AND'}
-                      <ToggleRight size="14" class="text-blue-600" />
-                      <span class="font-medium" style="color: var(--color-accent);">AND</span>
-                    {:else}
-                      <ToggleLeft size="14" class="text-green-600" />
-                      <span class="font-medium text-green-700">OR</span>
-                    {/if}
-                  </button>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    {tagFilterMode === 'AND' ? 'All tags required' : 'Any tag matches'}
-                  </span>
-                </div>
+          <div class="space-y-2">
+            <!-- Filter Mode Toggle -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
                 <button
-                  on:click={clearAllFilters}
-                  class="text-xs text-red-600 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors"
+                  on:click={toggleFilterMode}
+                  class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+                  title={`Currently using ${tagFilterMode} logic`}
                 >
-                  Clear all
+                  {#if tagFilterMode === 'AND'}
+                    <ToggleRight size="14" class="text-blue-600" />
+                    <span class="font-medium" style="color: var(--color-accent);">AND</span>
+                  {:else}
+                    <ToggleLeft size="14" class="text-green-600" />
+                    <span class="font-medium text-green-700">OR</span>
+                  {/if}
                 </button>
-              </div>
-              
-              <!-- Bulk Pin/Unpin Controls -->
-              <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                <div class="flex items-center gap-2">
-                  <button
-                    on:click={bulkPinFiltered}
-                    class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
-                    title="Pin all filtered {activeTab}"
-                  >
-                    📌 Pin all ({activeTab === 'facts' ? filteredFacts.length : filteredDocs.length})
-                  </button>
-                  <button
-                    on:click={bulkUnpinFiltered}
-                    class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                    title="Unpin all filtered {activeTab}"
-                  >
-                    📍 Unpin all ({activeTab === 'facts' ? filteredFacts.filter(f => f.pinned).length : filteredDocs.filter(d => d.pinned).length})
-                  </button>
-                </div>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {activeTab === 'facts' 
-                    ? `${filteredFacts.filter(f => f.pinned).length} of ${filteredFacts.length} pinned`
-                    : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
-                  }
+                  {tagFilterMode === 'AND' ? 'All tags required' : 'Any tag matches'}
                 </span>
               </div>
-              
-              <!-- Tag Breadcrumbs -->
-              <div class="flex flex-wrap gap-1">
-                {#each selectedTags as tag, index}
-                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full" style="background-color: var(--color-accent-light); color: var(--color-accent);">
-                    {tag}
-                    <button
-                      on:click={() => removeTagFilter(index)}
-                      class="hover:opacity-80 rounded-full p-0.5 transition-opacity"
-                      title="Remove tag"
-                    >
-                      <X size="12" />
-                    </button>
-                  </span>
-                {/each}
-              </div>
+              <button
+                on:click={clearAllFilters}
+                class="text-xs text-red-600 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                Clear all
+              </button>
             </div>
-          {/if}
-        </div>
-      {/if}
+            
+            <!-- Bulk Pin/Unpin Controls -->
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+              <div class="flex items-center gap-2">
+                <button
+                  on:click={bulkPinFiltered}
+                  class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
+                  title="Pin all filtered {activeTab}"
+                >
+                  📌 Pin all ({activeTab === 'facts' ? filteredFacts.length : filteredDocs.length})
+                </button>
+                <button
+                  on:click={bulkUnpinFiltered}
+                  class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                  title="Unpin all filtered {activeTab}"
+                >
+                  📍 Unpin all ({activeTab === 'facts' ? filteredFacts.filter(f => f.pinned).length : filteredDocs.filter(d => d.pinned).length})
+                </button>
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                {activeTab === 'facts' 
+                  ? `${filteredFacts.filter(f => f.pinned).length} of ${filteredFacts.length} pinned`
+                  : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
+                }
+              </span>
+            </div>
+            
+            <!-- Tag Breadcrumbs -->
+            <div class="flex flex-wrap gap-1">
+              {#each selectedTags as tag, index}
+                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full" style="background-color: var(--color-accent-light); color: var(--color-accent);">
+                  {tag}
+                  <button
+                    on:click={() => removeTagFilter(index)}
+                    class="hover:opacity-80 rounded-full p-0.5 transition-opacity"
+                    title="Remove tag"
+                  >
+                    <X size="12" />
+                  </button>
+                </span>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
       
       <!-- Tab Headers -->
       <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3">

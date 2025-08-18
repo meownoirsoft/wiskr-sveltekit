@@ -8,23 +8,23 @@
   /* Light theme */
   --bg-primary: #ffffff;
   --bg-secondary: rgba(255, 255, 255, 0.95);
-  --text-primary: #333333;
-  --border: #e1e5e9;
+  --text-primary: #1f2937;
+  --border: #e5e7eb;
   
   /* Panel backgrounds - light mode */
-  --bg-panel-left: #f9fafb;  /* bg-gray-50 equivalent */
-  --bg-panel-right: #fafafa; /* bg-zinc-50 equivalent */
+  --bg-panel-left: #EEF1FF;  /* Light blue background */
+  --bg-panel-right: #EEF1FF; /* Light blue background */
   
   /* Scrollbar colors - light mode */
-  --scrollbar-track: #f1f1f1;
-  --scrollbar-thumb: #c1c1c1;
-  --scrollbar-thumb-hover: #a8a8a8;
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
   
   /* Header background - light mode */
-  --bg-header: rgba(255, 255, 255, 0.8);
+  --bg-header: #D2DAFF;
   
   /* Input backgrounds - light mode */
-  --bg-input: #ffffff;
+  --bg-input: #F8FAFC;
   --border-input: #d1d5db;
   --border-input-focus: #3b82f6;
   
@@ -32,16 +32,19 @@
   --bg-card: #ffffff;
   
   /* Chat background - light mode */
-  --bg-chat: #ffffff;
+  --bg-chat: #D2DAFF;
   
   /* Chat header background - light mode */
-  --bg-chat-header: #f9fafb;
+  --bg-chat-header: #EEF1FF;
   
   /* Chat controls background - light mode */
   --bg-chat-controls: #ffffff;
   
+  /* Sessions button background - light mode */
+  --bg-sessions-button: #C2D4FE;
+  
   /* Ask form background - light mode */
-  --bg-ask-form: #f9fafb;
+  --bg-ask-form: #D9EAFD;
   
   /* Accent color - light mode */
   --color-accent: #155DFC;
@@ -50,8 +53,8 @@
   --color-accent-border: rgba(21, 93, 252, 0.3);
   
   /* Chat message backgrounds - light mode */
-  --bg-message-user: #585866;
-  --bg-message-assistant: #35353d;
+  --bg-message-user: #dbeafe;
+  --bg-message-assistant: #f1f5f9;
   
   /* Info popup background - light mode */
   --bg-info-popup: #42424c;
@@ -64,7 +67,13 @@
   
   /* Button backgrounds - light mode */
   --bg-button-secondary: #ffffff;
-  --bg-button-secondary-hover: #f9fafb;
+  --bg-button-secondary-hover: #f8fafc;
+  
+  /* Header component backgrounds - light mode */
+  --bg-header-input: #ffffff;
+  --border-header-input: #d1d5db;
+  --text-header: #374151;
+  --text-header-secondary: #6b7280;
 }
 
 .dark {
@@ -104,6 +113,9 @@
   /* Chat controls background - dark mode */
   --bg-chat-controls: #222226;
   
+  /* Sessions button background - dark mode */
+  --bg-sessions-button: #35353d;
+  
   /* Ask form background - dark mode */
   --bg-ask-form: #1b1b1e;
   
@@ -129,6 +141,12 @@
   /* Button backgrounds - dark mode */
   --bg-button-secondary: #2d2d30;
   --bg-button-secondary-hover: #3a3a3d;
+  
+  /* Header component backgrounds - dark mode */
+  --bg-header-input: #35353D;
+  --border-header-input: #4a4a52;
+  --text-header: #e5e7eb;
+  --text-header-secondary: #9ca3af;
 }
 
 html, body {

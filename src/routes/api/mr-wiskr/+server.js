@@ -26,6 +26,12 @@ export async function POST({ request, locals }) {
       throw error(400, 'Text is required');
     }
 
+    // Get user for authentication and usage tracking
+    const { data: { user } } = await locals.supabase.auth.getUser();
+    if (!user) {
+      throw error(401, 'Unauthorized');
+    }
+
     // Use fast model for Mr Wiskr since he should be quick and helpful
     const modelKey = 'speed';
     const { config: modelConf, client: openai } = getModelConfig(modelKey);
@@ -107,8 +113,34 @@ What does this mean in practical terms?${contextInfo}`;
       throw error(500, "Mr Wiskr seems to be at a loss for words right now. Please try again!");
     }
 
+    const responseContent = response.choices[0].message.content.trim();
+
+    // Calculate tokens and cost for usage tracking (similar to chat API)
+    const inTok = Math.round(JSON.stringify(messages).length / 4);
+    const outTok = Math.round(responseContent.length / 4);
+    const cost = +(inTok * modelConf.inPerTok + outTok * modelConf.outPerTok).toFixed(6);
+
+    // Log usage to usage_logs table
+    const usagePayload = {
+      user_id: user.id,
+      project_id: projectContext?.id || null, // Use project ID from context if available
+      model: modelConf.name,
+      tokens_in: inTok,
+      tokens_out: outTok,
+      cost_usd: cost
+    };
+
+    console.log('🐱 Mr Wiskr usage:', usagePayload);
+    const { error: usageError } = await locals.supabase.from('usage_logs').insert(usagePayload);
+    
+    if (usageError) {
+      console.error('❌ Mr Wiskr usage log error:', usageError);
+    } else {
+      console.log('✅ Mr Wiskr usage logged successfully');
+    }
+
     return json({
-      response: response.choices[0].message.content.trim(),
+      response: responseContent,
       model: modelConf.name,
       timestamp: new Date().toISOString()
     });

@@ -24,6 +24,8 @@ export async function load({ params, locals }) {
     throw error(403, 'Access denied');
   }
 
+  console.log('Loading project for settings:', project);
+  
   return {
     project
   };

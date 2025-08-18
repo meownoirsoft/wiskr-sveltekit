@@ -39,7 +39,7 @@
 
 <div class="flex flex-col h-full border-r border-gray-200 dark:border-gray-700 overflow-hidden mobile-ideas-column">
   <!-- Header -->
-  <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+  <div class="p-4">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Prompt Add-Ins</h2>
   </div>
   

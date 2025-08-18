@@ -6,7 +6,7 @@ export const POST = async ({ request, locals }) => {
     const { data: { user } } = await locals.supabase.auth.getUser();
     if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
-    const { name, icon = '📁', color = '#6366f1', brief_text = '' } = await request.json();
+    const { name, icon = '📁', color = '#6366f1', brief_text = '', description = '' } = await request.json();
     if (!name?.trim()) return json({ message: 'Name required' }, { status: 400 });
 
     // persona: get or create
@@ -29,8 +29,8 @@ export const POST = async ({ request, locals }) => {
 
     const { data: project, error: pErr } = await locals.supabase
       .from('projects')
-      .insert({ user_id: user.id, persona_id: persona.id, name: name.trim(), icon, color, brief_text })
-      .select('id, name, icon, color, brief_text, created_at')
+      .insert({ user_id: user.id, persona_id: persona.id, name: name.trim(), icon, color, brief_text, description: description.trim() })
+      .select('id, name, icon, color, brief_text, description, created_at')
       .single();
 
     if (pErr) return json({ message: pErr.message }, { status: 500 });

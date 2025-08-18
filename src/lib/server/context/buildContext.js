@@ -27,7 +27,32 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
 
   const blocks = [];
 
-  // 1) PINNED FACTS FIRST - HIGHEST PRIORITY
+  // 0) PROJECT DESCRIPTION - ULTIMATE HIGHEST PRIORITY
+  // This is where users define the core aims and goals of their project
+  const { data: projWithDesc } = await supabase
+    .from('projects')
+    .select('name, description, brief_text')
+    .eq('id', projectId)
+    .single();
+
+  if (projWithDesc?.description?.trim()) {
+    blocks.push(
+      '🎯 PROJECT MISSION & GOALS - YOUR PRIMARY DIRECTIVE:\n\n' +
+      `📋 Project: ${projWithDesc.name}\n\n` +
+      '🔥 CORE OBJECTIVES & PURPOSE:\n' +
+      projWithDesc.description.trim() +
+      '\n\n💡 CRITICAL: This project description defines the user\'s primary aims and goals. ' +
+      'EVERY response must align with and advance these objectives. ' +
+      'Use this as your north star for all recommendations and assistance.'
+    );
+    console.log('🎯 Added PROJECT DESCRIPTION as highest priority context:', projWithDesc.name);
+    console.log('📝 Description preview:', projWithDesc.description.substring(0, 100) + (projWithDesc.description.length > 100 ? '...' : ''));
+  } else {
+    console.log('⚠️  No project description found - AI context will be less targeted');
+    console.log('💡 Suggestion: User should add a project description for better AI assistance');
+  }
+
+  // 1) PINNED FACTS SECOND - CRITICAL PRIORITY
   // Get ALL pinned facts/docs - they're critical and must never be missed
   const [{ data: pFacts }, { data: pDocs }] = await Promise.all([
     supabase.from('facts').select('id,type,key,value').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_FACTS),
@@ -62,15 +87,10 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     console.log('📌 No pinned docs found');
   }
 
-  // 2) Project brief (lower priority)
-  const { data: proj } = await supabase
-    .from('projects')
-    .select('name, brief_text')
-    .eq('id', projectId)
-    .single();
-  if (proj?.brief_text) {
-    blocks.push(`PROJECT_BRIEF:\n${clip(proj.brief_text, MAX_BRIEF_CHARS)}`);
-    console.log('📋 Added project brief:', proj.name);
+  // 2) Project brief (lower priority) - use data already fetched above
+  if (projWithDesc?.brief_text) {
+    blocks.push(`PROJECT_BRIEF:\n${clip(projWithDesc.brief_text, MAX_BRIEF_CHARS)}`);
+    console.log('📋 Added project brief:', projWithDesc.name);
   } else {
     console.log('📋 No project brief found');
   }

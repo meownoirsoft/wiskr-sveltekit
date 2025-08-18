@@ -1,14 +1,16 @@
 <script>
-  import '../app.css';
-  export let data;
   import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import { onMount } from 'svelte';
+  import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette } from 'lucide-svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
-  import { Settings, Settings2, Moon, Sun, BarChart3, LogOut } from 'lucide-svelte';
+  import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+  import '../app.css';
+  import '$lib/components/styles.css';
   
+  export let data;
   // Project selector state
   let projects = [];
   let currentProject = null;
@@ -127,7 +129,7 @@
       const { supabase } = await import('$lib/supabase.js');
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name, icon, color, brief_text, created_at')
+        .select('id, name, icon, color, brief_text, description, created_at')
         .order('created_at');
       
       if (!error) {
@@ -146,7 +148,7 @@
         const { supabase } = await import('$lib/supabase.js');
         const { data } = await supabase
           .from('projects')
-          .select('id, name, icon, color, brief_text, created_at')
+          .select('id, name, icon, color, brief_text, description, created_at')
           .order('created_at');
         projects = data || [];
         
@@ -168,12 +170,11 @@
   }
 
   // NEW PROJECT modal state
-  let showNew = false;
-  let newName = '';
-  let newIcon = '📁';
-  let newColor = '#6366f1';
-  let creating = false;
-  let createErr = '';
+  let showNewProjectModal = false;
+  let newProjectName = '';
+  let newProjectDescription = '';
+  let creatingProject = false;
+  let createProjectErr = '';
 
   // APP SETTINGS modal state
   let showAppSettings = false;
@@ -245,17 +246,16 @@
     loadUserPreferences();
   }
   async function createProject() {
-    if (!newName.trim()) { createErr = 'Please enter a name.'; return; }
-    createErr = '';
-    creating = true;
+    if (!newProjectName.trim()) { createProjectErr = 'Please enter a name.'; return; }
+    createProjectErr = '';
+    creatingProject = true;
     try {
       const res = await fetch('/api/projects/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newName.trim(),
-          icon: newIcon,
-          color: newColor
+          name: newProjectName.trim(),
+          description: newProjectDescription.trim()
         })
       });
 
@@ -267,25 +267,36 @@
         try { msg = (JSON.parse(raw).message) || raw; } catch { msg = raw; }
         // Strip tags and truncate
         msg = msg.replace(/<[^>]+>/g, '').slice(0, 200);
-        createErr = msg || 'Failed to create project';
-        creating = false;
+        createProjectErr = msg || 'Failed to create project';
+        creatingProject = false;
         return;
       }
 
       const { project } = await res.json();
-      showNew = false;                 // close modal
-      newName = ''; createErr = '';
+      showNewProjectModal = false;                 // close modal
+      newProjectName = ''; newProjectDescription = ''; createProjectErr = '';
 
       window.dispatchEvent(new CustomEvent('projects:refresh', { detail: { id: project.id } }));
-
-      
       await goto(`/projects`, { replaceState: true });
 
-
     } catch (e) {
-      createErr = e.message || 'Failed to create project';
-      creating = false;
+      createProjectErr = e.message || 'Failed to create project';
+      creatingProject = false;
     }
+  }
+
+  function handleNewProjectModalClose() {
+    showNewProjectModal = false;
+    newProjectName = '';
+    newProjectDescription = '';
+    createProjectErr = '';
+  }
+
+  function handleCreateProject(event) {
+    const { name, description } = event.detail;
+    newProjectName = name;
+    newProjectDescription = description || '';
+    createProject();
   }
 </script>
 
@@ -316,7 +327,7 @@
                     window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
                   }
                 }}
-                on:create={() => showNew = true}
+                on:create={() => showNewProjectModal = true}
                 on:delete={async (e) => {
                   const project = e.detail;
                   if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -339,7 +350,7 @@
             <!-- Settings button for current project -->
             {#if currentProject}
               <button
-                class="flex items-center justify-center w-8 h-8 text-gray-300 hover:text-gray-100 transition-colors"
+                class="flex items-center justify-center w-8 h-8 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 title="Project Settings: {currentProject.name}"
                 on:click={() => {
                   // Dispatch event that the projects page can listen to
@@ -427,51 +438,18 @@
 
 
   <!-- NEW PROJECT MODAL -->
-  {#if showNew}
-    <div class="fixed inset-0 backdrop-blur-sm bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-md p-4" style="background-color: var(--bg-modal, white);">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Create Project</h3>
-          <button class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" on:click={() => !creating && (showNew = false)}>✕</button>
-        </div>
-
-        <div class="grid gap-2">
-          <label class="text-xs text-zinc-600 dark:text-zinc-400" for="newName">Name</label>
-          <input class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2" name="newName" placeholder="e.g., BEDNOMANCER 2" bind:value={newName} />
-
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <label class="text-xs text-zinc-600 dark:text-zinc-400" for="newIcon">Icon (emoji)</label>
-              <input class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2" name="newIcon" bind:value={newIcon} />
-            </div>
-            <div>
-              <label class="text-xs text-zinc-600 dark:text-zinc-400" for="newColor">Color</label>
-              <input class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded p-2" type="color" name="newColor" bind:value={newColor} />
-            </div>
-          </div>
-
-          {#if createErr}
-            <div class="text-xs text-red-600 dark:text-red-400 mt-1">{createErr}</div>
-          {/if}
-
-          <div class="flex items-center justify-end gap-2 mt-3">
-            <button class="text-sm px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded" style="background-color: var(--bg-button-secondary);" on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'} on:click={() => !creating && (showNew = false)}>Cancel</button>
-            <button class="text-sm px-3 py-1 border rounded text-white disabled:opacity-50 transition-colors" 
-              style="background-color: var(--color-accent);" 
-              on:mouseenter={(e) => !creating && (e.target.style.backgroundColor = 'var(--color-accent-hover)')}
-              on:mouseleave={(e) => !creating && (e.target.style.backgroundColor = 'var(--color-accent)')}
-              on:click={createProject} disabled={creating}>
-              {creating ? 'Creating…' : 'Create'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  {/if}
+  <NewProjectModal
+    {showNewProjectModal}
+    {newProjectName}
+    {creatingProject}
+    {createProjectErr}
+    on:close={handleNewProjectModalClose}
+    on:create={handleCreateProject}
+  />
 
   <!-- APP SETTINGS MODAL -->
   {#if showAppSettings}
-    <div class="fixed inset-0 backdrop-blur-sm bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+    <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-lg p-6" style="background-color: var(--bg-modal, white);">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Account Settings</h3>

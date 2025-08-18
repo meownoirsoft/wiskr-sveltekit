@@ -658,7 +658,7 @@
   <!-- Search Input -->
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <Search class="h-4 w-4 text-gray-400" />
+      <Search class="h-4 w-4" style="color: var(--text-header-secondary);" />
     </div>
     <input
       bind:this={searchInput}
@@ -666,9 +666,9 @@
       on:focus={handleInputFocus}
       on:click={handleInputClick}
       type="text"
-      class="block w-full pl-10 pr-12 py-2 border rounded-lg text-sm text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-      style="background-color: #35353D !important; border-color: #4a4a52 !important;"
-      placeholder="Search facts, docs, chat messages..."
+      class="block w-full pl-10 pr-12 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+      style="background-color: var(--bg-header-input) !important; border-color: var(--border-header-input) !important; color: var(--text-header) !important;"
+      placeholder="Search facts, docs, chats, anything..."
       autocomplete="off"
     />
     

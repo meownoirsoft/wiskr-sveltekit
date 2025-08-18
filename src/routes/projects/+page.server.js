@@ -12,7 +12,7 @@ export const load = async ({ locals }) => {
 
   const { data: projects, error } = await locals.supabase
     .from('projects')
-    .select('id, name, icon, color, brief_text, created_at')
+    .select('id, name, icon, color, brief_text, description, created_at')
     .order('created_at');
 
   if (error) {

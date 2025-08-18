@@ -70,25 +70,25 @@
   <!-- Current project button -->
   <button 
     class="flex items-center gap-2 px-3 py-1.5 border rounded-lg min-w-0 max-w-full transition-colors"
-    style="background-color: #35353D; border-color: #4a4a52; color: #e5e7eb;"
+    style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
     on:click={toggleDropdown}
   >
     {#if current}
       <span class="text-sm">{current.icon ?? '📁'}</span>
-      <span class="font-medium text-sm text-gray-100 truncate">{current.name}</span>
+      <span class="font-medium text-sm truncate" style="color: var(--text-header);">{current.name}</span>
     {:else}
-      <span class="text-sm text-gray-400">Select project...</span>
+      <span class="text-sm" style="color: var(--text-header-secondary);">Select project...</span>
     {/if}
-    <ChevronDown size="16" class="text-gray-400 flex-shrink-0" />
+    <ChevronDown size="16" style="color: var(--text-header-secondary);" class="flex-shrink-0" />
   </button>
 
   <!-- Dropdown -->
   {#if showDropdown}
-    <div class="absolute top-full left-0 mt-1 w-80 border rounded-lg shadow-lg z-[100]" style="background-color: #35353D; border-color: #4a4a52;">
+    <div class="absolute top-full left-0 mt-1 w-80 border rounded-lg shadow-lg z-[100]" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
       <!-- Header with search and new button -->
-      <div class="p-3 border-b" style="border-color: #4a4a52;">
+      <div class="p-3 border-b" style="border-color: var(--border-header-input);">
         <div class="flex items-center gap-2 mb-2">
-          <h4 class="font-semibold text-sm text-gray-100">Projects</h4>
+          <h4 class="font-semibold text-sm" style="color: var(--text-header);">Projects</h4>
           <button
             class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded ml-auto transition-colors"
             style="background-color: var(--color-accent);"
@@ -102,17 +102,18 @@
         </div>
         
         <div class="relative">
-          <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
           <input
             type="text"
             class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
-            style="background-color: #35353D; border-color: #4a4a52; color: #e5e7eb;"
+            style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
             placeholder="Search projects..."
             bind:value={search}
           />
           {#if search}
             <button
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+              class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
+              style="color: var(--text-header-secondary);"
               on:click={() => search = ''}
             >
               <X size="16" />
@@ -124,20 +125,21 @@
       <!-- Project list -->
       <div class="max-h-64 overflow-y-auto">
         {#each filtered as project}
-          <div class="flex items-center hover:bg-gray-600 {current?.id === project.id ? 'bg-blue-800' : ''}">
+          <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-500 dark:bg-blue-800' : ''} transition-colors">
             <button
               class="flex items-center gap-2 flex-1 p-3 text-left"
               on:click={() => selectProject(project)}
             >
               <span class="text-sm">{project.icon ?? '📁'}</span>
-              <span class="font-medium text-sm text-gray-100 truncate">{project.name}</span>
+              <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
               {#if current?.id === project.id}
-                <span class="text-xs text-blue-300 ml-auto">Current</span>
+                <span class="text-xs ml-auto" style="color: var(--color-accent);">Current</span>
               {/if}
             </button>
             <div class="flex items-center gap-1 px-2">
               <button
-                class="p-1 text-gray-400 hover:text-red-400"
+                class="p-1 hover:text-red-400 transition-colors"
+                style="color: var(--text-header-secondary);"
                 title="Delete"
                 on:click={(e) => deleteProject(project, e)}
               >
@@ -147,7 +149,7 @@
           </div>
         {/each}
         {#if !filtered.length}
-          <div class="p-3 text-sm text-gray-400 text-center">
+          <div class="p-3 text-sm text-center" style="color: var(--text-header-secondary);">
             {search ? 'No projects found' : 'No projects yet'}
           </div>
         {/if}

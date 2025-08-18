@@ -8,6 +8,30 @@
   export let availableModels = [];
   export let disabled = false;
 
+  // Helper function to format pricing
+  function formatPrice(price) {
+    const num = parseFloat(price);
+    if (num === 0) return 'Free';
+    
+    // Remove trailing zeros and format to meaningful decimals
+    return num.toString().replace(/\.?0+$/, '') + '¢/1k';
+  }
+  
+  // Helper function to format the full pricing string
+  function formatPricing(model) {
+    if (!model.costPer1kTokens) return '';
+    
+    const inputPrice = formatPrice(model.costPer1kTokens.input);
+    const outputPrice = formatPrice(model.costPer1kTokens.output);
+    
+    // If both are free, just show "Free"
+    if (inputPrice === 'Free' && outputPrice === 'Free') {
+      return 'Free';
+    }
+    
+    return `In: ${inputPrice} Out: ${outputPrice}`;
+  }
+
   const dispatch = createEventDispatcher();
   let isOpen = false;
   let dropdownElement;
@@ -22,23 +46,30 @@
   function toggleDropdown() {
     if (disabled) return;
     isOpen = !isOpen;
+    // Hide tooltip when dropdown closes
+    if (!isOpen) {
+      hideTooltip();
+    }
   }
 
   function selectModel(model) {
     modelKey = model.key;
     isOpen = false;
+    hideTooltip(); // Hide tooltip when selecting a model
     dispatch('change', { value: model.key });
   }
 
   function handleKeydown(event) {
     if (event.key === 'Escape') {
       isOpen = false;
+      hideTooltip(); // Hide tooltip when closing with Escape
     }
   }
 
   function handleClickOutside(event) {
     if (dropdownElement && !dropdownElement.contains(event.target)) {
       isOpen = false;
+      hideTooltip(); // Hide tooltip when clicking outside
     }
   }
 
@@ -81,14 +112,17 @@
   <!-- Dropdown Button -->
   <button
     type="button"
-class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[240px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
+class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[260px] max-w-[260px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
     on:click={toggleDropdown}
     {disabled}
   >
     <div class="flex items-center gap-3 flex-1 min-w-0">
       {#if currentAIInfo}
         <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-8 h-8 rounded-full flex-shrink-0" />
-        <span class="truncate">{currentAIInfo.name} • {currentModel?.tier || 'Standard'}</span>
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="truncate text-xs">{currentAIInfo.name} • {currentModel?.tier || 'Standard'}</span>
+          <span class="truncate text-xs text-gray-500 dark:text-gray-400">{formatPricing(currentModel)}</span>
+        </div>
       {:else}
         <span class="truncate">Loading models...</span>
       {/if}
@@ -109,9 +143,10 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
           on:mouseleave={hideTooltip}
         >
           <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-8 h-8 rounded-full flex-shrink-0" />
-          <span class="flex-1 min-w-0">
-            <span class="truncate block">{aiInfo.name} • {model.tier || 'Standard'}</span>
-          </span>
+          <div class="flex flex-col min-w-0 flex-1">
+            <span class="truncate text-xs">{aiInfo.name} • {model.tier || 'Standard'}</span>
+            <span class="truncate text-xs text-gray-500 dark:text-gray-400">{formatPricing(model)}</span>
+          </div>
           {#if model.key === modelKey}
             <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
           {/if}
