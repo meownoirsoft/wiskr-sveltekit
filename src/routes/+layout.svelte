@@ -1,5 +1,5 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto, beforeNavigate } from '$app/navigation';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
@@ -7,6 +7,7 @@
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+  import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import '../app.css';
   import '$lib/components/styles.css';
   
@@ -36,16 +37,18 @@
   // Initialize theme from localStorage or system preference
   onMount(() => {
     if (browser) {
-      // Check localStorage first
+      // Check current state (HTML script may have already applied theme)
+      const isDark = document.documentElement.classList.contains('dark');
       const savedTheme = localStorage.getItem('wiskr_theme');
+      
       if (savedTheme) {
         darkMode = savedTheme === 'dark';
       } else {
-        // Check system preference
-        darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Use detected state or check system preference
+        darkMode = isDark || window.matchMedia('(prefers-color-scheme: dark)').matches;
       }
       
-      // Apply theme
+      // Ensure theme is applied (in case HTML script didn't run)
       applyTheme();
       
       // Listen for system theme changes
@@ -122,8 +125,27 @@
   // Check if we're on the projects page
   $: isProjectsPage = $page.url.pathname === '/projects';
   
+  // Track page views
+  $: if (browser && $page.url.pathname) {
+    trackPageView($page.url.pathname);
+  }
+  
+  // Track user authentication state
+  $: if (browser && data?.user) {
+    identifyUser(data.user.id, {
+      email: data.user.email,
+      created_at: data.user.created_at
+    });
+  } else if (browser && !data?.user) {
+    // Reset user identity when logged out
+    resetUser();
+  }
+  
   onMount(async () => {
     if (!browser) return;
+    
+    // Initialize PostHog analytics
+    initAnalytics();
     
     try {
       const { supabase } = await import('$lib/supabase.js');
@@ -137,6 +159,11 @@
         // Try to get last selected project from localStorage
         const lastId = localStorage.getItem('wiskr_last_project_id');
         currentProject = projects.find(p => p.id === lastId) || projects[0] || null;
+        
+        // Track initial project load if there's a current project
+        if (currentProject) {
+          trackProjectNavigation(currentProject.id, currentProject.name);
+        }
       }
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -154,7 +181,12 @@
         
         // Select the new project if one was just created
         if (e.detail?.id) {
-          currentProject = projects.find(p => p.id === e.detail.id) || currentProject;
+          const newProject = projects.find(p => p.id === e.detail.id);
+          if (newProject) {
+            currentProject = newProject;
+            // Track navigation to newly created project
+            trackProjectNavigation(newProject.id, newProject.name);
+          }
         }
       } catch (error) {
         console.error('Error refreshing projects:', error);
@@ -203,6 +235,20 @@
   // Load preferences on mount
   onMount(() => {
     loadUserPreferences();
+  });
+  
+  // Track page leave events
+  beforeNavigate(({ from, to, cancel }) => {
+    if (browser && from) {
+      console.log('Leaving page:', from.url.pathname);
+      
+      // Track the page leave event
+      trackEvent(ANALYTICS_EVENTS.PAGE_LEAVE, {
+        from_path: from.url.pathname,
+        to_path: to?.url.pathname || 'external',
+        time_on_page: document.visibilityState === 'visible' ? (Date.now() - window.performance.timing.navigationStart) / 1000 : undefined
+      });
+    }
   });
   
   // Save user preferences
@@ -273,6 +319,14 @@
       }
 
       const { project } = await res.json();
+      
+      // Track project creation
+      trackEvent(ANALYTICS_EVENTS.PROJECT_CREATED, {
+        project_id: project.id,
+        project_name: project.name,
+        has_description: !!project.description?.trim()
+      });
+      
       showNewProjectModal = false;                 // close modal
       newProjectName = ''; newProjectDescription = ''; createProjectErr = '';
 
@@ -320,9 +374,19 @@
                 current={currentProject}
                 bind:search={projectSearch}
                 on:select={(e) => {
+                  const previousProject = currentProject;
                   currentProject = e.detail;
                   if (browser) {
                     localStorage.setItem('wiskr_last_project_id', e.detail.id);
+                    // Track project selection
+                    trackEvent(ANALYTICS_EVENTS.PROJECT_SELECTED, {
+                      project_id: e.detail.id,
+                      project_name: e.detail.name,
+                      previous_project_id: previousProject?.id,
+                      previous_project_name: previousProject?.name
+                    });
+                    // Track project navigation as a virtual page view
+                    trackProjectNavigation(e.detail.id, e.detail.name);
                     // Dispatch event to notify the projects page
                     window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
                   }
@@ -407,18 +471,19 @@
           </button>
         {/if}
         
-        <!-- App/Account Settings -->
-        <button 
-          type="button"
-          class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-          title="Settings"
-          on:click={openAppSettings}
-        >
-          <Settings size="16" />
-          <span>Settings</span>
-        </button>
-        
         {#if data?.user}
+          <!-- App/Account Settings -->
+          <button 
+            type="button"
+            class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            title="Settings"
+            on:click={openAppSettings}
+          >
+            <Settings size="16" />
+            <span>Settings</span>
+          </button>
+          
+          <!-- Logout -->
           <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
             <LogOut size="16" />
             <span>Logout</span>
@@ -621,7 +686,7 @@
                 AI-powered project knowledge management and chat interface.
               </p>
               <div class="flex gap-3 text-xs">
-                <a href="#" 
+                <!-- <a href="#" 
                    class="transition-colors" 
                    style="color: var(--color-accent);" 
                    on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
@@ -638,7 +703,7 @@
                    style="color: var(--color-accent);" 
                    on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
                    on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
-                >Privacy</a>
+                >Privacy</a> -->
               </div>
             </div>
           </div>

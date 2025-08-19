@@ -46,6 +46,7 @@
 		"luxon": "^3.7.1",
 		"marked": "^16.1.2",
 		"openai": "^5.12.2",
-		"postgres": "^3.4.5"
+		"postgres": "^3.4.5",
+		"posthog-js": "^1.260.1"
 	}
 }

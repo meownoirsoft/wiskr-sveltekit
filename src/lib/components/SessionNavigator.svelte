@@ -237,7 +237,6 @@
                     bind:value={editingSessionName}
                     on:keydown={(e) => onKeydown(e, saveEdit, session.id)}
                     on:blur={() => saveEdit(session.id)}
-                    autofocus
                   />
                 {:else}
                   <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">

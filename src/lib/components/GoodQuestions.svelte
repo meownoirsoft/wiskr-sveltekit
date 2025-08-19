@@ -2,10 +2,12 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Plus, X, ChevronsLeft, Edit, Info } from 'lucide-svelte';
-  import InfoPopup from './InfoPopup.svelte';
-  import { browser } from '$app/environment';
+import InfoPopup from './InfoPopup.svelte';
+import LoadingSpinner from './LoadingSpinner.svelte';
+import { browser } from '$app/environment';
 
   export let goodQuestions = [];
+  export let loadingQuestions = false;
   export let projectId = null;
 
   const dispatch = createEventDispatcher();
@@ -199,7 +201,10 @@
   </div>
 
   <!-- Questions List -->
-  <div class="flex-1 min-h-0 overflow-hidden">
+  <div class="flex-1 min-h-0 overflow-hidden relative">
+    {#if loadingQuestions}
+      <LoadingSpinner overlay={true} text="Loading questions..." size="sm" />
+    {/if}
     <div class="h-full overflow-y-auto pr-1">
       <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
       {#each goodQuestions as question, i}
@@ -280,7 +285,7 @@
           {/if}
         </li>
       {/each}
-      {#if !goodQuestions.length}
+      {#if !goodQuestions.length && !loadingQuestions}
         <li class="text-sm text-zinc-500 dark:text-zinc-400 italic ml-0"> <!-- Reset margin for empty state -->
           No questions yet. Add some thoughts to explore later!
         </li>

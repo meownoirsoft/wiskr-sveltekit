@@ -3,7 +3,8 @@
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
   import EditFactModal from './EditFactModal.svelte';
   import AddFactModal from './AddFactModal.svelte';
-  import InfoPopup from './InfoPopup.svelte';
+import InfoPopup from './InfoPopup.svelte';
+import LoadingSpinner from './LoadingSpinner.svelte';
 
   export let facts = [];
   export let loadingFacts = false;
@@ -23,8 +24,6 @@
 
   const dispatch = createEventDispatcher();
   
-  // Configuration for scrollable content
-  const CONTENT_SCROLL_THRESHOLD = 150; // Characters
 
   // Load project fact types when projectId changes
   $: if (projectId) {
@@ -234,12 +233,15 @@
     </div>
 
     {#if loadingFacts}
-      <div class="text-sm text-zinc-500 dark:text-zinc-400">Loading…</div>
+      <LoadingSpinner size="sm" text="Loading facts..." center={false} />
     {/if}
   </div>
 
   <!-- Scrollable Facts List -->
-  <div class="flex-1 overflow-y-auto pr-1">
+  <div class="flex-1 overflow-y-auto pr-1 relative">
+    {#if loadingFacts}
+      <LoadingSpinner overlay={true} text="Loading facts..." />
+    {/if}
     <div class="grid grid-cols-3 gap-2">
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
     <div class="fact-card flex flex-col h-full text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
@@ -299,7 +301,7 @@
       </div>
       
       <!-- Content -->
-      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 flex-1 {f.value?.length > CONTENT_SCROLL_THRESHOLD ? 'min-h-0 max-h-32 overflow-y-auto content-scrollbar' : ''}" title="Length: {f.value?.length || 0} chars (threshold: {CONTENT_SCROLL_THRESHOLD})">
+      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 flex-1 min-h-0 overflow-y-auto content-scrollbar" style="max-height: 140px;">
         {f.value}
       </div>
       

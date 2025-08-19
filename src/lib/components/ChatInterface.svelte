@@ -10,6 +10,7 @@ import TLDRModal from './TLDRModal.svelte';
 import TLDRButton from './TLDRButton.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
+import LoadingSpinner from './LoadingSpinner.svelte';
 
   export let current = null;
   export let messages = [];
@@ -30,6 +31,7 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
   let messageBranchCounts = {}; // Store branch counts per message
   let availableModels = []; // Store available AI models
   let userPreferences = { display_name: null }; // User preferences for display name
+  let hasLastUserMessage = false; // Track if there's a last user message for ReAsk button
   
   // Branch management state
   let isEditingBranch = false;
@@ -37,19 +39,6 @@ import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
   let isSavingBranchName = false;
   let isDeletingBranch = false;
   
-  // Debug: Track branch state changes
-  $: {
-    console.log('🔄 ChatInterface branch state changed:', {
-      currentBranchId,
-      currentBranch: currentBranch ? {
-        branch_id: currentBranch.branch_id,
-        branch_name: currentBranch.branch_name
-      } : null,
-      branchesLength: branches.length,
-      showIcons: !!(currentBranch && currentBranchId !== 'main'),
-      timestamp: new Date().toISOString()
-    });
-  }
   
   // Mr Wiskr state
   let mrWiskrVisible = false;
@@ -615,11 +604,26 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     
     // Find the last user message in the current conversation
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'user' && messages[i].content.trim()) {
-        return messages[i].content.trim();
+      const message = messages[i];
+      
+      if (message.role === 'user' && message.content.trim()) {
+        return message.content.trim();
       }
     }
+    
     return null;
+  }
+  
+  // Reactive variable to track if there's a last user message
+  $: {
+    // Guard against race condition - only run when messages are properly loaded
+    if (!loadingMessages && messages && Array.isArray(messages)) {
+      const lastUserMsg = getLastUserMessage();
+      hasLastUserMessage = lastUserMsg !== null;
+    } else {
+      // Messages not ready yet - keep button hidden
+      hasLastUserMessage = false;
+    }
   }
   
   // ReAsk function - copy last user question to input
@@ -764,16 +768,15 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
   {/if}
   
   <!-- Chat Messages (scrollable) -->
-  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3" bind:this={chatContainer}>
+  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3" bind:this={chatContainer} style="background-color: var(--bg-chat);">
     {#if !current}
       <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
     {:else if loadingMessages}
-      <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
-        <div class="inline-flex items-center gap-3">
-          <div class="animate-spin rounded-full h-6 w-6 border-2 border-zinc-300 dark:border-zinc-600 border-t-blue-500"></div>
-          <div class="text-sm">Loading conversation history...</div>
-        </div>
-      </div>
+      <LoadingSpinner 
+        size="md" 
+        text="Loading conversation history..." 
+        center={true} 
+      />
     {:else if messages.length === 0}
       <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
         <div class="text-sm">Look at this brand new chat ready for action!</div>
@@ -921,7 +924,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
         </div>
         
         <!-- ReAsk Button (always visible when there's a last message) -->
-        {#if getLastUserMessage()}
+        {#if hasLastUserMessage}
           <div class="pb-2">
             <button
               class="flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition-colors font-medium"

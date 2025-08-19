@@ -192,6 +192,7 @@
   let goodQuestions = [];
   let relatedIdeas = [];
   let isGeneratingIdeas = false;
+  let loadingQuestions = false;
   
   // Sidebar tab state
   let activeTab = 'facts';
@@ -373,6 +374,8 @@
   async function loadQuestions() {
     if (!current) return;
     
+    loadingQuestions = true;
+    
     try {
       const res = await fetch(`/api/projects/${current.id}/questions`);
       if (res.ok) {
@@ -385,6 +388,8 @@
     } catch (error) {
       console.error('Error loading questions:', error);
       goodQuestions = [];
+    } finally {
+      loadingQuestions = false;
     }
   }
 
@@ -1708,6 +1713,7 @@ function handleTextAddToDocs(event) {
         {goodQuestions}
         {relatedIdeas}
         {isGeneratingIdeas}
+        {loadingQuestions}
         {search}
         projectId={current?.id}
         on:questions-update={handleQuestionsUpdate}

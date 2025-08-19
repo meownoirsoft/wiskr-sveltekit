@@ -443,6 +443,7 @@
         {:else if activeTab === 'docs'}
           <DocsManager
             docs={filteredDocs}
+            loadingDocs={loadingFacts}
             bind:showAddDocForm
             bind:docTitle
             bind:docContent

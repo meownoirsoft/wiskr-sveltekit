@@ -1,8 +1,9 @@
 <script>
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft } from 'lucide-svelte';
+  import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, Share2 } from 'lucide-svelte';
   import FactTypesManager from '$lib/components/FactTypesManager.svelte';
+  import ProjectSharingSettings from '$lib/components/ProjectSharingSettings.svelte';
 
   export let data;
   
@@ -25,6 +26,7 @@
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'fact-types', label: 'Fact Types', icon: Settings },
+    { id: 'sharing', label: 'Sharing', icon: Share2 },
     // Future tabs can be added here
   ];
   
@@ -206,6 +208,15 @@
             <p class="text-sm text-gray-500 mb-4">More general settings will be added here in future updates.</p>
           </div> -->
         </div>
+      </div>
+    {:else if activeTab === 'sharing'}
+      <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">Project Sharing</h2>
+          <p class="text-gray-600">Control how your project can be shared with others.</p>
+        </div>
+        
+        <ProjectSharingSettings {projectId} />
       </div>
     {/if}
   </div>

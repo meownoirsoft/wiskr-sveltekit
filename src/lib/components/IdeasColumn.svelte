@@ -7,6 +7,7 @@
   export let goodQuestions = [];
   export let relatedIdeas = [];
   export let isGeneratingIdeas = false;
+  export let loadingQuestions = false;
   export let projectId = null;
   export let search = ''; // Search term from global search
   
@@ -48,6 +49,7 @@
     <div class="flex flex-col overflow-hidden" style="height: 40%;">
       <GoodQuestions 
         goodQuestions={filteredQuestions}
+        {loadingQuestions}
         {projectId}
         on:update={handleQuestionsUpdate}
         on:insert-text={handleInsertText}

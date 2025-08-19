@@ -3,9 +3,11 @@
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
   import EditDocModal from './EditDocModal.svelte';
   import AddDocModal from './AddDocModal.svelte';
-  import InfoPopup from './InfoPopup.svelte';
+import InfoPopup from './InfoPopup.svelte';
+import LoadingSpinner from './LoadingSpinner.svelte';
 
   export let docs = [];
+  export let loadingDocs = false;
   export let showAddDocForm = false;
   export let docTitle = '';
   export let docContent = '';
@@ -17,8 +19,6 @@
 
   const dispatch = createEventDispatcher();
   
-  // Configuration for scrollable content
-  const CONTENT_SCROLL_THRESHOLD = 150; // Characters
 
   function openAddModal() {
     showAddModal = true;
@@ -94,10 +94,17 @@
         Doc
       </button>
     </div>
+
+    {#if loadingDocs}
+      <LoadingSpinner size="sm" text="Loading docs..." center={false} />
+    {/if}
   </div>
 
   <!-- Scrollable Docs List -->
-  <div class="flex-1 overflow-y-auto pr-1">
+  <div class="flex-1 overflow-y-auto pr-1 relative">
+    {#if loadingDocs}
+      <LoadingSpinner overlay={true} backgroundColor="rgba(255, 255, 255, 0.7)" text="Loading docs..." />
+    {/if}
     <div class="grid grid-cols-3 gap-2">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
     <div class="doc-card flex flex-col h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
@@ -157,8 +164,8 @@
       </div>
       
       <!-- Content Preview -->
-      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 flex-1 {d.content?.length > CONTENT_SCROLL_THRESHOLD ? 'min-h-0 max-h-32 overflow-y-auto content-scrollbar' : ''}" title="Length: {d.content?.length || 0} chars (threshold: {CONTENT_SCROLL_THRESHOLD})">
-        {d.content?.length > CONTENT_SCROLL_THRESHOLD ? d.content : (d.content?.slice(0, 400) + (d.content?.length > 400 ? '…' : ''))}
+      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 flex-1 min-h-0 overflow-y-auto content-scrollbar" style="max-height: 140px;">
+        {d.content}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->
@@ -180,7 +187,7 @@
 
     </div>
   {/each}
-  {#if !docs.length}
+  {#if !docs.length && !loadingDocs}
     <div class="col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No docs.</div>
   {/if}
     </div>

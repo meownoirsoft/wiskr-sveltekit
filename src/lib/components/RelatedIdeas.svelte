@@ -8,6 +8,7 @@ import {
   ShoppingBag, Globe, Shield, Database, Brain, Info
 } from 'lucide-svelte';
 import InfoPopup from './InfoPopup.svelte';
+import LoadingSpinner from './LoadingSpinner.svelte';
 import { marked } from 'marked';
 import { browser } from '$app/environment';
 
@@ -453,14 +454,12 @@ import { browser } from '$app/environment';
   <div class="flex-1 min-h-0 overflow-hidden relative">
     <!-- Loading Overlay -->
     {#if isGenerating}
-      <div class="absolute inset-0 bg-white bg-opacity-85 flex items-center justify-center z-50 rounded" style="background-color: rgba(27, 27, 30, 0.9);">
-        <div class="text-center">
-          <RefreshCw size="28" class="animate-spin mx-auto mb-3" style="color: var(--color-accent);" />
-          <div class="text-base font-medium text-gray-700 dark:text-gray-300">Generating Ideas...</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Using AI to analyze your project</div>
-          <div class="text-xs mt-2 font-medium" style="color: var(--color-accent);">💙 Any ideas you've liked will stay visible</div>
-        </div>
-      </div>
+      <LoadingSpinner 
+        overlay={true} 
+        backgroundColor="rgba(27, 27, 30, 0.85)" 
+        text="Generating Ideas..." 
+        size="lg" 
+      />
     {/if}
     
     <!-- Scrollable content container -->
