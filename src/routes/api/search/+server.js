@@ -82,17 +82,26 @@ export async function POST({ request, locals }) {
     );
     const docs = uniqueDocs.slice(0, 20);
     
-    // Search chat messages
+    // Search chat messages with session information
     const { data: chatMessages, error: messagesError } = await supabase
       .from('messages')
-      .select('*')
+      .select(`
+        *,
+        conversation_sessions!inner(
+          id,
+          session_name,
+          is_active
+        )
+      `)
       .eq('project_id', projectId)
       .ilike('content', `%${query}%`)
       .order('created_at', { ascending: false })
       .limit(20);
     
-    // Get branch names for messages (if they're not on main branch)
+    // Get branch names and group messages by session
     const formattedMessages = [];
+    const sessionGroups = new Map(); // Track sessions with results
+    
     if (chatMessages && chatMessages.length > 0) {
       // Get unique branch IDs that aren't 'main'
       const branchIds = [...new Set(chatMessages.map(m => m.branch_id).filter(id => id !== 'main'))];
@@ -106,13 +115,35 @@ export async function POST({ request, locals }) {
         branches = branchData || [];
       }
       
-      // Format messages with branch names
+      // Format messages with branch names and group by session
       chatMessages.forEach(message => {
         const branch = branches.find(b => b.branch_id === message.branch_id);
-        formattedMessages.push({
+        const sessionInfo = message.conversation_sessions;
+        
+        const formattedMessage = {
           ...message,
-          branch_name: branch?.branch_name || (message.branch_id === 'main' ? 'Main' : 'Unknown Branch')
-        });
+          branch_name: branch?.branch_name || (message.branch_id === 'main' ? 'Main' : 'Unknown Branch'),
+          session_name: sessionInfo?.session_name || 'Unknown Session',
+          session_id: sessionInfo?.id,
+          is_active_session: sessionInfo?.is_active || false
+        };
+        
+        formattedMessages.push(formattedMessage);
+        
+        // Track unique sessions with results
+        if (sessionInfo?.id) {
+          if (!sessionGroups.has(sessionInfo.id)) {
+            sessionGroups.set(sessionInfo.id, {
+              session_id: sessionInfo.id,
+              session_name: sessionInfo.session_name,
+              is_active: sessionInfo.is_active,
+              message_count: 0,
+              messages: []
+            });
+          }
+          sessionGroups.get(sessionInfo.id).message_count++;
+          sessionGroups.get(sessionInfo.id).messages.push(formattedMessage);
+        }
       });
     }
     
@@ -142,14 +173,18 @@ export async function POST({ request, locals }) {
       questionsCount: questions?.length || 0
     });
     
-    // Return the search results
+    // Return the search results with session grouping information
     return json({
       results: {
         facts: facts || [],
         docs: docs || [],
         chatMessages: formattedMessages,
         questions: questions || [],
-        relatedIdeas: [] // Ideas are generated on-demand, not stored
+        relatedIdeas: [], // Ideas are generated on-demand, not stored
+        
+        // Additional session information for navigation
+        sessionGroups: sessionGroups ? Array.from(sessionGroups.values()) : [],
+        totalSessions: sessionGroups ? sessionGroups.size : 0
       }
     });
   } catch (error) {

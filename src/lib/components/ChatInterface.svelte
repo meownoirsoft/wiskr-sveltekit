@@ -1,13 +1,15 @@
 <script>
 import { createEventDispatcher, tick } from 'svelte';
 import { marked } from 'marked';
-import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw } from 'lucide-svelte';
+import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
 import TextSelectionMenu from './TextSelectionMenu.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import MrWiskrPopup from './MrWiskrPopup.svelte';
 import ModelDropdown from './ModelDropdown.svelte';
 import TLDRModal from './TLDRModal.svelte';
 import TLDRButton from './TLDRButton.svelte';
+import FeedbackButtons from './FeedbackButtons.svelte';
+import FeedbackModal from './FeedbackModal.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 import LoadingSpinner from './LoadingSpinner.svelte';
@@ -47,11 +49,20 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   let mrWiskrThinking = false;
   let mrWiskrResponse = '';
   let mrWiskrError = '';
+  let mrWiskrShowOptions = true; // Show options menu by default
+  let mrWiskrOriginalText = ''; // Store original message text
+  let mrWiskrFriendName = ''; // Store the friend's name who wrote the message
   
   // TL;DR state
   let showTLDRModal = false;
   let tldrOriginalText = '';
   let tldrFieldType = 'ask-prompt';
+  
+  // Problem Report Modal state
+  let showProblemReportModal = false;
+  let problemReportMessageContent = '';
+  let problemReportAiName = '';
+  let isSubmittingProblemReport = false;
 
   // Configure marked for better rendering
   marked.setOptions({
@@ -348,28 +359,27 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     dispatch('toggle-session-navigator');
   }
   
-  // Mr Wiskr functions
-  function showMrWiskr(text, type = 'translate', x = 0, y = 0) {
+  // Mr Wiskr functions - now shows options menu first
+  function showMrWiskrOptions(text, x = 0, y = 0, friendName = '') {
     // Hide any existing Mr Wiskr
     mrWiskrVisible = false;
     
-    // Store original text for potential follow-ups
+    // Store original text and friend name for potential follow-ups
     mrWiskrOriginalText = text;
+    mrWiskrFriendName = friendName;
     
-    // Reset state
+    // Reset state to show options
     mrWiskrResponse = '';
     mrWiskrError = '';
-    mrWiskrThinking = true;
+    mrWiskrThinking = false;
+    mrWiskrShowOptions = true;
     
     // Position Mr Wiskr (use provided coordinates or calculate from event)
     mrWiskrX = x || window.innerWidth - 400;
     mrWiskrY = y || 100;
     
-    // Show Mr Wiskr
+    // Show Mr Wiskr options menu
     mrWiskrVisible = true;
-    
-    // Call the API
-    askMrWiskr(text, type);
   }
   
   async function askMrWiskr(text, type = 'translate') {
@@ -385,7 +395,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       const response = await fetch('/api/mr-wiskr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, type, projectContext })
+        body: JSON.stringify({ text, type, projectContext, friendName: mrWiskrFriendName })
       });
       
       if (!response.ok) {
@@ -411,10 +421,10 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     mrWiskrResponse = '';
     mrWiskrError = '';
     mrWiskrThinking = false;
+    mrWiskrShowOptions = true;
+    mrWiskrOriginalText = '';
+    mrWiskrFriendName = '';
   }
-  
-  // Store original text for follow-ups
-  let mrWiskrOriginalText = '';
   
   // Track the last user question for "ask someone else" feature
   let lastUserQuestion = '';
@@ -459,15 +469,15 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     // Find the best alternative model based on current selection
     const currentModel = availableModels.find(m => m.key === modelKey);
     if (!currentModel || availableModels.length <= 1) {
-      mrWiskrResponse = "I'd love to suggest someone else to help, but it looks like there's only one model available right now. You might want to check if there are other AI models you can access!";
+      mrWiskrResponse = "I'd love to suggest one of my other friends to help, but it looks like there's only one friend available right now. You might want to check if there are other friends you can access!";
       mrWiskrThinking = false;
       return;
     }
     
-    // Logic to pick a better model:
+    // Logic to pick a better friend:
     // 1. If using micro/speed, suggest quality or claude
-    // 2. If using quality/claude, suggest a different premium model
-    // 3. Prefer models that are better but not much more expensive
+    // 2. If using quality/claude, suggest a different premium friend
+    // 3. Prefer friends that are better but not much more expensive
     
     let bestSuggestion = null;
     const currentTier = currentModel.tier?.toLowerCase() || '';
@@ -478,23 +488,23 @@ import LoadingSpinner from './LoadingSpinner.svelte';
                       availableModels.find(m => m.key.includes('claude')) ||
                       availableModels.find(m => m.tier?.toLowerCase().includes('quality'));
     } else if (currentModel.key === 'quality') {
-      // From quality, suggest Claude or other premium models
+      // From quality, suggest Claude or other premium friends
       bestSuggestion = availableModels.find(m => m.key.includes('claude')) ||
                       availableModels.find(m => m.key.includes('llama') && m.tier?.toLowerCase().includes('quality')) ||
                       availableModels.find(m => m.key !== modelKey && m.tier?.toLowerCase().includes('premium'));
     } else {
-      // From other models, suggest quality if not already using it
+      // From other friends, suggest quality if not already using it
       bestSuggestion = availableModels.find(m => m.key === 'quality') ||
                       availableModels.find(m => m.key !== modelKey && (m.tier?.toLowerCase().includes('quality') || m.tier?.toLowerCase().includes('premium')));
     }
     
-    // Fallback: pick any different model
+    // Fallback: pick any different friend
     if (!bestSuggestion) {
       bestSuggestion = availableModels.find(m => m.key !== modelKey);
     }
     
     if (!bestSuggestion) {
-      mrWiskrResponse = "Hmm, I'm not finding any other AI models to suggest right now. You might want to check if there are other options available!";
+      mrWiskrResponse = "Hmm, I'm not finding any other friends to suggest right now. You might want to check if there are other friends available!";
       mrWiskrThinking = false;
       return;
     }
@@ -505,17 +515,17 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     const modelName = getAIName(bestSuggestion.key);
     const currentModelName = getAIName(currentModel.key);
     
-    mrWiskrResponse = `What I think ${currentModelName} meant is helpful, but sometimes a different AI personality can explain things better! 
+    mrWiskrResponse = `What I think ${currentModelName} shared is helpful, but sometimes a different friend can explain things better! 
 
 I'd like to ask **${modelName}** the same question for you. They often have a different perspective and might give you the clarity you're looking for.
 
-Should I set that up? I'll switch the model and copy your original question so you just need to hit Enter.`;
+Should I set that up? I'll switch to your new friend and copy your original question so you just need to hit Enter.`;
     mrWiskrThinking = false;
   }
   
   function handleConfirmModelSwitch() {
     if (!suggestedModel || !lastUserQuestion) {
-      mrWiskrResponse = "Oops, something went wrong setting that up. Please try selecting a different model manually!";
+      mrWiskrResponse = "Oops, something went wrong setting that up. Please try selecting a different friend manually!";
       mrWiskrThinking = false;
       return;
     }
@@ -538,7 +548,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     suggestedModel = null;
   }
   
-  function translateFullMessage(messageIndex, event) {
+  function openMrWiskrForMessage(messageIndex, event) {
     const message = messages[messageIndex];
     if (!message || message.role !== 'assistant' || !message.content.trim()) return;
     
@@ -550,12 +560,76 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
       }
     }
     
+    // Get the friend's name from the message
+    const friendName = message.model_key ? getAIName(message.model_key) : '';
+    
     // Get button center position for Mr Wiskr positioning
     const rect = event.target.getBoundingClientRect();
     const centerX = rect.left + (rect.width / 2);
     const centerY = rect.top + (rect.height / 2);
     
-    showMrWiskr(message.content.trim(), 'translate', centerX, centerY);
+    // Show Mr Wiskr options menu instead of directly translating
+    showMrWiskrOptions(message.content.trim(), centerX, centerY, friendName);
+  }
+  
+  // Handle help option selection from Mr Wiskr popup
+  function handleMrWiskrHelpRequested(event) {
+    const { type, text } = event.detail;
+    
+    // Special handling for report-problem option
+    if (type === 'report-problem') {
+      // Open the problem report modal
+      problemReportMessageContent = text;
+      problemReportAiName = mrWiskrFriendName || 'Assistant';
+      showProblemReportModal = true;
+      
+      // Dismiss Mr Wiskr since we're opening the modal
+      dismissMrWiskr();
+      return;
+    }
+    
+    // Hide options and start thinking
+    mrWiskrShowOptions = false;
+    mrWiskrThinking = true;
+    mrWiskrResponse = '';
+    mrWiskrError = '';
+    
+    // Map the help type to the appropriate API call
+    let apiType = type;
+    switch (type) {
+      case 'examples':
+        apiType = 'show-examples';
+        break;
+      case 'next-steps':
+        apiType = 'next-steps';
+        break;
+      case 'critique':
+        apiType = 'critique';
+        break;
+      case 'alternative':
+        apiType = 'ask-someone-else';
+        break;
+      default:
+        apiType = 'translate'; // Default to translate for 'translate' type
+    }
+    
+    // If it's the alternative option, handle it specially
+    if (type === 'alternative') {
+      handleAskSomeoneElse();
+      return;
+    }
+    
+    // Call Mr Wiskr with the selected help type
+    askMrWiskr(text, apiType);
+  }
+  
+  // Handle back to options from Mr Wiskr popup
+  function handleMrWiskrBackToOptions() {
+    // Reset to show options menu again
+    mrWiskrShowOptions = true;
+    mrWiskrResponse = '';
+    mrWiskrError = '';
+    mrWiskrThinking = false;
   }
   
   // Hover handlers for accent color buttons
@@ -641,6 +715,50 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
         }
       }, 50);
     }
+  }
+  
+  // Problem Report Modal handlers
+  async function handleProblemReportSubmit(event) {
+    const { rating, comment } = event.detail;
+    
+    if (isSubmittingProblemReport) return;
+    
+    isSubmittingProblemReport = true;
+    
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'submit-problem-report',
+          projectId: current?.id,
+          rating: 'problem',
+          comment: comment || 'Problem reported via Mr Wiskr',
+          context: problemReportMessageContent ? problemReportMessageContent.slice(0, 200) + '...' : 'Problem report',
+          aiName: problemReportAiName,
+          reportType: 'problem-report'
+        })
+      });
+      
+      if (response.ok) {
+        // Close the modal
+        showProblemReportModal = false;
+        // Optional: show success message
+        console.log('Problem report submitted successfully');
+      } else {
+        console.error('Failed to submit problem report');
+      }
+    } catch (error) {
+      console.error('Error submitting problem report:', error);
+    } finally {
+      isSubmittingProblemReport = false;
+    }
+  }
+  
+  function handleProblemReportCancel() {
+    showProblemReportModal = false;
+    problemReportMessageContent = '';
+    problemReportAiName = '';
   }
 </script>
 
@@ -768,7 +886,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
   {/if}
   
   <!-- Chat Messages (scrollable) -->
-  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3" bind:this={chatContainer} style="background-color: var(--bg-chat);">
+  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3 searchable-chat-area" bind:this={chatContainer} style="background-color: var(--bg-chat);"
     {#if !current}
       <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
     {:else if loadingMessages}
@@ -791,7 +909,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               <span class="text-base font-bold">{userPreferences.display_name || 'You'}</span>
             {:else}
               {#if m.model_key}
-                <div class="w-12 h-12 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
+                <div class="w-12 h-12 -mb-3 z-40 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
                   <img src={getAIAvatar(m.model_key)} alt="AI Avatar" class="w-10 h-10 rounded-full" />
                 </div>
                 <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(m.model_key)}</span>
@@ -838,38 +956,52 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
             {/if}
             
             <div class="flex gap-2">
+              {#if m.role === 'assistant' && m.content.trim()}
+                <!-- Feedback Buttons -->  
+                <div class="">
+                  <FeedbackButtons
+                    messageId={m.id}
+                    projectId={current?.id}
+                    messageContent={m.content}
+                    aiName={m.model_key ? getAIName(m.model_key) : 'Assistant'}
+                    size="sm"
+                  />
+                </div>
+              {/if}
               {#if m.content.trim() && currentBranchId === 'main'}
                 {@const messageBranchCount = messageBranchCounts[m.id] || 0}
-                <button id="branch-button-{index}"
-                  class="flex items-center gap-1 text-sm px-2 py-1 rounded border transition-colors relative"
-                  style="color: var(--color-accent);"
-                  on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.color = 'var(--color-accent-hover)'; }}
-                  on:mouseleave={(e) => { e.target.style.backgroundColor = ''; e.target.style.color = 'var(--color-accent)'; }}
-                  on:click={() => openBranchModal(index)}
-                  title="Create new branch from here"
-                >
-                  <GitBranch size="12" />
-                  Branch
-                  {#if messageBranchCount > 0}
-                    <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
-                      {messageBranchCount}
-                    </span>
-                  {/if}
-                </button>
+                <div class="z-10">
+                  <button id="branch-button-{index}"
+                    class="flex items-center gap-1 text-sm px-2 py-1 rounded border transition-colors relative"
+                    style="background: var(--color-accent); border-color: var(--color-accent);"
+                    on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
+                    on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; e.target.style.color = 'var(--text-primary)'; }}
+                    on:click={() => openBranchModal(index)}
+                    title="Create new branch from here"
+                  >
+                    <GitBranch size="16" />
+                    {#if messageBranchCount > 0}
+                      <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
+                        {messageBranchCount}
+                      </span>
+                    {/if}
+                  </button>
+                </div>
               {/if}
               {#if m.role === 'assistant' && m.content.trim()}
-                
+                <div class="z-10">
                 <button
-                  class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md"
+                  class="flex items-center gap-1 text-xs px-2 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md"
                   style="background-color: #5D60DD; border-color: #5D60DD;"
                   on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
                   on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}
-                  on:click={(e) => translateFullMessage(index, e)}
-                  title="Ask Mr Wiskr to simplify this response"
+                  on:click={(e) => openMrWiskrForMessage(index, e)}
+                  title="Ask Mr Wiskr for help with this response"
                 >
                   <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-6 h-6" />
                   Mr Wiskr
                 </button>
+                </div>
               {/if}
             </div>
           </div>
@@ -962,7 +1094,9 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         >
-          &gt;&gt;&nbsp;Wiskr&nbsp;&lt;&lt;<br />Away
+          <ChevronsRight size="20" class="-ml-5 mt-4 absolute" />
+          Wiskr<br />Away
+          <ChevronsLeft size="20" class="ml-11 -mt-8 absolute" />
         </button>
       </form>
     </div>
@@ -987,8 +1121,13 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     isThinking={mrWiskrThinking}
     response={mrWiskrResponse}
     error={mrWiskrError}
+    showOptions={mrWiskrShowOptions}
+    originalText={mrWiskrOriginalText}
+    projectId={current?.id}
     on:dismiss={dismissMrWiskr}
     on:follow-up={handleMrWiskrFollowUp}
+    on:help-requested={handleMrWiskrHelpRequested}
+    on:back-to-options={handleMrWiskrBackToOptions}
   />
   
   <!-- TL;DR Modal -->
@@ -1000,5 +1139,16 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     on:close={handleTLDRModalClose}
     on:replace={handleTLDRReplace}
     on:copy={handleTLDRCopy}
+  />
+  
+  <!-- Problem Report Modal -->
+  <FeedbackModal
+    bind:visible={showProblemReportModal}
+    rating={null}
+    isSubmitting={isSubmittingProblemReport}
+    messageContent={problemReportMessageContent}
+    aiName={problemReportAiName}
+    on:submit={handleProblemReportSubmit}
+    on:cancel={handleProblemReportCancel}
   />
 

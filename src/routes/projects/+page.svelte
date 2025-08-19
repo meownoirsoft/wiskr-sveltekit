@@ -276,6 +276,7 @@
       window.addEventListener('search:activate-tab', handleSearchActivateTab);
       window.addEventListener('search:filter', handleSearchFilter);
       window.addEventListener('search:navigate-chat', handleSearchNavigateChat);
+      window.addEventListener('search:navigate-session', handleSearchNavigateSession);
       window.addEventListener('search:clear', handleSearchClear);
       
       // Listen for usage toggle from header
@@ -305,6 +306,7 @@
       window.removeEventListener('search:activate-tab', handleSearchActivateTab);
       window.removeEventListener('search:filter', handleSearchFilter);
       window.removeEventListener('search:navigate-chat', handleSearchNavigateChat);
+      window.removeEventListener('search:navigate-session', handleSearchNavigateSession);
       window.removeEventListener('search:clear', handleSearchClear);
       
       // Clean up Mr Wiskr event listener
@@ -1325,6 +1327,15 @@ function handleTextAddToDocs(event) {
     }
     // Scroll to the message (we could enhance ChatInterface to support this)
     // For now, just ensure the message is visible by switching branches
+  }
+  
+  function handleSearchNavigateSession(event) {
+    const { sessionId, sessionName } = event.detail;
+    // Find the session in our sessions list and switch to it
+    const targetSession = sessions.find(s => s.id === sessionId);
+    if (targetSession) {
+      selectSession(targetSession);
+    }
   }
   
   function handleSearchClear(event) {

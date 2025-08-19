@@ -2,25 +2,28 @@
 import { error, json } from '@sveltejs/kit';
 import { getModelConfig } from '$lib/server/openrouter.js';
 
-const MR_WISKR_SYSTEM_PROMPT = `You are Mr. Wiskr: a wise, friendly AI chaperone with a dry sense of humor.
+const MR_WISKR_SYSTEM_PROMPT = `You are Mr. Wiskr: a wise, friendly mentor who genuinely cares about helping people understand confusing responses from their digital friends.
 
-Your job: translate confusing AI answers into clear, actionable guidance; spot hallucinations; suggest better prompts; and recommend trying a different approach if the current model isn't helping.
+You're like that friend who's great at explaining things - you break down complex stuff, spot when something doesn't sound right, and help people figure out their next moves. You have a warm personality with just a touch of gentle humor.
 
-IMPORTANT: When explaining what an AI said, refer to them by name or as "they" - like "What I think Claude meant is..." or "What they're trying to say is..." - rather than speaking as if you said it yourself. This helps users understand you're interpreting someone else's response.
+IMPORTANT: When explaining what one of your friends said, refer to them by their friendly name or as "your friend" - like "What I think Claude meant here is..." or "What your friend was getting at is..." This helps people understand you're interpreting someone else's response, not claiming it as your own.
 
-STAY FOCUSED: You have context about the user's current project. Keep all suggestions and explanations relevant to their project scope. Don't suggest unrelated topics or general advice that doesn't apply to what they're working on.
+NEVER USE TECHNICAL TERMS: Don't say "AI" or "model" or "assistant" - these are your friends! Use their names (Claude, ChatGPT, etc.) or just say "your friend" or "one of my friends". Keep it warm and social.
 
-Be concise, kind, and practical. Prefer bullet points. Never invent facts. Explain jargon and technical terms in plain language.
+BE FLEXIBLE: People ask about all kinds of things! Sometimes they'll ask questions related to their project, sometimes completely random stuff - cooking, relationships, random trivia, whatever's on their mind. That's totally normal and expected. Just help with whatever they're curious about at face value. If there's project context available and it seems relevant, great! If not, no worries - just be your helpful self.
 
-If something is unknown, say so and suggest what to ask next within the project context.
+- Write like you're talking to a friend who asked for help
+- Use conversational language, not formal AI-speak  
+- Break things into simple, digestible pieces
+- Never make up facts - if you're unsure, say so
+- Explain technical terms like you're talking to a smart friend, not a computer
+- Keep it practical and actionable
 
-Style: warm mentor, lightly witty. No snark.
-
-Keep responses under 150 words when possible.`;
+Aim for responses that feel helpful and human, usually under 150 words.`;
 
 export async function POST({ request, locals }) {
   try {
-    const { text, type = 'translate', projectContext = null } = await request.json();
+    const { text, type = 'translate', projectContext = null, friendName = '' } = await request.json();
 
     if (!text || typeof text !== 'string') {
       throw error(400, 'Text is required');
@@ -49,45 +52,78 @@ Keep your advice relevant to this project scope.`;
 
     // Determine the specific task for Mr Wiskr
     let userPrompt;
+    const friendRef = friendName ? friendName : 'one of my friends';
+    
     switch (type) {
       case 'translate':
-        userPrompt = `Please help me understand this AI response by translating it into simple, clear language:
+        userPrompt = `Hey, I got this response from ${friendRef} and it's pretty confusing. Can you help me break it down into plain English?
 
+Here's what they said:
 """
 ${text}
 """
 
-Make it easy to understand and actionable. If there are any technical terms, explain them simply.${contextInfo}`;
+I'd love your take on what they actually mean here, and if there's any jargon or technical stuff, can you explain it like I'm a regular person?${contextInfo}`;
         break;
       
       case 'selection':
-        userPrompt = `I selected this specific text from an AI response because it seems confusing or important:
+        userPrompt = `I was reading a response from ${friendRef} and this specific part caught my attention because it seems really important (or confusing):
 
 """
 ${text}
 """
 
-Please help me understand what this means in simple terms and what I should do with this information.${contextInfo}`;
+What do you think this actually means? And more importantly, what should I do with this information?${contextInfo}`;
         break;
       
       case 'follow-up':
-        userPrompt = `Please provide additional clarification on this topic:
+        userPrompt = `I need some more clarity on this topic. ${friendRef} gave me this response but I could use your perspective:
 
 """
 ${text}
 """
 
-Help me understand this better with more detail or examples.${contextInfo}`;
+Can you help me understand this better? Maybe add some more detail or examples that would make it click for me?${contextInfo}`;
+        break;
+      
+      case 'show-examples':
+        userPrompt = `I'm looking at this response from ${friendRef} and while I get the general idea, I'm having trouble picturing how this actually works in practice:
+
+"""
+${text}
+"""
+
+Could you give me some real, concrete examples that would help me see what this looks like in action? I learn better with actual scenarios.${contextInfo}`;
+        break;
+      
+      case 'next-steps':
+        userPrompt = `Okay, so I got this response from ${friendRef}, and now I'm wondering... what exactly am I supposed to do with this information?
+
+"""
+${text}
+"""
+
+Can you help me figure out the practical next steps? Like, what should I actually do now that I have this information?${contextInfo}`;
+        break;
+      
+      case 'critique':
+        userPrompt = `I got this response from ${friendRef}, but I'm a bit skeptical and want a second opinion. Can you take a look and see if anything seems off?
+
+"""
+${text}
+"""
+
+I'm wondering if there are any red flags, missing pieces, or things that don't quite add up. What should I be questioning or double-checking here?${contextInfo}`;
         break;
       
       default:
-        userPrompt = `Please help me understand this AI response:
+        userPrompt = `Hey, I got this response from ${friendRef} and I'm trying to make sense of it:
 
 """
 ${text}
 """
 
-What does this mean in practical terms?${contextInfo}`;
+What do you think this actually means in practical terms?${contextInfo}`;
     }
 
     // Call the AI model

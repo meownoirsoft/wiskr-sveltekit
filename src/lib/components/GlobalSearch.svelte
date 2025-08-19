@@ -18,7 +18,9 @@
     docs: [],
     chatMessages: [],
     questions: [],
-    relatedIdeas: []
+    relatedIdeas: [],
+    sessionGroups: [],
+    totalSessions: 0
   };
   
   // Search highlighting
@@ -26,6 +28,12 @@
   let currentHighlightIndex = 0;
   let totalHighlights = 0;
   let showNavigationControls = false;
+  
+  // Session navigation state
+  let currentSessionIndex = 0;
+  let sessionsWithResults = [];
+  let currentSessionHighlights = 0;
+  let sessionNavigationMode = false; // Toggle between highlight navigation and session navigation
   
   let searchInput;
   let searchContainer;
@@ -91,15 +99,24 @@
     if (searchTerm.length >= 3 && !dropdownDisabled) {
       isSearching = true;
       debouncedSearch();
-    } else {
-      searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [] };
-      if (!dropdownDisabled) {
-        showDropdown = false;
+      } else {
+        // Debug: Log when search results are cleared
+        console.log('🧹 Search results cleared:', {
+          timestamp: new Date().toISOString(),
+          reason: searchTerm.length < 3 ? 'Search term too short' : 'Dropdown disabled',
+          searchTerm,
+          dropdownDisabled
+        });
+        
+        searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+        if (!dropdownDisabled) {
+          showDropdown = false;
+        }
+        if (searchTerm.length < 1) {
+          removeHighlights();
+          resetSessionNavigation();
+        }
       }
-      if (searchTerm.length < 1) {
-        removeHighlights();
-      }
-    }
   }
   
   // Perform the actual search
@@ -121,8 +138,30 @@
       
       if (response.ok) {
         const data = await response.json();
-        searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [] };
+        searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+        
+        // Debug: Log when search results are populated
+        console.log('🔍 Search results populated:', {
+          timestamp: new Date().toISOString(),
+          searchTerm,
+          factsCount: searchResults.facts?.length || 0,
+          docsCount: searchResults.docs?.length || 0,
+          questionsCount: searchResults.questions?.length || 0,
+          chatMessagesCount: searchResults.chatMessages?.length || 0,
+          sessionGroupsCount: searchResults.sessionGroups?.length || 0
+        });
+        
+        // Update session navigation state
+        updateSessionNavigation();
+        
         showDropdown = !dropdownDisabled && hasResults();
+        
+        // Apply highlighting now that we have search results
+        if (highlightedTerm && highlightedTerm === searchTerm) {
+          console.log('🎯 Applying highlighting with fresh search results');
+          // Apply highlighting immediately - don't auto-switch sessions
+          applyHighlighting();
+        }
       } else {
         console.error('Search failed:', await response.text());
         showDropdown = false;
@@ -142,10 +181,16 @@
   
   // Handle clicking on a search result
   function selectResult(result, type) {
+    if (type === 'chatMessages') {
+      // For chat messages, navigate to the message and apply highlighting
+      handleChatMessageSelection(result);
+      return;
+    }
+    
+    // For other result types, populate the search input as before
     let text = '';
     if (type === 'facts') text = result.key;
     else if (type === 'docs') text = result.title;
-    else if (type === 'chatMessages') text = result.content.substring(0, 50) + '...';
     else if (type === 'questions') text = result.question;
     
     // Close dropdown immediately and disable it
@@ -154,6 +199,46 @@
     
     // Update search term (this will trigger reactive statement, but dropdown is disabled)
     searchTerm = text;
+  }
+  
+  // Handle chat message selection - navigate to message and highlight
+  function handleChatMessageSelection(message) {
+    // Close dropdown but keep the search term for highlighting
+    showDropdown = false;
+    dropdownDisabled = true;
+    
+    // Preserve the current search term for highlighting
+    highlightedTerm = searchTerm;
+    
+    // Switch to the appropriate session first (if needed)
+    if (message.session_id && browser) {
+      window.dispatchEvent(new CustomEvent('search:navigate-session', {
+        detail: {
+          sessionId: message.session_id,
+          sessionName: message.session_name
+        }
+      }));
+    }
+    
+    // Navigate to the specific message and branch
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('search:navigate-chat', {
+        detail: {
+          messageId: message.id,
+          branchId: message.branch_id
+        }
+      }));
+    }
+    
+    // Apply highlighting after a longer delay to allow navigation to complete
+    // Also ensure we show navigation controls
+    setTimeout(() => {
+      applyHighlighting();
+      // Force show navigation controls if we have highlights
+      if (totalHighlights > 0) {
+        showNavigationControls = true;
+      }
+    }, 800);
   }
   
   // Handle enter key - filter and highlight
@@ -223,17 +308,32 @@
     applyHighlighting();
   }
   
-  // Apply container-based highlighting throughout the page
-  function applyHighlighting() {
+  // Apply container-based highlighting throughout the page including all sessions
+  async function applyHighlighting() {
     if (!browser || !highlightedTerm) return;
     
     // Remove existing highlights
     removeHighlights();
     
+    // First, highlight what's currently visible
+    await highlightCurrentContent();
+    
+    // Then, calculate total highlights across all sessions that have search results
+    await calculateCrossSessionHighlights();
+    
+    showNavigationControls = totalHighlights > 0;
+    
+    // Scroll to first highlight in current view
+    scrollToFirstHighlight();
+  }
+  
+  // Highlight content currently visible on the page
+  async function highlightCurrentContent() {
     // Find containers that match the search term in specific content areas
     const contentAreas = [
       document.querySelector('.mobile-sidebar'),      // Left sidebar
-      document.querySelector('.mobile-chat')          // Chat area
+      document.querySelector('.mobile-chat'),         // Chat area (legacy)
+      document.querySelector('.searchable-chat-area') // New chat area class
     ].filter(Boolean);
     
     // Handle right column differently - only highlight individual cards, not the whole column
@@ -269,14 +369,168 @@
     highlightedContainers.forEach(container => {
       highlightTextInElement(container, highlightedTerm);
     });
-    
-    // Count individual word highlights, not containers
+  }
+  
+  // Calculate total highlights across all sessions with search results
+  async function calculateCrossSessionHighlights() {
+    // Get actual visible highlights first
     const wordHighlights = document.querySelectorAll('.search-highlight');
-    totalHighlights = wordHighlights.length;
-    currentHighlightIndex = 0;
-    showNavigationControls = totalHighlights > 0;
+    const visibleHighlightsCount = wordHighlights.length;
     
-    // Scroll to first highlight if any - prioritize visible content areas
+    // Calculate theoretical highlights from search results data
+    let theoreticalHighlights = 0;
+    
+    // Count highlights in facts
+    if (searchResults.facts && searchResults.facts.length > 0) {
+      searchResults.facts.forEach(fact => {
+        const keyMatches = countMatchesInText(fact.key, highlightedTerm);
+        const valueMatches = countMatchesInText(fact.value, highlightedTerm);
+        theoreticalHighlights += keyMatches + valueMatches;
+      });
+    }
+    
+    // Count highlights in docs
+    if (searchResults.docs && searchResults.docs.length > 0) {
+      searchResults.docs.forEach(doc => {
+        const titleMatches = countMatchesInText(doc.title, highlightedTerm);
+        const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
+        theoreticalHighlights += titleMatches + contentMatches;
+      });
+    }
+    
+    // Count highlights in questions
+    if (searchResults.questions && searchResults.questions.length > 0) {
+      searchResults.questions.forEach(question => {
+        const questionMatches = countMatchesInText(question.question, highlightedTerm);
+        theoreticalHighlights += questionMatches;
+      });
+    }
+    
+    // Count highlights in all chat messages across all sessions
+    if (searchResults.chatMessages && searchResults.chatMessages.length > 0) {
+      searchResults.chatMessages.forEach(message => {
+        const messageMatches = countMatchesInText(message.content, highlightedTerm);
+        theoreticalHighlights += messageMatches;
+      });
+    }
+    
+    // Debug logging to help troubleshoot
+    console.log('🔍 Highlight count comparison:', {
+      searchTerm: highlightedTerm,
+      visibleHighlightsCount,
+      theoreticalHighlights,
+      difference: theoreticalHighlights - visibleHighlightsCount,
+      willUseVisible: visibleHighlightsCount > 0
+    });
+    
+    // Use visible highlights count if we have highlights, otherwise fall back to theoretical
+    if (visibleHighlightsCount > 0) {
+      totalHighlights = visibleHighlightsCount;
+      console.log('✅ Using visible highlights count:', totalHighlights);
+    } else if (theoreticalHighlights > 0) {
+      totalHighlights = theoreticalHighlights;
+      console.log('✅ Using theoretical highlights count:', totalHighlights);
+    } else {
+      totalHighlights = 0;
+      console.log('📍 No highlights found');
+    }
+    
+    // Set current index
+    await calculateCurrentHighlightIndex();
+  }
+  
+  // Count how many times a term appears in text
+  function countMatchesInText(text, searchTerm) {
+    if (!text || !searchTerm) return 0;
+    const regex = new RegExp(escapeRegex(searchTerm), 'gi');
+    const matches = text.match(regex);
+    return matches ? matches.length : 0;
+  }
+  
+  // Calculate which highlight index we're currently at across all sessions
+  async function calculateCurrentHighlightIndex() {
+    // Always start at index 0 (first highlight) when we first apply highlighting
+    currentHighlightIndex = 0;
+    
+    console.log('🎯 Setting initial highlight index to 0 (first highlight)');
+  }
+  
+  // Get current session ID from the actual app state, not search results
+  function getCurrentSessionId() {
+    // Method 1: Try to get from URL if it contains session info
+    if (browser) {
+      const url = window.location.href;
+      const sessionMatch = url.match(/session[\/_-]([a-f0-9-]+)/i);
+      if (sessionMatch) {
+        console.log('📍 Current session from URL:', sessionMatch[1]);
+        return sessionMatch[1];
+      }
+    }
+    
+    // Method 2: Try to find session info in DOM
+    if (browser) {
+      // Look for session info in data attributes or similar
+      const sessionElement = document.querySelector('[data-session-id]');
+      if (sessionElement) {
+        const sessionId = sessionElement.getAttribute('data-session-id');
+        console.log('📍 Current session from DOM:', sessionId);
+        return sessionId;
+      }
+    }
+    
+    // Method 3: Fallback to search results (original logic)
+    const activeSession = searchResults.sessionGroups?.find(s => s.is_active);
+    const fallbackId = activeSession?.session_id || searchResults.sessionGroups?.[0]?.session_id;
+    
+    console.log('📍 Current session fallback (from search results):', fallbackId);
+    return fallbackId;
+  }
+  
+  // Check if current session has any search results
+  async function checkCurrentSessionHasResults() {
+    if (!searchResults.sessionGroups || searchResults.sessionGroups.length === 0) {
+      console.log('🔍 No session groups found');
+      return false;
+    }
+    
+    const currentSessionId = getCurrentSessionId();
+    const currentSession = searchResults.sessionGroups.find(s => s.session_id === currentSessionId);
+    
+    console.log('🔍 Session detection debug:', {
+      currentSessionId,
+      allSessions: searchResults.sessionGroups.map(s => ({ id: s.session_id, name: s.session_name, is_active: s.is_active })),
+      foundCurrentSession: !!currentSession
+    });
+    
+    if (!currentSession) {
+      console.log('🔍 Current session not found in search results');
+      return false;
+    }
+    
+    // Check if current session has any chat message results
+    const currentSessionMessages = searchResults.chatMessages?.filter(m => m.session_id === currentSessionId) || [];
+    
+    // Also check if we have any facts, docs, or questions (these are always visible)
+    const hasNonSessionResults = (searchResults.facts?.length || 0) + (searchResults.docs?.length || 0) + (searchResults.questions?.length || 0) > 0;
+    
+    const hasCurrentSessionResults = currentSessionMessages.length > 0 || hasNonSessionResults;
+    
+    console.log('🔍 Current session results check:', {
+      currentSessionId,
+      currentSessionName: currentSession.session_name,
+      currentSessionMessages: currentSessionMessages.length,
+      hasNonSessionResults,
+      hasCurrentSessionResults,
+      allChatMessages: searchResults.chatMessages?.map(m => ({ id: m.session_id, name: m.session_name })) || []
+    });
+    
+    return hasCurrentSessionResults;
+  }
+  
+  // Scroll to first highlight in current view
+  function scrollToFirstHighlight() {
+    const highlightedContainers = document.querySelectorAll('.search-highlight-container');
+    
     if (highlightedContainers.length > 0) {
       // Find the first highlight in a visible panel
       let firstVisibleHighlight = null;
@@ -303,7 +557,7 @@
       
       // If no highlight in panels, check chat
       if (!firstVisibleHighlight) {
-        const chatArea = document.querySelector('.mobile-chat');
+        const chatArea = document.querySelector('.mobile-chat, .searchable-chat-area');
         if (chatArea) {
           const chatHighlights = chatArea.querySelectorAll('.search-highlight-container');
           if (chatHighlights.length > 0) {
@@ -320,15 +574,6 @@
       if (firstVisibleHighlight) {
         firstVisibleHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
         firstVisibleHighlight.classList.add('current');
-        
-        // Find the index of the first word highlight in this container to set proper counter
-        const wordHighlights = document.querySelectorAll('.search-highlight');
-        const firstWordInContainer = firstVisibleHighlight.querySelector('.search-highlight');
-        if (firstWordInContainer) {
-          currentHighlightIndex = Array.from(wordHighlights).indexOf(firstWordInContainer);
-        } else {
-          currentHighlightIndex = 0;
-        }
       }
     }
   }
@@ -488,70 +733,365 @@
     showNavigationControls = false;
   }
   
-  // Navigate to next highlight
-  function nextHighlight() {
+  // Navigate to next highlight (cross-session aware)
+  async function nextHighlight() {
     // Close dropdown and prevent it from reopening
     showDropdown = false;
     dropdownDisabled = true;
     
     if (totalHighlights > 0) {
-      const wordHighlights = document.querySelectorAll('.search-highlight');
-      const containerHighlights = document.querySelectorAll('.search-highlight-container');
+      // Calculate next highlight index
+      const nextIndex = (currentHighlightIndex + 1) % totalHighlights;
       
-      // Remove current class from all highlights
-      wordHighlights.forEach(h => h.classList.remove('current'));
-      containerHighlights.forEach(h => h.classList.remove('current'));
+      console.log('🔍 Next highlight navigation:', {
+        currentIndex: currentHighlightIndex,
+        nextIndex,
+        totalHighlights,
+        currentSessionId: getCurrentSessionId()
+      });
       
-      // Move to next highlight
-      currentHighlightIndex = (currentHighlightIndex + 1) % totalHighlights;
+      // First, try to find if this highlight exists in current visible content
+      const targetHighlight = findHighlightAtIndex(nextIndex);
       
-      // Add current class to word highlight and scroll to it
-      if (wordHighlights[currentHighlightIndex]) {
-        const currentWordHighlight = wordHighlights[currentHighlightIndex];
-        currentWordHighlight.classList.add('current');
-        currentWordHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        flashCurrentHighlight(currentWordHighlight);
+      if (targetHighlight) {
+        // Highlight exists in current visible content - navigate directly
+        console.log('✅ Found target highlight in current view');
+        currentHighlightIndex = nextIndex;
+        navigateToCurrentHighlight();
+        return;
+      }
+      
+      // Target highlight not in current view - check if we need session switch
+      const needsSessionSwitch = await shouldSwitchSessionForIndex(nextIndex);
+      console.log('🔄 Session switch check:', { needsSessionSwitch });
+      
+      if (needsSessionSwitch) {
+        const targetSession = await getSessionForHighlightIndex(nextIndex);
+        console.log('🎯 Target session:', {
+          sessionId: targetSession?.session_id,
+          sessionName: targetSession?.session_name
+        });
         
-        // Also highlight the container that contains this word
-        const parentContainer = currentWordHighlight.closest('.search-highlight-container');
-        if (parentContainer) {
-          parentContainer.classList.add('current');
+        if (targetSession) {
+          // Switch to the target session first
+          if (browser) {
+            console.log('📡 Dispatching session switch event');
+            window.dispatchEvent(new CustomEvent('search:navigate-session', {
+              detail: {
+                sessionId: targetSession.session_id,
+                sessionName: targetSession.session_name
+              }
+            }));
+          }
+          
+          // Update index and wait for session switch
+          currentHighlightIndex = nextIndex;
+          setTimeout(() => {
+            applyHighlighting();
+            navigateToCurrentHighlight();
+          }, 400);
+          return;
         }
+      }
+      
+      // If we get here, something went wrong - log error and don't navigate
+      console.error('⚠️ Could not navigate to highlight index:', {
+        targetIndex: nextIndex,
+        totalHighlights,
+        visibleHighlights: document.querySelectorAll('.search-highlight').length,
+        targetFound: !!targetHighlight,
+        needsSessionSwitch
+      });
+    }
+  }
+  
+  // Navigate to previous highlight (cross-session aware)
+  async function prevHighlight() {
+    // Close dropdown and prevent it from reopening
+    showDropdown = false;
+    dropdownDisabled = true;
+    
+    if (totalHighlights > 0) {
+      // Calculate previous highlight index
+      const prevIndex = currentHighlightIndex > 0 ? currentHighlightIndex - 1 : totalHighlights - 1;
+      
+      // Determine if we need to switch sessions
+      const needsSessionSwitch = await shouldSwitchSessionForIndex(prevIndex);
+      
+      if (needsSessionSwitch) {
+        const targetSession = await getSessionForHighlightIndex(prevIndex);
+        if (targetSession) {
+          // Switch to the target session first
+          if (browser) {
+            window.dispatchEvent(new CustomEvent('search:navigate-session', {
+              detail: {
+                sessionId: targetSession.session_id,
+                sessionName: targetSession.session_name
+              }
+            }));
+          }
+          
+          // Update index and wait for session switch
+          currentHighlightIndex = prevIndex;
+          setTimeout(() => {
+            applyHighlighting();
+            navigateToCurrentHighlight();
+          }, 400);
+          return;
+        }
+      }
+      
+      // Navigate within current session
+      currentHighlightIndex = prevIndex;
+      navigateToCurrentHighlight();
+    }
+  }
+  
+  // Helper function to check if switching sessions is needed for a given highlight index
+  async function shouldSwitchSessionForIndex(targetIndex) {
+    if (!searchResults.sessionGroups || searchResults.sessionGroups.length <= 1) {
+      return false; // No session switching needed if only one or no sessions
+    }
+    
+    const currentSessionId = getCurrentSessionId();
+    const targetSessionId = await getSessionIdForHighlightIndex(targetIndex);
+    
+    return currentSessionId !== targetSessionId;
+  }
+  
+  // Helper function to get which session a highlight index belongs to
+  async function getSessionIdForHighlightIndex(targetIndex) {
+    let runningIndex = 0;
+    
+    // Skip facts, docs, and questions (they don't belong to specific sessions)
+    searchResults.facts.forEach(fact => {
+      const keyMatches = countMatchesInText(fact.key, highlightedTerm);
+      const valueMatches = countMatchesInText(fact.value, highlightedTerm);
+      runningIndex += keyMatches + valueMatches;
+    });
+    
+    searchResults.docs.forEach(doc => {
+      const titleMatches = countMatchesInText(doc.title, highlightedTerm);
+      const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
+      runningIndex += titleMatches + contentMatches;
+    });
+    
+    searchResults.questions.forEach(question => {
+      const questionMatches = countMatchesInText(question.question, highlightedTerm);
+      runningIndex += questionMatches;
+    });
+    
+    // If target index is in non-session content, return current session
+    if (targetIndex < runningIndex) {
+      return getCurrentSessionId();
+    }
+    
+    // Find which session the target index falls into
+    const sortedSessions = [...searchResults.sessionGroups].sort((a, b) => {
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return a.session_name.localeCompare(b.session_name);
+    });
+    
+    for (const sessionGroup of sortedSessions) {
+      let sessionHighlights = 0;
+      sessionGroup.messages.forEach(message => {
+        const messageMatches = countMatchesInText(message.content, highlightedTerm);
+        sessionHighlights += messageMatches;
+      });
+      
+      if (targetIndex >= runningIndex && targetIndex < runningIndex + sessionHighlights) {
+        return sessionGroup.session_id;
+      }
+      
+      runningIndex += sessionHighlights;
+    }
+    
+    // Fallback to current session
+    return getCurrentSessionId();
+  }
+  
+  // Helper function to get session object for a highlight index
+  async function getSessionForHighlightIndex(targetIndex) {
+    const sessionId = await getSessionIdForHighlightIndex(targetIndex);
+    return searchResults.sessionGroups?.find(s => s.session_id === sessionId);
+  }
+  
+  // Helper function to navigate to the current highlight in the visible content
+  function navigateToCurrentHighlight() {
+    const wordHighlights = document.querySelectorAll('.search-highlight');
+    const containerHighlights = document.querySelectorAll('.search-highlight-container');
+    
+    // Remove current class from all highlights
+    wordHighlights.forEach(h => h.classList.remove('current'));
+    containerHighlights.forEach(h => h.classList.remove('current'));
+    
+    console.log('🎯 Navigating to current highlight:', {
+      currentHighlightIndex,
+      totalWordHighlights: wordHighlights.length,
+      totalContainerHighlights: containerHighlights.length
+    });
+    
+    // Try to find the specific highlight based on our index
+    const targetHighlight = findHighlightAtIndex(currentHighlightIndex);
+    
+    if (targetHighlight) {
+      targetHighlight.classList.add('current');
+      
+      console.log('📍 Scrolling to specific highlight:', {
+        element: targetHighlight.tagName,
+        text: targetHighlight.textContent?.substring(0, 50),
+        index: currentHighlightIndex
+      });
+      
+      // Scroll to the specific highlight
+      targetHighlight.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      
+      flashCurrentHighlight(targetHighlight);
+      
+      // Also highlight the container that contains this word
+      const parentContainer = targetHighlight.closest('.search-highlight-container');
+      if (parentContainer) {
+        parentContainer.classList.add('current');
+      }
+    } else if (wordHighlights.length > 0) {
+      // Fallback: navigate to first visible highlight
+      console.log('⚠️ Fallback to first visible highlight');
+      const firstVisibleHighlight = wordHighlights[0];
+      firstVisibleHighlight.classList.add('current');
+      firstVisibleHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      flashCurrentHighlight(firstVisibleHighlight);
+      
+      const parentContainer = firstVisibleHighlight.closest('.search-highlight-container');
+      if (parentContainer) {
+        parentContainer.classList.add('current');
       }
     }
   }
   
-  // Navigate to previous highlight
-  function prevHighlight() {
-    // Close dropdown and prevent it from reopening
-    showDropdown = false;
-    dropdownDisabled = true;
+  // Find the specific highlight element at the given index within visible content
+  function findHighlightAtIndex(targetIndex) {
+    // Get all word highlights in document order
+    const allWordHighlights = document.querySelectorAll('.search-highlight');
     
-    if (totalHighlights > 0) {
-      const wordHighlights = document.querySelectorAll('.search-highlight');
-      const containerHighlights = document.querySelectorAll('.search-highlight-container');
+    console.log('🔍 Finding highlight at index:', {
+      targetIndex,
+      totalVisible: allWordHighlights.length
+    });
+    
+    // Simple approach: if we're not dealing with cross-session navigation,
+    // just use the visible highlights directly
+    if (!searchResults.sessionGroups || searchResults.sessionGroups.length === 0) {
+      return allWordHighlights[targetIndex] || null;
+    }
+    
+    // For cross-session navigation, we need to map the global index to visible content
+    const currentSessionId = getCurrentSessionId();
+    
+    // Calculate how many highlights come from each category in the global count
+    let globalRunningIndex = 0;
+    
+    // Count highlights in facts (always visible)
+    let factsHighlights = 0;
+    if (searchResults.facts && searchResults.facts.length > 0) {
+      searchResults.facts.forEach(fact => {
+        const keyMatches = countMatchesInText(fact.key, highlightedTerm);
+        const valueMatches = countMatchesInText(fact.value, highlightedTerm);
+        factsHighlights += keyMatches + valueMatches;
+      });
+    }
+    
+    // Count highlights in docs (always visible)
+    let docsHighlights = 0;
+    if (searchResults.docs && searchResults.docs.length > 0) {
+      searchResults.docs.forEach(doc => {
+        const titleMatches = countMatchesInText(doc.title, highlightedTerm);
+        const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
+        docsHighlights += titleMatches + contentMatches;
+      });
+    }
+    
+    // Count highlights in questions (always visible)
+    let questionsHighlights = 0;
+    if (searchResults.questions && searchResults.questions.length > 0) {
+      searchResults.questions.forEach(question => {
+        const questionMatches = countMatchesInText(question.question, highlightedTerm);
+        questionsHighlights += questionMatches;
+      });
+    }
+    
+    const nonSessionHighlights = factsHighlights + docsHighlights + questionsHighlights;
+    globalRunningIndex = nonSessionHighlights;
+    
+    console.log('🧮 Highlight distribution analysis:', {
+      factsHighlights,
+      docsHighlights,
+      questionsHighlights,
+      nonSessionHighlights,
+      targetIndex,
+      currentSessionId
+    });
+    
+    // If the target index is within non-session content (facts, docs, questions),
+    // it maps directly to visible highlights
+    if (targetIndex < nonSessionHighlights) {
+      console.log('📝 Target is in non-session content, using direct index:', targetIndex);
+      return allWordHighlights[targetIndex] || null;
+    }
+    
+    // Now we need to handle session-specific content
+    // Find which session this target index belongs to
+    const sortedSessions = [...searchResults.sessionGroups].sort((a, b) => {
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return a.session_name.localeCompare(b.session_name);
+    });
+    
+    for (const sessionGroup of sortedSessions) {
+      let sessionHighlights = 0;
+      sessionGroup.messages.forEach(message => {
+        const messageMatches = countMatchesInText(message.content, highlightedTerm);
+        sessionHighlights += messageMatches;
+      });
       
-      // Remove current class from all highlights
-      wordHighlights.forEach(h => h.classList.remove('current'));
-      containerHighlights.forEach(h => h.classList.remove('current'));
-      
-      // Move to previous highlight
-      currentHighlightIndex = currentHighlightIndex > 0 ? currentHighlightIndex - 1 : totalHighlights - 1;
-      
-      // Add current class to word highlight and scroll to it
-      if (wordHighlights[currentHighlightIndex]) {
-        const currentWordHighlight = wordHighlights[currentHighlightIndex];
-        currentWordHighlight.classList.add('current');
-        currentWordHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        flashCurrentHighlight(currentWordHighlight);
-        
-        // Also highlight the container that contains this word
-        const parentContainer = currentWordHighlight.closest('.search-highlight-container');
-        if (parentContainer) {
-          parentContainer.classList.add('current');
+      if (targetIndex >= globalRunningIndex && targetIndex < globalRunningIndex + sessionHighlights) {
+        // The target index is within this session
+        if (sessionGroup.session_id === currentSessionId) {
+          // This is the current session, calculate the visible index
+          const indexWithinSession = targetIndex - globalRunningIndex;
+          const visibleIndex = nonSessionHighlights + indexWithinSession;
+          
+          console.log('💬 Target is in current session:', {
+            sessionId: currentSessionId,
+            sessionName: sessionGroup.session_name,
+            globalIndex: targetIndex,
+            indexWithinSession,
+            visibleIndex,
+            totalVisibleHighlights: allWordHighlights.length
+          });
+          
+          return allWordHighlights[visibleIndex] || null;
+        } else {
+          // Target is in a different session - return null to trigger session switch
+          console.log('🔄 Target is in different session:', {
+            targetSessionId: sessionGroup.session_id,
+            targetSessionName: sessionGroup.session_name,
+            currentSessionId,
+            needsSessionSwitch: true
+          });
+          return null;
         }
       }
+      
+      globalRunningIndex += sessionHighlights;
     }
+    
+    console.log('⚠️ Could not find target highlight, using fallback');
+    return allWordHighlights[0] || null;
   }
   
   // Flash animation for current highlight
@@ -648,6 +1188,108 @@
     }
   });
   
+  // Session navigation functions
+  function updateSessionNavigation() {
+    if (!searchResults.sessionGroups || searchResults.sessionGroups.length === 0) {
+      resetSessionNavigation();
+      return;
+    }
+    
+    sessionsWithResults = searchResults.sessionGroups.sort((a, b) => {
+      // Sort by active session first, then by name
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return a.session_name.localeCompare(b.session_name);
+    });
+    
+    currentSessionIndex = 0;
+    sessionNavigationMode = sessionsWithResults.length > 1; // Enable session navigation if multiple sessions
+  }
+  
+  function resetSessionNavigation() {
+    sessionsWithResults = [];
+    currentSessionIndex = 0;
+    sessionNavigationMode = false;
+  }
+  
+  // Navigate to next session with search results
+  async function nextSession() {
+    if (sessionsWithResults.length === 0) return;
+    
+    currentSessionIndex = (currentSessionIndex + 1) % sessionsWithResults.length;
+    const targetSession = sessionsWithResults[currentSessionIndex];
+    
+    // Dispatch session switch event via window event (to maintain consistency with existing pattern)
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('search:navigate-session', {
+        detail: {
+          sessionId: targetSession.session_id, 
+          sessionName: targetSession.session_name 
+        }
+      }));
+    }
+    
+    // Small delay to allow session switch, then re-apply highlighting
+    setTimeout(() => {
+      applyHighlighting();
+    }, 300);
+  }
+  
+  // Navigate to previous session with search results
+  async function prevSession() {
+    if (sessionsWithResults.length === 0) return;
+    
+    currentSessionIndex = currentSessionIndex > 0 ? currentSessionIndex - 1 : sessionsWithResults.length - 1;
+    const targetSession = sessionsWithResults[currentSessionIndex];
+    
+    // Dispatch session switch event via window event (to maintain consistency with existing pattern)
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('search:navigate-session', {
+        detail: {
+          sessionId: targetSession.session_id, 
+          sessionName: targetSession.session_name 
+        }
+      }));
+    }
+    
+    // Small delay to allow session switch, then re-apply highlighting
+    setTimeout(() => {
+      applyHighlighting();
+    }, 300);
+  }
+  
+  // Toggle between session navigation and highlight navigation modes
+  function toggleNavigationMode() {
+    if (sessionsWithResults.length > 1) {
+      sessionNavigationMode = !sessionNavigationMode;
+    }
+  }
+  
+  // Enhanced navigation that handles both session and highlight navigation
+  function enhancedNext() {
+    // Close dropdown and prevent it from reopening
+    showDropdown = false;
+    dropdownDisabled = true;
+    
+    if (sessionNavigationMode && sessionsWithResults.length > 1) {
+      nextSession();
+    } else {
+      nextHighlight();
+    }
+  }
+  
+  function enhancedPrev() {
+    // Close dropdown and prevent it from reopening
+    showDropdown = false;
+    dropdownDisabled = true;
+    
+    if (sessionNavigationMode && sessionsWithResults.length > 1) {
+      prevSession();
+    } else {
+      prevHighlight();
+    }
+  }
+  
   // Reactive statement to handle search input changes
   $: if (searchTerm !== undefined) {
     handleSearchInput();
@@ -691,28 +1333,58 @@
       {#if showNavigationControls && totalHighlights > 0}
         <div class="mr-3 flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
           <button
-            on:click={prevHighlight}
+            on:click={enhancedPrev}
             class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
-            disabled={totalHighlights === 0}
-            title="Previous highlight"
+            disabled={totalHighlights === 0 && (!sessionNavigationMode || sessionsWithResults.length === 0)}
+            title={sessionNavigationMode ? 'Previous session with results' : 'Previous highlight'}
           >
             <ChevronLeft class="h-3 w-3" />
           </button>
+          
+          <!-- Counter button with session info when applicable -->
+          {#if sessionNavigationMode && sessionsWithResults.length > 1}
+            <button
+              on:click={toggleNavigationMode}
+              class="px-2 py-1 bg-blue-500 text-white font-mono text-xs rounded font-medium shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
+              title="Toggle to highlight navigation • Click to switch modes"
+            >
+              {currentSessionIndex + 1}/{sessionsWithResults.length} sessions
+            </button>
+          {:else}
+            <button
+              on:click={sessionNavigationMode ? toggleNavigationMode : handleCounterClick}
+              class="px-2 py-1 {sessionNavigationMode ? 'bg-blue-500 hover:bg-blue-600' : 'bg-pink-500 hover:bg-pink-600'} text-white font-mono text-xs rounded font-medium shadow-sm transition-colors cursor-pointer"
+              title={sessionNavigationMode ? 'Toggle to highlight navigation' : 'Close search dropdown'}
+            >
+              {#if sessionNavigationMode && sessionsWithResults.length === 1}
+                1/1 session
+              {:else}
+                {currentHighlightIndex + 1}/{totalHighlights}
+              {/if}
+            </button>
+          {/if}
+          
           <button
-            on:click={handleCounterClick}
-            class="px-2 py-1 bg-pink-500 text-white font-mono text-xs rounded font-medium shadow-sm hover:bg-pink-600 transition-colors cursor-pointer"
-            title="Close search dropdown"
-          >
-            {currentHighlightIndex + 1}/{totalHighlights}
-          </button>
-          <button
-            on:click={nextHighlight}
+            on:click={enhancedNext}
             class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
-            disabled={totalHighlights === 0}
-            title="Next highlight"
+            disabled={totalHighlights === 0 && (!sessionNavigationMode || sessionsWithResults.length === 0)}
+            title={sessionNavigationMode ? 'Next session with results' : 'Next highlight'}
           >
             <ChevronRight class="h-3 w-3" />
           </button>
+          
+          <!-- Session mode toggle button (only show when multiple sessions exist) -->
+          {#if sessionsWithResults.length > 1}
+            <div class="ml-1 pl-1 border-l border-gray-300 dark:border-gray-500">
+              <button
+                on:click={toggleNavigationMode}
+                class="p-1 text-xs {sessionNavigationMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded"
+                title={sessionNavigationMode ? 'Switch to highlight navigation' : 'Switch to session navigation'}
+              >
+                {sessionNavigationMode ? 'S' : 'H'}
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>
@@ -755,19 +1427,48 @@
         </div>
       {/if}
       
-      <!-- Chat Messages Results (Middle Column) -->
+      <!-- Chat Messages Results (Middle Column) with Session Grouping -->
       {#if searchResults.chatMessages.length > 0}
         <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Chat Messages</h4>
-          {#each searchResults.chatMessages.slice(0, 5) as message}
-            <button
-              on:click={() => selectResult(message, 'chatMessages')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-            >
-              <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 60)}...</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'}</div>
-            </button>
-          {/each}
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chat Messages</h4>
+            {#if searchResults.totalSessions > 1}
+              <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">{searchResults.totalSessions} sessions</span>
+            {/if}
+          </div>
+          
+          {#if searchResults.sessionGroups.length > 0}
+            <!-- Group by sessions when multiple sessions have results -->
+            {#each searchResults.sessionGroups.slice(0, 3) as sessionGroup}
+              <div class="mb-3 last:mb-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="h-2 w-2 rounded-full {sessionGroup.is_active ? 'bg-green-500' : 'bg-gray-400'}"></div>
+                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{sessionGroup.session_name}</span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">({sessionGroup.message_count} {sessionGroup.message_count === 1 ? 'message' : 'messages'})</span>
+                </div>
+                {#each sessionGroup.messages.slice(0, 2) as message}
+                  <button
+                    on:click={() => selectResult(message, 'chatMessages')}
+                    class="w-full text-left p-2 ml-4 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block border-l-2 border-gray-200 dark:border-gray-600 pl-3"
+                  >
+                    <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 55)}...</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'}</div>
+                  </button>
+                {/each}
+              </div>
+            {/each}
+          {:else}
+            <!-- Fallback to regular message list if no session grouping -->
+            {#each searchResults.chatMessages.slice(0, 5) as message}
+              <button
+                on:click={() => selectResult(message, 'chatMessages')}
+                class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
+              >
+                <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 60)}...</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'} • {message.session_name || 'Unknown Session'}</div>
+              </button>
+            {/each}
+          {/if}
         </div>
       {/if}
       
