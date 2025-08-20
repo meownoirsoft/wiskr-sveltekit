@@ -24,6 +24,30 @@ const MAX_DOC_CHARS = 1000;      // Increased from 800 for better context
 const MAX_BRIEF_CHARS = 2000;    // Increased from 1500 for project context
 
 function clip(str, max) { return (str || '').length > max ? str.slice(0, max) : (str || ''); }
+
+// Cosine similarity helper for entity card MMR
+function cosineSimilarity(vecA, vecB) {
+  if (!vecA || !vecB || vecA.length !== vecB.length) {
+    return 0;
+  }
+  
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  
+  if (normA === 0 || normB === 0) {
+    return 0;
+  }
+  
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
 export async function buildContext({ supabase, projectId, userMessage, branchId = 'main' }) {
   if (!supabase) throw new Error('buildContext: missing `supabase`');
   if (!projectId) throw new Error('buildContext: missing `projectId`');
@@ -58,13 +82,31 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     console.log('💡 Suggestion: User should add a project description for better AI assistance');
   }
 
-  // 1) PINNED FACTS SECOND - CRITICAL PRIORITY
+  // Get query embedding first (needed for entity card MMR)
+  let qvec = null;
+  if (userMessage?.trim()) {
+    console.log('🔍 Generating embedding for user message...');
+    try {
+      const emb = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: userMessage
+      });
+      qvec = emb.data[0]?.embedding || null;
+      console.log('✅ Embedding generated successfully, vector length:', qvec?.length || 0);
+    } catch (e) {
+      console.error('❌ Query embedding error:', e?.message || e);
+    }
+  } else {
+    console.log('⚠️  No user message provided, skipping embedding');
+  }
+
+  // 1) PINNED FACTS FIRST - CRITICAL PRIORITY
   // Get ALL pinned facts/docs - they're critical and must never be missed
   const [{ data: pFacts }, { data: pDocs }] = await Promise.all([
     supabase.from('facts').select('id,type,key,value').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_FACTS),
     supabase.from('docs').select('id,title,content').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_DOCS)
   ]);
-
+  
   if (pFacts?.length) {
     blocks.push(
       '🚨 MANDATORY INFORMATION - MUST USE IN ALL RESPONSES:\n\n' +
@@ -93,7 +135,46 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     console.log('📌 No pinned docs found');
   }
 
-  // 2) Project brief (lower priority) - use data already fetched above
+  // 2) ENTITY CARDS - HIGH PRIORITY (coherent summaries)
+  // Get entity cards for coherent context, supplement with atomic facts
+  const { data: entityCards, error: cardsError } = await supabase
+    .from('entity_cards')
+    .select('id, entity_name, entity_type, summary, confidence_score, embedding')
+    .eq('project_id', projectId)
+    .order('confidence_score', { ascending: false })
+    .limit(15); // Reasonable limit for entity cards
+
+  if (entityCards?.length && !cardsError) {
+    // Use MMR for diverse entity card selection if we have a query vector
+    let selectedCards = entityCards.slice(0, 8); // Default to top 8
+    if (qvec && entityCards.length > 8) {
+      const { selectWithMMR } = await import('../utils/mmr.js');
+      // Convert entity cards to have similarity scores for MMR
+      const cardsWithSimilarity = entityCards.map(card => ({
+        ...card,
+        similarity: card.embedding ? cosineSimilarity(qvec, card.embedding) : 0.5
+      }));
+      selectedCards = selectWithMMR(cardsWithSimilarity, qvec, 8, 0.6); // Slightly favor diversity for cards
+    }
+
+    if (selectedCards.length > 0) {
+      blocks.push(
+        '🎭 ENTITY SUMMARIES - KEY KNOWLEDGE:\n\n' +
+        selectedCards.map(card => {
+          const confidenceText = card.confidence_score > 0.8 ? ' (high confidence)' : '';
+          return `⚡ ${card.entity_name} (${card.entity_type})${confidenceText}:\n${card.summary}`;
+        }).join('\n\n') +
+        '\n\n💡 These entity cards provide coherent summaries. Use them as primary context, supplemented by specific facts below.'
+      );
+      console.log('🎭 Added entity cards:', selectedCards.length, 'cards -', selectedCards.map(c => c.entity_name));
+    }
+  } else {
+    console.log('🎭 No entity cards found or error fetching cards:', cardsError?.message);
+  }
+
+  // Content moved up to be first priority after project description
+
+  // 3) Project brief (lower priority) - use data already fetched above
   if (projWithDesc?.brief_text) {
     blocks.push(`PROJECT_BRIEF:\n${clip(projWithDesc.brief_text, MAX_BRIEF_CHARS)}`);
     console.log('📋 Added project brief:', projWithDesc.name);
@@ -101,26 +182,10 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     console.log('📋 No project brief found');
   }
 
-  // 3) Query embedding for the user's message (to find top-k)
-  let qvec = null;
-  if (userMessage?.trim()) {
-    console.log('🔍 Generating embedding for user message...');
-    try {
-      const emb = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: userMessage
-      });
-      qvec = emb.data[0]?.embedding || null;
-      console.log('✅ Embedding generated successfully, vector length:', qvec?.length || 0);
-    } catch (e) {
-      console.error('❌ Query embedding error:', e?.message || e);
-    }
-  } else {
-    console.log('⚠️  No user message provided, skipping embedding');
-  }
+  // 4) Vector search now uses the qvec generated earlier
 
   if (qvec) {
-    // 4) Top-K semantic matches (pgvector)
+    // 5) Top-K semantic matches (pgvector)
     console.log('🎯 Attempting vector similarity search...');
     try {
       const [{ data: simFacts }, { data: simDocs }] = await Promise.all([
@@ -167,7 +232,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
   
   if (!qvec) {
     console.log('📅 Using FALLBACK mode - fetching recent items...');
-    // 5) Fallback if no embeddings yet or API hiccup:
+    // 6) Fallback if no embeddings yet or API hiccup:
     // Increased limits for better fallback coverage
     const [{ data: rFacts }, { data: rDocs }] = await Promise.all([
       supabase.from('facts').select('type,key,value').eq('project_id', projectId).order('created_at', { ascending: false }).limit(FALLBACK_FACTS),
@@ -185,7 +250,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     }
   }
 
-  // 6) Add recent conversation history from this branch (last 10 messages)
+  // 7) Add recent conversation history from this branch (last 10 messages)
   console.log('💬 Fetching conversation history for branch:', branchId);
   const { data: recentMessages } = await supabase
     .from('messages')

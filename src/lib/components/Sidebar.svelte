@@ -3,6 +3,7 @@
   import ContextSummary from './ContextSummary.svelte';
   import FactsManager from './FactsManager.svelte';
   import DocsManager from './DocsManager.svelte';
+  import EntityCards from './EntityCards.svelte';
   import { Search, X, ToggleLeft, ToggleRight, Info } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
 
@@ -27,7 +28,7 @@
   let factsManagerComponent;
   
   // Tab state - exported so parent can control it
-  export let activeTab = 'facts'; // 'summary', 'facts', or 'docs'
+  export let activeTab = 'facts'; // 'summary', 'facts', 'docs', or 'entities'
   
   // Tag filtering state
   let selectedTags = [];
@@ -402,6 +403,17 @@
         <button
           class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
           style="{
+            activeTab === 'entities' 
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
+              : 'border-color: transparent;'
+          } {activeTab !== 'entities' ? 'color: #6b7280;' : ''}"
+          on:click={() => activeTab = 'entities'}
+        >
+          Entities
+        </button>
+        <button
+          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          style="{
             activeTab === 'summary' 
               ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
               : 'border-color: transparent;'
@@ -456,6 +468,15 @@
             on:delete={handleDocDelete}
             on:toggle-pin={handleDocTogglePin}
             on:tag-click={handleTagClick}
+          />
+        {:else if activeTab === 'entities'}
+          <EntityCards 
+            projectId={current?.id}
+            facts={facts}
+            on:cards-generated={() => {
+              // Optionally reload facts or do other updates when cards are generated
+              console.log('Entity cards generated!');
+            }}
           />
         {/if}
       </div>

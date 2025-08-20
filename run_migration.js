@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Read the migration file
-const migrationSQL = readFileSync('src/lib/migrations/complete_missing_parts.sql', 'utf8');
+const migrationSQL = readFileSync('src/lib/migrations/entity_cards.sql', 'utf8');
 
 // Split into individual statements (remove comments and empty lines)
 const statements = migrationSQL

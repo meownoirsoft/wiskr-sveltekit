@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import OpenAI from 'openai';
 import { OPENAI_API_KEY } from '$env/static/private';
+import { refreshContextScore } from '$lib/server/utils/contextScore.js';
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -35,6 +36,9 @@ export const POST = async ({ params, request, locals }) => {
   if (typeof tags   !== 'undefined') patch.tags   = tags;
   if (typeof pinned !== 'undefined') patch.pinned = !!pinned;
 
+  // Detect if pinned status is changing (affects context score)
+  const pinnedStatusChanged = typeof pinned !== 'undefined' && !!pinned !== current.pinned;
+
   // Save updates first (RLS enforced)
   const { data: updated, error: upErr } = await locals.supabase
     .from('facts')
@@ -56,6 +60,12 @@ export const POST = async ({ params, request, locals }) => {
     (autoChanged ? 'force' : 'skip');
 
   if (want === 'skip') {
+    // Refresh context score if pinned status changed
+    if (pinnedStatusChanged) {
+      refreshContextScore(locals.supabase, current.project_id).catch(error => {
+        console.error('❌ Context score refresh error (no reembed):', error);
+      });
+    }
     return json({ fact: updated, reembedded: false });
   }
 
@@ -74,9 +84,25 @@ export const POST = async ({ params, request, locals }) => {
         .eq('id', id);
       if (embErr) console.error('facts embedding update error:', embErr.message);
     }
+    
+    // Refresh context score if pinned status changed
+    if (pinnedStatusChanged) {
+      refreshContextScore(locals.supabase, current.project_id).catch(error => {
+        console.error('❌ Context score refresh error (with reembed):', error);
+      });
+    }
+    
     return json({ fact: updated, reembedded: !!embedding });
   } catch (e) {
     console.error('Embedding error (fact update):', e?.message || e);
+    
+    // Still refresh context score if pinned status changed, even on embedding error
+    if (pinnedStatusChanged) {
+      refreshContextScore(locals.supabase, current.project_id).catch(error => {
+        console.error('❌ Context score refresh error (embedding failed):', error);
+      });
+    }
+    
     return json({ fact: updated, reembedded: false, warn: 'embedding_failed' });
   }
 };

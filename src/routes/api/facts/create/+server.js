@@ -1,6 +1,7 @@
 // src/routes/api/facts/create
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
+import { refreshContextScore } from '$lib/server/utils/contextScore.js';
 
 export const POST = async ({ request, locals }) => {
   const { data: { user } } = await locals.supabase.auth.getUser();
@@ -43,6 +44,23 @@ export const POST = async ({ request, locals }) => {
       .update({ embedding })
       .eq('id', fact.id);
     if (upErr) console.error('facts embedding update error:', upErr.message);
+  }
+
+  // Auto-refresh entity cards based on the new fact
+  try {
+    const { handleNewFact } = await import('$lib/server/services/entityCardRefresh.js');
+    handleNewFact(locals.supabase, fact).catch(error => {
+      console.error('❌ EntityCardRefresh: Error in background processing:', error);
+    });
+  } catch (refreshError) {
+    console.warn('⚠️ EntityCardRefresh: Failed to import refresh service:', refreshError);
+  }
+
+  // Refresh context score in background (especially important for pinned facts)
+  if (pinned) {
+    refreshContextScore(locals.supabase, project_id).catch(error => {
+      console.error('❌ Context score refresh error:', error);
+    });
   }
 
   return json({ fact });

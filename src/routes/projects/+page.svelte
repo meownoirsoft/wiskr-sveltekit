@@ -576,6 +576,16 @@
       alert('Failed to save fact');
       return;
     }
+
+    const { fact } = await res.json();
+    
+    // Dispatch event for context score refresh
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('fact:created', {
+        detail: { fact, projectId: current.id }
+      }));
+    }
+    
     // clear form and hide
     factKey = ''; factValue = ''; factTags = '';
     showAddFactForm = false;
@@ -660,16 +670,30 @@
   }
 
 async function toggleFactPin(f) {
+    const wasPinned = f.pinned;
+    const willBePinned = !f.pinned;
+    
     const res = await fetch(`/api/facts/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: !f.pinned, reembed: 'skip' }) // pin doesn't change meaning
+      body: JSON.stringify({ pinned: willBePinned, reembed: 'skip' }) // pin doesn't change meaning
     });
     if (!res.ok) {
       console.error(await res.text());
       alert('Failed to toggle pin');
       return;
     }
+    
+    const { fact } = await res.json();
+    
+    // Dispatch event for context score refresh when pinning status changes
+    if (browser && wasPinned !== willBePinned) {
+      const eventType = willBePinned ? 'fact:pinned' : 'fact:unpinned';
+      window.dispatchEvent(new CustomEvent(eventType, {
+        detail: { fact, projectId: current.id }
+      }));
+    }
+    
     await loadContext();
   }
 

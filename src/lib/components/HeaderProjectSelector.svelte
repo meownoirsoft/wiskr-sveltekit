@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Search, ChevronDown, Trash, X } from 'lucide-svelte';
+  import { Plus, Search, ChevronDown, Trash, Settings, X } from 'lucide-svelte';
 
   export let projects = [];
   export let current = null;
@@ -47,6 +47,12 @@
   function deleteProject(project, event) {
     event.stopPropagation();
     dispatch('delete', project);
+    closeDropdown();
+  }
+  
+  function openSettings(project, event) {
+    event.stopPropagation();
+    dispatch('open-settings', project);
     closeDropdown();
   }
 
@@ -137,6 +143,14 @@
               {/if}
             </button>
             <div class="flex items-center gap-1 px-2">
+              <button
+                class="p-1 transition-colors"
+                style="color: var(--text-header-secondary);"
+                title="Project Settings"
+                on:click={(e) => openSettings(project, e)}
+              >
+                <Settings size="16" />
+              </button>
               <button
                 class="p-1 hover:text-red-400 transition-colors"
                 style="color: var(--text-header-secondary);"

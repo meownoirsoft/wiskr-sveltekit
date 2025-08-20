@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+  import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
@@ -168,6 +169,8 @@
         if (foundProject) {
           currentProject = foundProject;
           console.log('🎯 Layout: Updated current project to:', foundProject.name);
+          // Load context quality score for the new project
+          loadContextQualityScore(foundProject.id);
         }
       }
     });
@@ -218,6 +221,10 @@
   
   // Mobile menu state
   let showMobileMenu = false;
+  
+  // Context quality state
+  let contextQualityScore = 0;
+  let loadingContextScore = false;
   
   // Load user preferences when modal opens
   async function loadUserPreferences() {
@@ -358,6 +365,39 @@
     newProjectDescription = description || '';
     createProject();
   }
+  
+  // Context quality functions
+  async function loadContextQualityScore(projectId) {
+    if (!projectId || !browser) return;
+    
+    loadingContextScore = true;
+    try {
+      // Import and initialize the context score store
+      const { initContextScoreTracking, contextScore, contextScoreLoading } = await import('$lib/stores/contextScore.js');
+      
+      // Initialize tracking for this project (includes automatic event listeners)
+      initContextScoreTracking(projectId);
+      
+      // Subscribe to store updates
+      const unsubscribeScore = contextScore.subscribe(score => {
+        contextQualityScore = score;
+      });
+      
+      const unsubscribeLoading = contextScoreLoading.subscribe(loading => {
+        loadingContextScore = loading;
+      });
+      
+      // Store unsubscribe functions for cleanup
+      if (!window.contextScoreUnsubscribes) {
+        window.contextScoreUnsubscribes = [];
+      }
+      window.contextScoreUnsubscribes.push(unsubscribeScore, unsubscribeLoading);
+      
+    } catch (error) {
+      console.error('Failed to initialize context quality score tracking:', error);
+      loadingContextScore = false;
+    }
+  }
 </script>
 
 <!-- App shell: full height -->
@@ -397,6 +437,8 @@
                     trackProjectNavigation(e.detail.id, e.detail.name);
                     // Dispatch event to notify the projects page
                     window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                    // Load context quality score for the selected project
+                    loadContextQualityScore(e.detail.id);
                   }
                 }}
                 on:create={() => showNewProjectModal = true}
@@ -422,6 +464,25 @@
                 }}
               />
             </div>
+            <!-- Context Quality Indicator - right after project selector -->
+            {#if currentProject?.id}
+              <ContextQualityIndicator 
+                score={contextQualityScore}
+                loading={loadingContextScore}
+                projectId={currentProject.id}
+                on:open-dashboard={() => goto(`/context-dashboard?projectId=${currentProject.id}`)}
+                on:open-settings={() => {
+                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
+                }}
+                on:navigate-facts={() => {
+                  window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' }));
+                }}
+                on:generate-entities={() => {
+                  window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'entities' }));
+                  window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
+                }}
+              />
+            {/if}
           {/if}
       </div>
         
@@ -458,7 +519,16 @@
             >
               <BarChart3 size="16" />
               <span>Usage</span>
-            </button>
+              </button>
+            <!-- Context Dashboard link (only on projects page) -->
+            <a 
+              href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              title="Context Dashboard - See what gets sent to LLMs"
+            >
+              <Settings2 size="16" />
+              <span>Context</span>
+            </a>
           {/if}
           
           {#if data?.user}
@@ -557,6 +627,14 @@
                     <BarChart3 size="16" />
                     <span>Usage</span>
                   </button>
+                  <a 
+                    href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    on:click={() => showMobileMenu = false}
+                  >
+                    <Settings2 size="16" />
+                    <span>Context Dashboard</span>
+                  </a>
                 {/if}
                 
                 {#if data?.user}
