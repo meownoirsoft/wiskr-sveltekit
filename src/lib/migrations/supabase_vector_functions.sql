@@ -1,7 +1,7 @@
 -- Enable the pgvector extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- RPC function to match facts by vector similarity
+-- RPC function to match facts by vector similarity (returns extra candidates for MMR)
 CREATE OR REPLACE FUNCTION match_facts(
   p_project_id UUID,
   p_query VECTOR(1536),
@@ -14,6 +14,7 @@ RETURNS TABLE(
   value TEXT,
   tags TEXT[],
   pinned BOOLEAN,
+  embedding VECTOR(1536),
   similarity FLOAT
 )
 LANGUAGE SQL
@@ -25,16 +26,17 @@ AS $$
     f.value,
     f.tags,
     f.pinned,
+    f.embedding,
     1 - (f.embedding <=> p_query) AS similarity
   FROM facts f
   WHERE f.project_id = p_project_id
     AND f.embedding IS NOT NULL
     AND NOT f.pinned  -- exclude pinned facts as they're already included separately
   ORDER BY f.embedding <=> p_query
-  LIMIT p_limit;
+  LIMIT (p_limit * 3);  -- Return 3x candidates for MMR diversity selection
 $$;
 
--- RPC function to match docs by vector similarity
+-- RPC function to match docs by vector similarity (returns extra candidates for MMR)
 CREATE OR REPLACE FUNCTION match_docs(
   p_project_id UUID,
   p_query VECTOR(1536),
@@ -46,6 +48,7 @@ RETURNS TABLE(
   content TEXT,
   tags TEXT[],
   pinned BOOLEAN,
+  embedding VECTOR(1536),
   similarity FLOAT
 )
 LANGUAGE SQL
@@ -56,13 +59,14 @@ AS $$
     d.content,
     d.tags,
     d.pinned,
+    d.embedding,
     1 - (d.embedding <=> p_query) AS similarity
   FROM docs d
   WHERE d.project_id = p_project_id
     AND d.embedding IS NOT NULL
     AND NOT d.pinned  -- exclude pinned docs as they're already included separately
   ORDER BY d.embedding <=> p_query
-  LIMIT p_limit;
+  LIMIT (p_limit * 3);  -- Return 3x candidates for MMR diversity selection
 $$;
 
 -- Grant execute permissions to authenticated users

@@ -1,6 +1,7 @@
 // Build chat system context: pinned + top-k semantic matches via pgvector.
 import OpenAI from 'openai';
 import { OPENAI_API_KEY } from '$env/static/private';
+import { selectDiverseFacts, selectDiverseDocs } from '../utils/mmr.js';
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -11,6 +12,11 @@ const K_FACTS = 12;              // More related facts for better coverage
 const K_DOCS = 6;                // More related docs for better coverage
 const FALLBACK_FACTS = 15;       // More fallback facts when vector search fails
 const FALLBACK_DOCS = 8;         // More fallback docs when vector search fails
+
+// MMR (Maximal Marginal Relevance) parameters for diversity
+// Lambda controls relevance vs diversity tradeoff: 0.0 = max diversity, 1.0 = max relevance
+const MMR_LAMBDA = parseFloat(process.env.MMR_LAMBDA) || 0.7;  // Default: 70% relevance, 30% diversity
+const MMR_ENABLED = process.env.MMR_ENABLED !== 'false';       // Enable/disable MMR (default: enabled)
 
 // Character limits optimized for token efficiency
 const MAX_FACT_CHARS = 500;      // Increased from 400 for better context
@@ -123,19 +129,32 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
       ]);
 
       console.log('✅ Vector search successful!');
-      console.log('🔬 Vector-matched facts:', simFacts?.length || 0, 'found -', simFacts?.map(f => `${f.key} (${f.similarity?.toFixed(3)})`) || []);
-      console.log('🔬 Vector-matched docs:', simDocs?.length || 0, 'found -', simDocs?.map(d => `${d.title} (${d.similarity?.toFixed(3)})`) || []);
-
+      console.log('🔬 Vector-matched facts candidates:', simFacts?.length || 0, 'found');
+      console.log('🔬 Vector-matched docs candidates:', simDocs?.length || 0, 'found');
+      
+      // Apply MMR for diverse fact selection
+      let selectedFacts = [];
       if (simFacts?.length) {
+        selectedFacts = selectDiverseFacts(simFacts, qvec, K_FACTS, MMR_LAMBDA);
+        console.log('🎯 MMR selected facts:', selectedFacts.length, 'diverse facts -', 
+                   selectedFacts.map(f => `${f.key} (${f.similarity?.toFixed(3)})`));
+        
         blocks.push(
           'RELATED_FACTS:\n' +
-          simFacts.map(f => `- [${f.type}] ${f.key}: ${clip(f.value, MAX_FACT_CHARS)}`).join('\n')
+          selectedFacts.map(f => `- [${f.type}] ${f.key}: ${clip(f.value, MAX_FACT_CHARS)}`).join('\n')
         );
       }
+      
+      // Apply MMR for diverse doc selection
+      let selectedDocs = [];
       if (simDocs?.length) {
+        selectedDocs = selectDiverseDocs(simDocs, qvec, K_DOCS, MMR_LAMBDA);
+        console.log('🎯 MMR selected docs:', selectedDocs.length, 'diverse docs -', 
+                   selectedDocs.map(d => `${d.title} (${d.similarity?.toFixed(3)})`));
+        
         blocks.push(
           'RELATED_DOCS:\n' +
-          simDocs.map(d => `# ${d.title}\n${clip(d.content, MAX_DOC_CHARS)}`).join('\n\n')
+          selectedDocs.map(d => `# ${d.title}\n${clip(d.content, MAX_DOC_CHARS)}`).join('\n\n')
         );
       }
     } catch (e) {
@@ -197,7 +216,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
   console.log('   - Total blocks:', blocks.length);
   console.log('   - Block types:', blocks.map(block => block.split(':\n')[0]));
   console.log('   - Total context length:', blocks.join('\n').length, 'characters');
-  console.log('   - Mode used:', qvec ? '🎯 VECTOR SEARCH' : '📅 FALLBACK (Recent Items)');
+  console.log('   - Mode used:', qvec ? '🎯 VECTOR SEARCH + MMR DIVERSITY' : '📅 FALLBACK (Recent Items)');
   console.log('🏁 buildContext finished\n');
   
   return { messages: finalMessages };
