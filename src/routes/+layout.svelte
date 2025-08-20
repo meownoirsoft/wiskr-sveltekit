@@ -365,21 +365,18 @@
 
   <!-- Header -->
   <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-50 transition-colors" style="background-color: var(--bg-header);">
-    <div class="w-full px-6 flex items-center gap-4 relative">
+    <div class="w-full px-6 flex items-center justify-between gap-4 relative">
       <!-- Left: brand and project selector -->
-      <div class="flex items-center gap-4 flex-shrink-0">
-        <a href="/projects" class="flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+      <div class="flex items-center gap-4 min-w-0 flex-1">
+        <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
           <span class="text-2xl inline-flex items-center">
             <ChevronsRight className="inline-block align-middle" size={20} />
             Mr. Wiskr
             <ChevronsLeft className="inline-block align-middle" size={20} />
           </span>
-
-          <!-- <span class="text-xs text-zinc-500">Projects</span> -->
         </a>
         {#if isProjectsPage}
-          <div class="flex items-center gap-2">
-            <div class="max-w-sm">
+          <div class="min-w-0 flex-shrink">
               <HeaderProjectSelector 
                 {projects}
                 current={currentProject}
@@ -403,6 +400,9 @@
                   }
                 }}
                 on:create={() => showNewProjectModal = true}
+                on:open-settings={(e) => {
+                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail }));
+                }}
                 on:delete={async (e) => {
                   const project = e.detail;
                   if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -422,81 +422,37 @@
                 }}
               />
             </div>
-            <!-- Settings button for current project -->
-            {#if currentProject}
-              <button
-                class="flex items-center justify-center w-8 h-8 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                title="Project Settings: {currentProject.name}"
-                on:click={() => {
-                  // Dispatch event that the projects page can listen to
-                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
-                }}
-              >
-                <Settings2 size="20" />
-              </button>
-            {/if}
-          </div>
-        {/if}
+          {/if}
       </div>
-
-      <!-- Center: Global Search - Responsive positioning -->
-      {#if isProjectsPage}
-        <!-- Desktop: Centered search (>= 1200px) -->
-        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 pointer-events-auto z-10 hidden xl:block">
-          <GlobalSearch 
-            projectId={currentProject?.id}
-            on:activate-tab={(e) => {
-              // Dispatch event for the projects page to handle tab activation
-              window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-            }}
-            on:filter={(e) => {
-              // Dispatch event for the projects page to handle filtering
-              window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-            }}
-            on:navigate-chat={(e) => {
-              // Dispatch event for the projects page to handle chat navigation
-              window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-            }}
-            on:clear={(e) => {
-              // Dispatch event for the projects page to handle clearing
-              window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-            }}
-          />
-        </div>
-      {/if}
-
-      <!-- Right: responsive content -->
-      <div class="flex items-center gap-4 flex-shrink-0 ml-auto">
-        <!-- Mobile search (< 1200px) -->
-        {#if isProjectsPage}
-          <div class="w-64 xl:hidden">
-            <GlobalSearch 
-              projectId={currentProject?.id}
-              on:activate-tab={(e) => {
-                window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-              }}
-              on:filter={(e) => {
-                window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-              }}
-              on:navigate-chat={(e) => {
-                window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-              }}
-              on:clear={(e) => {
-                window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-              }}
-            />
-          </div>
-        {/if}
         
-        <!-- Desktop links (>= 1200px) -->
+      <!-- Right side: Navigation links and search -->
+      <div class="flex items-center gap-4 flex-shrink-0">
+        <!-- Desktop navigation (>= 1200px) -->
         <div class="hidden xl:flex items-center gap-6">
           {#if isProjectsPage}
+            <!-- Global Search -->
+            <div class="w-full max-w-sm">
+              <GlobalSearch 
+                projectId={currentProject?.id}
+                on:activate-tab={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+                }}
+                on:filter={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+                }}
+                on:navigate-chat={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+                }}
+                on:clear={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+                }}
+              />
+            </div>
             <!-- Usage link (only on projects page) -->
             <button 
               type="button"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" 
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               on:click={() => {
-                // Dispatch event for the projects page to handle usage toggle
                 window.dispatchEvent(new CustomEvent('usage:toggle'));
               }}
             >
@@ -528,8 +484,29 @@
           {/if}
         </div>
         
-        <!-- Mobile hamburger menu (< 1200px) -->
-        <div class="xl:hidden relative">
+        <!-- Medium screen search (768px - 1199px) -->
+        <div class="hidden md:block xl:hidden w-64">
+          {#if isProjectsPage}
+            <GlobalSearch 
+              projectId={currentProject?.id}
+              on:activate-tab={(e) => {
+                window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+              }}
+              on:filter={(e) => {
+                window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+              }}
+              on:navigate-chat={(e) => {
+                window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+              }}
+              on:clear={(e) => {
+                window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+              }}
+            />
+          {/if}
+        </div>
+        
+        <!-- Mobile hamburger menu (< 768px) -->
+        <div class="md:hidden relative">
           <button
             type="button"
             class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
@@ -551,6 +528,24 @@
             >
               <div class="absolute top-16 right-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2">
                 {#if isProjectsPage}
+                  <!-- Search for mobile -->
+                  <div class="md:hidden px-4 py-2">
+                    <GlobalSearch 
+                      projectId={currentProject?.id}
+                      on:activate-tab={(e) => {
+                        window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+                      }}
+                      on:filter={(e) => {
+                        window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+                      }}
+                      on:navigate-chat={(e) => {
+                        window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+                      }}
+                      on:clear={(e) => {
+                        window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+                      }}
+                    />
+                  </div>
                   <button 
                     type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 

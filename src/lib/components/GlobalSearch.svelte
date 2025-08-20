@@ -1310,7 +1310,7 @@
       type="text"
       class="block w-full pl-10 pr-12 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
       style="background-color: var(--bg-header-input) !important; border-color: var(--border-header-input) !important; color: var(--text-header) !important;"
-      placeholder="Search facts, docs, chats, anything..."
+      placeholder="Search anything..."
       autocomplete="off"
     />
     
