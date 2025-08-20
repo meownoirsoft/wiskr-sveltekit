@@ -214,8 +214,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Facts</h3>
         <InfoPopup 
           title="Facts" 
-          content={`Key-value pairs that define important information about your project. They can be people, places, processes, terms, or other important entities. 
-          Facts are used to provide context for AI interactions and help the AI understand your domain.<br /><br /> <strong>Fact Types</strong> can be updated in the project settings. Click the button in the header next to the project selector.`}
+          content={`Name and description tidbits that mportant info about your project. They can be people, places, processes, terms, or things. 
+          Facts are used to provide context for wiskr interactions and help the wiskr understand your world.<br /><br /> <strong>Fact Types</strong> can be updated in the project settings. Click the button in the header next to the project selector.`}
           buttonTitle="Learn about Facts"
         />
       </div>
@@ -265,6 +265,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           
             {#if openMenuIndex === i}
               <!-- Overlay to close menu when clicking outside -->
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div class="dropdown-overlay" on:click={closeMenu}></div>
               <!-- Dropdown menu -->
               <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-md shadow-lg z-10 min-w-[120px]">

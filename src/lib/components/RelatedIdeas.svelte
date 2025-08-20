@@ -443,9 +443,9 @@ import { browser } from '$app/environment';
     </div>
     <div class="text-xs text-zinc-500 dark:text-zinc-400 mb-2" style="margin-left: 32px;">
       {#if isGenerating}
-        <span class="font-medium" style="color: var(--color-accent);">🤖 AI is thinking...</span>
+        <span class="font-medium" style="color: var(--color-accent);">🤖 Wiskr is thinking...</span>
       {:else}
-        AI-suggested concepts to expand your knowledge base
+        Wiskr-suggested concepts to expand your knowledge base
       {/if}
     </div>
   </div>

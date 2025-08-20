@@ -1107,13 +1107,13 @@
     }, 1000); // Duration matches CSS animation
   }
   
-  // Handle input focus and click to re-enable dropdown
+  // Handle box focus and click to re-enable dropdown
   function handleInputFocus() {
     // Only re-enable dropdown if user manually focused (not programmatically)
     // Add a small delay to avoid interfering with selectResult
     setTimeout(() => {
       if (document.activeElement === searchInput) {
-        dropdownDisabled = false; // Re-enable dropdown when user focuses input
+        dropdownDisabled = false; // Re-enable dropdown when user focuses box
         if (searchTerm.length >= 3 && hasResults()) {
           showDropdown = true; // Show dropdown if we have results
         }
@@ -1122,7 +1122,7 @@
   }
   
   function handleInputClick() {
-    dropdownDisabled = false; // Re-enable dropdown when user clicks input
+    dropdownDisabled = false; // Re-enable dropdown when user clicks box
     if (searchTerm.length >= 3 && hasResults()) {
       showDropdown = true; // Show dropdown if we have results
     }
@@ -1297,7 +1297,7 @@
 </script>
 
 <div class="relative w-full max-w-md" bind:this={searchContainer}>
-  <!-- Search Input -->
+  <!-- Search Box -->
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
       <Search class="h-4 w-4" style="color: var(--text-header-secondary);" />

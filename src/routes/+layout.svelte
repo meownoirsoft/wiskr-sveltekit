@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette } from 'lucide-svelte';
+  import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
@@ -147,27 +147,30 @@
     // Initialize PostHog analytics
     initAnalytics();
     
-    try {
-      const { supabase } = await import('$lib/supabase.js');
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, name, icon, color, brief_text, description, created_at')
-        .order('created_at');
+    // IMPORTANT: Don't load projects directly in layout - this bypasses RLS!
+    // Projects should be loaded by the page server-side with proper auth context
+    // The layout will get project data from page events instead
+    
+    // Try to get last selected project from localStorage (will be validated later)
+    const lastId = localStorage.getItem('wiskr_last_project_id');
+    console.log('🎯 Layout: Found cached project ID:', lastId);
+    
+    // Listen for projects data from the projects page
+    window.addEventListener('layout:update-projects', (e) => {
+      const { projects: pageProjects, currentProjectId } = e.detail;
+      console.log('🎯 Layout: Received projects from page:', pageProjects.length, 'projects');
       
-      if (!error) {
-        projects = data || [];
-        // Try to get last selected project from localStorage
-        const lastId = localStorage.getItem('wiskr_last_project_id');
-        currentProject = projects.find(p => p.id === lastId) || projects[0] || null;
-        
-        // Track initial project load if there's a current project
-        if (currentProject) {
-          trackProjectNavigation(currentProject.id, currentProject.name);
+      projects = pageProjects || [];
+      
+      // Update current project based on page selection
+      if (currentProjectId) {
+        const foundProject = projects.find(p => p.id === currentProjectId);
+        if (foundProject) {
+          currentProject = foundProject;
+          console.log('🎯 Layout: Updated current project to:', foundProject.name);
         }
       }
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    }
+    });
     
     // Listen for project updates
     window.addEventListener('projects:refresh', async (e) => {
@@ -212,6 +215,9 @@
   let showAppSettings = false;
   let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null };
   let savingPreferences = false;
+  
+  // Mobile menu state
+  let showMobileMenu = false;
   
   // Load user preferences when modal opens
   async function loadUserPreferences() {
@@ -362,8 +368,13 @@
     <div class="w-full px-6 flex items-center gap-4 relative">
       <!-- Left: brand and project selector -->
       <div class="flex items-center gap-4 flex-shrink-0">
-        <a href="/projects" class="flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-          <span class="text-2xl"><span style="color: #5d60dd">&gt;&gt;</span> Mr. Wiskr <span style="color: #5d60dd">&lt;&lt;</span></span>
+        <a href="/projects" class="flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+          <span class="text-2xl inline-flex items-center">
+            <ChevronsRight className="inline-block align-middle" size={20} />
+            Mr. Wiskr
+            <ChevronsLeft className="inline-block align-middle" size={20} />
+          </span>
+
           <!-- <span class="text-xs text-zinc-500">Projects</span> -->
         </a>
         {#if isProjectsPage}
@@ -428,9 +439,10 @@
         {/if}
       </div>
 
-      <!-- Center: Global Search - Absolutely positioned to center above chat -->
+      <!-- Center: Global Search - Responsive positioning -->
       {#if isProjectsPage}
-        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 pointer-events-auto z-10">
+        <!-- Desktop: Centered search (>= 1200px) -->
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 pointer-events-auto z-10 hidden xl:block">
           <GlobalSearch 
             projectId={currentProject?.id}
             on:activate-tab={(e) => {
@@ -453,45 +465,146 @@
         </div>
       {/if}
 
-      <!-- Right: usage and user -->
-      <div class="flex items-center gap-6 flex-shrink-0 ml-auto">
+      <!-- Right: responsive content -->
+      <div class="flex items-center gap-4 flex-shrink-0 ml-auto">
+        <!-- Mobile search (< 1200px) -->
         {#if isProjectsPage}
-          
-          <!-- Usage link (only on projects page) -->
-          <button 
-            type="button"
-            class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" 
-            on:click={() => {
-              // Dispatch event for the projects page to handle usage toggle
-              window.dispatchEvent(new CustomEvent('usage:toggle'));
-            }}
-          >
-            <BarChart3 size="16" />
-            <span>Usage</span>
-          </button>
+          <div class="w-64 xl:hidden">
+            <GlobalSearch 
+              projectId={currentProject?.id}
+              on:activate-tab={(e) => {
+                window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+              }}
+              on:filter={(e) => {
+                window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+              }}
+              on:navigate-chat={(e) => {
+                window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+              }}
+              on:clear={(e) => {
+                window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+              }}
+            />
+          </div>
         {/if}
         
-        {#if data?.user}
-          <!-- App/Account Settings -->
-          <button 
+        <!-- Desktop links (>= 1200px) -->
+        <div class="hidden xl:flex items-center gap-6">
+          {#if isProjectsPage}
+            <!-- Usage link (only on projects page) -->
+            <button 
+              type="button"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" 
+              on:click={() => {
+                // Dispatch event for the projects page to handle usage toggle
+                window.dispatchEvent(new CustomEvent('usage:toggle'));
+              }}
+            >
+              <BarChart3 size="16" />
+              <span>Usage</span>
+            </button>
+          {/if}
+          
+          {#if data?.user}
+            <!-- App/Account Settings -->
+            <button 
+              type="button"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              title="Settings"
+              on:click={openAppSettings}
+            >
+              <Settings size="16" />
+              <span>Settings</span>
+            </button>
+            
+            <!-- Logout -->
+            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+              <LogOut size="16" />
+              <span>Logout</span>
+            </a>
+          {:else}
+            <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Login</a>
+            <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Sign Up</a>
+          {/if}
+        </div>
+        
+        <!-- Mobile hamburger menu (< 1200px) -->
+        <div class="xl:hidden relative">
+          <button
             type="button"
-            class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            title="Settings"
-            on:click={openAppSettings}
+            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            on:click={() => showMobileMenu = !showMobileMenu}
+            aria-label="Menu"
           >
-            <Settings size="16" />
-            <span>Settings</span>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
           
-          <!-- Logout -->
-          <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-            <LogOut size="16" />
-            <span>Logout</span>
-          </a>
-        {:else}
-          <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Login</a>
-          <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Sign Up</a>
-        {/if}
+          <!-- Mobile menu dropdown -->
+          {#if showMobileMenu}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div 
+              class="fixed inset-0 z-50" 
+              on:click={() => showMobileMenu = false}
+            >
+              <div class="absolute top-16 right-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2">
+                {#if isProjectsPage}
+                  <button 
+                    type="button"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
+                    on:click={() => {
+                      window.dispatchEvent(new CustomEvent('usage:toggle'));
+                      showMobileMenu = false;
+                    }}
+                  >
+                    <BarChart3 size="16" />
+                    <span>Usage</span>
+                  </button>
+                {/if}
+                
+                {#if data?.user}
+                  <button 
+                    type="button"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    on:click={() => {
+                      openAppSettings();
+                      showMobileMenu = false;
+                    }}
+                  >
+                    <Settings size="16" />
+                    <span>Settings</span>
+                  </button>
+                  
+                  <a 
+                    href="/logout" 
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    on:click={() => showMobileMenu = false}
+                  >
+                    <LogOut size="16" />
+                    <span>Logout</span>
+                  </a>
+                {:else}
+                  <a 
+                    href="/login" 
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    on:click={() => showMobileMenu = false}
+                  >
+                    Login
+                  </a>
+                  <a 
+                    href="/signup" 
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    on:click={() => showMobileMenu = false}
+                  >
+                    Sign Up
+                  </a>
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
   </header>
@@ -576,7 +689,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <button
-                    class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" 
+                    class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:white transition-colors" 
                     style={!darkMode ? 'background-color: var(--color-accent-light); border-color: var(--color-accent-border);' : ''}
                     title="Light mode"
                     on:click={() => {

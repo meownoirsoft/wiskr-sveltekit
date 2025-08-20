@@ -268,11 +268,12 @@
     <!-- Add New Fact Type -->
     <div class="border-t pt-2">
       {#if !showAddForm}
+        <!-- svelte-ignore a11y-mouse-events-have-key-events -->
         <button
           on:click={() => showAddForm = true}
           class="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer" style="color: var(--color-accent); border-color: var(--color-accent-border); background-color: transparent;" 
-          on:mouseover={() => this.style.backgroundColor='var(--color-accent-light)'} 
-          on:mouseout={() => this.style.backgroundColor='transparent'}
+          on:mouseenter={handleHover} 
+          on:mouseleave={handleLeave}
         >
           <Plus size="16" />
           Add Custom Fact Type

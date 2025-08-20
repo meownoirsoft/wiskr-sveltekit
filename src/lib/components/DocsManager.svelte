@@ -78,9 +78,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
         <InfoPopup 
           title="Documentation" 
           content={`Docs are longer text documents that provide detailed information about your project. 
-          They can include background information, specifications, guidelines, or any other contextual information that will help the AI understand your project better.
+          They can include background information, specifications, guidelines, or any other contextual information that will help the wiskr understand your project better.
           <br /><br />
-          If you find the AI has a hard time grasping a concept, you should add docs or add detail to them to improve understanding.`}
+          If you find the wiskr has a hard time grasping a concept, you should add docs or add detail to them to improve understanding.`}
           buttonTitle="Learn about Documentation"
         />
       </div>
@@ -128,6 +128,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           
             {#if openMenuIndex === i}
               <!-- Overlay to close menu when clicking outside -->
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div class="dropdown-overlay" on:click={closeMenu}></div>
               <!-- Dropdown menu -->
               <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-md shadow-lg z-10 min-w-[120px]">

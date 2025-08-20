@@ -700,7 +700,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     }
   }
   
-  // ReAsk function - copy last user question to input
+  // ReAsk function - copy last user question to box
   function reAskLastQuestion() {
     const lastQuestion = getLastUserMessage();
     if (lastQuestion) {
@@ -886,7 +886,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
   {/if}
   
   <!-- Chat Messages (scrollable) -->
-  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3 searchable-chat-area" bind:this={chatContainer} style="background-color: var(--bg-chat);"
+  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3 searchable-chat-area" bind:this={chatContainer} style="background-color: var(--bg-chat);">
     {#if !current}
       <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
     {:else if loadingMessages}
@@ -897,7 +897,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
       />
     {:else if messages.length === 0}
       <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
-        <div class="text-sm">Look at this brand new chat ready for action!</div>
+        <div class="text-sm">Look at this brand new space ready for action!</div>
         <div class="text-xs mt-1">What do you want to do next?</div>
       </div>
     {:else}
@@ -910,14 +910,14 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
             {:else}
               {#if m.model_key}
                 <div class="w-12 h-12 -mb-3 z-40 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
-                  <img src={getAIAvatar(m.model_key)} alt="AI Avatar" class="w-10 h-10 rounded-full" />
+                  <img src={getAIAvatar(m.model_key)} alt="Wiskr Avatar" class="w-10 h-10 rounded-full" />
                 </div>
                 <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(m.model_key)}</span>
               {:else}
                 <div class="w-12 h-12 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
-                  <img src="/avatars/default-ai.png" alt="AI Avatar" class="w-10 h-10 rounded-full" />
+                  <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-10 h-10 rounded-full" />
                 </div>
-                <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">Assistant</span>
+                <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</span>
               {/if}
             {/if}
           </div>
@@ -1013,7 +1013,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
   <!-- Fixed Ask Form at Bottom -->
   <div class="flex-shrink-0" style="background-color: var(--bg-ask-form);">
     <!-- Usage Stats (if enabled) -->
-    {#if usage && showUsageStats}
+    <!-- {#if usage && showUsageStats}
       <div class="px-3 border-t border-gray-200 dark:border-gray-700">
         <div class="text-xs text-zinc-500 dark:text-zinc-400 space-y-1 py-2">
           <div class="text-zinc-600 dark:text-zinc-300 font-medium mb-1">Total Usage (All Projects):</div>
@@ -1022,15 +1022,15 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
           <div>This month: {usage.month.in.toLocaleString()} in / {usage.month.out.toLocaleString()} out · ${usage.month.cost.toFixed(4)}</div>
         </div>
       </div>
-    {/if}
+    {/if} -->
     
     <!-- Ask Form -->
     <div class="border-t border-gray-200 dark:border-gray-700">
-      <!-- Top Row: Model Selection and ReAsk -->
+      <!-- Top Row: Friend Selection and ReAsk -->
       <div class="px-3 pt-2 pb-1 flex justify-between items-center">
         
         <div class="flex items-center gap-2 pb-2">
-          <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400">Model:</label>
+          <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400">Wiskr:</label>
           <ModelDropdown
             bind:modelKey
             {availableModels}
@@ -1038,9 +1038,22 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
             on:change={(e) => { modelKey = e.detail.value; }}
           />
           <InfoPopup
-            title="AI Models"
-            content="<p><strong>AI Models</strong> are different language models with varying capabilities and costs:</p><ul><li><strong>🚀 Speed Models</strong> - Fast and cost-effective for quick questions and simple tasks</li><li><strong>⭐ Quality Models</strong> - More sophisticated reasoning and better for complex tasks</li><li><strong>👑 Premium Models</strong> - Highest capability for challenging problems requiring deep analysis</li><li><strong>💰 Micro Models</strong> - Ultra-efficient for simple text processing tasks</li></ul><p>Each model has different pricing tiers:</p><ul><li><strong>Input tokens</strong> - Cost for your questions and context</li><li><strong>Output tokens</strong> - Cost for the AI's responses</li></ul><p>Choose based on your task complexity vs. cost preferences. Speed models work great for most conversations!</p>"
-            buttonTitle="Learn about AI Models"
+            title="Da heck is a Wiskr?"
+            content={`<p>Smart friends who get rewarded to do various tasks for you:</p><br />
+              <ul>
+                <li><strong>🚀 Speedy</strong> - Quick paws, light on kibble. Handles small tasks with ease.</li>
+                <li><strong>⭐ Quality</strong> - Sharper whiskers, stronger mind. Suited for tangled problems.</li>
+                <li><strong>👑 Premium</strong> - Full prowl power. Best for tough hunts and deep thinking.</li>
+                <li><strong>💰 Micro</strong> - Streamlined swipes. Perfect for neat, simple text tasks.</li>
+              </ul>
+              <br />
+              <p>Each Wiskr has a different rewards for doing their tasks:</p>
+              <ul>
+                <li><strong>You talking to them</strong> - Cost for your questions (yes they are elitists)</li>
+                <li><strong>Them talking to you</strong> - Cost for their insights and number crunching</li>
+              </ul><br />
+              <p>Speedy Wiskrs work great for most conversations!</p>`}
+            buttonTitle="Learn about Wiskrs"
           />
         </div>
         
@@ -1065,7 +1078,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
               on:click={reAskLastQuestion}
               disabled={!current}
-              title="Copy your last question to the input box"
+              title="Try your last question again"
             >
               <RotateCcw size="14" />
               ReAsk
@@ -1074,7 +1087,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
         {/if}
       </div>
       
-      <!-- Input and Send -->
+      <!-- Box and Send -->
       <form class="px-3 pb-3 flex gap-2 items-start" on:submit|preventDefault={send}>
         <div class="relative w-full">
           <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white text-gray-900 dark:text-gray-100 rounded p-2 pr-8 w-full resize-none" rows="3" bind:value={input} placeholder={current ? "Ask…" : "Pick a project"} disabled={!current} on:keydown={handleKeydown} style="background-color: white;" data-theme-bg="#1b1b1e"></textarea>
@@ -1083,7 +1096,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               type="button"
               class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
               on:click={() => input = ''}
-              title="Clear input"
+              title="Clear box"
             >
               <X size="20" />
             </button>

@@ -14,26 +14,47 @@ export const PUT = async ({ params, request, locals }) => {
       return json({ message: 'Project name is required' }, { status: 400 });
     }
 
+    // First, verify the project exists and user has access
+    const { data: existingProject, error: fetchError } = await locals.supabase
+      .from('projects')
+      .select('id, user_id')
+      .eq('id', projectId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching project for update:', fetchError);
+      if (fetchError.code === 'PGRST116') {
+        return json({ message: 'Project not found or unauthorized' }, { status: 404 });
+      }
+      return json({ message: fetchError.message }, { status: 500 });
+    }
+
+    if (!existingProject) {
+      return json({ message: 'Project not found or unauthorized' }, { status: 404 });
+    }
+
     // Update the project
-    const { data: project, error } = await locals.supabase
+    const { data: projects, error } = await locals.supabase
       .from('projects')
       .update({ 
         name: name.trim(), 
         description: description?.trim() || '' 
       })
       .eq('id', projectId)
-      .eq('user_id', user.id) // Ensure user owns this project
-      .select('id, name, description, icon, color, brief_text, created_at')
-      .single();
+      .eq('user_id', user.id)
+      .select('id, name, description, icon, color, brief_text, created_at');
 
     if (error) {
       console.error('Error updating project:', error);
       return json({ message: error.message }, { status: 500 });
     }
 
-    if (!project) {
+    if (!projects || projects.length === 0) {
       return json({ message: 'Project not found or unauthorized' }, { status: 404 });
     }
+
+    const project = projects[0];
 
     return json(project);
   } catch (error) {
@@ -45,6 +66,7 @@ export const PUT = async ({ params, request, locals }) => {
 export const GET = async ({ params, locals }) => {
   try {
     const { data: { user } } = await locals.supabase.auth.getUser();
+    console.log(user)
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
     }

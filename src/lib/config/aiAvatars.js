@@ -181,10 +181,10 @@ export function getAIInfo(modelKey) {
   
   // Fallback for unknown models
   return {
-    name: 'AI Assistant',
+    name: 'Wiskr',
     avatar: 'default-ai.png',
     avatarPath: '/avatars/default-ai.png',
-    description: 'AI Assistant',
+    description: 'Wiskr Assistant',
     modelKey: modelKey
   };
 }

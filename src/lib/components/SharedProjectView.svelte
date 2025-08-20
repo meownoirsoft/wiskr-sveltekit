@@ -136,7 +136,7 @@
                     style={message.role === 'assistant' ? 'background-color: #1b1b1e;' : ''}>
                       <div class="flex items-center gap-2 mb-2">
                         <span class="text-sm font-medium opacity-75">
-                          {message.role === 'user' ? 'You' : 'Assistant'}
+                          {message.role === 'user' ? 'You' : 'Wiskr'}
                         </span>
                         <span class="text-xs opacity-60">
                           {formatTime(message.created_at)}

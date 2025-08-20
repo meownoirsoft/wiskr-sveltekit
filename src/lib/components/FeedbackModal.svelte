@@ -6,8 +6,8 @@
   export let visible = false;
   export let rating = null; // 1 for thumbs up, -1 for thumbs down
   export let isSubmitting = false;
-  export let messageContent = ''; // The AI message content for context
-  export let aiName = 'Assistant'; // The AI's name for context
+  export let messageContent = ''; // The wiskr message content for context
+  export let aiName = 'Wiskr'; // The wiskr's name for context
   
   const dispatch = createEventDispatcher();
   
@@ -113,7 +113,7 @@
           </div>
         {/if}
         
-        <!-- Comment input -->
+        <!-- Comment box -->
         <div class="mb-4">
           <div class="mb-4 text-sm">Please include any specific issues, bugs, or anything else you feel needs to be addressed in our system. We want to be sensitive to everyone's needs and believe in fairness and inclusion wherever possible. We do read your messages.</div>
           <label 

@@ -53,23 +53,23 @@
 		}
 	}
 
-	function loadSampleData() {
-		if (prompts.length === 0) {
-			const samplePrompts = [
-				{
-					id: Date.now(),
-					text: "Write a compelling blog post about the future of AI in healthcare, focusing on personalized medicine and diagnostic tools.",
-					model: "gpt-4o",
-					tags: ["healthcare", "AI", "blog"],
-					response: "# The Future of AI in Healthcare: Revolutionizing Personalized Medicine\n\nThe healthcare industry stands on the brink of a technological revolution, with artificial intelligence (AI) leading the charge toward a more personalized, efficient, and effective medical landscape...",
-					timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-					metadata: { tokens: 842, duration: 3200 }
-				}
-			];
-			prompts = samplePrompts;
-			savePrompts();
-		}
-	}
+	// function loadSampleData() {
+	// 	if (prompts.length === 0) {
+	// 		const samplePrompts = [
+	// 			{
+	// 				id: Date.now(),
+	// 				text: "Write a compelling blog post about the future of AI in healthcare, focusing on personalized medicine and diagnostic tools.",
+	// 				model: "gpt-4o",
+	// 				tags: ["healthcare", "AI", "blog"],
+	// 				response: "# The Future of AI in Healthcare: Revolutionizing Personalized Medicine\n\nThe healthcare industry stands on the brink of a technological revolution, with artificial intelligence (AI) leading the charge toward a more personalized, efficient, and effective medical landscape...",
+	// 				timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+	// 				metadata: { tokens: 842, duration: 3200 }
+	// 			}
+	// 		];
+	// 		prompts = samplePrompts;
+	// 		savePrompts();
+	// 	}
+	// }
 
 	async function sendPrompt() {
 		if (!promptText.trim()) {

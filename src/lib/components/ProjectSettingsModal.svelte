@@ -55,7 +55,17 @@
   }
 
   async function saveGeneralSettings() {
-    if (!project?.id) return;
+    if (!project?.id) {
+      console.error('❌ No project ID available for saving');
+      alert('Error: No project selected');
+      return;
+    }
+    
+    console.log('💾 Saving project settings...', {
+      projectId: project.id,
+      name: projectName.trim(),
+      descriptionLength: projectDescription.trim().length
+    });
     
     savingGeneral = true;
     try {
@@ -72,8 +82,12 @@
         body: JSON.stringify(requestData)
       });
       
+      console.log('📡 API Response status:', response.status, response.statusText);
+      
       if (response.ok) {
         const updatedProject = await response.json();
+        console.log('✅ Project updated successfully:', updatedProject);
+        
         // Update the local project object
         project = { ...project, ...updatedProject };
         // Explicitly update the form fields to ensure they reflect the saved data
@@ -86,13 +100,35 @@
           saveSuccess = false;
         }, 3000);
       } else {
-        const error = await response.json();
-        console.error('Failed to save general settings:', error);
-        alert('Failed to save settings: ' + (error.message || 'Unknown error'));
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          errorData = { message: await response.text() };
+        }
+        
+        console.error('❌ Failed to save general settings:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        
+        // Show user-friendly error messages
+        let errorMessage = errorData.message || 'Unknown error';
+        
+        if (errorMessage.includes('Cannot coerce the result to a single JSON object')) {
+          errorMessage = 'Database error: The project may not exist or you may not have permission to update it. Please refresh the page and try again.';
+        } else if (response.status === 404) {
+          errorMessage = 'Project not found. Please refresh the page and try again.';
+        } else if (response.status === 401) {
+          errorMessage = 'Authentication error. Please refresh the page and log in again.';
+        }
+        
+        alert('Failed to save settings: ' + errorMessage);
       }
     } catch (error) {
-      console.error('Error saving general settings:', error);
-      alert('Error saving settings. Please try again.');
+      console.error('❌ Network error saving general settings:', error);
+      alert('Network error saving settings. Please check your connection and try again.');
     } finally {
       savingGeneral = false;
     }

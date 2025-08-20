@@ -21,7 +21,7 @@
   function toggleDropdown() {
     showDropdown = !showDropdown;
     if (showDropdown) {
-      // Focus search input when dropdown opens
+      // Focus search box when dropdown opens
       setTimeout(() => {
         const searchInput = dropdownEl?.querySelector('input[type="text"]');
         searchInput?.focus();

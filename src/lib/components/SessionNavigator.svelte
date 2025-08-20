@@ -222,6 +222,8 @@
         </div>
       {:else}
         {#each sessions as session}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div 
             class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors group session-item"
             style="background-color: {currentSession?.id === session.id ? 'var(--color-accent-light)' : ''}; border-color: {currentSession?.id === session.id ? 'var(--color-accent-border)' : ''};"

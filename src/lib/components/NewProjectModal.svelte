@@ -69,7 +69,7 @@
               />
             </div>
             <div>
-              <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for AI Performance</h4>
+              <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for Wiskr Performance</h4>
               <div class="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
                 <div class="flex items-start">
                   <div class="flex-shrink-0">
@@ -79,7 +79,7 @@
                   </div>
                 
                   <div class="ml-3">
-                    <p class="text-xs text-blue-700 dark:text-blue-300">The description below is the <strong>most important context</strong> for Mr Wiskr (and friends). It's their <strong>"north star"</strong> for providing targeted assistance. This should clearly define:</p>
+                    <p class="text-xs text-blue-700 dark:text-blue-300">The description below is the <strong>most important context</strong> for your wiskrs. It's their <strong>"north star"</strong> for providing targeted assistance. This should clearly define:</p>
                     <ul class="font-medium text-xs text-blue-700 dark:text-blue-300 my-4 mb-0 list-disc space-y-1">
                       <li>What you're trying to achieve or build</li>
                       <li>Your project's main goals and objectives</li>
@@ -103,7 +103,7 @@
               rows="10"
               bind:value={newProjectDescription}
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
-              placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps the AI provide more targeted assistance."
+              placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps your wiskrs provide more targeted assistance."
             ></textarea>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
               💡 <strong>Tip:</strong> A well-written description dramatically improves response quality.

@@ -32,6 +32,17 @@
   
   export let data;
   let projects = data?.projects ?? [];
+  
+  // Debug: Log server-side data
+  console.log('🎯 Server-side data.projects:', data?.projects?.map(p => ({ id: p.id, name: p.name, source: 'server' })));
+  
+  // Debug: Log initial projects state
+  $: if (browser && projects) {
+    console.log('🔍 Projects array updated:', {
+      count: projects.length,
+      projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
+    });
+  }
   let selectedId = null;
   let current = null;
   let hasInit = false;
@@ -43,17 +54,39 @@
     localStorage.setItem('wiskr_model_key', modelKey);
   }
 
-  // init once - simple localStorage-only approach
+  // init once - with localStorage validation
   $: (async () => {
     if (!browser || hasInit || !projects?.length) return;
     const lastSelectedId = localStorage.getItem('wiskr_last_project_id');
     
-    // Simple priority: localStorage > first project
+    // Validate that the cached project ID actually exists for this user
     const foundByStorage = lastSelectedId ? projects.find(p => p.id === lastSelectedId) : null;
-    const selectedId = foundByStorage?.id || projects[0].id;
+    
+    let selectedId;
+    if (foundByStorage) {
+      // Use the cached project if it exists
+      selectedId = foundByStorage.id;
+      console.log('✅ Using cached project:', foundByStorage.name);
+    } else {
+      // If cached project doesn't exist, use first project and clear bad cache
+      selectedId = projects[0].id;
+      if (lastSelectedId) {
+        console.log('🧽 Clearing invalid cached project ID:', lastSelectedId);
+        localStorage.removeItem('wiskr_last_project_id');
+      }
+      console.log('✅ Using first available project:', projects[0].name);
+    }
     
     hasInit = true;
     await selectProjectById(selectedId);
+    
+    // Send project data to layout for header dropdown
+    window.dispatchEvent(new CustomEvent('layout:update-projects', {
+      detail: {
+        projects: projects,
+        currentProjectId: selectedId
+      }
+    }));
   })();
 
   // keep current derived from id
@@ -229,12 +262,71 @@
     }
   }
 
+  // Utility function to clear stale localStorage data
+  function clearStaleProjectData() {
+    if (!browser) return;
+    
+    const lastProjectId = localStorage.getItem('wiskr_last_project_id');
+    if (lastProjectId && !projects.find(p => p.id === lastProjectId)) {
+      console.log('🧽 Clearing stale project data from localStorage');
+      localStorage.removeItem('wiskr_last_project_id');
+      
+      // Also clear any project-specific data that might be stale
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('liked_ideas_') || key.includes('dismissed_ideas_'))) {
+          // Check if this is for a project that no longer exists
+          const projectId = key.split('_').pop();
+          if (projectId && !projects.find(p => p.id === projectId)) {
+            keysToRemove.push(key);
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log('🧽 Removed stale localStorage key:', key);
+      });
+    }
+  }
+
   onMount(async () => {
     // If the server didn't preload, fetch projects
     if (!projects.length) {
+      console.log('📋 No projects preloaded, fetching from database...');
       const { data: p } = await supabase.from('projects').select('*').order('created_at');
       projects = p ?? [];
+      console.log(`📊 Found ${projects.length} existing projects`);
+      
+      // If still no projects after fetching, create a default first project for new users
+      if (projects.length === 0) {
+        console.log('🆕 New user detected, creating first project...');
+        try {
+          const res = await fetch('/api/projects/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: 'My First Project',
+              description: 'Welcome to Wiskr! This is your first project to get you started.'
+            })
+          });
+          
+          if (res.ok) {
+            const { project } = await res.json();
+            projects = [project];
+            console.log('✅ Created first project for new user:', project.name);
+          } else {
+            console.error('❌ Failed to create first project:', await res.text());
+          }
+        } catch (error) {
+          console.error('❌ Error creating first project:', error);
+        }
+      }
     }
+    
+    // Clean up any stale localStorage data
+    clearStaleProjectData();
 
     // Load usage once on page load
     await loadUsage();
@@ -1142,7 +1234,7 @@ async function handleQuestionsUpdate(event) {
 }
 
 function handleInsertText(event) {
-  // Insert text into the chat input
+  // Insert text into the chat box
   const textToInsert = event.detail.text;
   if (input) {
     input += (input ? ' ' : '') + textToInsert;
@@ -1150,9 +1242,9 @@ function handleInsertText(event) {
     input = textToInsert;
   }
   
-  // Focus the chat input (we'll need to dispatch this to ChatInterface)
+  // Focus the chat box (we'll need to dispatch this to ChatInterface)
   if (browser) {
-    window.dispatchEvent(new CustomEvent('focus-chat-input'));
+    window.dispatchEvent(new CustomEvent('focus-chat-box'));
   }
 }
 
@@ -1369,6 +1461,41 @@ function handleTextAddToDocs(event) {
           if (currentSession) {
             await loadSessionMessages(currentSession.id);
             await loadSessionBranches(currentSession.id);
+          }
+        } else {
+          // No sessions exist - create a default session for new users
+          try {
+            const createRes = await fetch('/api/sessions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create',
+                projectId: current.id,
+                sessionName: 'Main Chat'
+              })
+            });
+            
+            if (createRes.ok) {
+              const { session } = await createRes.json();
+              sessions = [session];
+              currentSession = session;
+              
+              console.log('✅ Created default session for new project:', session.session_name);
+              
+              // Load messages and branches for the new session
+              await loadSessionMessages(session.id);
+              await loadSessionBranches(session.id);
+            } else {
+              const errorText = await createRes.text();
+              console.error('❌ Failed to create default session:', errorText);
+              
+              // Try to show user-friendly error
+              if (errorText.includes('row-level security')) {
+                console.error('🔒 RLS Policy Error: Please check database permissions');
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error creating default session:', error);
           }
         }
       }
@@ -1737,7 +1864,11 @@ function handleTextAddToDocs(event) {
 
 <!-- Usage Popover -->
 {#if showUsagePopover && usage}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 z-40 flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="bg-white border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 min-w-[300px]" style="background-color: var(--bg-modal, white);" on:click|stopPropagation>
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Usage Stats</h3>

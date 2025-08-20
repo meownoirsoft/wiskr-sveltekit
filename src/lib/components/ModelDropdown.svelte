@@ -124,7 +124,7 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
           <span class="truncate text-xs text-gray-500 dark:text-gray-400">{formatPricing(currentModel)}</span>
         </div>
       {:else}
-        <span class="truncate">Loading models...</span>
+        <span class="truncate">Loading Wiskrs...</span>
       {/if}
     </div>
     <ChevronDown size="14" class="flex-shrink-0 transition-transform {isOpen ? 'rotate-180' : ''}" />
@@ -158,7 +158,7 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
   <!-- Fallback dropdown when no models loaded -->
   {#if isOpen && availableModels.length === 0}
     <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-50 px-3 py-2" style="background-color: var(--bg-input);">
-      <div class="text-xs text-gray-500 dark:text-gray-400">Loading models...</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400">Loading Wiskrs...</div>
     </div>
   {/if}
 </div>
