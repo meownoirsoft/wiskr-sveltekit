@@ -77,8 +77,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Docs</h3>
         <InfoPopup 
           title="Documentation" 
-          content={`Docs are longer text documents that provide detailed information about your project. 
-          They can include background information, specifications, guidelines, or any other contextual information that will help the wiskr understand your project better.
+          content={`Docs are longer text documents that provide detailed info about your project. 
+          They can include background info, specs, guidelines, or any other context that will help the wiskr understand your project better.
           <br /><br />
           If you find the wiskr has a hard time grasping a concept, you should add docs or add detail to them to improve understanding.`}
           buttonTitle="Learn about Documentation"
@@ -105,9 +105,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {#if loadingDocs}
       <LoadingSpinner overlay={true} backgroundColor="rgba(255, 255, 255, 0.7)" text="Loading docs..." />
     {/if}
-    <div class="grid grid-cols-3 gap-2">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
-    <div class="doc-card flex flex-col h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
+    <div class="doc-card flex flex-col md:h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
       <!-- Header: Title and Menu -->
       <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
@@ -128,8 +128,6 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           
             {#if openMenuIndex === i}
               <!-- Overlay to close menu when clicking outside -->
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
-              <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div class="dropdown-overlay" on:click={closeMenu}></div>
               <!-- Dropdown menu -->
               <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-md shadow-lg z-10 min-w-[120px]">
@@ -166,7 +164,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       </div>
       
       <!-- Content Preview -->
-      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 flex-1 min-h-0 overflow-y-auto content-scrollbar" style="max-height: 140px;">
+      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 md:flex-1 md:min-h-0 md:overflow-y-auto content-scrollbar" style="max-height: 140px;">
         {d.content}
       </div>
       
@@ -185,12 +183,10 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           {/each}
         {/if}
       </div>
-      
-
     </div>
   {/each}
   {#if !docs.length && !loadingDocs}
-    <div class="col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No docs.</div>
+    <div class="col-span-1 md:col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No docs.</div>
   {/if}
     </div>
   </div>

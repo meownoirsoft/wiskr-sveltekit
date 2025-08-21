@@ -116,7 +116,7 @@
   {:else if analysis}
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Context Quality</p>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Tokens</p>
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Pinned Facts</p>
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Processing Time</p>
@@ -159,7 +159,7 @@
     </div>
 
     <!-- Project Info -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-6" style="background-color: var(--bg-primary);">
       <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Analysis Context</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
         <div>
@@ -179,7 +179,7 @@
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">LLM Context Breakdown</h3>
       
       {#each analysis.sections as section, index}
-        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+        <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden" style="background-color: var(--bg-primary);">
           <button 
             class="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             on:click={() => toggleSection(index)}
@@ -217,7 +217,7 @@
                   <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Items in this section:</h4>
                   <div class="grid gap-2">
                     {#each section.items as item}
-                      <div class="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 p-3">
+                      <div class="bg-white rounded border border-gray-200 dark:border-gray-600 p-3" style="background-color: var(--bg-primary);">
                         {#if item.name}
                           <div class="flex items-center justify-between mb-1">
                             <span class="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>

@@ -25,8 +25,8 @@ console.log('   - Should automatically create "My First Project"');
 console.log('   - Check console for: "✅ Created first project for new user: My First Project"');
 
 console.log('\n3. 💬 Test Session Auto-Creation:');
-console.log('   - The project should automatically create a "Main Chat" session');
-console.log('   - Check console for: "✅ Created default session for new project: Main Chat"');
+console.log('   - The project should automatically create a "First Chat" session');
+console.log('   - Check console for: "✅ Created default session for new project: First Chat"');
 console.log('   - Should NOT see: "❌ Error creating session" with RLS policy violation');
 
 console.log('\n4. 📨 Test Chat Functionality:');
@@ -36,7 +36,7 @@ console.log('   - Check that conversation branches work properly');
 
 console.log('\n🔍 Expected Console Messages (Success):');
 console.log('   ✅ "Created first project for new user: My First Project"');
-console.log('   ✅ "Created default session for new project: Main Chat"');
+console.log('   ✅ "Created default session for new project: First Chat"');
 console.log('   ✅ No RLS policy violation errors');
 
 console.log('\n⚠️  If You Still See Errors:');

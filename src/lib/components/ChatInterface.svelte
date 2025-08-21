@@ -13,6 +13,7 @@ import FeedbackModal from './FeedbackModal.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 import LoadingSpinner from './LoadingSpinner.svelte';
+import BranchPickerModal from './BranchPickerModal.svelte';
 
   export let current = null;
   export let messages = [];
@@ -27,6 +28,10 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let showSessionNavigator = false;
   export let sessions = [];
   export let currentSession = null;
+  export let isMobile = false;
+
+  // Mobile-only UI state
+  let showBranchPicker = false;
 
   const dispatch = createEventDispatcher();
   let chatContainer;
@@ -121,6 +126,13 @@ import LoadingSpinner from './LoadingSpinner.svelte';
 
   function switchToBranch(event) {
     dispatch('switch-branch', event.target.value);
+  }
+
+  // Mobile: select branch from modal
+  function selectBranchFromPicker(id) {
+    if (!id || id === currentBranchId) { showBranchPicker = false; return; }
+    dispatch('switch-branch', id);
+    showBranchPicker = false;
   }
 
   function openFormatModal(index) {
@@ -765,49 +777,97 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
 <main class="flex flex-col h-full overflow-hidden mobile-chat" style="background-color: var(--bg-chat);">
   <!-- Chat Header -->
   {#if current}
-    <div class="border-gray-200 dark:border-gray-700 border-b px-4 py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
-      <!-- Title and Branch Controls Row -->
-      <div class="flex items-center justify-between">
-        <!-- Sessions Toggle Button and Info -->
-        <div class="flex items-center gap-2">
+    <div class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
+      {#if isMobile}
+        <!-- Mobile: Compact controls moved from header -->
+        <div class="flex items-center justify-between w-full">
+          <button
+            type="button"
+            class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+            data-mobile-sessions-button
+            on:click={toggleSessionNavigator}
+            aria-label="Chats"
+          >
+            <MessageSquare class="w-6 h-6" />
+            <span class="text-xs">Chats</span>
+          </button>
+          <button
+            type="button"
+            class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+            on:click={() => { showBranchPicker = true; }}
+            aria-label="Branches"
+          >
+            <GitBranch class="w-6 h-6" />
+            <span class="text-xs">Branches</span>
+          </button>
+        </div>
+      {:else}
+      <!-- Two Column Layout -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Sessions Column -->
+        <div class="flex flex-col gap-1">
+          <!-- Sessions Label -->
+          <div class="flex items-center gap-1">
+            <span class="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Chat:</span>
+            <!-- Hide InfoPopup on mobile -->
+            <div class="hidden md:block">
+              <InfoPopup
+                title="Chats"
+                content="<p><strong>Chats</strong> help you organize different conversation flows within a project.</p><p>Each chat maintains its own conversation history, allowing you to:</p><ul><li><strong>Separate topics</strong> - Keep different discussion threads organized</li><li><strong>Switch contexts</strong> - Jump between different aspects of your project</li><li><strong>Preserve history</strong> - Each chat remembers its own conversation</li></ul><p>Use the Chats button to toggle the chat navigator and easily switch between conversations.</p>"
+                buttonTitle="Learn about Chats"
+              />
+            </div>
+          </div>
+          <!-- Sessions Button -->
           <button 
             data-sessions-button
-class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-sessions-button)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''};"
-            title="{showSessionNavigator ? 'Hide Sessions' : 'Show Sessions'}"
+            class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 text-sm w-full {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" 
+            style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-sessions-button)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''}; touch-action: manipulation;"
+            title="{showSessionNavigator ? 'Hide Chats' : 'Show Chats'}"
             on:click={toggleSessionNavigator}
           >
-            <MessageSquare size="16" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};" class="{showSessionNavigator ? '' : 'text-gray-600 dark:text-gray-400'}" />
-            <span class="text-sm font-medium {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-100'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">Sessions</span>
-            {#if currentSession}
-              <span class="text-xs text-gray-500 dark:text-gray-400">• {currentSession.session_name}</span>
-            {/if}
+            <MessageSquare size="16" class="flex-shrink-0" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};" />
+            <div class="flex flex-col items-start min-w-0 flex-1">
+              {#if currentSession}
+                <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-100'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">{currentSession.session_name}</span>
+              {/if}
+            </div>
           </button>
-          <InfoPopup
-            title="Sessions"
-            content="<p><strong>Sessions</strong> help you organize different conversation flows within a project.</p><p>Each session maintains its own chat history, allowing you to:</p><ul><li><strong>Separate topics</strong> - Keep different discussion threads organized</li><li><strong>Switch contexts</strong> - Jump between different aspects of your project</li><li><strong>Preserve history</strong> - Each session remembers its own conversation</li></ul><p>Use the Sessions button to toggle the session navigator and easily switch between conversations.</p>"
-            buttonTitle="Learn about Sessions"
-          />
         </div>
-        
-        <!-- Branch Controls (only show if branches exist) -->
+
+        <!-- Branch Controls Column (only show if branches exist) -->
         {#if branches.length > 0}
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-600 dark:text-gray-400">Branch:</span>
+          <div class="flex flex-col gap-1">
+            <!-- Branch Label -->
+            <div class="flex items-center gap-1">
+              <span class="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Branch:</span>
+              <!-- Info icon (only show on main branch and desktop) -->
+              {#if currentBranchId === 'main'}
+                <div class="hidden md:block">
+                  <InfoPopup
+                    title="Conversation Branches"
+                    content="<p><strong>Branches</strong> let you explore different conversation paths from any message.</p><p>Think of them like parallel universes for your chat:</p><ul><li><strong>Branch from any message</strong> - Click 'Branch' next to assistant replies to start a new path</li><li><strong>Explore alternatives</strong> - Try different approaches without losing your main conversation</li><li><strong>Visual organization</strong> - Each branch has its own color theme</li><li><strong>Independent history</strong> - Changes in one branch don't affect others</li></ul><p>Perfect for A/B testing ideas, exploring different solutions, or keeping your main conversation clean while trying experimental directions.</p>"
+                    buttonTitle="Learn about Branches"
+                  />
+                </div>
+              {/if}
+            </div>
             
+            <!-- Branch Controls -->
             {#if isEditingBranch}
               <!-- Edit mode -->
               <div class="flex items-center gap-2">
                 <input 
                   type="text" 
                   bind:value={editBranchName}
-                  class="bg-white border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="bg-white border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
                   style="background-color: white; color: #1f2937;"
                   data-theme-bg="#1b1b1e"
                   maxlength="100"
                   disabled={isSavingBranchName}
                 />
                 <button
-                  class="p-1 disabled:opacity-50"
+                  class="p-1.5 disabled:opacity-50"
                   style="color: var(--color-accent);"
                   on:mouseenter={handleAccentHover}
                   on:mouseleave={handleAccentLeave}
@@ -816,13 +876,13 @@ class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 round
                   title="Save"
                 >
                   {#if isSavingBranchName}
-                    <div class="animate-spin rounded-full h-3 w-3 border-2 border-t-transparent" style="border-color: var(--color-accent); border-top-color: transparent;"></div>
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style="border-color: var(--color-accent); border-top-color: transparent;"></div>
                   {:else}
                     <Check size="16" />
                   {/if}
                 </button>
                 <button
-                  class="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 disabled:opacity-50"
+                  class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 disabled:opacity-50"
                   on:click={cancelEditingBranch}
                   disabled={isSavingBranchName}
                   title="Cancel"
@@ -832,56 +892,53 @@ class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 round
               </div>
             {:else}
               <!-- Normal mode -->
-              <select 
-class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--bg-chat-controls);"
-                bind:value={currentBranchId} 
-                on:change={switchToBranch}
-                disabled={isDeletingBranch}
-              >
-                {#each branches as branch}
-                  <option value={branch.branch_id}>{branch.branch_name}</option>
-                {/each}
-              </select>
-              
-              <!-- Info icon (only show on main branch) -->
-              {#if currentBranchId === 'main'}
-                <InfoPopup
-                  title="Conversation Branches"
-                  content="<p><strong>Branches</strong> let you explore different conversation paths from any message.</p><p>Think of them like parallel universes for your chat:</p><ul><li><strong>Branch from any message</strong> - Click 'Branch' next to assistant replies to start a new path</li><li><strong>Explore alternatives</strong> - Try different approaches without losing your main conversation</li><li><strong>Visual organization</strong> - Each branch has its own color theme</li><li><strong>Independent history</strong> - Changes in one branch don't affect others</li></ul><p>Perfect for A/B testing ideas, exploring different solutions, or keeping your main conversation clean while trying experimental directions.</p>"
-                  buttonTitle="Learn about Branches"
-                />
-              {/if}
-              
-              <!-- Branch management buttons (only show for non-main branches) -->
-              <!-- DEBUG: currentBranch={currentBranch?.branch_name}, currentBranchId={currentBranchId} -->
-              {#if currentBranch && currentBranchId !== 'main'}
-                <div class="flex items-center gap-1">
-                  <button
-                    class="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:opacity-50"
-                    on:click={startEditingBranch}
-                    disabled={isDeletingBranch}
-                    title="Edit branch name"
-                  >
-                    <Edit2 size="20" />
-                  </button>
-                  <button
-                    class="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
-                    on:click={deleteBranch}
-                    disabled={isDeletingBranch}
-                    title="Delete branch"
-                  >
-                    {#if isDeletingBranch}
-                      <div class="animate-spin rounded-full h-3 w-3 border-2 border-red-600 border-t-transparent"></div>
-                    {:else}
-                      <Trash2 size="20" />
-                    {/if}
-                  </button>
-                </div>
-              {/if}
+              <div class="flex items-center gap-2">
+                <select 
+                  class="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-xs font-medium text-gray-800 dark:text-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 truncate" 
+                  style="background-color: var(--bg-chat-controls); touch-action: manipulation;"
+                  bind:value={currentBranchId} 
+                  on:change={switchToBranch}
+                  disabled={isDeletingBranch}
+                >
+                  {#each branches as branch}
+                    <option value={branch.branch_id} style="">{branch.branch_name}</option>
+                  {/each}
+                </select>
+                
+                <!-- Branch management buttons (only show for non-main branches) -->
+                {#if currentBranch && currentBranchId !== 'main'}
+                  <div class="flex items-center gap-1">
+                    <button
+                      class="p-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:opacity-50"
+                      on:click={startEditingBranch}
+                      disabled={isDeletingBranch}
+                      title="Edit branch name"
+                    >
+                      <Edit2 size="16" />
+                    </button>
+                    <button
+                      class="p-1.5 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
+                      on:click={deleteBranch}
+                      disabled={isDeletingBranch}
+                      title="Delete branch"
+                    >
+                      {#if isDeletingBranch}
+                        <div class="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent"></div>
+                      {:else}
+                        <Trash2 size="16" />
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+              </div>
             {/if}
           </div>
+        {:else}
+          <!-- Empty column when no branches -->
+          <div></div>
         {/if}
       </div>
+      {/if}
     </div>
   {/if}
   
@@ -903,59 +960,58 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     {:else}
       {#each messages as m, index}
         {@const branchColor = getBranchColor(currentBranch)}
-        <div class="{m.role === 'user' ? 'max-w-2xl ml-auto mr-4' : 'max-w-4xl group'}">
-          <div class="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {m.role === 'user' ? 'text-right' : 'flex items-center gap-3'}">
+        <div class="{m.role === 'user' ? 'max-w-[90%] sm:max-w-2xl ml-auto mr-2 sm:mr-4' : 'max-w-[95%] sm:max-w-4xl group'}">
+          <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {m.role === 'user' ? 'text-right' : 'flex items-center gap-3 sm:gap-3'}">
             {#if m.role === 'user'}
-              <span class="text-base font-bold">{userPreferences.display_name || 'You'}</span>
+              <span class="text-sm sm:text-sm font-bold">{userPreferences.display_name || 'You'}</span>
             {:else}
               {#if m.model_key}
-                <div class="w-12 h-12 -mb-3 z-40 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
-                  <img src={getAIAvatar(m.model_key)} alt="Wiskr Avatar" class="w-10 h-10 rounded-full" />
+                <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+                  <img src={getAIAvatar(m.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-full" />
                 </div>
-                <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(m.model_key)}</span>
+                <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(m.model_key)}</span>
               {:else}
-                <div class="w-12 h-12 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-1" style="border-color: var(--color-accent);">
-                  <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-10 h-10 rounded-full" />
+                <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+                  <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-full" />
                 </div>
-                <span class="text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</span>
+                <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
               {/if}
             {/if}
           </div>
-          <div class="rounded-lg p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `ml-8 whitespace-pre-wrap ${branchColor.accent}` : `mr-8 assistant-message ${branchColor.accent}`}" style="background-color: {m.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {m.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {m.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {m.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
+          <div class="rounded-lg p-2 sm:p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent}` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent}`}" style="background-color: {m.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {m.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {m.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {m.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
             {#if m.role === 'assistant'}
-              <div class="prose prose-sm max-w-none prose-gray dark:prose-invert">
+              <div class="prose prose-xs sm:prose-sm max-w-none prose-gray dark:prose-invert">
                 {@html renderMarkdown(m.content)}
               </div>
               <!-- Select All button for assistant messages (bottom right) -->
               <button
-                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm"
-                style="background-color: var(--bg-button-secondary);" 
+                class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation" style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
                 on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
                 on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
                 on:click={() => selectAllMessage(index)}
                 title="Select all and format for posts"
               >
-                <MousePointer2 size="12" class="inline mr-1" />
-                Select All
+                <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
+                <span class="hidden xs:inline">Select All</span>
+                <span class="xs:hidden">Select</span>
               </button>
             {:else}
-              <div class="text-sm">
+              <div class="text-xs sm:text-sm">
                 {m.content}
               </div>
             {/if}
           </div>
-          <div class="flex justify-between items-center {m.role === 'user' ? '' : 'mr-8'} mt-2 gap-2">
+          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center {m.role === 'user' ? '' : 'mr-3 sm:mr-6'} mt-2 gap-2">
             <!-- Highlight-to-add feature hint (only for assistant messages) -->
             {#if m.role === 'assistant' && m.content.trim()}
-              <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 italic">
-                <Type size="16" />
-                Highlight text to capture or format
+              <div class="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                <Type size="14" class="flex-shrink-0" />
+                <span class="hidden sm:inline">Highlight to capture/format</span>
+                <span class="sm:hidden">Highlight to capture</span>
               </div>
-            {:else}
-              <div></div>
             {/if}
             
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
               {#if m.role === 'assistant' && m.content.trim()}
                 <!-- Feedback Buttons -->  
                 <div class="">
@@ -963,7 +1019,7 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
                     messageId={m.id}
                     projectId={current?.id}
                     messageContent={m.content}
-                    aiName={m.model_key ? getAIName(m.model_key) : 'Assistant'}
+                    aiName={m.model_key ? getAIName(m.model_key) : 'Wiskr'}
                     size="sm"
                   />
                 </div>
@@ -972,16 +1028,17 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
                 {@const messageBranchCount = messageBranchCounts[m.id] || 0}
                 <div class="z-10">
                   <button id="branch-button-{index}"
-                    class="flex items-center gap-1 text-sm px-2 py-1 rounded border transition-colors relative"
-                    style="background: var(--color-accent); border-color: var(--color-accent);"
+                    class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 touch-action-manipulation"
+                    style="background: var(--color-accent); border-color: var(--color-accent); touch-action: manipulation;"
                     on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
                     on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; e.target.style.color = 'var(--text-primary)'; }}
                     on:click={() => openBranchModal(index)}
                     title="Create new branch from here"
                   >
-                    <GitBranch size="16" />
+                    <GitBranch size="14" class="flex-shrink-0" />
+                    Branch
                     {#if messageBranchCount > 0}
-                      <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
+                      <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
                         {messageBranchCount}
                       </span>
                     {/if}
@@ -991,15 +1048,16 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
               {#if m.role === 'assistant' && m.content.trim()}
                 <div class="z-10">
                 <button
-                  class="flex items-center gap-1 text-xs px-2 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md"
-                  style="background-color: #5D60DD; border-color: #5D60DD;"
+                  class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 touch-action-manipulation"
+                  style="background-color: #5D60DD; border-color: #5D60DD; touch-action: manipulation;"
                   on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
                   on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}
                   on:click={(e) => openMrWiskrForMessage(index, e)}
                   title="Ask Mr Wiskr for help with this response"
                 >
-                  <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-6 h-6" />
-                  Mr Wiskr
+                  <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-4 h-4 sm:w-7 sm:h-7 flex-shrink-0" />
+                  <span class="hidden xs:inline">Mr&nbsp;Wiskr</span>
+                  <span class="xs:hidden">Wiskr</span>
                 </button>
                 </div>
               {/if}
@@ -1012,104 +1070,115 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
 
   <!-- Fixed Ask Form at Bottom -->
   <div class="flex-shrink-0" style="background-color: var(--bg-ask-form);">
-    <!-- Usage Stats (if enabled) -->
-    <!-- {#if usage && showUsageStats}
-      <div class="px-3 border-t border-gray-200 dark:border-gray-700">
-        <div class="text-xs text-zinc-500 dark:text-zinc-400 space-y-1 py-2">
-          <div class="text-zinc-600 dark:text-zinc-300 font-medium mb-1">Total Usage (All Projects):</div>
-          <div>Today: {usage.today.in.toLocaleString()} in / {usage.today.out.toLocaleString()} out · ${usage.today.cost.toFixed(4)}</div>
-          <div>Last 7 days: {usage.week.in.toLocaleString()} in / {usage.week.out.toLocaleString()} out · ${usage.week.cost.toFixed(4)}</div>
-          <div>This month: {usage.month.in.toLocaleString()} in / {usage.month.out.toLocaleString()} out · ${usage.month.cost.toFixed(4)}</div>
-        </div>
-      </div>
-    {/if} -->
     
     <!-- Ask Form -->
     <div class="border-t border-gray-200 dark:border-gray-700">
       <!-- Top Row: Friend Selection and ReAsk -->
-      <div class="px-3 pt-2 pb-1 flex justify-between items-center">
-        
-        <div class="flex items-center gap-2 pb-2">
-          <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400">Wiskr:</label>
-          <ModelDropdown
-            bind:modelKey
-            {availableModels}
-            disabled={!current}
-            on:change={(e) => { modelKey = e.detail.value; }}
-          />
-          <InfoPopup
-            title="Da heck is a Wiskr?"
-            content={`<p>Smart friends who get rewarded to do various tasks for you:</p><br />
-              <ul>
-                <li><strong>🚀 Speedy</strong> - Quick paws, light on kibble. Handles small tasks with ease.</li>
-                <li><strong>⭐ Quality</strong> - Sharper whiskers, stronger mind. Suited for tangled problems.</li>
-                <li><strong>👑 Premium</strong> - Full prowl power. Best for tough hunts and deep thinking.</li>
-                <li><strong>💰 Micro</strong> - Streamlined swipes. Perfect for neat, simple text tasks.</li>
-              </ul>
-              <br />
-              <p>Each Wiskr has a different rewards for doing their tasks:</p>
-              <ul>
-                <li><strong>You talking to them</strong> - Cost for your questions (yes they are elitists)</li>
-                <li><strong>Them talking to you</strong> - Cost for their insights and number crunching</li>
-              </ul><br />
-              <p>Speedy Wiskrs work great for most conversations!</p>`}
-            buttonTitle="Learn about Wiskrs"
-          />
-        </div>
-        
-        <!-- TL;DR Button and ReAsk Button -->
-        <div class="pb-2 flex gap-2">
-          {#if input.trim()}
-            <TLDRButton
-              on:tldr={handleTLDRClick}
-              disabled={!current || !input.trim()}
-              size="sm"
-            />
-          {/if}
-        </div>
-        
-        <!-- ReAsk Button (always visible when there's a last message) -->
-        {#if hasLastUserMessage}
-          <div class="pb-2">
-            <button
-              class="flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition-colors font-medium"
-              style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light);"
-              on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.borderColor = 'var(--color-accent)'; }}
-              on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
-              on:click={reAskLastQuestion}
-              disabled={!current}
-              title="Try your last question again"
-            >
-              <RotateCcw size="14" />
-              ReAsk
-            </button>
+      <div class="px-2 sm:px-3 pt-2 pb-1">
+        <!-- First row: Model selector -->
+        <div class="flex items-center justify-between pb-2">
+          <div class="{isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-1 sm:gap-2'} min-w-0">
+            <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">Wiskr:</label>
+            <div class="{isMobile ? 'w-full' : 'flex-1'}">
+              <ModelDropdown
+                bind:modelKey
+                {availableModels}
+                disabled={!current}
+                on:change={(e) => { modelKey = e.detail.value; }}
+              />
+            </div>
+            {#if !isMobile}
+              <InfoPopup
+                title="Da heck is a Wiskr?"
+                content={`<p>Smart friends who get rewarded to do various tasks for you:</p><br />
+                  <ul>
+                    <li><strong>🚀 Speedy</strong> - Quick paws, light on kibble. Handles small tasks with ease.</li>
+                    <li><strong>⭐ Quality</strong> - Sharper whiskers, stronger mind. Suited for tangled problems.</li>
+                    <li><strong>👑 Premium</strong> - Full prowl power. Best for tough hunts and deep thinking.</li>
+                    <li><strong>💰 Micro</strong> - Streamlined swipes. Perfect for neat, simple text tasks.</li>
+                  </ul>
+                  <br />
+                  <p>Each Wiskr has a different rewards for doing their tasks:</p>
+                  <ul>
+                    <li><strong>You talking to them</strong> - Cost for your questions (yes they are elitists)</li>
+                    <li><strong>Them talking to you</strong> - Cost for their insights and number crunching</li>
+                  </ul><br />
+                  <p>Speedy Wiskrs work great for most conversations!</p>`}
+                buttonTitle="Learn about Wiskrs"
+              />
+            {/if}
           </div>
-        {/if}
+          
+          <!-- Action buttons -->
+          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {#if input.trim()}
+              <TLDRButton
+                on:tldr={handleTLDRClick}
+                disabled={!current || !input.trim()}
+                size="sm"
+              />
+            {/if}
+            
+            <!-- ReAsk Button (always visible when there's a last message) -->
+            {#if hasLastUserMessage}
+              <button
+                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation" 
+                style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light); touch-action: manipulation;"
+                on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.borderColor = 'var(--color-accent)'; }}
+                on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
+                on:click={reAskLastQuestion}
+                disabled={!current}
+                title="Try your last question again"
+              >
+                <RotateCcw size={isMobile ? "16" : "12"} class="sm:hidden" />
+                <RotateCcw size="14" class="hidden sm:inline" />
+                {#if !isMobile}
+                  <span class="xs:inline">ReAsk</span>
+                {/if}
+              </button>
+            {/if}
+          </div>
+        </div>
       </div>
       
       <!-- Box and Send -->
-      <form class="px-3 pb-3 flex gap-2 items-start" on:submit|preventDefault={send}>
-        <div class="relative w-full">
-          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white text-gray-900 dark:text-gray-100 rounded p-2 pr-8 w-full resize-none" rows="3" bind:value={input} placeholder={current ? "Ask…" : "Pick a project"} disabled={!current} on:keydown={handleKeydown} style="background-color: white;" data-theme-bg="#1b1b1e"></textarea>
+      <form class="px-2 sm:px-3 pb-2 sm:pb-3 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
+        <div class="relative {isMobile ? 'flex-1' : 'w-full'}">
+          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
+          rows="2" 
+          bind:value={input} 
+          placeholder={current ? "Ask…" : "Pick a project"} 
+          disabled={!current} on:keydown={handleKeydown} 
+          style="background-color: var(--ask-box-bg); touch-action: manipulation;" data-theme-bg="#35353D"></textarea>
           {#if input.trim()}
             <button
               type="button"
-              class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 touch-action-manipulation"
+              style="touch-action: manipulation;"
               on:click={() => input = ''}
               title="Clear box"
             >
-              <X size="20" />
+              <X size="16" class="sm:hidden" />
+              <X size="20" class="hidden sm:inline" />
             </button>
           {/if}
         </div>
-        <button class="border border-gray-300 dark:border-gray-600 text-white rounded px-3 py-2 mt-3 transition-colors" type="submit" disabled={!current || !input.trim()} 
-        style="background-color: var(--color-accent);" 
+        <button class="border border-gray-300 dark:border-gray-600 text-white rounded px-2 sm:px-3 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
+        style="background-color: var(--color-accent); touch-action: manipulation;" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         >
-          <ChevronsRight size="20" class="-ml-5 mt-4 absolute" />
-          Wiskr<br />Away
-          <ChevronsLeft size="20" class="ml-11 -mt-8 absolute" />
+          <div class="flex flex-col items-center justify-center text-xs sm:text-sm leading-tight">
+            {#if isMobile}
+              <span class="font-medium">Wiskr</span>
+            {:else}
+              <!-- <ChevronsRight size="16" class="sm:hidden mb-0.5" /> -->
+              <!-- <ChevronsRight size="20" class="hidden sm:inline mb-1" /> -->
+              <span class="font-medium">Wiskr</span>
+              <!-- <ChevronsLeft size="16" class="sm:hidden mt-0.5" /> -->
+              <!-- <ChevronsLeft size="20" class="hidden sm:inline mt-1" /> -->
+            {/if}
+          </div>
         </button>
       </form>
     </div>
@@ -1154,6 +1223,15 @@ class="w-48 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-s
     on:copy={handleTLDRCopy}
   />
   
+  <!-- Branch Picker (Mobile) -->
+  <BranchPickerModal
+    visible={showBranchPicker}
+    {branches}
+    {currentBranchId}
+    on:close={() => showBranchPicker = false}
+    on:select={(e) => selectBranchFromPicker(e.detail)}
+  />
+
   <!-- Problem Report Modal -->
   <FeedbackModal
     bind:visible={showProblemReportModal}

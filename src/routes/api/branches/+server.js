@@ -214,7 +214,7 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
       project_id: projectId,
       session_id: sessionId,
       branch_id: 'main',
-      branch_name: 'Main Conversation',
+      branch_name: 'Main Branch',
       parent_message_id: null,
       color_index: 0,
       colorClass: 'bg-white border-gray-200',

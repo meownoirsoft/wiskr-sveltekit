@@ -109,7 +109,7 @@
     aria-labelledby="tldr-modal-title"
   >
     <!-- Modal Content -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style="background-color: var(--bg-primary);">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 pb-2 border-b border-gray-200 dark:border-gray-700">
         <div>

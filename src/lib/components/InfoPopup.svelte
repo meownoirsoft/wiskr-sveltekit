@@ -32,15 +32,46 @@
     if (!buttonElement || !popupElement || !isOpen) return;
     
     try {
+      // Determine optimal initial placement based on button position and screen size
+      const buttonRect = buttonElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const isMobile = window.innerWidth <= 768;
+      
+      // If button is in lower half of screen, prefer top placement
+      const isInLowerHalf = buttonRect.top > viewportHeight / 2;
+      
+      let initialPlacement = 'bottom-end'; // Default
+      let fallbackPlacements;
+      
+      if (isMobile) {
+        if (isInLowerHalf) {
+          // Mobile + lower half: FORCE top placement
+          initialPlacement = 'top';
+          fallbackPlacements = ['top-start', 'top-end', 'bottom']; // Very limited fallbacks
+        } else {
+          // Mobile + upper half: prefer bottom placements
+          initialPlacement = 'bottom';
+          fallbackPlacements = ['bottom-start', 'bottom-end', 'top'];
+        }
+      } else {
+        // Desktop: more flexible, but still consider vertical position
+        if (isInLowerHalf) {
+          initialPlacement = 'top-end';
+          fallbackPlacements = ['left', 'top-start', 'bottom-end', 'bottom-start', 'right'];
+        } else {
+          initialPlacement = 'bottom-end';
+          fallbackPlacements = ['left', 'top-end', 'bottom-start', 'top-start', 'right'];
+        }
+      }
+      
       const { x, y, placement, middlewareData } = await computePosition(buttonElement, popupElement, {
-        placement: 'bottom-end', // Default preference
+        placement: initialPlacement,
         middleware: [
           offset(8), // 8px gap between button and popup
           flip({
-            // Try different placements if default doesn't fit
-            fallbackPlacements: ['left', 'top-end', 'bottom-start', 'top-start', 'right']
+            fallbackPlacements: fallbackPlacements
           }),
-          shift({ padding: 8 }), // Keep popup within viewport with 8px padding
+          shift({ padding: isMobile ? 16 : 8 }), // More padding on mobile
           arrow({ element: arrowElement }), // Position arrow
           hide() // Hide popup if reference element is not visible
         ]
@@ -156,14 +187,14 @@
   {#if isOpen}
     <div 
       bind:this={popupElement}
-      class="info-popup-content fixed z-[60] w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-      style="max-height: calc(100vh - 32px);"
+      class="info-popup-content fixed z-[60] w-80 sm:w-96 md:w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white"
+      style="max-height: calc(100vh - 32px); max-width: calc(100vw - 32px); background-color: var(--bg-primary);"
     >
       <!-- Header with close button -->
-      <div class="flex-shrink-0 flex items-center justify-between p-4 pb-2">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+      <div class="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 pb-2">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white pr-2">{title}</h3>
         <button 
-          class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors"
+          class="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors flex-shrink-0"
           on:click|stopPropagation={close}
           title="Close"
         >
@@ -172,15 +203,14 @@
       </div>
       
       <!-- Content with scrolling -->
-      <div class="flex-1 px-4 pb-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed overflow-y-auto" style="max-height: calc(100vh - 120px);">
+      <div class="flex-1 px-3 sm:px-4 pb-3 sm:pb-4 text-sm text-gray-700 dark:text-gray-200 leading-relaxed overflow-y-auto" style="max-height: calc(100vh - 120px);">
         {@html content}
       </div>
       
       <!-- Arrow pointing to button -->
       <div 
         bind:this={arrowElement}
-        class="absolute w-4 h-4 transform rotate-45 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-        style="z-index: -1;"
+        class="absolute w-4 h-4 transform rotate-45 border border-gray-300 dark:border-gray-600 bg-white" style="background-color: var(--bg-primary); z-index: -1;"
       ></div>
     </div>
   {/if}

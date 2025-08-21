@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { DateTime } from 'luxon';
 import { buildContext } from '$lib/server/context/buildContext.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
+import { postProcessStreamedResponse } from '$lib/server/responseProcessor.js';
 import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
@@ -119,13 +120,16 @@ export const POST = async ({ request, locals }) => {
           }
         }
 
-        // 6) Save assistant message
-        console.log('💾 Saving assistant message to DB:', { projectId, sessionId, branchId, role: 'assistant', contentLength: full.length, modelKey });
+        // 6) Process the response to replace generic AI self-identifications with friendly names
+        const processedContent = postProcessStreamedResponse(full, modelKey);
+        
+        // 7) Save assistant message (with processed content)
+        console.log('💾 Saving assistant message to DB:', { projectId, sessionId, branchId, role: 'assistant', contentLength: processedContent.length, modelKey, processed: processedContent !== full });
         const { data: assistantMsgResult, error: assistantMsgError } = await locals.supabase.from('messages').insert({
           project_id: projectId,
           session_id: sessionId,
           role: 'assistant',
-          content: full,
+          content: processedContent,
           branch_id: branchId,
           model_key: modelKey
         }).select();
@@ -136,7 +140,7 @@ export const POST = async ({ request, locals }) => {
           console.log('✅ Assistant message saved:', assistantMsgResult);
         }
 
-        // 7) Log usage ONCE (after you have the full reply)
+        // 8) Log usage ONCE (after you have the full reply)
         const inTok  = Math.round(JSON.stringify(finalMessages).length / 4);
         const outTok = Math.round(full.length / 4);
         const cost   = +(inTok * modelConf.inPerTok + outTok * modelConf.outPerTok).toFixed(6);
@@ -159,7 +163,7 @@ export const POST = async ({ request, locals }) => {
           console.log('Usage log inserted successfully:', usageResult);
         }
 
-        // 8) Clear one-time overrides
+        // 9) Clear one-time overrides
         if ((overrides || []).length) {
           await locals.supabase
             .from('context_overrides')

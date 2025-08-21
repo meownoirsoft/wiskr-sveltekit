@@ -78,8 +78,7 @@
   >
     <div 
       bind:this={modalElement}
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-auto"
-      style="background-color: var(--bg-modal);"
+      class="bg-white rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-auto" style="background-color: var(--bg-modal);"
     >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -140,7 +139,7 @@
       </div>
       
       <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
+      <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 rounded-b-lg" style="background-color: var(--bg-primary);">
         <button
           class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
           on:click={handleCancel}

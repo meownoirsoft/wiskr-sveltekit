@@ -54,7 +54,7 @@ BEGIN
         ) 
         VALUES (
             project_record.id,
-            'Main Session',
+            'First Chat',
             CURRENT_DATE,
             TRUE,
             'Initial conversation session',

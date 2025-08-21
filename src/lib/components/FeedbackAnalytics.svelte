@@ -77,7 +77,7 @@
     class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/20 dark:bg-black/40"
     on:click={handleBackdropClick}
   >
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl mx-auto max-h-[80vh] overflow-hidden">
+    <div class="bg-white rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-4xl mx-auto max-h-[80vh] overflow-hidden" style="background-color: var(--bg-primary);">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100" style="color: var(--text-primary);">

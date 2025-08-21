@@ -74,6 +74,12 @@
   --border-header-input: #d1d5db;
   --text-header: #374151;
   --text-header-secondary: #6b7280;
+  
+  /* Mobile-specific variables - light mode */
+  --mobile-header-height: 4rem;
+  --mobile-panel-width: 100vw;
+  --mobile-chat-input-height: 3.5rem;
+  --mobile-touch-target: 44px;
 }
 
 .dark {
@@ -147,6 +153,12 @@
   --border-header-input: #4a4a52;
   --text-header: #e5e7eb;
   --text-header-secondary: #9ca3af;
+  
+  /* Mobile-specific variables - dark mode */
+  --mobile-header-height: 4rem;
+  --mobile-panel-width: 100vw;
+  --mobile-chat-input-height: 3.5rem;
+  --mobile-touch-target: 44px;
 }
 
 html, body {
@@ -202,11 +214,14 @@ input[type="search"],
 input[type="url"],
 input[type="tel"],
 input[type="color"],
-textarea,
-select {
-  background-color: var(--bg-input) !important;
+textarea {
   border-color: var(--border-input) !important;
   color: var(--text-primary) !important;
+}
+
+/* Select styling handled separately */
+select {
+  border-color: var(--border-input) !important;
 }
 
 input[type="text"]:focus,
@@ -232,6 +247,82 @@ textarea::placeholder {
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #6b7280 !important; /* Darker gray for dark mode */
+}
+
+/* Select option styling */
+select option {
+  color: #1f2937 !important; /* Dark gray for light mode */
+}
+
+select option[disabled] {
+  color: #9ca3af !important; /* Light gray for light mode */
+}
+
+.dark select option {
+  color: #ffffff !important; /* White for dark mode */
+}
+
+.dark select option[disabled] {
+  color: #9ca3af !important; /* Lighter gray for disabled in dark mode */
+}
+
+/* Select element when showing placeholder (empty value) */
+select:invalid,
+select[value=""],
+select:not(:focus):invalid,
+select:not(:focus)[value=""] {
+  color: #9ca3af !important; /* Light gray for light mode */
+}
+
+.dark select:invalid,
+.dark select[value=""],
+.dark select:not(:focus):invalid,
+.dark select:not(:focus)[value=""] {
+  color: #6b7280 !important; /* Darker gray for dark mode */
+}
+
+/* More specific override for Tailwind classes */
+.dark select.text-gray-900.dark\:text-gray-100:invalid,
+.dark select.text-gray-900.dark\:text-gray-100[value=""] {
+  color: #6b7280 !important;
+}
+
+/* Custom select placeholder styling class - more specific than universal styling */
+select.select-with-placeholder:invalid,
+select.select-with-placeholder[value=""],
+select.select-with-placeholder:not([value]),
+select.select-with-placeholder[value=""]:not(:focus) {
+  color: #9ca3af !important; /* Light gray for light mode */
+}
+
+.dark select.select-with-placeholder:invalid,
+.dark select.select-with-placeholder[value=""],
+.dark select.select-with-placeholder:not([value]),
+.dark select.select-with-placeholder[value=""]:not(:focus) {
+  color: #6b7280 !important; /* Darker gray for dark mode */
+}
+
+/* Ensure selected options show normal color */
+select.select-with-placeholder:not(:invalid):not([value=""]) {
+  color: var(--text-primary) !important;
+}
+
+.dark select.select-with-placeholder:not(:invalid):not([value=""]) {
+  color: var(--text-primary) !important;
+}
+
+/* JavaScript-controlled select placeholder styling */
+select.showing-placeholder {
+  color: #9ca3af !important; /* Light gray for light mode */
+}
+
+.dark select.showing-placeholder {
+  color: #6b7280 !important; /* Darker gray for dark mode */
+}
+
+/* Selected options show normal text color */
+select:not(.showing-placeholder) {
+  color: var(--text-primary) !important;
 }
 
 /* JetBrains Mono font for code and monospace text */
@@ -313,4 +404,94 @@ code {
 
 .content-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+/* Mobile-optimized styles */
+@media (max-width: 768px) {
+  /* Override desktop grid card heights on mobile */
+  .grid .fact-card,
+  .grid .doc-card {
+    min-height: auto !important;
+    height: auto !important;
+  }
+  
+  /* Touch-friendly button sizes */
+  button {
+    min-height: var(--mobile-touch-target);
+    min-width: var(--mobile-touch-target);
+  }
+  
+  /* Mobile panel transitions */
+  .mobile-panel {
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-panel-enter {
+    transform: translateX(0);
+  }
+  
+  .mobile-panel-exit {
+    transform: translateX(-100%);
+  }
+  
+  /* Mobile modal adjustments */
+  .mobile-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    margin: 0;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+  }
+  
+  /* Mobile form improvements */
+  .mobile-form input[type="text"],
+  .mobile-form input[type="email"],
+  .mobile-form input[type="password"],
+  .mobile-form textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: var(--mobile-touch-target);
+  }
+  
+  /* Mobile typography adjustments */
+  .mobile-compact-text {
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .tablet-layout {
+    /* Tablet-specific styles */
+  }
+}
+
+/* Mobile landscape optimizations */
+@media (max-width: 1023px) and (orientation: landscape) {
+  .landscape-mobile {
+    /* Landscape mobile styles */
+  }
+}
+
+/* Safe area handling for iOS devices */
+@supports (padding: max(0px)) {
+  .safe-area-inset-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-inset-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .safe-area-inset-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }

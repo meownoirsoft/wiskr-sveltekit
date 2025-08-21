@@ -203,7 +203,7 @@
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
       {#each entityCards as card (card.id)}
         {@const typeConfig = getEntityTypeConfig(card.entity_type)}
-        <div class="entity-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
+        <div class="entity-card bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow" style="background-color: var(--bg-card);">
           <!-- Card Header -->
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-2 min-w-0 flex-1">

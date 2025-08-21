@@ -242,9 +242,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {#if loadingFacts}
       <LoadingSpinner overlay={true} text="Loading facts..." />
     {/if}
-    <div class="grid grid-cols-3 gap-2">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
-    <div class="fact-card flex flex-col h-full text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
+    <div class="fact-card flex flex-col md:h-full text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
       <!-- Header: Title and Menu -->
       <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
@@ -303,7 +303,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       </div>
       
       <!-- Content -->
-      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 flex-1 min-h-0 overflow-y-auto content-scrollbar" style="max-height: 140px;">
+      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 md:flex-1 md:min-h-0 md:overflow-y-auto content-scrollbar" style="max-height: 140px;">
         {f.value}
       </div>
       
@@ -328,12 +328,10 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           {/each}
         {/if}
       </div>
-      
-
     </div>
   {/each}
   {#if !facts.length && !loadingFacts}
-    <div class="col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No facts.</div>
+    <div class="col-span-1 md:col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No facts.</div>
   {/if}
     </div>
   </div>
@@ -344,6 +342,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   bind:showModal={showEditModal}
   fact={editingFact}
   {projectFactTypes}
+  {projectId}
   on:save={handleModalSave}
   on:close={handleModalClose}
 />
@@ -352,6 +351,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
 <AddFactModal 
   bind:showModal={showAddModal}
   {projectFactTypes}
+  {projectId}
   bind:factType
   bind:factKey
   bind:factValue

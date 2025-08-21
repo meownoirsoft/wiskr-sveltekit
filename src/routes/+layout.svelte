@@ -2,8 +2,8 @@
   import { goto, beforeNavigate } from '$app/navigation';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
-  import { onMount } from 'svelte';
-  import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+  import { onMount, onDestroy } from 'svelte';
+import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight, Boxes, GitBranch } from 'lucide-svelte';
   import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
@@ -220,7 +220,13 @@
   let savingPreferences = false;
   
   // Mobile menu state
+  let showProjectMenu = false;
   let showMobileMenu = false;
+  let showContextMenu = false;
+  let showAddInsMenu = false;
+  
+  // Responsive state
+  let isDesktop = false;
   
   // Context quality state
   let contextQualityScore = 0;
@@ -245,9 +251,28 @@
     }
   }
   
+  // Responsive screen detection for layout
+  function checkScreenSize() {
+    if (browser) {
+      isDesktop = window.innerWidth >= 1024; // lg breakpoint
+    }
+  }
+  
   // Load preferences on mount
   onMount(() => {
     loadUserPreferences();
+    
+    // Setup responsive detection
+    if (browser) {
+      checkScreenSize();
+      window.addEventListener('resize', checkScreenSize);
+    }
+  });
+  
+  onDestroy(() => {
+    if (browser) {
+      window.removeEventListener('resize', checkScreenSize);
+    }
   });
   
   // Track page leave events
@@ -405,158 +430,90 @@
 
   <!-- Header -->
   <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-50 transition-colors" style="background-color: var(--bg-header);">
-    <div class="w-full px-6 flex items-center justify-between gap-4 relative">
-      <!-- Left: brand and project selector -->
-      <div class="flex items-center gap-4 min-w-0 flex-1">
-        <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-          <span class="text-2xl inline-flex items-center">
-            <ChevronsRight className="inline-block align-middle" size={20} />
-            Mr. Wiskr
-            <ChevronsLeft className="inline-block align-middle" size={20} />
+    <div class="w-full px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
+      <!-- Left: Wiskr Brand + Desktop Project Controls -->
+      <div class="flex items-center gap-6">
+        <!-- Desktop: Mr Wiskr brand -->
+        <a href="/projects" class="hidden md:flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+          <span class="text-lg md:text-xl inline-flex items-center">
+            <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
+            <span style="color: #5d60dd">Mr Wiskr</span>
+            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" />
           </span>
         </a>
+        <!-- Mobile: Wiskr brand -->
+        <a href="/projects" class="md:hidden flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+          <span class="text-lg inline-flex items-center">
+            <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
+            <span style="color: #5d60dd" class="hidden xs:inline">Mr Wiskr</span>
+            <span style="color: #5d60dd" class="xs:hidden">Wiskr</span>
+            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" />
+          </span>
+        </a>
+        
+        <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
-          <div class="min-w-0 flex-shrink">
-              <HeaderProjectSelector 
-                {projects}
-                current={currentProject}
-                bind:search={projectSearch}
-                on:select={(e) => {
-                  const previousProject = currentProject;
-                  currentProject = e.detail;
-                  if (browser) {
-                    localStorage.setItem('wiskr_last_project_id', e.detail.id);
-                    // Track project selection
-                    trackEvent(ANALYTICS_EVENTS.PROJECT_SELECTED, {
-                      project_id: e.detail.id,
-                      project_name: e.detail.name,
-                      previous_project_id: previousProject?.id,
-                      previous_project_name: previousProject?.name
-                    });
-                    // Track project navigation as a virtual page view
-                    trackProjectNavigation(e.detail.id, e.detail.name);
-                    // Dispatch event to notify the projects page
-                    window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
-                    // Load context quality score for the selected project
-                    loadContextQualityScore(e.detail.id);
-                  }
-                }}
-                on:create={() => showNewProjectModal = true}
-                on:open-settings={(e) => {
-                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail }));
-                }}
-                on:delete={async (e) => {
-                  const project = e.detail;
-                  if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
-                  if (!confirm(`Delete "${project.name}"? This can\'t be undone.`)) return;
-                  
-                  try {
-                    const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
-                    if (res.ok) {
-                      // Refresh projects list
-                      window.dispatchEvent(new CustomEvent('projects:refresh'));
-                    } else {
-                      alert('Delete failed.');
-                    }
-                  } catch (error) {
+          <div class="hidden md:flex items-center gap-6">
+            <HeaderProjectSelector 
+              {projects}
+              current={currentProject}
+              bind:search={projectSearch}
+              isMobile={false}
+              on:select={(e) => {
+                const previousProject = currentProject;
+                currentProject = e.detail;
+                if (browser) {
+                  localStorage.setItem('wiskr_last_project_id', e.detail.id);
+                  trackEvent(ANALYTICS_EVENTS.PROJECT_SELECTED, { project_id: e.detail.id, project_name: e.detail.name, previous_project_id: previousProject?.id, previous_project_name: previousProject?.name });
+                  trackProjectNavigation(e.detail.id, e.detail.name);
+                  window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                  loadContextQualityScore(e.detail.id);
+                }
+              }}
+              on:create={() => { showNewProjectModal = true; }}
+              on:open-settings={(e) => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail })); }}
+              on:delete={async (e) => {
+                const project = e.detail;
+                if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
+                if (!confirm(`Delete \"{project.name}\"? This can't be undone.`)) return;
+                try {
+                  const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
+                  if (res.ok) {
+                    window.dispatchEvent(new CustomEvent('projects:refresh'));
+                  } else {
                     alert('Delete failed.');
                   }
-                }}
-              />
-            </div>
-            <!-- Context Quality Indicator - right after project selector -->
+                } catch (error) {
+                  alert('Delete failed.');
+                }
+              }}
+            />
             {#if currentProject?.id}
               <ContextQualityIndicator 
                 score={contextQualityScore}
                 loading={loadingContextScore}
                 projectId={currentProject.id}
-                on:open-dashboard={() => goto(`/context-dashboard?projectId=${currentProject.id}`)}
-                on:open-settings={() => {
-                  window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
-                }}
-                on:navigate-facts={() => {
-                  window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' }));
-                }}
+                on:open-dashboard={() => { goto(`/context-dashboard?projectId=${currentProject.id}`); }}
+                on:open-settings={() => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject })); }}
+                on:navigate-facts={() => { window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' })); }}
                 on:generate-entities={() => {
                   window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'entities' }));
                   window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
                 }}
               />
             {/if}
-          {/if}
+          </div>
+        {/if}
       </div>
-        
-      <!-- Right side: Navigation links and search -->
-      <div class="flex items-center gap-4 flex-shrink-0">
-        <!-- Desktop navigation (>= 1200px) -->
-        <div class="hidden xl:flex items-center gap-6">
-          {#if isProjectsPage}
-            <!-- Global Search -->
-            <div class="w-full max-w-sm">
-              <GlobalSearch 
-                projectId={currentProject?.id}
-                on:activate-tab={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-                }}
-                on:filter={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-                }}
-                on:navigate-chat={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-                }}
-                on:clear={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-                }}
-              />
-            </div>
-            <!-- Usage link (only on projects page) -->
-            <button 
-              type="button"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              on:click={() => {
-                window.dispatchEvent(new CustomEvent('usage:toggle'));
-              }}
-            >
-              <BarChart3 size="16" />
-              <span>Usage</span>
-              </button>
-            <!-- Context Dashboard link (only on projects page) -->
-            <a 
-              href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              title="Context Dashboard - See what gets sent to LLMs"
-            >
-              <Settings2 size="16" />
-              <span>Context</span>
-            </a>
-          {/if}
-          
-          {#if data?.user}
-            <!-- App/Account Settings -->
-            <button 
-              type="button"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              title="Settings"
-              on:click={openAppSettings}
-            >
-              <Settings size="16" />
-              <span>Settings</span>
-            </button>
-            
-            <!-- Logout -->
-            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-              <LogOut size="16" />
-              <span>Logout</span>
-            </a>
-          {:else}
-            <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Login</a>
-            <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Sign Up</a>
-          {/if}
-        </div>
-        
-        <!-- Medium screen search (768px - 1199px) -->
-        <div class="hidden md:block xl:hidden w-64">
-          {#if isProjectsPage}
+      
+      <!-- Spacer -->
+      <div class="flex-1"></div>
+
+      <!-- Right side: Menus and controls -->
+      <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
+        {#if isProjectsPage}
+          <!-- Desktop: Global Search and Usage -->
+          <div class="hidden md:flex items-center gap-4">
             <GlobalSearch 
               projectId={currentProject?.id}
               on:activate-tab={(e) => {
@@ -572,6 +529,80 @@
                 window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
               }}
             />
+            
+            <!-- Usage Stats Button -->
+            <button
+              type="button"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              title="Usage Stats"
+              on:click={() => { window.dispatchEvent(new CustomEvent('usage:toggle')); }}
+            >
+              <BarChart3 size="16" />
+              <span>Usage</span>
+            </button>
+          </div>
+
+          <!-- Mobile: Menu buttons -->
+          <div class="md:hidden flex items-center gap-1">
+            <!-- Project Menu Button -->
+            <button
+              type="button"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => showProjectMenu = !showProjectMenu}
+              aria-label="Projects and Tools"
+            >
+              <Boxes class="w-6 h-6" />
+              Projects
+            </button>
+            <!-- Context button -->
+            <button
+              type="button"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => window.dispatchEvent(new CustomEvent('mobile:show-context'))}
+              aria-label="Show Context Panel"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="text-xs mt-1">Context</span>
+            </button>
+            <!-- Add-Ins button -->
+            <button
+              type="button"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => window.dispatchEvent(new CustomEvent('mobile:show-addins'))}
+              aria-label="Show Add-Ins Panel"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+              </svg>
+              <span class="text-xs mt-1">Add-Ins</span>
+            </button>
+          </div>
+        {/if}
+
+        <!-- Desktop navigation (>= 1200px) -->
+        <div class="hidden xl:flex items-center gap-6">
+          {#if data?.user}
+             <!-- App/Account Settings -->
+            <button 
+              type="button"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              title="Settings"
+              on:click={openAppSettings}
+            >
+              <Settings size="16" />
+              <span>Settings</span>
+            </button>
+            
+            <!-- Logout -->
+            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
+              <LogOut size="16" />
+              <span>Logout</span>
+            </a>
+          {:else}
+            <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
+            <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
           {/if}
         </div>
         
@@ -579,7 +610,7 @@
         <div class="md:hidden relative">
           <button
             type="button"
-            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
             on:click={() => showMobileMenu = !showMobileMenu}
             aria-label="Menu"
           >
@@ -587,6 +618,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          
           
           <!-- Mobile menu dropdown -->
           {#if showMobileMenu}
@@ -596,7 +628,7 @@
               class="fixed inset-0 z-50" 
               on:click={() => showMobileMenu = false}
             >
-              <div class="absolute top-16 right-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2">
+              <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2" style="background-color: var(--bg-primary);">
                 {#if isProjectsPage}
                   <!-- Search for mobile -->
                   <div class="md:hidden px-4 py-2">
@@ -616,6 +648,8 @@
                       }}
                     />
                   </div>
+                  
+                  <!-- Sidebar Panel Toggles removed - now handled by dedicated Context/Add-Ins buttons -->
                   <button 
                     type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
@@ -681,6 +715,119 @@
       </div>
     </div>
   </header>
+
+  <!-- Project Menu Drawer -->
+  {#if showProjectMenu}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div 
+      class="fixed inset-0 z-50" 
+      on:click={(e) => {
+        // Only close if clicking on the backdrop itself, not on dropdown content
+        if (e.target === e.currentTarget) {
+          showProjectMenu = false;
+        }
+      }}
+    >
+      <div class="absolute top-16 left-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl w-80 max-w-[90vw] py-4" style="background-color: var(--bg-primary);">
+        <!-- Header -->
+        <div class="px-4 pb-3 border-b border-gray-200 dark:border-gray-600">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</h3>
+        </div>
+        
+        <!-- Project Selector Section -->
+        <div class="px-4 pt-4 pb-4">
+          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Current Project</h4>
+          <div class="space-y-3">
+            <HeaderProjectSelector 
+              {projects}
+              current={currentProject}
+              bind:search={projectSearch}
+              isMobile={!isDesktop}
+              on:select={(e) => {
+                const previousProject = currentProject;
+                currentProject = e.detail;
+                if (browser) {
+                  localStorage.setItem('wiskr_last_project_id', e.detail.id);
+                  // Track project selection
+                  trackEvent(ANALYTICS_EVENTS.PROJECT_SELECTED, {
+                    project_id: e.detail.id,
+                    project_name: e.detail.name,
+                    previous_project_id: previousProject?.id,
+                    previous_project_name: previousProject?.name
+                  });
+                  // Track project navigation as a virtual page view
+                  trackProjectNavigation(e.detail.id, e.detail.name);
+                  // Dispatch event to notify the projects page
+                  window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                  // Load context quality score for the selected project
+                  loadContextQualityScore(e.detail.id);
+                }
+                // Don't close project menu immediately - let user keep browsing projects
+                // showProjectMenu = false;
+              }}
+              on:create={() => {
+                showNewProjectModal = true;
+                showProjectMenu = false;
+              }}
+              on:open-settings={(e) => {
+                window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail }));
+                showProjectMenu = false;
+              }}
+              on:delete={async (e) => {
+                const project = e.detail;
+                if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
+                if (!confirm(`Delete "${project.name}"? This can't be undone.`)) return;
+                
+                try {
+                  const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
+                  if (res.ok) {
+                    // Refresh projects list
+                    window.dispatchEvent(new CustomEvent('projects:refresh'));
+                  } else {
+                    alert('Delete failed.');
+                  }
+                } catch (error) {
+                  alert('Delete failed.');
+                }
+                showProjectMenu = false;
+              }}
+            />
+          </div>
+        </div>
+        
+        <!-- Context Quality Section -->
+        {#if currentProject?.id}
+          <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-600">
+            <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Context Quality</h4>
+            <ContextQualityIndicator 
+              score={contextQualityScore}
+              loading={loadingContextScore}
+              projectId={currentProject.id}
+              isMobile={!isDesktop}
+              on:open-dashboard={() => {
+                goto(`/context-dashboard?projectId=${currentProject.id}`);
+                showProjectMenu = false;
+              }}
+              on:open-settings={() => {
+                window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
+                showProjectMenu = false;
+              }}
+              on:navigate-facts={() => {
+                window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' }));
+                showProjectMenu = false;
+              }}
+              on:generate-entities={() => {
+                window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'entities' }));
+                window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
+                showProjectMenu = false;
+              }}
+            />
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <!-- Page content fills the rest -->
   <main class="flex-1 min-h-0">
@@ -868,28 +1015,7 @@
                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Mr. Wiskr</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">v1.0.0</span>
               </div>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                AI-powered project knowledge management and chat interface.
-              </p>
               <div class="flex gap-3 text-xs">
-                <!-- <a href="#" 
-                   class="transition-colors" 
-                   style="color: var(--color-accent);" 
-                   on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
-                   on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
-                >Documentation</a>
-                <a href="#" 
-                   class="transition-colors" 
-                   style="color: var(--color-accent);" 
-                   on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
-                   on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
-                >Support</a>
-                <a href="#" 
-                   class="transition-colors" 
-                   style="color: var(--color-accent);" 
-                   on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
-                   on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
-                >Privacy</a> -->
               </div>
             </div>
           </div>

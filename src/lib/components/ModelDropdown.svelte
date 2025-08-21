@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { ChevronDown } from 'lucide-svelte';
-  import { getAIInfo } from '$lib/config/aiAvatars.js';
+  import { getAIInfo, getAINameWithTeam } from '$lib/config/aiAvatars.js';
   import ModelTooltip from './ModelTooltip.svelte';
 
   export let modelKey = 'speed';
@@ -112,16 +112,16 @@
   <!-- Dropdown Button -->
   <button
     type="button"
-class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[260px] max-w-[260px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
+class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[300px] max-w-[300px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
     on:click={toggleDropdown}
     {disabled}
   >
-    <div class="flex items-center gap-3 flex-1 min-w-0">
+    <div class="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
       {#if currentAIInfo}
-        <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-8 h-8 rounded-full flex-shrink-0" />
+        <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-12 h-12 md:w-8 md:h-8 rounded-full flex-shrink-0" />
         <div class="flex flex-col min-w-0 flex-1">
-          <span class="truncate text-xs">{currentAIInfo.name} • {currentModel?.tier || 'Standard'}</span>
-          <span class="truncate text-xs text-gray-500 dark:text-gray-400">{formatPricing(currentModel)}</span>
+          <span class="truncate text-sm md:text-xs">{getAINameWithTeam(currentModel?.key || modelKey)}</span>
+          <span class="truncate text-xs text-gray-500 dark:text-gray-400">{currentAIInfo.bestFor || 'General tasks'}</span>
         </div>
       {:else}
         <span class="truncate">Loading Wiskrs...</span>
@@ -137,15 +137,15 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
         {@const aiInfo = getAIInfo(model.key)}
         <button
           type="button"
-          class="w-full px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-blue-900' : ''}"
+          class="w-full px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 md:gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-blue-900' : ''}"
           on:click={() => selectModel(model)}
           on:mouseenter={(e) => showTooltip(model, aiInfo, e)}
           on:mouseleave={hideTooltip}
         >
-          <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-8 h-8 rounded-full flex-shrink-0" />
-          <div class="flex flex-col min-w-0 flex-1">
-            <span class="truncate text-xs">{aiInfo.name} • {model.tier || 'Standard'}</span>
-            <span class="truncate text-xs text-gray-500 dark:text-gray-400">{formatPricing(model)}</span>
+          <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex-shrink-0" />
+          <div class="flex flex-col min-w-0 flex-1 items-start">
+            <span class="truncate text-sm md:text-xs">{getAINameWithTeam(model.key)}</span>
+            <span class="truncate text-xs text-gray-500 dark:text-gray-400">{aiInfo.bestFor || 'General tasks'}</span>
           </div>
           {#if model.key === modelKey}
             <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>

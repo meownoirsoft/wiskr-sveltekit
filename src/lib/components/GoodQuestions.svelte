@@ -156,7 +156,10 @@ import { browser } from '$app/environment';
         <h3 class="font-semibold text-gray-800 dark:text-gray-200">Next Questions</h3>
         <InfoPopup
           title="Next Questions"
-          content="<p><strong>Next Questions</strong> help you plan and track your project exploration.</p><p>This is your personal question queue for:</p><ul><li><strong>Follow-up inquiries</strong> - Things you want to ask the AI later</li><li><strong>Research reminders</strong> - Topics to investigate further</li><li><strong>Progress tracking</strong> - Check off questions as you explore them</li></ul><p><strong>How to use:</strong></p><ul><li>Click the <strong>left arrow</strong> to instantly add any question to your chat input</li><li>Use the <strong>checkbox</strong> to mark questions as answered</li><li><strong>Edit or delete</strong> questions as your project evolves</li></ul><p>Keep your curiosity organized and never lose track of what you wanted to explore!</p>"
+          content={`
+            <p>Save next questions to ask so you don't forget by the time you get your last question answered.</p>
+            <br /><p>You can click the chevrons to the left to add it to chat.</p>
+          `}
           buttonTitle="Learn about Next Questions"
         />
       </div>
@@ -206,9 +209,9 @@ import { browser } from '$app/environment';
       <LoadingSpinner overlay={true} text="Loading questions..." size="sm" />
     {/if}
     <div class="h-full overflow-y-auto pr-1">
-      <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
+      <ul class="space-y-1 px-2 md:px-0" style="margin-left: 32px;"> <!-- 32px for chevron space, mobile padding -->
       {#each goodQuestions as question, i}
-        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded p-2 group hover:bg-gray-50 dark:hover:bg-gray-600" style="background-color: var(--bg-card);">
+        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded p-2 md:p-2 group hover:bg-gray-50 dark:hover:bg-gray-600" style="background-color: var(--bg-card);">
           <!-- Chevron button outside card on the left, always visible -->
           <button 
             class="absolute p-2 flex-shrink-0 cursor-pointer z-10" 
@@ -232,18 +235,18 @@ import { browser } from '$app/environment';
               ></textarea>
               <div class="flex flex-col gap-1">
                 <button 
-                  class="text-green-600 hover:text-green-700 p-1 cursor-pointer" 
+                  class="text-green-600 hover:text-green-700 p-1 md:p-1 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={saveEdit}
                   title="Save"
                 >
-                  ✓
+                  <span class="text-lg md:text-base">✓</span>
                 </button>
                 <button 
-                  class="text-gray-500 hover:text-gray-700 p-1 cursor-pointer" 
+                  class="text-gray-500 hover:text-gray-700 p-1 md:p-1 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={cancelEdit}
                   title="Cancel edit"
                 >
-                  <X size="16" />
+                  <X size="20" class="md:w-4 md:h-4" />
                 </button>
               </div>
             </div>
@@ -265,20 +268,20 @@ import { browser } from '$app/environment';
               </div>
               
               <!-- Right section: edit and delete buttons -->
-              <div class="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="flex items-start gap-1 opacity-0 md:group-hover:opacity-100 opacity-100 md:opacity-0 transition-opacity">
                 <button 
-                  class="text-gray-500 hover:text-gray-700 p-0.5 cursor-pointer" 
+                  class="text-gray-500 hover:text-gray-700 p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={() => startEdit(i)}
                   title="Edit question"
                 >
-                  <Edit size="16" />
+                  <Edit size="20" class="md:w-4 md:h-4" />
                 </button>
                 <button 
-                  class="text-red-500 hover:text-red-700 p-0.5 cursor-pointer" 
+                  class="text-red-500 hover:text-red-700 p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={() => removeQuestion(i)}
                   title="Remove question"
                 >
-                  <X size="16" />
+                  <X size="20" class="md:w-4 md:h-4" />
                 </button>
               </div>
             </div>

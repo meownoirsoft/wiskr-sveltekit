@@ -423,7 +423,10 @@ import { browser } from '$app/environment';
         <h3 class="font-semibold text-gray-800 dark:text-gray-200">Related Ideas</h3>
         <InfoPopup
           title="Related Ideas"
-          content="<p><strong>Related Ideas</strong> use AI to suggest concepts that could expand your project knowledge.</p><p>The AI analyzes your project context to suggest:</p><ul><li><strong>Adjacent concepts</strong> - Related topics you might not have considered</li><li><strong>Expansion opportunities</strong> - Areas to grow your project scope</li><li><strong>Research directions</strong> - New avenues to explore</li></ul><p><strong>How to use:</strong></p><ul><li>Click the <strong>left arrow</strong> to instantly add any idea to your chat input</li><li>Use the <strong>heart button</strong> to save ideas you love (they'll persist through refreshes)</li><li>Click the <strong>broken heart</strong> to dismiss ideas you don't want to see again</li><li>Hit <strong>Refresh</strong> to generate new ideas (liked ideas stay visible)</li></ul><p>Perfect for brainstorming and discovering new angles for your project!</p>"
+          content={`
+            <p><strong>Related Ideas</strong> uses wiskrs to suggest concepts to enhance your project.</p>
+            <p>You'll see related topics you might not have considered, areas to expand on, and new avenues to explore</p>
+          `}
           buttonTitle="Learn about Related Ideas"
         />
       </div>
@@ -463,9 +466,9 @@ import { browser } from '$app/environment';
     {/if}
     
     <!-- Scrollable content container -->
-    <div class="h-full overflow-y-auto pr-1">
+    <div class="h-full overflow-y-auto pr-1 pb-4 md:pb-0">
     
-    <ul class="space-y-1" style="margin-left: 32px;"> <!-- 32px for chevron space -->
+    <ul class="space-y-1 px-2 md:px-0" style="margin-left: 32px;"> <!-- 32px for chevron space, mobile padding -->
       {#each visibleIdeas as idea, i (typeof idea === 'object' ? idea.id : idea)}
         {@const ideaText = typeof idea === 'object' ? idea.text : idea}
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}

@@ -30,7 +30,7 @@
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
   <!-- Navigation Bar -->
-  <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+  <nav class="bg-white border-b border-gray-200 dark:border-gray-700" style="background-color: var(--bg-primary);">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center gap-4">
@@ -67,7 +67,7 @@
   <!-- Test Message Input -->
   {#if selectedProjectId}
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <label for="test-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Test Message (simulates user input for context analysis):
         </label>

@@ -1,7 +1,8 @@
 // API endpoint for generating entity card summaries
 import { json } from '@sveltejs/kit';
+import { detectEntities, mapEntitiesToFacts } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
-import { detectEntities, mapEntitiesToFacts, matchFactToEntities } from '$lib/server/services/entityDetection.js';
+import { processAIResponse } from '$lib/server/responseProcessor.js';
 
 /**
  * Generate or update entity cards for a project
@@ -129,11 +130,14 @@ Summary:`;
           max_tokens: 200
         });
 
-        const summary = summaryResponse.choices[0]?.message?.content?.trim();
-        if (!summary) {
+        const rawSummary = summaryResponse.choices[0]?.message?.content?.trim();
+        if (!rawSummary) {
           console.error('❌ EntityCards: No summary generated for', entityData.entityName);
           continue;
         }
+        
+        // Process the summary to replace any AI self-identifications
+        const summary = processAIResponse(rawSummary, 'micro');
 
         // Estimate token count (rough approximation)
         const summaryTokens = Math.ceil(summary.length / 4);

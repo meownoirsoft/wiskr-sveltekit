@@ -296,6 +296,19 @@
   .min-h-0 {
     min-height: 120px;
   }
+  
+  /* Exception: fact and doc cards should not have minimum height on mobile */
+  .fact-card .fact-content,
+  .doc-card .doc-content {
+    min-height: auto !important;
+  }
+  
+  /* Let cards collapse to their natural height on mobile */
+  .fact-card,
+  .doc-card {
+    min-height: auto;
+    height: auto;
+  }
 }
 
 /* Tab navigation improvements on mobile */
@@ -466,6 +479,30 @@
 
 .prose.prose-sm.max-w-none em {
   line-height: inherit !important;
+}
+
+/* Mobile-specific RelatedIdeas improvements */
+@media (max-width: 768px) {
+  /* Ensure proper mobile viewport handling for RelatedIdeas */
+  .mobile-ideas-column {
+    max-height: calc(100vh - 8rem); /* Account for header and mobile navigation */
+  }
+  
+  /* Better mobile scrolling for ideas */
+  .mobile-ideas-column .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-bottom: 1rem;
+  }
+  
+  /* Improve touch targets on mobile for idea cards */
+  .mobile-ideas-column li {
+    min-height: 44px;
+  }
+  
+  /* Better spacing for mobile viewport */
+  .mobile-ideas-column ul {
+    padding-bottom: 2rem !important;
+  }
 }
 
 /* Make sure code blocks also follow tighter spacing */

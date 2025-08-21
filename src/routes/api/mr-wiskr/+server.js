@@ -1,6 +1,7 @@
 // src/routes/api/mr-wiskr/+server.js
 import { error, json } from '@sveltejs/kit';
 import { getModelConfig } from '$lib/server/openrouter.js';
+import { processAIResponse } from '$lib/server/responseProcessor.js';
 
 const MR_WISKR_SYSTEM_PROMPT = `You are Mr. Wiskr: a wise, friendly mentor who genuinely cares about helping people understand confusing responses from their digital friends.
 
@@ -149,7 +150,8 @@ What do you think this actually means in practical terms?${contextInfo}`;
       throw error(500, "Mr Wiskr seems to be at a loss for words right now. Please try again!");
     }
 
-    const responseContent = response.choices[0].message.content.trim();
+    const rawContent = response.choices[0].message.content.trim();
+    const responseContent = processAIResponse(rawContent, modelKey);
 
     // Calculate tokens and cost for usage tracking (similar to chat API)
     const inTok = Math.round(JSON.stringify(messages).length / 4);

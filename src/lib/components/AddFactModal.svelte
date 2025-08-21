@@ -3,6 +3,7 @@
   import { X } from 'lucide-svelte';
   import TLDRModal from './TLDRModal.svelte';
   import TLDRButton from './TLDRButton.svelte';
+  import TagSuggest from './TagSuggest.svelte';
   
   export let showModal = false;
   export let projectFactTypes = [];
@@ -10,6 +11,7 @@
   export let factKey = '';
   export let factValue = '';
   export let factTags = '';
+  export let projectId = null;
   
   const dispatch = createEventDispatcher();
   
@@ -86,6 +88,42 @@
     showTLDRModal = false;
     tldrOriginalText = '';
   }
+  
+  function handleAddTag(event) {
+    const newTag = event.detail;
+    const currentTags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    if (!currentTags.includes(newTag)) {
+      const updatedTags = [...currentTags, newTag];
+      factTags = updatedTags.join(', ');
+    }
+  }
+  
+  // Get existing tags for TagSuggest component
+  $: existingTagsArray = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  
+  // Handle select placeholder styling
+  function handleSelectChange(event) {
+    const select = event.target;
+    if (select.value === '' || !select.value) {
+      select.classList.add('showing-placeholder');
+    } else {
+      select.classList.remove('showing-placeholder');
+    }
+  }
+  
+  // Initialize select styling on modal open
+  $: if (showModal) {
+    setTimeout(() => {
+      const select = document.querySelector('.fact-type-select');
+      if (select) {
+        if (select.value === '' || !select.value) {
+          select.classList.add('showing-placeholder');
+        } else {
+          select.classList.remove('showing-placeholder');
+        }
+      }
+    }, 0);
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -106,7 +144,7 @@
           {/if}
         </div>
         <button 
-          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-blue-400 p-1"
           on:click={closeModal}
         >
           <X size="20" />
@@ -118,8 +156,8 @@
         <!-- Type Selection -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type">Type</label>
-          <select class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" bind:value={factType}>
-            <option value="" disabled class="text-gray-500">Select a fact type...</option>
+          <select class="select-with-placeholder fact-type-select w-full text-sm border border-gray-300 dark:border-gray-600 bg-gray-50 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="background-color: var(--bg-primary);" bind:value={factType} on:change={handleSelectChange}>
+            <option value="" disabled>Select a fact type...</option>
             {#if projectFactTypes.length > 0}
               {#each projectFactTypes as factTypeOption}
                 <option value={factTypeOption.type_key}>{factTypeOption.display_name}</option>
@@ -138,7 +176,7 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-key">Name/Title</label>
           <input 
-            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-gray-50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="background-color: var(--bg-primary);"
             placeholder="e.g., Cheddar"
             bind:value={factKey}
           />
@@ -157,7 +195,7 @@
             {/if}
           </div>
           <textarea 
-            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-gray-50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="background-color: var(--bg-primary);"
             rows="4"
             placeholder="Enter the fact details... (≤120 words work best)"
             bind:value={factValue}
@@ -168,9 +206,19 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-tags">Tags</label>
           <input 
-            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-gray-50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="background-color: var(--bg-primary);"
             placeholder="comma, separated, tags"
             bind:value={factTags}
+          />
+          
+          <!-- Tag Suggestions -->
+          <TagSuggest
+            content={factValue}
+            title={factKey}
+            type={factType}
+            {projectId}
+            existingTags={existingTagsArray}
+            on:add-tag={handleAddTag}
           />
         </div>
       </div>
@@ -178,7 +226,7 @@
       <!-- Modal Footer -->
       <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
         <button 
-          class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+          class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-blue-400"
           on:click={closeModal}
         >
           Cancel

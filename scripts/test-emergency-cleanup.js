@@ -25,7 +25,7 @@ console.log('✅ Expected Results:');
 console.log('   • No BEDNOMANCER project should appear');
 console.log('   • If no projects exist, "My First Project" should be auto-created');
 console.log('   • Console should show: "✅ Created first project for new user: My First Project"');
-console.log('   • Console should show: "✅ Created default session for new project: Main Chat"');
+console.log('   • Console should show: "✅ Created default session for new project: First Chat"');
 console.log('   • No RLS policy errors (42501) should appear in console');
 console.log('   • You should be able to type in the chat box without errors');
 console.log('   • Project editing should work without "Cannot coerce to single JSON object" error');

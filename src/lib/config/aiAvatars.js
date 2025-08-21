@@ -10,133 +10,185 @@ export const AI_AVATARS = {
   'speed': {
     name: 'Hikari',
     avatar: 'hikari.png',
-    description: 'Fast and efficient AI assistant'
+    description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
+    bestFor: 'Quick questions & simple tasks',
+    company: 'anthropic'
   },
   'quality': {
-    name: 'Sonny',
+    name: 'Verse',
     avatar: 'sonny.png',
-    description: 'Balanced AI with great reasoning'
+    description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
+    bestFor: 'Most conversations & analysis',
+    company: 'anthropic'
   },
   'gpt4': {
     name: 'Aurora',
     avatar: 'aurora.png',
-    description: 'Advanced multimodal AI assistant'
+    description: 'Advanced multimodal wiskr from the innovative minds at OpenAI',
+    bestFor: 'Complex reasoning & creativity',
+    company: 'openai'
   },
   'micro': {
-    name: 'Nova Flash',
+    name: 'Spark',
     avatar: 'nova-flash.png',
-    description: 'Lightning-fast AI responses'
+    description: 'Lightning-fast wiskr from the search experts at Google',
+    bestFor: 'Lightning-fast micro tasks',
+    company: 'google'
   },
   'gpt-oss': {
-    name: 'Mini Moe',
+    name: 'Pixel',
     avatar: 'moe.png',
-    description: 'Compact but capable AI assistant'
+    description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
+    bestFor: 'Cost-effective quick help',
+    company: 'openai'
   },
   'gpt4-turbo': {
-    name: 'Turbo Tess',
+    name: 'Dash',
     avatar: 'turbo-tess.png',
-    description: 'High-performance AI assistant'
+    description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
+    bestFor: 'Fast complex problem solving',
+    company: 'openai'
   },
   'claude-opus': {
-    name: 'Professor Opal',
+    name: 'Opal',
     avatar: 'prof-opal.png',
-    description: 'Thoughtful and comprehensive AI'
+    description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
+    bestFor: 'Deep research & writing',
+    company: 'anthropic'
   },
   'gemini-pro': {
-    name: 'Gemma',
+    name: 'Gem',
     avatar: 'gemma.png',
-    description: 'Professional AI assistant'
+    description: 'Professional wiskr from the brilliant team at Google AI Research',
+    bestFor: 'Structured analysis & data',
+    company: 'google'
   },
   'llama-70b': {
     name: 'Tina',
     avatar: 'tina.png',
-    description: 'Open-source AI assistant'
+    description: 'Open-source wiskr from the social researchers at Meta',
+    bestFor: 'Open-source conversations',
+    company: 'meta'
   },
   'llama-405b': {
-    name: 'Big Timmy',
+    name: 'Titan',
     avatar: 'big-timmy.png',
-    description: 'Powerful large-scale AI'
+    description: 'Powerful large-scale wiskr from the open-source advocates at Meta',
+    bestFor: 'Heavyweight reasoning tasks',
+    company: 'meta'
   },
   'mistral-large': {
-    name: 'Misty',
+    name: 'Gale',
     avatar: 'misty.png',
-    description: 'European AI assistant'
+    description: 'European wiskr from the innovative minds at Mistral',
+    bestFor: 'European perspective & coding',
+    company: 'mistral'
   },
   'qwen-72b': {
-    name: 'Dr. Qwen',
+    name: 'Quest',
     avatar: 'dr-qwen.png',
-    description: 'Knowledgeable AI assistant'
+    description: 'Knowledgeable wiskr from the research innovators at Alibaba',
+    bestFor: 'Research & knowledge tasks',
+    company: 'alibaba'
   },
   'deepseek-v3': {
-    name: 'Marina',
+    name: 'Sage',
     avatar: 'marina.png',
-    description: 'Deep thinking AI assistant'
+    description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
+    bestFor: 'Math(s) logic & code',
+    company: 'deepseek'
   },
   // Full model names (for backward compatibility)
   'claude-3-haiku': {
     name: 'Hikari',
     avatar: 'hikari.png',
-    description: 'Fast and efficient AI assistant'
+    description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
+    bestFor: 'Quick questions & simple tasks',
+    company: 'anthropic'
   },
   'claude-3-5-sonnet': {
-    name: 'Sonny',
+    name: 'Verse',
     avatar: 'sonny.png',
-    description: 'Balanced AI with great reasoning'
+    description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
+    bestFor: 'Most conversations & analysis',
+    company: 'anthropic'
   },
   'gpt-4o': {
     name: 'Aurora',
     avatar: 'aurora.png',
-    description: 'Advanced multimodal AI assistant'
+    description: 'Advanced multimodal wiskr from the innovative minds at OpenAI',
+    bestFor: 'Complex reasoning & creativity',
+    company: 'openai'
   },
   'gemini-flash-1.5': {
-    name: 'Nova Flash',
+    name: 'Spark',
     avatar: 'nova-flash.png',
-    description: 'Lightning-fast AI responses'
+    description: 'Lightning-fast wiskr from the search experts at Google',
+    bestFor: 'Lightning-fast micro tasks',
+    company: 'google'
   },
   'gpt-4o-mini-2024-07-18': {
-    name: 'Mini Moe',
+    name: 'Pixel',
     avatar: 'moe.png',
-    description: 'Compact but capable AI assistant'
+    description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
+    bestFor: 'Cost-effective quick help',
+    company: 'openai'
   },
   'gpt-4-turbo': {
-    name: 'Turbo Tess',
+    name: 'Dash',
     avatar: 'turbo-tess.png',
-    description: 'High-performance AI assistant'
+    description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
+    bestFor: 'Fast complex problem solving',
+    company: 'openai'
   },
   'claude-3-opus': {
-    name: 'Professor Opal',
+    name: 'Opal',
     avatar: 'prof-opal.png',
-    description: 'Thoughtful and comprehensive AI'
+    description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
+    bestFor: 'Deep research & writing',
+    company: 'anthropic'
   },
   'gemini-pro-1.5': {
-    name: 'Gemma',
+    name: 'Gem',
     avatar: 'gemma.png',
-    description: 'Professional AI assistant'
+    description: 'Professional wiskr from the brilliant team at Google AI Research',
+    bestFor: 'Structured analysis & data',
+    company: 'google'
   },
   'llama-3.1-70b-instruct': {
     name: 'Tina',
     avatar: 'tina.png',
-    description: 'Open-source AI assistant'
+    description: 'Open-source wiskr from the social researchers at Meta',
+    bestFor: 'Open-source conversations',
+    company: 'meta'
   },
   'llama-3.1-405b-instruct': {
-    name: 'Big Timmy',
+    name: 'Titan',
     avatar: 'big-timmy.png',
-    description: 'Powerful large-scale AI'
+    description: 'Powerful large-scale wiskr from the open-source advocates at Meta',
+    bestFor: 'Heavy reasoning tasks',
+    company: 'meta'
   },
   'mistral-large': {
-    name: 'Misty',
+    name: 'Gale',
     avatar: 'misty.png',
-    description: 'European AI assistant'
+    description: 'European wiskr from the innovative minds at Mistral',
+    bestFor: 'European perspective & coding',
+    company: 'mistral'
   },
   'qwen-2.5-72b-instruct': {
-    name: 'Dr. Qwen',
+    name: 'Quest',
     avatar: 'dr-qwen.png',
-    description: 'Knowledgeable AI assistant'
+    description: 'Knowledgeable wiskr from the research innovators at Alibaba',
+    bestFor: 'Research & knowledge tasks',
+    company: 'alibaba'
   },
   'deepseek-v3': {
-    name: 'Marina',
+    name: 'Sage',
     avatar: 'marina.png',
-    description: 'Deep thinking AI assistant'
+    description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
+    bestFor: 'Math(s) logic & code',
+    company: 'deepseek'
   }
 };
 
@@ -184,7 +236,8 @@ export function getAIInfo(modelKey) {
     name: 'Wiskr',
     avatar: 'default-ai.png',
     avatarPath: '/avatars/default-ai.png',
-    description: 'Wiskr Assistant',
+    description: 'Default Wiskr',
+    bestFor: 'General tasks',
     modelKey: modelKey
   };
 }
@@ -205,6 +258,40 @@ export function getAIName(modelKey) {
  */
 export function getAIAvatar(modelKey) {
   return getAIInfo(modelKey).avatarPath;
+}
+
+/**
+ * Company to team name mapping
+ */
+const COMPANY_TEAMS = {
+  'anthropic': 'Anthropic',
+  'openai': 'OpenAI', 
+  'google': 'Google',
+  'meta': 'Meta',
+  'mistral': 'Mistral',
+  'alibaba': 'Alibaba',
+  'deepseek': 'DeepSeek'
+};
+
+/**
+ * Get team name for a model
+ * @param {string} modelKey - The model identifier
+ * @returns {string} The team name
+ */
+export function getAITeam(modelKey) {
+  const aiInfo = getAIInfo(modelKey);
+  return COMPANY_TEAMS[aiInfo.company] || 'Independent';
+}
+
+/**
+ * Get formatted display name with team
+ * @param {string} modelKey - The model identifier
+ * @returns {string} The formatted name like "Hikari @ House Anthropic"
+ */
+export function getAINameWithTeam(modelKey) {
+  const aiInfo = getAIInfo(modelKey);
+  const teamName = getAITeam(modelKey);
+  return `${aiInfo.name} @ ${teamName}`;
 }
 
 /**

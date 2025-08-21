@@ -249,15 +249,31 @@
   // Responsive screen detection
   function checkScreenSize() {
     if (browser) {
-      isDesktop = window.innerWidth >= 1024; // lg breakpoint
-      // On desktop, show both panels by default
-      if (isDesktop) {
+      const width = window.innerWidth;
+      const wasDesktop = isDesktop;
+      isDesktop = width >= 1024; // lg breakpoint
+      
+      // Only set initial panel state on first load, not on resize
+      if (wasDesktop === false && isDesktop === true) {
+        // Switching from mobile to desktop - show both panels
         showLeftPanel = true;
         showRightPanel = true;
-      } else {
-        // On mobile/tablet, collapse both panels by default
+      } else if (wasDesktop === true && isDesktop === false) {
+        // Switching from desktop to mobile - hide both panels to show chat
         showLeftPanel = false;
         showRightPanel = false;
+      }
+      // If this is the very first time checkScreenSize runs (both were false)
+      else if (wasDesktop === false && isDesktop === false) {
+        // Mobile initial load - ensure panels are hidden to show chat
+        showLeftPanel = false;
+        showRightPanel = false;
+      }
+      // If switching to desktop for the first time
+      else if (wasDesktop === false && isDesktop === true) {
+        // Desktop initial load - show both panels
+        showLeftPanel = true;
+        showRightPanel = true;
       }
     }
   }
@@ -380,6 +396,10 @@
       // Listen for Mr Wiskr button from header
       window.addEventListener('mrwiskr:open', handleMrWiskrOpen);
       
+      // Listen for mobile menu events
+      window.addEventListener('mobile:show-context', handleMobileShowContext);
+      window.addEventListener('mobile:show-addins', handleMobileShowAddins);
+      
       // Add click outside listener for sessions panel
       document.addEventListener('click', handleClickOutside);
     }
@@ -403,6 +423,10 @@
       
       // Clean up Mr Wiskr event listener
       window.removeEventListener('mrwiskr:open', handleMrWiskrOpen);
+      
+      // Clean up mobile menu event listeners
+      window.removeEventListener('mobile:show-context', handleMobileShowContext);
+      window.removeEventListener('mobile:show-addins', handleMobileShowAddins);
       
       // Remove click outside listener
       document.removeEventListener('click', handleClickOutside);
@@ -1495,7 +1519,7 @@ function handleTextAddToDocs(event) {
               body: JSON.stringify({
                 action: 'create',
                 projectId: current.id,
-                sessionName: 'Main Chat'
+                sessionName: 'First Chat'
               })
             });
             
@@ -1666,9 +1690,10 @@ function handleTextAddToDocs(event) {
   // Click outside handler for sessions panel
   function handleClickOutside(event) {
     if (showSessionNavigator && sessionNavigatorElement && !sessionNavigatorElement.contains(event.target)) {
-      // Check if click is not on the Sessions button in the header
+      // Check if click is not on the Sessions button in the header (desktop) or mobile session button
       const isSessionsButton = event.target.closest('[data-sessions-button]');
-      if (!isSessionsButton) {
+      const isMobileSessionButton = event.target.closest('[data-mobile-sessions-button]');
+      if (!isSessionsButton && !isMobileSessionButton) {
         showSessionNavigator = false;
       }
     }
@@ -1730,14 +1755,47 @@ function handleTextAddToDocs(event) {
       mrWiskrLoading = false;
     }
   }
+  
+  // Mobile menu event handlers
+  function handleMobileShowContext() {
+    console.log('📱 Mobile Context button pressed - showing Facts/Docs panel');
+    // Show the left panel (Facts/Docs)
+    showLeftPanel = true;
+    if (showRightPanel) {
+      showRightPanel = false;
+    }
+  }
+  
+  function handleMobileShowAddins() {
+    console.log('📱 Mobile Add-Ins button pressed - showing Questions/Ideas panel');
+    // Show the right panel (Questions/Ideas)
+    showRightPanel = true;
+    if (showLeftPanel) {
+      showLeftPanel = false;
+    }
+  }
 
 </script>
 
-<!-- Layout -->
+  <!-- Layout -->
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar" style="background-color: var(--bg-panel-left);">
+  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}">
+    {#if showLeftPanel && !isDesktop}
+      <!-- Mobile panel header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
+        <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Facts & Docs</h2>
+        <button 
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          on:click={() => showLeftPanel = false}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    {/if}
     {#if showLeftPanel}
       <Sidebar 
         bind:this={sidebarComponent}
@@ -1776,46 +1834,6 @@ function handleTextAddToDocs(event) {
   </div>
 
 
-  <!-- Left Toggle Button (Mobile/Tablet Only) -->
-  <div class="absolute left-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
-    <button 
-      class="border border-gray-300 dark:border-gray-600 rounded-r-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showLeftPanel ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : ''}" style="background-color: var(--bg-modal, white);"
-      on:mouseenter={(e) => !showLeftPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-button-secondary-hover)')} 
-      on:mouseleave={(e) => !showLeftPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-modal)')}
-      on:click={toggleLeftPanel}
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showLeftPanel ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}">
-        {#if showLeftPanel}
-          <path d="M15 18l-6-6 6-6"/>
-        {:else}
-          <path d="M9 18l6-6-6-6"/>
-        {/if}
-      </svg>
-      <div class="text-xs font-medium text-center leading-tight {showLeftPanel ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
-        Facts<br/>& Docs
-      </div>
-    </button>
-  </div>
-
-  <!-- Right Toggle Button (Mobile/Tablet Only) -->
-  <div class="absolute right-0 top-1/2 -translate-y-1/2 z-30 flex items-center lg:hidden">
-    <button 
-      class="border border-gray-300 dark:border-gray-600 rounded-l-lg px-3 py-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center gap-2 min-w-[60px] {showRightPanel ? 'bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700' : ''}" style="background-color: var(--bg-modal, white);" on:mouseenter={(e) => !showRightPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-button-secondary-hover)')} 
-      on:mouseleave={(e) => !showRightPanel && (e.currentTarget.style.backgroundColor = 'var(--bg-modal)')}
-      on:click={toggleRightPanel}
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{showRightPanel ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}">
-        {#if showRightPanel}
-          <path d="M9 18l6-6-6-6"/>
-        {:else}
-          <path d="M15 18l-6-6 6-6"/>
-        {/if}
-      </svg>
-      <div class="text-xs font-medium text-center leading-tight {showRightPanel ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'}">
-        Questions & Ideas
-      </div>
-    </button>
-  </div>
 
   <!-- MAIN AREA: Chat (Center) -->
   <div class="flex-1 flex justify-center relative">
@@ -1836,6 +1854,7 @@ function handleTextAddToDocs(event) {
       {showSessionNavigator}
       {sessions}
       {currentSession}
+      isMobile={!isDesktop}
       on:send={send}
       on:switch-branch={handleSwitchToBranch}
       on:open-format-modal={handleOpenFormatModal}
@@ -1852,24 +1871,70 @@ function handleTextAddToDocs(event) {
     <!-- SESSION NAVIGATOR (overlays chat below header) -->
     <div 
       bind:this={sessionNavigatorElement}
-      class="absolute left-0 top-16 bottom-0 z-50 transition-all duration-300 ease-in-out {showSessionNavigator ? 'translate-x-0 visible opacity-100' : '-translate-x-full invisible opacity-0'}"
+      class="absolute z-50 transition-all duration-300 ease-in-out {showSessionNavigator ? 'translate-x-0 visible opacity-100' : '-translate-x-full invisible opacity-0'} {isDesktop ? 'left-0 top-16 bottom-0 w-80' : 'fixed inset-0 top-16 w-full h-full'}"
     >
-      <SessionNavigator 
-        {sessions}
-        {currentSession}
-        projectId={current?.id}
-        isVisible={showSessionNavigator}
-        on:select-session={handleSessionSelect}
-        on:session-created={handleSessionCreated}
-        on:session-updated={handleSessionUpdated}
-        on:session-deleted={handleSessionDeleted}
-      />
+      {#if showSessionNavigator && !isDesktop}
+        <!-- Mobile session navigator header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
+          <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Chats</h2>
+          <button 
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            on:click={() => showSessionNavigator = false}
+            aria-label="Close chats"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <!-- Mobile session navigator content -->
+        <div class="flex-1 overflow-hidden w-full" style="background-color: var(--bg-sessions-panel);">
+          <SessionNavigator 
+            {sessions}
+            {currentSession}
+            projectId={current?.id}
+            isVisible={showSessionNavigator}
+            isMobile={!isDesktop}
+            on:select-session={handleSessionSelect}
+            on:session-created={handleSessionCreated}
+            on:session-updated={handleSessionUpdated}
+            on:session-deleted={handleSessionDeleted}
+          />
+        </div>
+      {:else if showSessionNavigator}
+        <!-- Desktop session navigator (no header needed) -->
+        <SessionNavigator 
+          {sessions}
+          {currentSession}
+          projectId={current?.id}
+          isVisible={showSessionNavigator}
+          isMobile={false}
+          on:select-session={handleSessionSelect}
+          on:session-created={handleSessionCreated}
+          on:session-updated={handleSessionUpdated}
+          on:session-deleted={handleSessionDeleted}
+        />
+      {/if}
     </div>
     </div>
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'w-80') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar" style="background-color: var(--bg-panel-right);">
+  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {showRightPanel && !isDesktop ? 'top: 4rem;' : ''}">
+    {#if showRightPanel && !isDesktop}
+      <!-- Mobile panel header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
+        <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Questions & Ideas</h2>
+        <button 
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          on:click={() => showRightPanel = false}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    {/if}
     {#if showRightPanel}
       <IdeasColumn 
         {goodQuestions}

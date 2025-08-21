@@ -6,6 +6,7 @@
   export let currentSession = null;
   export let projectId = null;
   export let isVisible = false;
+  export let isMobile = false;
 
   const dispatch = createEventDispatcher();
 
@@ -159,17 +160,18 @@
 </script>
 
 <!-- Session Navigator Sidebar -->
-<div class="h-full border-r border-gray-200 dark:border-gray-700 flex flex-col w-72 overflow-hidden shadow-lg" style="background-color: var(--bg-sessions-panel);">
-    <!-- Header -->
+<div class="h-full border-r border-gray-200 dark:border-gray-700 flex flex-col {isMobile ? 'w-full' : 'w-72'} overflow-hidden shadow-lg" style="background-color: var(--bg-sessions-panel);">
+    <!-- Header (only show on desktop, mobile has its own header) -->
+    {#if !isMobile}
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <MessageSquare size="18" />
-          Conversation Sessions
+          Chats
         </h3>
         <button
           class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-          title="New Session"
+          title="New Chat"
           on:click={() => showNewSessionForm = true}
         >
           <Plus size="18" />
@@ -182,7 +184,7 @@
           <input
             type="text"
             class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-2 py-1 mb-2"
-            placeholder="Session name"
+            placeholder="Chat name"
             bind:value={newSessionName}
             on:keydown={(e) => onKeydown(e, createSession)}
             disabled={isCreatingSession}
@@ -213,21 +215,79 @@
         </div>
       {/if}
     </div>
+    {/if}
+
+    <!-- Mobile New Session Button -->
+    {#if isMobile}
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <button
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          on:click={() => showNewSessionForm = true}
+        >
+          <Plus size="18" />
+          New Chat
+        </button>
+        
+        <!-- New Session Form (Mobile) -->
+        {#if showNewSessionForm}
+          <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <input
+              type="text"
+              class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 mb-3"
+            placeholder="Chat name"
+              bind:value={newSessionName}
+              on:keydown={(e) => onKeydown(e, createSession)}
+              disabled={isCreatingSession}
+            />
+            {#if createError}
+              <div class="text-xs text-red-600 mb-3">{createError}</div>
+            {/if}
+            <div class="flex items-center gap-2">
+              <button
+                class="flex-1 text-sm px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50 font-medium"
+                on:click={createSession}
+                disabled={isCreatingSession || !newSessionName.trim()}
+              >
+                {isCreatingSession ? 'Creating...' : 'Create'}
+              </button>
+              <button
+                class="flex-1 text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 font-medium"
+                on:click={() => {
+                  showNewSessionForm = false;
+                  newSessionName = '';
+                  createError = '';
+                }}
+                disabled={isCreatingSession}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
 
     <!-- Sessions List -->
     <div class="flex-1 overflow-y-auto">
       {#if sessions.length === 0}
         <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-          No sessions yet. Create your first one!
+          No chats yet. Create your first one!
         </div>
       {:else}
         {#each sessions as session}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div 
             class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors group session-item"
             style="background-color: {currentSession?.id === session.id ? 'var(--color-accent-light)' : ''}; border-color: {currentSession?.id === session.id ? 'var(--color-accent-border)' : ''};"
+            role="button"
+            tabindex="0"
+            aria-pressed={currentSession?.id === session.id}
             on:click={() => selectSession(session)}
+            on:keydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectSession(session);
+              }
+            }}
           >
             <!-- Session Header -->
             <div class="flex items-start justify-between">
@@ -265,14 +325,14 @@
               <div class="flex items-center gap-1 ml-2 session-actions opacity-0 transition-opacity duration-200">
                 <button
                   class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400"
-                  title="Edit Session"
+                  title="Edit Chat"
                   on:click|stopPropagation={() => startEditSession(session)}
                 >
                   <Edit3 size="16" />
                 </button>
                 <button
                   class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
-                  title="Delete Session"
+                  title="Delete Chat"
                   on:click|stopPropagation={() => deleteSession(session)}
                 >
                   <Trash2 size="16" />

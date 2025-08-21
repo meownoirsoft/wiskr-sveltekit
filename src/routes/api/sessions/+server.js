@@ -109,7 +109,7 @@ export async function POST({ request, locals }) {
             project_id: projectId,
             session_id: session.id,
             branch_id: 'main',
-            branch_name: 'Main Conversation',
+            branch_name: 'Main Branch',
             color_index: 0
           });
 
@@ -268,7 +268,7 @@ export async function POST({ request, locals }) {
               project_id: projectId,
               session_id: session.id,
               branch_id: 'main',
-              branch_name: 'Main Conversation',
+              branch_name: 'Main Branch',
               color_index: 0
             });
 

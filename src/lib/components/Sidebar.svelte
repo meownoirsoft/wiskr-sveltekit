@@ -456,6 +456,7 @@
           <DocsManager
             docs={filteredDocs}
             loadingDocs={loadingFacts}
+            projectId={current?.id}
             bind:showAddDocForm
             bind:docTitle
             bind:docContent
