@@ -132,10 +132,10 @@ export const OPENROUTER_MODELS = {
   },
   
   'deepseek-v3': {
-    name: 'deepseek/deepseek-v3',
+    name: 'deepseek/deepseek-chat-v3.1',
     friendlyName: getAIName('deepseek-v3'),
-    inPerTok: 0.27/1_000_000,
-    outPerTok: 1.10/1_000_000,
+    inPerTok: 0.20/1_000_000,
+    outPerTok: 0.80/1_000_000,
     provider: 'openrouter',
     tier: 'Budget',
     category: 'Code Specialist'

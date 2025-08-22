@@ -8,7 +8,11 @@ const config = {
 	// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 	adapter: adapter() },
 	preprocess: [mdsvex()],
-	extensions: ['.svelte', '.svx']
+	extensions: ['.svelte', '.svx'],
+	compilerOptions: {
+		dev: true,
+		sourcemap: false
+	}
 };
 
 export default config;

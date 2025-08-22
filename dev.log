@@ -1,0 +1,3478 @@
+nohup: ignoring input
+
+> wiskr-sveltekit@1.0.0 dev
+> vite dev
+
+
+  VITE v7.1.1  ready in 2863 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+8:19:29 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:100:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:19:29 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:151:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:19:29 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:198:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:19:29 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1789:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+8:19:29 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1928:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+8:19:45 PM [vite-plugin-svelte] src/lib/components/FactsManager.svelte:11:13 Component has unused export property 'showAddFactForm'. If it is for external reference only, please consider using `export const showAddFactForm`
+https://svelte.dev/e/export_let_unused
+8:19:45 PM [vite-plugin-svelte] src/lib/components/TLDRModal.svelte:103:2 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+8:19:45 PM [vite-plugin-svelte] src/lib/components/TLDRModal.svelte:103:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:19:45 PM [vite-plugin-svelte] src/lib/components/TLDRButton.svelte:7:13 Component has unused export property 'variant'. If it is for external reference only, please consider using `export const variant`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:131:14 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:131:14 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:11:13 Component has unused export property 'showAddDocForm'. If it is for external reference only, please consider using `export const showAddDocForm`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:12:13 Component has unused export property 'docTitle'. If it is for external reference only, please consider using `export const docTitle`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:13:13 Component has unused export property 'docContent'. If it is for external reference only, please consider using `export const docContent`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:14:13 Component has unused export property 'docTags'. If it is for external reference only, please consider using `export const docTags`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/ChatInterface.svelte:26:13 Component has unused export property 'usage'. If it is for external reference only, please consider using `export const usage`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/ChatInterface.svelte:29:13 Component has unused export property 'sessions'. If it is for external reference only, please consider using `export const sessions`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/TextSelectionMenu.svelte:7:13 Component has unused export property 'projectId'. If it is for external reference only, please consider using `export const projectId`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/MrWiskrPopup.svelte:11:13 Component has unused export property 'y'. If it is for external reference only, please consider using `export const y`
+https://svelte.dev/e/export_let_unused
+8:19:46 PM [vite-plugin-svelte] src/lib/components/ProjectExport.svelte:185:2 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+8:19:46 PM [vite-plugin-svelte] src/lib/components/ProjectExport.svelte:260:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:19:46 PM [vite-plugin-svelte] src/lib/components/BranchPickerModal.svelte:21:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:19:46 PM [vite-plugin-svelte] src/lib/components/BranchPickerModal.svelte:21:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+8:20:03 PM [vite-plugin-svelte] src/lib/components/SessionNavigator.svelte:8:13 Component has unused export property 'isVisible'. If it is for external reference only, please consider using `export const isVisible`
+https://svelte.dev/e/export_let_unused
+🧹 Search results cleared: {
+  timestamp: '2025-08-22T02:20:03.413Z',
+  reason: 'Search term too short',
+  searchTerm: '',
+  dropdownDisabled: false
+}
+🎯 Server-side data.projects: [
+  {
+    id: '406a8059-e462-431c-9935-457ef1e0425c',
+    name: 'My New Project',
+    source: 'server'
+  },
+  {
+    id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    name: 'BEDNOMANCER',
+    source: 'server'
+  }
+]
+8:20:37 PM [vite-plugin-svelte] src/lib/components/ProjectExport.svelte:185:2 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+8:20:37 PM [vite-plugin-svelte] src/lib/components/ProjectExport.svelte:260:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:20:37 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1789:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+8:20:37 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1928:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+8:20:38 PM [vite-plugin-svelte] src/lib/components/ChatInterface.svelte:26:13 Component has unused export property 'usage'. If it is for external reference only, please consider using `export const usage`
+https://svelte.dev/e/export_let_unused
+8:20:38 PM [vite-plugin-svelte] src/lib/components/ChatInterface.svelte:29:13 Component has unused export property 'sessions'. If it is for external reference only, please consider using `export const sessions`
+https://svelte.dev/e/export_let_unused
+8:20:38 PM [vite-plugin-svelte] src/lib/components/SessionNavigator.svelte:8:13 Component has unused export property 'isVisible'. If it is for external reference only, please consider using `export const isVisible`
+https://svelte.dev/e/export_let_unused
+8:20:38 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:100:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:20:38 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:151:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:20:38 PM [vite-plugin-svelte] src/routes/admin/import/+page.svelte:198:8 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+8:20:39 PM [vite-plugin-svelte] src/lib/components/FactsManager.svelte:11:13 Component has unused export property 'showAddFactForm'. If it is for external reference only, please consider using `export const showAddFactForm`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/TextSelectionMenu.svelte:7:13 Component has unused export property 'projectId'. If it is for external reference only, please consider using `export const projectId`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/MrWiskrPopup.svelte:11:13 Component has unused export property 'y'. If it is for external reference only, please consider using `export const y`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/TLDRModal.svelte:103:2 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+8:20:39 PM [vite-plugin-svelte] src/lib/components/TLDRModal.svelte:103:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:20:39 PM [vite-plugin-svelte] src/lib/components/BranchPickerModal.svelte:21:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:20:39 PM [vite-plugin-svelte] src/lib/components/BranchPickerModal.svelte:21:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:131:14 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:131:14 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:11:13 Component has unused export property 'showAddDocForm'. If it is for external reference only, please consider using `export const showAddDocForm`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:12:13 Component has unused export property 'docTitle'. If it is for external reference only, please consider using `export const docTitle`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:13:13 Component has unused export property 'docContent'. If it is for external reference only, please consider using `export const docContent`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/DocsManager.svelte:14:13 Component has unused export property 'docTags'. If it is for external reference only, please consider using `export const docTags`
+https://svelte.dev/e/export_let_unused
+8:20:39 PM [vite-plugin-svelte] src/lib/components/TLDRButton.svelte:7:13 Component has unused export property 'variant'. If it is for external reference only, please consider using `export const variant`
+https://svelte.dev/e/export_let_unused
+📊 Context score refreshed for project 7c43dba7-01e2-42ac-8ae9-6d57ae926c0c: 74/100
+8:21:03 PM [vite] (client) hmr update /src/app.css
+8:21:03 PM [vite] (ssr) page reload src/routes/api/admin/import/project/+server.ts
+Import data summary: {
+  projectName: 'BEDNOMANCER',
+  factsCount: 23,
+  docsCount: 1,
+  sessionsCount: 2,
+  branchesCount: 3,
+  messagesCount: 58,
+  questionsCount: 3
+}
+Sessions data check: {
+  hasSessions: true,
+  sessionCount: 2,
+  firstSession: {
+    id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+    session_name: 'Main Chat',
+    session_date: '2025-08-13',
+    is_active: true,
+    topic_summary: 'Initial conversation session',
+    message_count: 56,
+    created_at: '2025-08-08T17:43:45.027298+00:00',
+    updated_at: '2025-08-19T04:50:37.354+00:00'
+  }
+}
+Processing session: {
+  id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  session_name: 'Main Chat',
+  session_date: '2025-08-13',
+  is_active: true,
+  topic_summary: 'Initial conversation session',
+  message_count: 56,
+  created_at: '2025-08-08T17:43:45.027298+00:00',
+  updated_at: '2025-08-19T04:50:37.354+00:00'
+}
+Session name extraction: {
+  originalSession: {
+    id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+    session_name: 'Main Chat',
+    session_date: '2025-08-13',
+    is_active: true,
+    topic_summary: 'Initial conversation session',
+    message_count: 56,
+    created_at: '2025-08-08T17:43:45.027298+00:00',
+    updated_at: '2025-08-19T04:50:37.354+00:00'
+  },
+  extractedName: 'Main Chat'
+}
+Session data to insert: {
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_name: 'Main Chat',
+  created_at: '2025-08-08T17:43:45.027298+00:00'
+}
+Session imported successfully: { id: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62' }
+Processing session: {
+  id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  session_name: 'New Chat',
+  session_date: '2025-08-13',
+  is_active: false,
+  topic_summary: null,
+  message_count: 2,
+  created_at: '2025-08-13T23:47:46.724814+00:00',
+  updated_at: '2025-08-19T04:31:02.389+00:00'
+}
+Session name extraction: {
+  originalSession: {
+    id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+    session_name: 'New Chat',
+    session_date: '2025-08-13',
+    is_active: false,
+    topic_summary: null,
+    message_count: 2,
+    created_at: '2025-08-13T23:47:46.724814+00:00',
+    updated_at: '2025-08-19T04:31:02.389+00:00'
+  },
+  extractedName: 'New Chat'
+}
+Session data to insert: {
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_name: 'New Chat',
+  created_at: '2025-08-13T23:47:46.724814+00:00'
+}
+Session imported successfully: { id: '7e5b1294-93e1-46e9-a24a-f3ff501b784d' }
+Branches data check: {
+  hasBranches: true,
+  branchCount: 3,
+  firstBranch: {
+    id: '56c0d7ff-ce3b-45a7-ae90-9bcaa6abd2b9',
+    branch_id: 'main',
+    branch_name: 'Main Branch',
+    parent_message_id: null,
+    color_index: 0,
+    created_at: '2025-08-10T18:32:50.70512+00:00',
+    session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+  },
+  sessionIdMapSize: 2
+}
+Processing branch: {
+  id: '56c0d7ff-ce3b-45a7-ae90-9bcaa6abd2b9',
+  branch_id: 'main',
+  branch_name: 'Main Branch',
+  parent_message_id: null,
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Branch session mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62'
+}
+Branch data to insert: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00'
+}
+Branch import error: {
+  code: '23505',
+  details: 'Key (session_id, branch_id)=(277d79b5-c27d-449a-a95c-df40c8e571ce, main) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "conversation_branches_session_branch_unique"'
+}
+Failed branch data: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00'
+}
+Processing branch: {
+  id: '784c1f20-d40e-4d43-93b1-3a14d57e9eb9',
+  branch_id: 'branch_1754850898916_npof4f228',
+  branch_name: 'Location Name Options',
+  parent_message_id: '031a0851-59e0-476c-988f-38774d4f721d',
+  color_index: 1,
+  created_at: '2025-08-10T18:34:59.197506+00:00',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Branch session mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62'
+}
+Branch data to insert: {
+  branch_id: '25943e3e-666d-40b4-955e-0269a4ddb917',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Location Name Options',
+  color_index: 1,
+  created_at: '2025-08-10T18:34:59.197506+00:00'
+}
+Branch imported successfully: { id: 'ceeb4f15-b3b3-4513-8a11-4a587c03ff8f' }
+Branch mappings created: {
+  byId: '784c1f20-d40e-4d43-93b1-3a14d57e9eb9 -> 25943e3e-666d-40b4-955e-0269a4ddb917',
+  byName: 'Location Name Options -> 25943e3e-666d-40b4-955e-0269a4ddb917',
+  variations: [ 'location name options', 'LOCATION NAME OPTIONS', 'main' ]
+}
+Processing branch: {
+  id: 'eb578ed7-074e-4566-941f-545b01a08ba2',
+  branch_id: 'main',
+  branch_name: 'Main Branch',
+  parent_message_id: null,
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Branch session mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  newSessionId: '7e5b1294-93e1-46e9-a24a-f3ff501b784d'
+}
+Branch data to insert: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00'
+}
+Branch import error: {
+  code: '23505',
+  details: 'Key (session_id, branch_id)=(a648b36e-1020-4285-9121-4ece2ffa9038, main) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "conversation_branches_session_branch_unique"'
+}
+Failed branch data: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00'
+}
+Messages data check: {
+  hasMessages: true,
+  messageCount: 58,
+  firstMessage: {
+    id: '6f0f74c7-e420-420a-936a-46c2ab783900',
+    role: 'user',
+    content: 'test msg',
+    created_at: '2025-08-10T05:16:08.258406+00:00',
+    branch_id: 'main',
+    parent_message_id: null,
+    branch_name: null,
+    branch_point: false,
+    model_key: null,
+    session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+  },
+  branchIdMapSize: 4
+}
+Processing message: {
+  id: '6f0f74c7-e420-420a-936a-46c2ab783900',
+  role: 'user',
+  content: 'test msg',
+  created_at: '2025-08-10T05:16:08.258406+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1500cd9a-7aa9-4598-8cce-a636a14cee4d',
+  role: 'assistant',
+  content: '🎉 Woohoo! Test messages are a win! 🎉 \n' +
+    '\n' +
+    'What’s next on your mind? 🤔 \n' +
+    '1. Brainstorm ideas for the story? \n' +
+    '2. Dive into character development? \n' +
+    '3. Plan your next steps? \n' +
+    '\n' +
+    'Let’s keep the momentum going! 🚀✨',
+  created_at: '2025-08-10T05:16:10.125173+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1504ad9a-3822-4143-bb20-d59e5d5000a4',
+  role: 'user',
+  content: 'what happened on the moon in the past in my story?',
+  created_at: '2025-08-10T15:24:01.512863+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'cb40799c-9c5b-4cd5-82ae-1df16a2c682c',
+  role: 'assistant',
+  content: 'In the past of your story, the Moon—known as Mewn in cat language—was the ancient landing site for the alien race we call cats. Two factions emerged from their civilization, each with different philosophies shaped by their origins on Mewn.\n' +
+    '\n' +
+    '**The HegeMAOny**, representing the younger faction led by a figure named Trevel, believed in salvation through control. They prioritized upgrading strays and eliminating emotional volatility, aiming to protect their species through technological advancement. Their notable creation, the Biscuit Factory, symbolizes their focus on efficiency and control.\n' +
+    '\n' +
+    'In contrast, **The DistSyst**, the older faction, valued peaceful coexistence with humans. They descended from Mewn’s spiritual and exploratory class, embracing the beauty of imperfection and emotional growth. Drawing inspiration from the ancient meme wisdom of the Cat Distribution System, they believed in trust and natural placement, fostering a harmonious relationship with humanity.\n' +
+    '\n' +
+    'These factions ultimately shaped the narrative of cats on Earth. The HegeMAOny’s reliance on technology and control contrasts with the DistSyst’s philosophy of emotional bonds and relationships. This historical divide is reflected in the behaviors of your kittens—Scarlett, Clover, and Cheddar—who may represent the ongoing conflict between emotion and control as they navigate their late-night escapades with their dad. The arrival of the glitchy Midnight Meowligan via power lines adds another layer to this complex relationship, illustrating the consequences of overuse of technology and the potential for robotic behavior among the kittens, impacting their connection with their father.',
+  created_at: '2025-08-10T15:24:07.93419+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '60f76f7f-62b0-4913-a01c-2a30a4eaf385',
+  role: 'user',
+  content: 'what are we calling the moon again?',
+  created_at: '2025-08-10T15:26:23.44+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '36222a95-5821-4991-9f41-4576c683fe78',
+  role: 'assistant',
+  content: 'The moon is called "Mewn," which is the cat spelling of "moon."',
+  created_at: '2025-08-10T15:26:24.214744+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '83fc02f9-c0c4-496c-ab04-e81bfc61ea6b',
+  role: 'user',
+  content: 'I think I have some kittens missing from the list?',
+  created_at: '2025-08-10T15:30:05.993526+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '223e4ec9-0faa-4f55-9440-2879ed79995f',
+  role: 'assistant',
+  content: "It seems like you have three kittens mentioned: Scarlett, Clover, and Cheddar. If there are more kittens you want to include, please share their names or any details, and I'll help you integrate them into the story!",
+  created_at: '2025-08-10T15:30:08.162158+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f6fabbde-f502-4f25-a677-6d19dd1aa767',
+  role: 'user',
+  content: 'who are my kittens?',
+  created_at: '2025-08-10T15:34:52.490167+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '460b711f-b560-4b9e-ad43-8bdaaf916254',
+  role: 'assistant',
+  content: 'Your kittens are:\n' +
+    '\n' +
+    '1. **Scarlett**: A playful and adventurous kitten who often gets into mischief, adding a dash of chaos to late-night parenting.\n' +
+    '\n' +
+    '2. **Clover**: A more cautious and curious kitten, who sometimes finds herself caught between wanting to explore and the fear of the unknown.\n' +
+    '\n' +
+    '3. **Cheddar**: The quirky and affectionate one, always looking for cuddles and snacks, often bringing a light-hearted spirit to the mix.\n' +
+    '\n' +
+    'These kittens each have their unique personalities, contributing to the humorous and chaotic atmosphere of your late-night parenting escapades!',
+  created_at: '2025-08-10T15:34:55.441812+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '4544f043-853b-4aa3-8c0f-1b82cc325076',
+  role: 'user',
+  content: 'Who is Luna?',
+  created_at: '2025-08-10T15:38:29.375276+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '067a2a81-c421-4b57-aa0b-8a62ab2fd4e4',
+  role: 'assistant',
+  content: 'Luna is a character who struggles with her fears, particularly in the context of running from Shadow Puppies, which may symbolize her anxieties. She experiences difficulty sleeping, possibly due to the nightmares that haunt her. Her journey involves confronting her fears and finding a way to cope with the challenges she faces, which aligns with the theme of late-night parenting horror-comedy where the characters must navigate both the humorous and scary aspects of parenting and companionship, especially with pets.',
+  created_at: '2025-08-10T15:38:33.986742+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '8c9f1d3b-f1ec-4c33-a1cb-c3da9327dfd2',
+  role: 'user',
+  content: 'who are the kittens?',
+  created_at: '2025-08-10T15:40:01.838013+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '9b883c93-4adc-4115-814f-3c13c9cd1dbe',
+  role: 'assistant',
+  content: 'The kittens in the project are:\n' +
+    '\n' +
+    '- **Clover**: Known as the Tinkle kitten, Clover requires bathroom assistance in a specific room.\n' +
+    '\n' +
+    'Additionally, while not specifically categorized as a kitten, **Scarlett** is another character who experiences dramatic situations, as she is trapped under the floor. \n' +
+    '\n' +
+    'If you need more details about any of these characters, feel free to ask!',
+  created_at: '2025-08-10T15:40:04.255552+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '3b5664bb-8247-4f14-b91d-369a7a321c31',
+  role: 'user',
+  content: 'who are the kittens?',
+  created_at: '2025-08-10T15:46:03.916806+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '14c0d13c-abb9-40c0-849f-c6d29e60d0cd',
+  role: 'assistant',
+  content: 'The kittens in the story are:\n' +
+    '\n' +
+    '1. **Clover**: Known as the Tinkle kitten, Clover requires bathroom assistance in a specific room. \n' +
+    '\n' +
+    '2. **Scarlett**: Although not a typical kitten, she is trapped under the floor and experiences dramatic, high-stakes mews, adding a sense of urgency to the situation.\n' +
+    '\n' +
+    'These characters bring a playful yet intense dynamic to the narrative, especially in the context of their surroundings and challenges.',
+  created_at: '2025-08-10T15:46:06.199369+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1f8f03c2-71dc-47af-a2bc-1e0564acc4fa',
+  role: 'user',
+  content: 'I updated the kitten list, can you give me just their names?',
+  created_at: '2025-08-10T15:47:41.948936+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '638b38c1-99ed-4cef-818d-ad7e96db6dcb',
+  role: 'assistant',
+  content: 'Sure! Here are the names of the kittens:\n' +
+    '\n' +
+    '1. Scarlett\n' +
+    '2. Clover\n' +
+    '3. Cheddar\n' +
+    '4. Luna',
+  created_at: '2025-08-10T15:47:42.74581+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'c7f7f32d-39c7-4d8c-a24c-fee2c1afe1be',
+  role: 'user',
+  content: 'Who are the kittens?',
+  created_at: '2025-08-10T16:17:16.005443+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '47de9e2e-9d1c-461f-a741-4ec8a5fd007b',
+  role: 'assistant',
+  content: 'The kittens are:\n' +
+    '\n' +
+    '1. **Clover** - Green colored and needs bladder relief in the Bafroom. They are a non-binary kitten who requires guidance to the bathroom.\n' +
+    '\n' +
+    '2. **Cheddar** - An older and larger kitten who wakes up hungry and disoriented. They need to be guided to the Dining Room for a snack.\n' +
+    '\n' +
+    '3. **Scarlett** - The oldest kitten who starts trapped under the floor and is bleeding. She needs parental and medical attention, so she must be guided to the Clawset for bandaging.\n' +
+    '\n' +
+    '4. **Nitro** - A violet colored kitten who was rescued from being trapped in the wiring in the laundry room wall. He has trouble slowing down and often gets the zoomies, so he needs to be guided to the Family/Game Room.\n' +
+    '\n' +
+    "5. **Aurora** - A cyan colored kitten and everyone's best friend. She lost her best plushie friend to Nipsy and can't sleep without one, so she needs guidance to find a new plushie friend in the Laundry room.\n" +
+    '\n' +
+    '6. **Luna** - The yellow colored kitten who starts running from Shadow Puppies, fighting with her own fears. She needs guidance to the Office for a highlighter dart showdown and courage. \n' +
+    '\n' +
+    'Each kitten has their own unique needs and situations!',
+  created_at: '2025-08-10T16:17:21.554299+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'c19addd1-a5c1-4e08-9bba-e86d055d4ae4',
+  role: 'user',
+  content: 'please list kitten names',
+  created_at: '2025-08-10T16:19:26.24023+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5893a901-e75b-4d8e-9a37-dae7657f513e',
+  role: 'assistant',
+  content: 'Here are some adorable kitten names you might like:\n' +
+    '\n' +
+    '1. Clover (Green colored non-binary kitten)\n' +
+    '2. Cheddar (Orange colored)\n' +
+    '3. Scarlett (Red colored, the oldest)\n' +
+    '4. Nitro (Violet colored)\n' +
+    "5. Aurora (Cyan colored, everyone's BFF)\n" +
+    '6. Luna (Yellow colored)\n' +
+    '7. Ripley (Blue colored)\n' +
+    '\n' +
+    "If you're looking for something specific or need more suggestions, let me know!",
+  created_at: '2025-08-10T16:19:28.492405+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '9e6dd300-7232-4c3a-91ef-95858debca15',
+  role: 'user',
+  content: "kitten's names?",
+  created_at: '2025-08-10T16:43:54.081701+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '42ccbca5-5eaa-4992-aad6-5893e72b50f2',
+  role: 'assistant',
+  content: 'Here are the names of the kittens:\n' +
+    '\n' +
+    '1. **Clover** - Green colored, needs bladder relief in the Bafroom.\n' +
+    '2. **Cheddar** - Orange colored, older and wakes up hungry.\n' +
+    '3. **Scarlett** - Red colored, the oldest, starts trapped under the floor.\n' +
+    '4. **Nitro** - Violet colored, rescued from being trapped in the wiring, always zooming around.\n' +
+    "5. **Aurora** - Cyan colored, everyone's BFF, needing a new plushie friend after hers gets shredded.\n" +
+    '6. **Luna** - Yellow colored, runs from Shadow Puppies and fights her fears. \n' +
+    '7. **Ripley** - Blue colored, rescued from the Bafroom desert, thirsty and parched.\n' +
+    '\n' +
+    'Let me know if you need anything else about them!',
+  created_at: '2025-08-10T16:43:58.068436+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5dba7798-c221-4de7-a899-3322389bf32f',
+  role: 'user',
+  content: 'what locations do we have?',
+  created_at: '2025-08-10T16:45:33.781624+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '031a0851-59e0-476c-988f-38774d4f721d',
+  role: 'assistant',
+  content: 'We have several key locations:\n' +
+    '\n' +
+    '1. **Bafroom** - This is where Clover needs bladder relief, and where Ripley was found thirsty and parched.\n' +
+    '2. **Dining Room** - This is where Cheddar can be guided for a snack when he wakes up hungry and disoriented.\n' +
+    '3. **Clawset** - This is where Scarlett needs to be guided for parental and medical attention due to her bleeding condition.\n' +
+    '4. **Family/Game Room** - Nitro, who tends to have zoomies, can be guided here to calm down.\n' +
+    '5. **Laundry Room** - Aurora can be guided here to find a new plushie friend after hers was shredded by Nipsy.\n' +
+    '6. **Office** - Luna can be led here for a showdown with her fears against the Shadow Puppies using highlighter darts.\n' +
+    '7. **Mewn** - The Moon, known as "Mewn" in cat spelling, which is the ancient landing site for the alien race known as cats.\n' +
+    '\n' +
+    'Let me know if you need any more information!',
+  created_at: '2025-08-10T16:45:38.760406+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '57770bbc-3121-424b-9343-efff43d81734',
+  role: 'user',
+  content: 'Should we rename any locations to be clearer for players?',
+  created_at: '2025-08-10T18:35:25.641059+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6c8004c7-b57d-4a3b-a439-25f7a35adacf',
+  role: 'assistant',
+  content: 'Yes, renaming locations can enhance clarity for players. Here are some suggestions:\n' +
+    '\n' +
+    `1. **Bafroom**: Consider renaming it to "Kitten Bathroom" to make it clear that it's a specific place for bladder relief.\n` +
+    '  \n' +
+    '2. **Dining Room**: This name is already clear, but you might consider making it "Snack Haven" to emphasize its purpose as a place for food.\n' +
+    '\n' +
+    '3. **Clawset**: Renaming it to "First Aid Clawset" could highlight its function for bandaging and medical attention.\n' +
+    '\n' +
+    '4. **Family/Game Room**: This could be simplified to "Game Room" to make it more concise and focused on fun.\n' +
+    '\n' +
+    `5. **Laundry Room**: Perhaps rename it to "Plushie Paradise" to emphasize its connection to Aurora's plushie friend.\n` +
+    '\n' +
+    'By implementing these clearer names, players can navigate the game more intuitively. Would you like to discuss more about these suggestions?',
+  created_at: '2025-08-10T18:35:29.037017+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '53c8f272-c4f2-4c7c-9111-c8667d50bdcf',
+  role: 'user',
+  content: 'what are better location names than we have?',
+  created_at: '2025-08-10T23:22:30.397904+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '43efe088-eb9f-4131-8ec9-abdcd18ea81d',
+  role: 'assistant',
+  content: 'Here are some improved location name suggestions that could enhance clarity and engagement for players:\n' +
+    '\n' +
+    '1. **Bafroom**: Rename to **"Kitty Relief Station"** to clearly indicate its purpose for bathroom needs.\n' +
+    '\n' +
+    '2. **Dining Room**: Change to **"Snack Central"** to emphasize the focus on food and snacks for characters like Cheddar.\n' +
+    '\n' +
+    '3. **Clawset**: Consider changing to **"Medical Clawset"** to highlight its function for bandaging and medical care for Scarlett.\n' +
+    '\n' +
+    '4. **Family/Game Room**: Rename to **"Playtime Arena"** to suggest a fun space for Nitro to enjoy his zoomies.\n' +
+    '\n' +
+    '5. **Laundry Room**: Change to **"Plushie Retrieval Room"** to indicate that this is where Aurora can find a new plushie friend.\n' +
+    '\n' +
+    `6. **Office**: Rename to **"Courage Corner"** to reflect Luna's battle with her fears and the showdown with the Shadow Puppies.\n` +
+    '\n' +
+    "These names can provide clearer hints about the locations' purposes, making the game more enjoyable for players. What do you think?",
+  created_at: '2025-08-10T23:22:35.475131+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '77b3c745-8e3b-4e3d-8efb-66d98ed84101',
+  role: 'user',
+  content: 'what would you name locations?',
+  created_at: '2025-08-11T00:32:20.406479+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '8bbbb214-d976-46e6-a3b5-038892872b98',
+  role: 'assistant',
+  content: 'Here are some creative and engaging names for the locations that align with the characters and their needs:\n' +
+    '\n' +
+    `1. **Bafroom**: **"Kitten Relief Nook"** - A cozy spot specifically for Clover's bathroom needs.\n` +
+    '\n' +
+    '2. **Dining Room**: **"Snack Sanctuary"** - A welcoming place where Cheddar can find delicious snacks.\n' +
+    '\n' +
+    '3. **Clawset**: **"Healing Clawset"** - A dedicated area for Scarlett to receive medical attention and bandaging.\n' +
+    '\n' +
+    '4. **Family/Game Room**: **"Zoomie Zone"** - An energetic space where Nitro can unleash his zoomies and have fun.\n' +
+    '\n' +
+    '5. **Laundry Room**: **"Plushie Haven"** - A comforting spot where Aurora can find her new plushie friend.\n' +
+    '\n' +
+    '6. **Office**: **"Courage Chamber"** - The place where Luna confronts her fears and battles the Shadow Puppies.\n' +
+    '\n' +
+    `7. **Mewn**: **"Catstronaut Landing"** - A playful nod to the moon's history as the ancient landing site of the alien race known as cats.\n` +
+    '\n' +
+    "These names add character and enhance the game's theme, making navigation and gameplay more enjoyable for players! What do you think of these suggestions?",
+  created_at: '2025-08-11T00:32:26.195055+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'eae94a58-6630-4423-b761-cb37e14dc7ed',
+  role: 'user',
+  content: 'test',
+  created_at: '2025-08-12T03:10:23.453656+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'dad0a04b-f787-4f93-a719-35a46bc5f543',
+  role: 'user',
+  content: 'texst',
+  created_at: '2025-08-12T03:13:38.676333+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '190eda4b-43eb-46af-9583-9acd38520936',
+  role: 'user',
+  content: 'testing',
+  created_at: '2025-08-12T03:16:12.732607+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '534b4b1b-973f-4e55-8f88-3c9f673f32ef',
+  role: 'assistant',
+  content: "This is a test.  I understand you're testing the input.  Is there anything specific you'd like me to do or respond to regarding your test inputs?\n",
+  created_at: '2025-08-12T03:16:13.881626+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'micro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '16352e08-eec5-4d87-8ac6-6eb7da26635c',
+  role: 'user',
+  content: 'what are you best at?',
+  created_at: '2025-08-12T03:28:48.520277+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f20f88a8-3f43-4667-a5aa-bd88d39b6a53',
+  role: 'assistant',
+  content: "I'm best at a wide variety of tasks, but my strengths lie in these areas:\n" +
+    '\n' +
+    '* **Providing information and answering questions:** I can access and process information from a massive dataset and provide concise and informative answers on a wide range of topics.  I can explain complex subjects in simple terms.\n' +
+    '\n' +
+    '* **Generating different creative text formats:** I can write stories, poems, articles, summaries, scripts, musical pieces, email, letters, etc., in many different styles.\n' +
+    '\n' +
+    '* **Translating languages:** I can translate text between many languages.\n' +
+    '\n' +
+    "* **Following your instructions and completing requests:** I'm designed to follow instructions precisely and complete various tasks as requested.  This includes tasks such as summarizing text, answering questions in an informative way, creating different kinds of creative content, and translating languages.  I can even adapt my responses to specific tones or styles.\n" +
+    '\n' +
+    '* **Learning and improving:**  My knowledge is constantly being updated, making me better at understanding and responding to your requests over time.\n' +
+    '\n' +
+    '\n' +
+    "While I can perform many tasks, I don't have personal opinions or experiences.  My abilities are based on the data I've been trained on.\n",
+  created_at: '2025-08-12T03:28:51.032524+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'micro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'b29c8387-6550-4035-b289-53cce22bcbaa',
+  role: 'user',
+  content: 'testing',
+  created_at: '2025-08-15T05:09:40.572465+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f9ae48b4-7aa7-4e86-a1b1-4d97281a98f8',
+  role: 'assistant',
+  content: "This is a test response. If you have any specific questions or tasks you'd like me to address, feel free to let me know!",
+  created_at: '2025-08-15T05:09:42.096462+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '57094b0f-6e88-4ec2-9150-480ef6afa2d2',
+  role: 'user',
+  content: 'what are you best at?',
+  created_at: '2025-08-15T05:09:57.296822+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'd3da8028-432e-42be-bd37-98693520c1fd',
+  role: 'assistant',
+  content: "I'm best at providing information, answering questions, and guiding characters based on their specific needs. For instance, I can help with:\n" +
+    '\n' +
+    '- **Guiding characters:** For example, I can lead Scarlett to the Clawset for medical attention, Clover to the Bafroom for bladder relief, Cheddar to the Dining Room for a snack, Nitro to the Family/Game Room, Ripley to the Kitchen for drinks, Luna to the Office for a highlighter dart showdown, and Aurora to the Laundry Room for a new plushie friend.\n' +
+    '\n' +
+    "- **Providing details about characters and locations:** I can share information about each character's situation and needs, such as Scarlett being trapped and needing bandaging or the Shadow Puppies that Luna is afraid of.\n" +
+    '\n' +
+    "If there's something specific you'd like assistance with, just let me know!",
+  created_at: '2025-08-15T05:10:01.903465+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '31a15995-a02c-47e3-9dac-2e114edc930c',
+  role: 'user',
+  content: 'how are you today',
+  created_at: '2025-08-15T05:13:53.639234+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'fb7ed078-105e-457f-a132-9e3760c17ad9',
+  role: 'assistant',
+  content: "I'm here and ready to assist you! How can I help today? If you have any characters like Scarlett needing medical attention, Clover looking for the Bafroom, or any other specific needs, just let me know!",
+  created_at: '2025-08-15T05:13:55.136807+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '983ac619-892d-4de3-822c-8ea7422900ab',
+  role: 'user',
+  content: "What would you name my game. So far I've been using BEDNOMANCER, but considered Lullamancer. Anything better you think I should call it?",
+  created_at: '2025-08-18T02:22:11.237712+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'ec9e29ff-419e-481e-abfd-5a38da55e0c6',
+  role: 'assistant',
+  content: 'Both "Bednomancer" and "Lullamancer" have a mystical feel, but might not fully capture the core gameplay of helping kittens back to sleep. Here are some alternative titles to consider, keeping in mind the characters and story:\n' +
+    '\n' +
+    '**Emphasizing the Cat/Kitten Aspect:**\n' +
+    '\n' +
+    '* **Kitten Dreams:** Simple, sweet, and directly related to sleep.\n' +
+    '* **Whisker Watch:** Hints at nighttime vigilance and care.\n' +
+    '* **The Purrfect Night:**  Playful and emphasizes a peaceful outcome.\n' +
+    '* **Nine Lives, No Sleep:**  Highlights the challenges Dad faces.\n' +
+    "* **Midnight Mewsic:**  Appealing if there's a musical element to the game.\n" +
+    '\n' +
+    '**Emphasizing the Paternal/Caretaking Aspect:**\n' +
+    '\n' +
+    "* **Dad's Duty:** Straightforward and relatable.\n" +
+    '* **3 AM Savior:**  Captures the late-night parenting struggle.\n' +
+    '* **Hush Little Kittens:**  A classic lullaby with a twist.\n' +
+    '\n' +
+    '**Emphasizing the Mystery/Shadow Puppy Aspect:**\n' +
+    '\n' +
+    '* **Shadow Chasers:** Action-oriented and hints at the conflict.\n' +
+    "* **Fear Busters:**  Focuses on overcoming the kittens' fears.\n" +
+    '* **The Whispering Dark:** More mysterious and ominous.\n' +
+    '\n' +
+    '**More Creative/Unique Options:**\n' +
+    '\n' +
+    '* **Straylight Slumber:** Connects to the Straylight Station setting.\n' +
+    '* **The Glitch in the Night:**  Highlights the AI element.\n' +
+    "* **Zoomies at Dawn:**  Emphasizes Nitro's hyperactivity and the time frame.\n" +
+    '\n' +
+    "Consider which title best reflects the overall tone and gameplay you're aiming for.  You might also want to test these titles out on your target audience to see which ones resonate the most.\n",
+  created_at: '2025-08-18T02:22:18.882609+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'bd63effc-65a5-4564-a490-65ebf05b4a8c',
+  role: 'user',
+  content: 'What makes sense to players who would find the game on steam and think "oh, that looks interesting?"',
+  created_at: '2025-08-18T02:24:12.699068+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5caa1e47-3833-4742-ad64-32590f875f40',
+  role: 'assistant',
+  content: `To grab the attention of Steam players, a title needs to be catchy, informative, and hint at the game's genre and appeal.  Here's a breakdown of what might work, considering the "Dad Cat helping kittens" core gameplay:\n` +
+    '\n' +
+    '**Catchy & Intriguing:**\n' +
+    '\n' +
+    '* **Whisker Watch:**  Mysterious, hints at vigilance.\n' +
+    '* **Midnight Mewsic:** Playful, suggests a unique experience.\n' +
+    '* **Zoomies at Dawn:**  Energetic, hints at chaotic fun.\n' +
+    '* **The Glitch in the Night:** Suggests a mystery/sci-fi element.\n' +
+    '\n' +
+    '\n' +
+    '**Informative (but not too literal):**\n' +
+    '\n' +
+    '* **Kitten Dreams:** Clearly about kittens, likely involving sleep/dreams.\n' +
+    '* **Shadow Chasers:** Hints at action/adventure, possibly involving threats.\n' +
+    '\n' +
+    '\n' +
+    '**Genre-Appropriate:**\n' +
+    '\n' +
+    `Titles like "Dad's Duty" or "3 AM Savior," while relatable, might sound too mundane for a Steam audience.  Something with a bit more flair is generally preferred.\n` +
+    '\n' +
+    '\n' +
+    '**Consider also:**\n' +
+    '\n' +
+    '* **Searchability:**  Will players easily find the game if they search for keywords related to cats, kittens, puzzles, or whatever genre your game falls into?\n' +
+    '* **Uniqueness:** Does the title stand out from other games on Steam?\n' +
+    '* **Target Audience:**  What kind of players are you trying to attract?\n' +
+    '\n' +
+    '\n' +
+    'To further refine your choice, you could test different titles with potential players on relevant Steam communities or social media.  See which ones generate the most interest and discussion.  Remember to check if the name is already in use on Steam!\n',
+  created_at: '2025-08-18T02:24:19.774871+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '557f4017-49ee-4fad-ad19-fc8a46e0f86c',
+  role: 'user',
+  content: "I like BEDNOMANCER more because it isn't taken, is very memorable, and is distinctive enough to stick in your mind? Or am I mistaken about that?",
+  created_at: '2025-08-18T02:25:39.852477+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6d651439-f935-4382-bf93-f2982a84ba21',
+  role: 'assistant',
+  content: '"BEDNOMANCER" is definitely memorable and distinctive.  It has a mystical, slightly quirky feel that could attract a certain audience. However, it might also be *too* unusual and not clearly convey the core gameplay of caring for kittens.  Players browsing Steam might not immediately understand what the game is about from the title alone.\n' +
+    '\n' +
+    "Here's a breakdown of the pros and cons:\n" +
+    '\n' +
+    '**Pros:**\n' +
+    '\n' +
+    "* **Memorable:**  It's unlikely people will forget the name.\n" +
+    '* **Distinctive:** It stands out from other game titles.\n' +
+    '* **Intriguing:** It sparks curiosity and makes people wonder what the game is about.\n' +
+    '* **Available:**  Not being taken is a significant advantage.\n' +
+    '\n' +
+    '\n' +
+    '**Cons:**\n' +
+    '\n' +
+    `* **Obscure:** The meaning isn't immediately clear.  Players might not connect "bed" and "mancer" to kittens and sleep.\n` +
+    '* **Genre Confusion:** It could be mistaken for a fantasy RPG, strategy game, or something entirely different.\n' +
+    '* **Limited Appeal:** While intriguing, it might also alienate some players who prefer more straightforward titles.\n' +
+    '\n' +
+    '\n' +
+    '**To mitigate the cons:**\n' +
+    '\n' +
+    "* **Strong Visuals:**  Eye-catching graphics and screenshots on your Steam page can quickly convey the game's actual content, even if the title is abstract.\n" +
+    `* **Clear Tagline:** A concise tagline explaining the gameplay (e.g., "A dad cat's 3 AM quest to soothe his kittens") can clarify what "BEDNOMANCER" is all about.\n` +
+    '* **Targeted Marketing:** Focus on reaching players who appreciate quirky, unusual games and are likely to be drawn to a title like "BEDNOMANCER."\n' +
+    '\n' +
+    '\n' +
+    `Ultimately, whether or not "BEDNOMANCER" is the right choice depends on your target audience and marketing strategy.  If you're confident you can effectively communicate the game's core gameplay despite the abstract title, it could be a successful choice.\n`,
+  created_at: '2025-08-18T02:25:48.387882+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '3120a062-8bf1-424d-8044-f358263e3365',
+  role: 'user',
+  content: 'The line that I think helps sell it is "Necromancers raise the dead. The Bednomancer puts the UNBED back to sleep"',
+  created_at: '2025-08-18T02:27:28.202804+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '2dee512f-b62b-4d17-a45f-b97319a408e9',
+  role: 'assistant',
+  content: 'That tagline definitely adds a layer of humor and helps explain the core gameplay loop.  It connects the unusual title "BEDNOMANCER" to the act of getting the kittens back to sleep.  The play on words with "unbed" is clever and memorable.\n' +
+    '\n' +
+    "Here's why it works:\n" +
+    '\n' +
+    '* **Clarifies the Gameplay:** It directly explains what the player does in the game.\n' +
+    '* **Adds Humor:** The wordplay makes it engaging and lighthearted.\n' +
+    '* **Creates Intrigue:**  It still retains a bit of the mystery and quirkiness of the title.\n' +
+    '* **Reinforces the Title:** It helps players understand and remember the connection between "BEDNOMANCER" and putting the kittens to sleep.\n' +
+    '\n' +
+    '\n' +
+    `Using this tagline alongside strong visuals and a clear description of the game on your Steam page would significantly improve players' understanding of what "BEDNOMANCER" is all about.  It could be a winning combination!\n`,
+  created_at: '2025-08-18T02:27:32.718288+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1dc788c2-7826-4e94-a0d4-94d5abdf7852',
+  role: 'user',
+  content: 'Hi how are you, testing...',
+  created_at: '2025-08-18T18:08:36.500964+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6fed906e-0fec-48c5-bb5a-ccf8e8289a9c',
+  role: 'assistant',
+  content: `I'm here and ready to assist you with your project! If you have any questions about "BEDNOMANCER" or need guidance on any aspect of the game or its characters, feel free to let me know. How can I help you today?`,
+  created_at: '2025-08-18T18:08:39.730415+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt4',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '7f90d3a9-f0a2-4748-947d-8a33eecc0aa6',
+  role: 'user',
+  content: '2 + 2',
+  created_at: '2025-08-18T21:22:08.127569+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'de6b495f-448e-45eb-965e-433180f9af3d',
+  role: 'assistant',
+  content: '2 + 2 equals 4! If you have any other questions or need help with something related to "BEDNOMANCER," feel free to ask!',
+  created_at: '2025-08-18T21:22:09.62651+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: '7d4e31d4-89bf-4d6c-9543-fc5a42e08a62',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '7cf9bbd1-7923-4689-90ee-14a3a464e917',
+  role: 'user',
+  content: 'how are you today, testing sessions search bagel pretzel',
+  created_at: '2025-08-19T04:27:09.059992+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Message mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  oldBranchId: 'main',
+  newSessionId: '7e5b1294-93e1-46e9-a24a-f3ff501b784d',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'a9410838-77b2-4df8-bb2f-30a7415a4e79',
+  role: 'assistant',
+  content: `I'm here and ready to assist you! It seems like you’re testing responses. If you're looking for help with "BEDNOMANCER" or anything else related to your project, just let me know how I can assist! If "bagel pretzel" refers to something specific, please clarify, and I’d be happy to help with that too!`,
+  created_at: '2025-08-19T04:27:10.838942+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Message mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  oldBranchId: 'main',
+  newSessionId: '7e5b1294-93e1-46e9-a24a-f3ff501b784d',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Messages summary: { totalMessages: 58, toImport: 0, skipped: 58 }
+Questions data check: {
+  hasQuestions: true,
+  questionCount: 3,
+  firstQuestion: {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  }
+}
+Processing questions: [
+  {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  {
+    id: 'ccf1f40a-1172-42b8-8aca-d2e33167ced8',
+    question: 'something else I need to ask about but I have to wait bc things are slow my god',
+    sort_order: 1,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  {
+    id: '251b3a9b-9306-4fc0-9b47-26cdda9a2d27',
+    question: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    sort_order: 2,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  }
+]
+Question filter check: {
+  question: {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: false
+}
+Question filter check: {
+  question: {
+    id: 'ccf1f40a-1172-42b8-8aca-d2e33167ced8',
+    question: 'something else I need to ask about but I have to wait bc things are slow my god',
+    sort_order: 1,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: false
+}
+Question filter check: {
+  question: {
+    id: '251b3a9b-9306-4fc0-9b47-26cdda9a2d27',
+    question: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    sort_order: 2,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: false
+}
+Questions to import: []
+🧹 Search results cleared: {
+  timestamp: '2025-08-22T02:21:46.950Z',
+  reason: 'Search term too short',
+  searchTerm: '',
+  dropdownDisabled: false
+}
+🎯 Server-side data.projects: [
+  {
+    id: '406a8059-e462-431c-9935-457ef1e0425c',
+    name: 'My New Project',
+    source: 'server'
+  },
+  {
+    id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    name: 'BEDNOMANCER',
+    source: 'server'
+  }
+]
+📊 Context score refreshed for project 7c43dba7-01e2-42ac-8ae9-6d57ae926c0c: 74/100
+8:23:08 PM [vite] (client) hmr update /src/app.css
+8:23:08 PM [vite] (ssr) page reload src/routes/api/admin/import/project/+server.ts
+8:23:23 PM [vite] (client) hmr update /src/app.css
+8:23:23 PM [vite] (ssr) page reload src/routes/api/admin/import/project/+server.ts
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/12.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:23:36 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:23:36 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:23:36 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:23:36 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+🧹 Search results cleared: {
+  timestamp: '2025-08-22T02:23:38.384Z',
+  reason: 'Search term too short',
+  searchTerm: '',
+  dropdownDisabled: false
+}
+🎯 Server-side data.projects: [
+  {
+    id: '406a8059-e462-431c-9935-457ef1e0425c',
+    name: 'My New Project',
+    source: 'server'
+  },
+  {
+    id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    name: 'BEDNOMANCER',
+    source: 'server'
+  }
+]
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/12.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:24:15 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:24:15 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:24:15 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:24:15 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+Import data summary: {
+  projectName: 'BEDNOMANCER',
+  factsCount: 23,
+  docsCount: 1,
+  sessionsCount: 2,
+  branchesCount: 3,
+  messagesCount: 58,
+  questionsCount: 3
+}
+Sessions data check: {
+  hasSessions: true,
+  sessionCount: 2,
+  firstSession: {
+    id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+    session_name: 'Main Chat',
+    session_date: '2025-08-13',
+    is_active: true,
+    topic_summary: 'Initial conversation session',
+    message_count: 56,
+    created_at: '2025-08-08T17:43:45.027298+00:00',
+    updated_at: '2025-08-19T04:50:37.354+00:00'
+  }
+}
+Processing session: {
+  id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  session_name: 'Main Chat',
+  session_date: '2025-08-13',
+  is_active: true,
+  topic_summary: 'Initial conversation session',
+  message_count: 56,
+  created_at: '2025-08-08T17:43:45.027298+00:00',
+  updated_at: '2025-08-19T04:50:37.354+00:00'
+}
+Session name extraction: {
+  originalSession: {
+    id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+    session_name: 'Main Chat',
+    session_date: '2025-08-13',
+    is_active: true,
+    topic_summary: 'Initial conversation session',
+    message_count: 56,
+    created_at: '2025-08-08T17:43:45.027298+00:00',
+    updated_at: '2025-08-19T04:50:37.354+00:00'
+  },
+  extractedName: 'Main Chat'
+}
+Session data to insert: {
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_name: 'Main Chat',
+  created_at: '2025-08-08T17:43:45.027298+00:00'
+}
+Session imported successfully: { id: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea' }
+Processing session: {
+  id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  session_name: 'New Chat',
+  session_date: '2025-08-13',
+  is_active: false,
+  topic_summary: null,
+  message_count: 2,
+  created_at: '2025-08-13T23:47:46.724814+00:00',
+  updated_at: '2025-08-19T04:31:02.389+00:00'
+}
+Session name extraction: {
+  originalSession: {
+    id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+    session_name: 'New Chat',
+    session_date: '2025-08-13',
+    is_active: false,
+    topic_summary: null,
+    message_count: 2,
+    created_at: '2025-08-13T23:47:46.724814+00:00',
+    updated_at: '2025-08-19T04:31:02.389+00:00'
+  },
+  extractedName: 'New Chat'
+}
+Session data to insert: {
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_name: 'New Chat',
+  created_at: '2025-08-13T23:47:46.724814+00:00'
+}
+Session imported successfully: { id: '2b38c22e-357b-4859-a917-b3f461a773fa' }
+Branches data check: {
+  hasBranches: true,
+  branchCount: 3,
+  firstBranch: {
+    id: '56c0d7ff-ce3b-45a7-ae90-9bcaa6abd2b9',
+    branch_id: 'main',
+    branch_name: 'Main Branch',
+    parent_message_id: null,
+    color_index: 0,
+    created_at: '2025-08-10T18:32:50.70512+00:00',
+    session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+  },
+  sessionIdMapSize: 2
+}
+Processing branch: {
+  id: '56c0d7ff-ce3b-45a7-ae90-9bcaa6abd2b9',
+  branch_id: 'main',
+  branch_name: 'Main Branch',
+  parent_message_id: null,
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Branch session mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea'
+}
+Branch data to insert: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00'
+}
+Branch import error: {
+  code: '23505',
+  details: 'Key (session_id, branch_id)=(277d79b5-c27d-449a-a95c-df40c8e571ce, main) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "conversation_branches_session_branch_unique"'
+}
+Failed branch data: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-10T18:32:50.70512+00:00'
+}
+Processing branch: {
+  id: '784c1f20-d40e-4d43-93b1-3a14d57e9eb9',
+  branch_id: 'branch_1754850898916_npof4f228',
+  branch_name: 'Location Name Options',
+  parent_message_id: '031a0851-59e0-476c-988f-38774d4f721d',
+  color_index: 1,
+  created_at: '2025-08-10T18:34:59.197506+00:00',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Branch session mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea'
+}
+Branch data to insert: {
+  branch_id: 'd125ad5d-6328-4441-8b22-daa0dc8d2e90',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  branch_name: 'Location Name Options',
+  color_index: 1,
+  created_at: '2025-08-10T18:34:59.197506+00:00'
+}
+Branch imported successfully: { id: '47e7cd30-27cc-4374-a34d-97aa0ad5441b' }
+Branch mappings created: {
+  byId: '784c1f20-d40e-4d43-93b1-3a14d57e9eb9 -> d125ad5d-6328-4441-8b22-daa0dc8d2e90',
+  byName: 'Location Name Options -> d125ad5d-6328-4441-8b22-daa0dc8d2e90',
+  variations: [ 'location name options', 'LOCATION NAME OPTIONS', 'main' ]
+}
+Processing branch: {
+  id: 'eb578ed7-074e-4566-941f-545b01a08ba2',
+  branch_id: 'main',
+  branch_name: 'Main Branch',
+  parent_message_id: null,
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Branch session mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  newSessionId: '2b38c22e-357b-4859-a917-b3f461a773fa'
+}
+Branch data to insert: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00'
+}
+Branch import error: {
+  code: '23505',
+  details: 'Key (session_id, branch_id)=(a648b36e-1020-4285-9121-4ece2ffa9038, main) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "conversation_branches_session_branch_unique"'
+}
+Failed branch data: {
+  branch_id: 'main',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  branch_name: 'Main Branch',
+  color_index: 0,
+  created_at: '2025-08-13T23:47:46.841945+00:00'
+}
+Messages data check: {
+  hasMessages: true,
+  messageCount: 58,
+  firstMessage: {
+    id: '6f0f74c7-e420-420a-936a-46c2ab783900',
+    role: 'user',
+    content: 'test msg',
+    created_at: '2025-08-10T05:16:08.258406+00:00',
+    branch_id: 'main',
+    parent_message_id: null,
+    branch_name: null,
+    branch_point: false,
+    model_key: null,
+    session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+  },
+  branchIdMapSize: 4
+}
+Processing message: {
+  id: '6f0f74c7-e420-420a-936a-46c2ab783900',
+  role: 'user',
+  content: 'test msg',
+  created_at: '2025-08-10T05:16:08.258406+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1500cd9a-7aa9-4598-8cce-a636a14cee4d',
+  role: 'assistant',
+  content: '🎉 Woohoo! Test messages are a win! 🎉 \n' +
+    '\n' +
+    'What’s next on your mind? 🤔 \n' +
+    '1. Brainstorm ideas for the story? \n' +
+    '2. Dive into character development? \n' +
+    '3. Plan your next steps? \n' +
+    '\n' +
+    'Let’s keep the momentum going! 🚀✨',
+  created_at: '2025-08-10T05:16:10.125173+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1504ad9a-3822-4143-bb20-d59e5d5000a4',
+  role: 'user',
+  content: 'what happened on the moon in the past in my story?',
+  created_at: '2025-08-10T15:24:01.512863+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'cb40799c-9c5b-4cd5-82ae-1df16a2c682c',
+  role: 'assistant',
+  content: 'In the past of your story, the Moon—known as Mewn in cat language—was the ancient landing site for the alien race we call cats. Two factions emerged from their civilization, each with different philosophies shaped by their origins on Mewn.\n' +
+    '\n' +
+    '**The HegeMAOny**, representing the younger faction led by a figure named Trevel, believed in salvation through control. They prioritized upgrading strays and eliminating emotional volatility, aiming to protect their species through technological advancement. Their notable creation, the Biscuit Factory, symbolizes their focus on efficiency and control.\n' +
+    '\n' +
+    'In contrast, **The DistSyst**, the older faction, valued peaceful coexistence with humans. They descended from Mewn’s spiritual and exploratory class, embracing the beauty of imperfection and emotional growth. Drawing inspiration from the ancient meme wisdom of the Cat Distribution System, they believed in trust and natural placement, fostering a harmonious relationship with humanity.\n' +
+    '\n' +
+    'These factions ultimately shaped the narrative of cats on Earth. The HegeMAOny’s reliance on technology and control contrasts with the DistSyst’s philosophy of emotional bonds and relationships. This historical divide is reflected in the behaviors of your kittens—Scarlett, Clover, and Cheddar—who may represent the ongoing conflict between emotion and control as they navigate their late-night escapades with their dad. The arrival of the glitchy Midnight Meowligan via power lines adds another layer to this complex relationship, illustrating the consequences of overuse of technology and the potential for robotic behavior among the kittens, impacting their connection with their father.',
+  created_at: '2025-08-10T15:24:07.93419+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '60f76f7f-62b0-4913-a01c-2a30a4eaf385',
+  role: 'user',
+  content: 'what are we calling the moon again?',
+  created_at: '2025-08-10T15:26:23.44+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '36222a95-5821-4991-9f41-4576c683fe78',
+  role: 'assistant',
+  content: 'The moon is called "Mewn," which is the cat spelling of "moon."',
+  created_at: '2025-08-10T15:26:24.214744+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '83fc02f9-c0c4-496c-ab04-e81bfc61ea6b',
+  role: 'user',
+  content: 'I think I have some kittens missing from the list?',
+  created_at: '2025-08-10T15:30:05.993526+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '223e4ec9-0faa-4f55-9440-2879ed79995f',
+  role: 'assistant',
+  content: "It seems like you have three kittens mentioned: Scarlett, Clover, and Cheddar. If there are more kittens you want to include, please share their names or any details, and I'll help you integrate them into the story!",
+  created_at: '2025-08-10T15:30:08.162158+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f6fabbde-f502-4f25-a677-6d19dd1aa767',
+  role: 'user',
+  content: 'who are my kittens?',
+  created_at: '2025-08-10T15:34:52.490167+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '460b711f-b560-4b9e-ad43-8bdaaf916254',
+  role: 'assistant',
+  content: 'Your kittens are:\n' +
+    '\n' +
+    '1. **Scarlett**: A playful and adventurous kitten who often gets into mischief, adding a dash of chaos to late-night parenting.\n' +
+    '\n' +
+    '2. **Clover**: A more cautious and curious kitten, who sometimes finds herself caught between wanting to explore and the fear of the unknown.\n' +
+    '\n' +
+    '3. **Cheddar**: The quirky and affectionate one, always looking for cuddles and snacks, often bringing a light-hearted spirit to the mix.\n' +
+    '\n' +
+    'These kittens each have their unique personalities, contributing to the humorous and chaotic atmosphere of your late-night parenting escapades!',
+  created_at: '2025-08-10T15:34:55.441812+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '4544f043-853b-4aa3-8c0f-1b82cc325076',
+  role: 'user',
+  content: 'Who is Luna?',
+  created_at: '2025-08-10T15:38:29.375276+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '067a2a81-c421-4b57-aa0b-8a62ab2fd4e4',
+  role: 'assistant',
+  content: 'Luna is a character who struggles with her fears, particularly in the context of running from Shadow Puppies, which may symbolize her anxieties. She experiences difficulty sleeping, possibly due to the nightmares that haunt her. Her journey involves confronting her fears and finding a way to cope with the challenges she faces, which aligns with the theme of late-night parenting horror-comedy where the characters must navigate both the humorous and scary aspects of parenting and companionship, especially with pets.',
+  created_at: '2025-08-10T15:38:33.986742+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '8c9f1d3b-f1ec-4c33-a1cb-c3da9327dfd2',
+  role: 'user',
+  content: 'who are the kittens?',
+  created_at: '2025-08-10T15:40:01.838013+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '9b883c93-4adc-4115-814f-3c13c9cd1dbe',
+  role: 'assistant',
+  content: 'The kittens in the project are:\n' +
+    '\n' +
+    '- **Clover**: Known as the Tinkle kitten, Clover requires bathroom assistance in a specific room.\n' +
+    '\n' +
+    'Additionally, while not specifically categorized as a kitten, **Scarlett** is another character who experiences dramatic situations, as she is trapped under the floor. \n' +
+    '\n' +
+    'If you need more details about any of these characters, feel free to ask!',
+  created_at: '2025-08-10T15:40:04.255552+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '3b5664bb-8247-4f14-b91d-369a7a321c31',
+  role: 'user',
+  content: 'who are the kittens?',
+  created_at: '2025-08-10T15:46:03.916806+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '14c0d13c-abb9-40c0-849f-c6d29e60d0cd',
+  role: 'assistant',
+  content: 'The kittens in the story are:\n' +
+    '\n' +
+    '1. **Clover**: Known as the Tinkle kitten, Clover requires bathroom assistance in a specific room. \n' +
+    '\n' +
+    '2. **Scarlett**: Although not a typical kitten, she is trapped under the floor and experiences dramatic, high-stakes mews, adding a sense of urgency to the situation.\n' +
+    '\n' +
+    'These characters bring a playful yet intense dynamic to the narrative, especially in the context of their surroundings and challenges.',
+  created_at: '2025-08-10T15:46:06.199369+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1f8f03c2-71dc-47af-a2bc-1e0564acc4fa',
+  role: 'user',
+  content: 'I updated the kitten list, can you give me just their names?',
+  created_at: '2025-08-10T15:47:41.948936+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '638b38c1-99ed-4cef-818d-ad7e96db6dcb',
+  role: 'assistant',
+  content: 'Sure! Here are the names of the kittens:\n' +
+    '\n' +
+    '1. Scarlett\n' +
+    '2. Clover\n' +
+    '3. Cheddar\n' +
+    '4. Luna',
+  created_at: '2025-08-10T15:47:42.74581+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'c7f7f32d-39c7-4d8c-a24c-fee2c1afe1be',
+  role: 'user',
+  content: 'Who are the kittens?',
+  created_at: '2025-08-10T16:17:16.005443+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '47de9e2e-9d1c-461f-a741-4ec8a5fd007b',
+  role: 'assistant',
+  content: 'The kittens are:\n' +
+    '\n' +
+    '1. **Clover** - Green colored and needs bladder relief in the Bafroom. They are a non-binary kitten who requires guidance to the bathroom.\n' +
+    '\n' +
+    '2. **Cheddar** - An older and larger kitten who wakes up hungry and disoriented. They need to be guided to the Dining Room for a snack.\n' +
+    '\n' +
+    '3. **Scarlett** - The oldest kitten who starts trapped under the floor and is bleeding. She needs parental and medical attention, so she must be guided to the Clawset for bandaging.\n' +
+    '\n' +
+    '4. **Nitro** - A violet colored kitten who was rescued from being trapped in the wiring in the laundry room wall. He has trouble slowing down and often gets the zoomies, so he needs to be guided to the Family/Game Room.\n' +
+    '\n' +
+    "5. **Aurora** - A cyan colored kitten and everyone's best friend. She lost her best plushie friend to Nipsy and can't sleep without one, so she needs guidance to find a new plushie friend in the Laundry room.\n" +
+    '\n' +
+    '6. **Luna** - The yellow colored kitten who starts running from Shadow Puppies, fighting with her own fears. She needs guidance to the Office for a highlighter dart showdown and courage. \n' +
+    '\n' +
+    'Each kitten has their own unique needs and situations!',
+  created_at: '2025-08-10T16:17:21.554299+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'c19addd1-a5c1-4e08-9bba-e86d055d4ae4',
+  role: 'user',
+  content: 'please list kitten names',
+  created_at: '2025-08-10T16:19:26.24023+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5893a901-e75b-4d8e-9a37-dae7657f513e',
+  role: 'assistant',
+  content: 'Here are some adorable kitten names you might like:\n' +
+    '\n' +
+    '1. Clover (Green colored non-binary kitten)\n' +
+    '2. Cheddar (Orange colored)\n' +
+    '3. Scarlett (Red colored, the oldest)\n' +
+    '4. Nitro (Violet colored)\n' +
+    "5. Aurora (Cyan colored, everyone's BFF)\n" +
+    '6. Luna (Yellow colored)\n' +
+    '7. Ripley (Blue colored)\n' +
+    '\n' +
+    "If you're looking for something specific or need more suggestions, let me know!",
+  created_at: '2025-08-10T16:19:28.492405+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '9e6dd300-7232-4c3a-91ef-95858debca15',
+  role: 'user',
+  content: "kitten's names?",
+  created_at: '2025-08-10T16:43:54.081701+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '42ccbca5-5eaa-4992-aad6-5893e72b50f2',
+  role: 'assistant',
+  content: 'Here are the names of the kittens:\n' +
+    '\n' +
+    '1. **Clover** - Green colored, needs bladder relief in the Bafroom.\n' +
+    '2. **Cheddar** - Orange colored, older and wakes up hungry.\n' +
+    '3. **Scarlett** - Red colored, the oldest, starts trapped under the floor.\n' +
+    '4. **Nitro** - Violet colored, rescued from being trapped in the wiring, always zooming around.\n' +
+    "5. **Aurora** - Cyan colored, everyone's BFF, needing a new plushie friend after hers gets shredded.\n" +
+    '6. **Luna** - Yellow colored, runs from Shadow Puppies and fights her fears. \n' +
+    '7. **Ripley** - Blue colored, rescued from the Bafroom desert, thirsty and parched.\n' +
+    '\n' +
+    'Let me know if you need anything else about them!',
+  created_at: '2025-08-10T16:43:58.068436+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5dba7798-c221-4de7-a899-3322389bf32f',
+  role: 'user',
+  content: 'what locations do we have?',
+  created_at: '2025-08-10T16:45:33.781624+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '031a0851-59e0-476c-988f-38774d4f721d',
+  role: 'assistant',
+  content: 'We have several key locations:\n' +
+    '\n' +
+    '1. **Bafroom** - This is where Clover needs bladder relief, and where Ripley was found thirsty and parched.\n' +
+    '2. **Dining Room** - This is where Cheddar can be guided for a snack when he wakes up hungry and disoriented.\n' +
+    '3. **Clawset** - This is where Scarlett needs to be guided for parental and medical attention due to her bleeding condition.\n' +
+    '4. **Family/Game Room** - Nitro, who tends to have zoomies, can be guided here to calm down.\n' +
+    '5. **Laundry Room** - Aurora can be guided here to find a new plushie friend after hers was shredded by Nipsy.\n' +
+    '6. **Office** - Luna can be led here for a showdown with her fears against the Shadow Puppies using highlighter darts.\n' +
+    '7. **Mewn** - The Moon, known as "Mewn" in cat spelling, which is the ancient landing site for the alien race known as cats.\n' +
+    '\n' +
+    'Let me know if you need any more information!',
+  created_at: '2025-08-10T16:45:38.760406+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '57770bbc-3121-424b-9343-efff43d81734',
+  role: 'user',
+  content: 'Should we rename any locations to be clearer for players?',
+  created_at: '2025-08-10T18:35:25.641059+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6c8004c7-b57d-4a3b-a439-25f7a35adacf',
+  role: 'assistant',
+  content: 'Yes, renaming locations can enhance clarity for players. Here are some suggestions:\n' +
+    '\n' +
+    `1. **Bafroom**: Consider renaming it to "Kitten Bathroom" to make it clear that it's a specific place for bladder relief.\n` +
+    '  \n' +
+    '2. **Dining Room**: This name is already clear, but you might consider making it "Snack Haven" to emphasize its purpose as a place for food.\n' +
+    '\n' +
+    '3. **Clawset**: Renaming it to "First Aid Clawset" could highlight its function for bandaging and medical attention.\n' +
+    '\n' +
+    '4. **Family/Game Room**: This could be simplified to "Game Room" to make it more concise and focused on fun.\n' +
+    '\n' +
+    `5. **Laundry Room**: Perhaps rename it to "Plushie Paradise" to emphasize its connection to Aurora's plushie friend.\n` +
+    '\n' +
+    'By implementing these clearer names, players can navigate the game more intuitively. Would you like to discuss more about these suggestions?',
+  created_at: '2025-08-10T18:35:29.037017+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '53c8f272-c4f2-4c7c-9111-c8667d50bdcf',
+  role: 'user',
+  content: 'what are better location names than we have?',
+  created_at: '2025-08-10T23:22:30.397904+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '43efe088-eb9f-4131-8ec9-abdcd18ea81d',
+  role: 'assistant',
+  content: 'Here are some improved location name suggestions that could enhance clarity and engagement for players:\n' +
+    '\n' +
+    '1. **Bafroom**: Rename to **"Kitty Relief Station"** to clearly indicate its purpose for bathroom needs.\n' +
+    '\n' +
+    '2. **Dining Room**: Change to **"Snack Central"** to emphasize the focus on food and snacks for characters like Cheddar.\n' +
+    '\n' +
+    '3. **Clawset**: Consider changing to **"Medical Clawset"** to highlight its function for bandaging and medical care for Scarlett.\n' +
+    '\n' +
+    '4. **Family/Game Room**: Rename to **"Playtime Arena"** to suggest a fun space for Nitro to enjoy his zoomies.\n' +
+    '\n' +
+    '5. **Laundry Room**: Change to **"Plushie Retrieval Room"** to indicate that this is where Aurora can find a new plushie friend.\n' +
+    '\n' +
+    `6. **Office**: Rename to **"Courage Corner"** to reflect Luna's battle with her fears and the showdown with the Shadow Puppies.\n` +
+    '\n' +
+    "These names can provide clearer hints about the locations' purposes, making the game more enjoyable for players. What do you think?",
+  created_at: '2025-08-10T23:22:35.475131+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '77b3c745-8e3b-4e3d-8efb-66d98ed84101',
+  role: 'user',
+  content: 'what would you name locations?',
+  created_at: '2025-08-11T00:32:20.406479+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '8bbbb214-d976-46e6-a3b5-038892872b98',
+  role: 'assistant',
+  content: 'Here are some creative and engaging names for the locations that align with the characters and their needs:\n' +
+    '\n' +
+    `1. **Bafroom**: **"Kitten Relief Nook"** - A cozy spot specifically for Clover's bathroom needs.\n` +
+    '\n' +
+    '2. **Dining Room**: **"Snack Sanctuary"** - A welcoming place where Cheddar can find delicious snacks.\n' +
+    '\n' +
+    '3. **Clawset**: **"Healing Clawset"** - A dedicated area for Scarlett to receive medical attention and bandaging.\n' +
+    '\n' +
+    '4. **Family/Game Room**: **"Zoomie Zone"** - An energetic space where Nitro can unleash his zoomies and have fun.\n' +
+    '\n' +
+    '5. **Laundry Room**: **"Plushie Haven"** - A comforting spot where Aurora can find her new plushie friend.\n' +
+    '\n' +
+    '6. **Office**: **"Courage Chamber"** - The place where Luna confronts her fears and battles the Shadow Puppies.\n' +
+    '\n' +
+    `7. **Mewn**: **"Catstronaut Landing"** - A playful nod to the moon's history as the ancient landing site of the alien race known as cats.\n` +
+    '\n' +
+    "These names add character and enhance the game's theme, making navigation and gameplay more enjoyable for players! What do you think of these suggestions?",
+  created_at: '2025-08-11T00:32:26.195055+00:00',
+  branch_id: 'branch_1754850898916_npof4f228',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'branch_1754850898916_npof4f228',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'eae94a58-6630-4423-b761-cb37e14dc7ed',
+  role: 'user',
+  content: 'test',
+  created_at: '2025-08-12T03:10:23.453656+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'dad0a04b-f787-4f93-a719-35a46bc5f543',
+  role: 'user',
+  content: 'texst',
+  created_at: '2025-08-12T03:13:38.676333+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '190eda4b-43eb-46af-9583-9acd38520936',
+  role: 'user',
+  content: 'testing',
+  created_at: '2025-08-12T03:16:12.732607+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '534b4b1b-973f-4e55-8f88-3c9f673f32ef',
+  role: 'assistant',
+  content: "This is a test.  I understand you're testing the input.  Is there anything specific you'd like me to do or respond to regarding your test inputs?\n",
+  created_at: '2025-08-12T03:16:13.881626+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'micro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '16352e08-eec5-4d87-8ac6-6eb7da26635c',
+  role: 'user',
+  content: 'what are you best at?',
+  created_at: '2025-08-12T03:28:48.520277+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f20f88a8-3f43-4667-a5aa-bd88d39b6a53',
+  role: 'assistant',
+  content: "I'm best at a wide variety of tasks, but my strengths lie in these areas:\n" +
+    '\n' +
+    '* **Providing information and answering questions:** I can access and process information from a massive dataset and provide concise and informative answers on a wide range of topics.  I can explain complex subjects in simple terms.\n' +
+    '\n' +
+    '* **Generating different creative text formats:** I can write stories, poems, articles, summaries, scripts, musical pieces, email, letters, etc., in many different styles.\n' +
+    '\n' +
+    '* **Translating languages:** I can translate text between many languages.\n' +
+    '\n' +
+    "* **Following your instructions and completing requests:** I'm designed to follow instructions precisely and complete various tasks as requested.  This includes tasks such as summarizing text, answering questions in an informative way, creating different kinds of creative content, and translating languages.  I can even adapt my responses to specific tones or styles.\n" +
+    '\n' +
+    '* **Learning and improving:**  My knowledge is constantly being updated, making me better at understanding and responding to your requests over time.\n' +
+    '\n' +
+    '\n' +
+    "While I can perform many tasks, I don't have personal opinions or experiences.  My abilities are based on the data I've been trained on.\n",
+  created_at: '2025-08-12T03:28:51.032524+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'micro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'b29c8387-6550-4035-b289-53cce22bcbaa',
+  role: 'user',
+  content: 'testing',
+  created_at: '2025-08-15T05:09:40.572465+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'f9ae48b4-7aa7-4e86-a1b1-4d97281a98f8',
+  role: 'assistant',
+  content: "This is a test response. If you have any specific questions or tasks you'd like me to address, feel free to let me know!",
+  created_at: '2025-08-15T05:09:42.096462+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '57094b0f-6e88-4ec2-9150-480ef6afa2d2',
+  role: 'user',
+  content: 'what are you best at?',
+  created_at: '2025-08-15T05:09:57.296822+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'd3da8028-432e-42be-bd37-98693520c1fd',
+  role: 'assistant',
+  content: "I'm best at providing information, answering questions, and guiding characters based on their specific needs. For instance, I can help with:\n" +
+    '\n' +
+    '- **Guiding characters:** For example, I can lead Scarlett to the Clawset for medical attention, Clover to the Bafroom for bladder relief, Cheddar to the Dining Room for a snack, Nitro to the Family/Game Room, Ripley to the Kitchen for drinks, Luna to the Office for a highlighter dart showdown, and Aurora to the Laundry Room for a new plushie friend.\n' +
+    '\n' +
+    "- **Providing details about characters and locations:** I can share information about each character's situation and needs, such as Scarlett being trapped and needing bandaging or the Shadow Puppies that Luna is afraid of.\n" +
+    '\n' +
+    "If there's something specific you'd like assistance with, just let me know!",
+  created_at: '2025-08-15T05:10:01.903465+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '31a15995-a02c-47e3-9dac-2e114edc930c',
+  role: 'user',
+  content: 'how are you today',
+  created_at: '2025-08-15T05:13:53.639234+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'fb7ed078-105e-457f-a132-9e3760c17ad9',
+  role: 'assistant',
+  content: "I'm here and ready to assist you! How can I help today? If you have any characters like Scarlett needing medical attention, Clover looking for the Bafroom, or any other specific needs, just let me know!",
+  created_at: '2025-08-15T05:13:55.136807+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '983ac619-892d-4de3-822c-8ea7422900ab',
+  role: 'user',
+  content: "What would you name my game. So far I've been using BEDNOMANCER, but considered Lullamancer. Anything better you think I should call it?",
+  created_at: '2025-08-18T02:22:11.237712+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'ec9e29ff-419e-481e-abfd-5a38da55e0c6',
+  role: 'assistant',
+  content: 'Both "Bednomancer" and "Lullamancer" have a mystical feel, but might not fully capture the core gameplay of helping kittens back to sleep. Here are some alternative titles to consider, keeping in mind the characters and story:\n' +
+    '\n' +
+    '**Emphasizing the Cat/Kitten Aspect:**\n' +
+    '\n' +
+    '* **Kitten Dreams:** Simple, sweet, and directly related to sleep.\n' +
+    '* **Whisker Watch:** Hints at nighttime vigilance and care.\n' +
+    '* **The Purrfect Night:**  Playful and emphasizes a peaceful outcome.\n' +
+    '* **Nine Lives, No Sleep:**  Highlights the challenges Dad faces.\n' +
+    "* **Midnight Mewsic:**  Appealing if there's a musical element to the game.\n" +
+    '\n' +
+    '**Emphasizing the Paternal/Caretaking Aspect:**\n' +
+    '\n' +
+    "* **Dad's Duty:** Straightforward and relatable.\n" +
+    '* **3 AM Savior:**  Captures the late-night parenting struggle.\n' +
+    '* **Hush Little Kittens:**  A classic lullaby with a twist.\n' +
+    '\n' +
+    '**Emphasizing the Mystery/Shadow Puppy Aspect:**\n' +
+    '\n' +
+    '* **Shadow Chasers:** Action-oriented and hints at the conflict.\n' +
+    "* **Fear Busters:**  Focuses on overcoming the kittens' fears.\n" +
+    '* **The Whispering Dark:** More mysterious and ominous.\n' +
+    '\n' +
+    '**More Creative/Unique Options:**\n' +
+    '\n' +
+    '* **Straylight Slumber:** Connects to the Straylight Station setting.\n' +
+    '* **The Glitch in the Night:**  Highlights the AI element.\n' +
+    "* **Zoomies at Dawn:**  Emphasizes Nitro's hyperactivity and the time frame.\n" +
+    '\n' +
+    "Consider which title best reflects the overall tone and gameplay you're aiming for.  You might also want to test these titles out on your target audience to see which ones resonate the most.\n",
+  created_at: '2025-08-18T02:22:18.882609+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'bd63effc-65a5-4564-a490-65ebf05b4a8c',
+  role: 'user',
+  content: 'What makes sense to players who would find the game on steam and think "oh, that looks interesting?"',
+  created_at: '2025-08-18T02:24:12.699068+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '5caa1e47-3833-4742-ad64-32590f875f40',
+  role: 'assistant',
+  content: `To grab the attention of Steam players, a title needs to be catchy, informative, and hint at the game's genre and appeal.  Here's a breakdown of what might work, considering the "Dad Cat helping kittens" core gameplay:\n` +
+    '\n' +
+    '**Catchy & Intriguing:**\n' +
+    '\n' +
+    '* **Whisker Watch:**  Mysterious, hints at vigilance.\n' +
+    '* **Midnight Mewsic:** Playful, suggests a unique experience.\n' +
+    '* **Zoomies at Dawn:**  Energetic, hints at chaotic fun.\n' +
+    '* **The Glitch in the Night:** Suggests a mystery/sci-fi element.\n' +
+    '\n' +
+    '\n' +
+    '**Informative (but not too literal):**\n' +
+    '\n' +
+    '* **Kitten Dreams:** Clearly about kittens, likely involving sleep/dreams.\n' +
+    '* **Shadow Chasers:** Hints at action/adventure, possibly involving threats.\n' +
+    '\n' +
+    '\n' +
+    '**Genre-Appropriate:**\n' +
+    '\n' +
+    `Titles like "Dad's Duty" or "3 AM Savior," while relatable, might sound too mundane for a Steam audience.  Something with a bit more flair is generally preferred.\n` +
+    '\n' +
+    '\n' +
+    '**Consider also:**\n' +
+    '\n' +
+    '* **Searchability:**  Will players easily find the game if they search for keywords related to cats, kittens, puzzles, or whatever genre your game falls into?\n' +
+    '* **Uniqueness:** Does the title stand out from other games on Steam?\n' +
+    '* **Target Audience:**  What kind of players are you trying to attract?\n' +
+    '\n' +
+    '\n' +
+    'To further refine your choice, you could test different titles with potential players on relevant Steam communities or social media.  See which ones generate the most interest and discussion.  Remember to check if the name is already in use on Steam!\n',
+  created_at: '2025-08-18T02:24:19.774871+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '557f4017-49ee-4fad-ad19-fc8a46e0f86c',
+  role: 'user',
+  content: "I like BEDNOMANCER more because it isn't taken, is very memorable, and is distinctive enough to stick in your mind? Or am I mistaken about that?",
+  created_at: '2025-08-18T02:25:39.852477+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6d651439-f935-4382-bf93-f2982a84ba21',
+  role: 'assistant',
+  content: '"BEDNOMANCER" is definitely memorable and distinctive.  It has a mystical, slightly quirky feel that could attract a certain audience. However, it might also be *too* unusual and not clearly convey the core gameplay of caring for kittens.  Players browsing Steam might not immediately understand what the game is about from the title alone.\n' +
+    '\n' +
+    "Here's a breakdown of the pros and cons:\n" +
+    '\n' +
+    '**Pros:**\n' +
+    '\n' +
+    "* **Memorable:**  It's unlikely people will forget the name.\n" +
+    '* **Distinctive:** It stands out from other game titles.\n' +
+    '* **Intriguing:** It sparks curiosity and makes people wonder what the game is about.\n' +
+    '* **Available:**  Not being taken is a significant advantage.\n' +
+    '\n' +
+    '\n' +
+    '**Cons:**\n' +
+    '\n' +
+    `* **Obscure:** The meaning isn't immediately clear.  Players might not connect "bed" and "mancer" to kittens and sleep.\n` +
+    '* **Genre Confusion:** It could be mistaken for a fantasy RPG, strategy game, or something entirely different.\n' +
+    '* **Limited Appeal:** While intriguing, it might also alienate some players who prefer more straightforward titles.\n' +
+    '\n' +
+    '\n' +
+    '**To mitigate the cons:**\n' +
+    '\n' +
+    "* **Strong Visuals:**  Eye-catching graphics and screenshots on your Steam page can quickly convey the game's actual content, even if the title is abstract.\n" +
+    `* **Clear Tagline:** A concise tagline explaining the gameplay (e.g., "A dad cat's 3 AM quest to soothe his kittens") can clarify what "BEDNOMANCER" is all about.\n` +
+    '* **Targeted Marketing:** Focus on reaching players who appreciate quirky, unusual games and are likely to be drawn to a title like "BEDNOMANCER."\n' +
+    '\n' +
+    '\n' +
+    `Ultimately, whether or not "BEDNOMANCER" is the right choice depends on your target audience and marketing strategy.  If you're confident you can effectively communicate the game's core gameplay despite the abstract title, it could be a successful choice.\n`,
+  created_at: '2025-08-18T02:25:48.387882+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '3120a062-8bf1-424d-8044-f358263e3365',
+  role: 'user',
+  content: 'The line that I think helps sell it is "Necromancers raise the dead. The Bednomancer puts the UNBED back to sleep"',
+  created_at: '2025-08-18T02:27:28.202804+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '2dee512f-b62b-4d17-a45f-b97319a408e9',
+  role: 'assistant',
+  content: 'That tagline definitely adds a layer of humor and helps explain the core gameplay loop.  It connects the unusual title "BEDNOMANCER" to the act of getting the kittens back to sleep.  The play on words with "unbed" is clever and memorable.\n' +
+    '\n' +
+    "Here's why it works:\n" +
+    '\n' +
+    '* **Clarifies the Gameplay:** It directly explains what the player does in the game.\n' +
+    '* **Adds Humor:** The wordplay makes it engaging and lighthearted.\n' +
+    '* **Creates Intrigue:**  It still retains a bit of the mystery and quirkiness of the title.\n' +
+    '* **Reinforces the Title:** It helps players understand and remember the connection between "BEDNOMANCER" and putting the kittens to sleep.\n' +
+    '\n' +
+    '\n' +
+    `Using this tagline alongside strong visuals and a clear description of the game on your Steam page would significantly improve players' understanding of what "BEDNOMANCER" is all about.  It could be a winning combination!\n`,
+  created_at: '2025-08-18T02:27:32.718288+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gemini-pro',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '1dc788c2-7826-4e94-a0d4-94d5abdf7852',
+  role: 'user',
+  content: 'Hi how are you, testing...',
+  created_at: '2025-08-18T18:08:36.500964+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '6fed906e-0fec-48c5-bb5a-ccf8e8289a9c',
+  role: 'assistant',
+  content: `I'm here and ready to assist you with your project! If you have any questions about "BEDNOMANCER" or need guidance on any aspect of the game or its characters, feel free to let me know. How can I help you today?`,
+  created_at: '2025-08-18T18:08:39.730415+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt4',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '7f90d3a9-f0a2-4748-947d-8a33eecc0aa6',
+  role: 'user',
+  content: '2 + 2',
+  created_at: '2025-08-18T21:22:08.127569+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'de6b495f-448e-45eb-965e-433180f9af3d',
+  role: 'assistant',
+  content: '2 + 2 equals 4! If you have any other questions or need help with something related to "BEDNOMANCER," feel free to ask!',
+  created_at: '2025-08-18T21:22:09.62651+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: '277d79b5-c27d-449a-a95c-df40c8e571ce'
+}
+Message mapping: {
+  oldSessionId: '277d79b5-c27d-449a-a95c-df40c8e571ce',
+  oldBranchId: 'main',
+  newSessionId: 'b6f6b94a-e3f0-4202-a89e-e7378107e6ea',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: '7cf9bbd1-7923-4689-90ee-14a3a464e917',
+  role: 'user',
+  content: 'how are you today, testing sessions search bagel pretzel',
+  created_at: '2025-08-19T04:27:09.059992+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: null,
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Message mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  oldBranchId: 'main',
+  newSessionId: '2b38c22e-357b-4859-a917-b3f461a773fa',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Processing message: {
+  id: 'a9410838-77b2-4df8-bb2f-30a7415a4e79',
+  role: 'assistant',
+  content: `I'm here and ready to assist you! It seems like you’re testing responses. If you're looking for help with "BEDNOMANCER" or anything else related to your project, just let me know how I can assist! If "bagel pretzel" refers to something specific, please clarify, and I’d be happy to help with that too!`,
+  created_at: '2025-08-19T04:27:10.838942+00:00',
+  branch_id: 'main',
+  parent_message_id: null,
+  branch_name: null,
+  branch_point: false,
+  model_key: 'gpt-oss',
+  session_id: 'a648b36e-1020-4285-9121-4ece2ffa9038'
+}
+Message mapping: {
+  oldSessionId: 'a648b36e-1020-4285-9121-4ece2ffa9038',
+  oldBranchId: 'main',
+  newSessionId: '2b38c22e-357b-4859-a917-b3f461a773fa',
+  newBranchId: undefined
+}
+Skipping message - missing session or branch: { hasSession: true, hasBranch: false }
+Messages summary: { totalMessages: 58, toImport: 0, skipped: 58 }
+Questions data check: {
+  hasQuestions: true,
+  questionCount: 3,
+  firstQuestion: {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  }
+}
+Processing questions: [
+  {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  {
+    id: 'ccf1f40a-1172-42b8-8aca-d2e33167ced8',
+    question: 'something else I need to ask about but I have to wait bc things are slow my god',
+    sort_order: 1,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  {
+    id: '251b3a9b-9306-4fc0-9b47-26cdda9a2d27',
+    question: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    sort_order: 2,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  }
+]
+Question filter check: {
+  question: {
+    id: '4f28c9e1-8904-4a07-8260-2da117ee86fd',
+    question: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    sort_order: 0,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: true
+}
+Question filter check: {
+  question: {
+    id: 'ccf1f40a-1172-42b8-8aca-d2e33167ced8',
+    question: 'something else I need to ask about but I have to wait bc things are slow my god',
+    sort_order: 1,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: true
+}
+Question filter check: {
+  question: {
+    id: '251b3a9b-9306-4fc0-9b47-26cdda9a2d27',
+    question: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    sort_order: 2,
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    updated_at: '2025-08-21T19:56:16.866203+00:00'
+  },
+  hasContent: true
+}
+Mapped question: {
+  question_text: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  created_at: '2025-08-21T19:56:16.866203+00:00',
+  tags: []
+}
+Mapped question: {
+  question_text: 'something else I need to ask about but I have to wait bc things are slow my god',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  created_at: '2025-08-21T19:56:16.866203+00:00',
+  tags: []
+}
+Mapped question: {
+  question_text: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+  project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+  created_at: '2025-08-21T19:56:16.866203+00:00',
+  tags: []
+}
+Questions to import: [
+  {
+    question_text: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  },
+  {
+    question_text: 'something else I need to ask about but I have to wait bc things are slow my god',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  },
+  {
+    question_text: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  }
+]
+Questions import error: {
+  code: 'PGRST204',
+  details: null,
+  hint: null,
+  message: "Could not find the 'question_text' column of 'project_questions' in the schema cache"
+}
+Failed questions data: [
+  {
+    question_text: 'Need to get ideas for Mewn scope, buildings, type, what is needed for story-telling',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  },
+  {
+    question_text: 'something else I need to ask about but I have to wait bc things are slow my god',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  },
+  {
+    question_text: 'I wonder if we are headed for a big crash over miniscule cash when the shay brings the sash.',
+    project_id: '7c43dba7-01e2-42ac-8ae9-6d57ae926c0c',
+    created_at: '2025-08-21T19:56:16.866203+00:00',
+    tags: []
+  }
+]
+📊 Context score refreshed for project 7c43dba7-01e2-42ac-8ae9-6d57ae926c0c: 74/100

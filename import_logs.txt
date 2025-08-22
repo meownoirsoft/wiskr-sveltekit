@@ -1,0 +1,14 @@
+
+> wiskr-sveltekit@1.0.0 dev
+> vite dev
+
+
+  VITE v7.1.1  ready in 2913 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+8:29:21 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1789:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+8:29:21 PM [vite-plugin-svelte] src/routes/projects/+page.svelte:1928:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label

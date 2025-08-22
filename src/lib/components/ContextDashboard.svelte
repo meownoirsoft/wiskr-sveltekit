@@ -20,6 +20,9 @@
   async function analyzeContext() {
     if (!projectId) return;
 
+    console.log('🔍 ContextDashboard: Starting analysis for project:', projectId);
+    console.log('📝 User message:', userMessage);
+    
     loading = true;
     error = null;
     
@@ -30,11 +33,21 @@
         body: JSON.stringify({ projectId, userMessage })
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       analysis = await response.json();
+      console.log('✅ Analysis received:', analysis);
+      console.log('📊 Metrics:', analysis?.metrics);
+      console.log('📈 Summary:', analysis?.summary);
+      console.log('🎯 Context Quality Score:', analysis?.summary?.contextQualityScore);
+      console.log('🔎 Estimated Tokens:', analysis?.metrics?.estimatedTokens);
     } catch (err) {
       console.error('Context analysis error:', err);
       error = err.message;
@@ -116,42 +129,42 @@
   {:else if analysis}
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
+      <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Context Quality</p>
-            <p class="text-2xl font-bold {getQualityScoreColor(analysis.summary.contextQualityScore)}">{analysis.summary.contextQualityScore}/100</p>
+            <p class="text-2xl font-bold {getQualityScoreColor(analysis.summary?.contextQualityScore || 0)}">{analysis.summary?.contextQualityScore || 0}/100</p>
           </div>
           <BarChart3 size="24" class="text-blue-600" />
         </div>
       </div>
 
-      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
+      <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Tokens</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics.estimatedTokens.toLocaleString()}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics?.estimatedTokens?.toLocaleString() || '0'}</p>
           </div>
           <Zap size="24" class="text-orange-600" />
         </div>
       </div>
 
-      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
+      <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Pinned Facts</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics.pinnedFactsCoverage}</p>
-            <p class="text-xs text-gray-500">of {analysis.metrics.totalFactsInProject} total</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics?.pinnedFactsCoverage || 0}</p>
+            <p class="text-xs text-gray-500">of {analysis.metrics?.totalFactsInProject || 0} total</p>
           </div>
           <Pin size="24" class="text-red-600" />
         </div>
       </div>
 
-      <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
+      <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4" style="background-color: var(--bg-primary);">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Processing Time</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics.processingTimeMs}ms</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.metrics?.processingTimeMs || 0}ms</p>
           </div>
           <Clock size="24" class="text-green-600" />
         </div>
@@ -159,7 +172,7 @@
     </div>
 
     <!-- Project Info -->
-    <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-6" style="background-color: var(--bg-primary);">
+    <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-6" style="background-color: var(--bg-primary);">
       <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Analysis Context</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
         <div>
@@ -179,7 +192,7 @@
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">LLM Context Breakdown</h3>
       
       {#each analysis.sections as section, index}
-        <div class="bg-white rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden" style="background-color: var(--bg-primary);">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden" style="background-color: var(--bg-primary);">
           <button 
             class="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             on:click={() => toggleSection(index)}
@@ -217,7 +230,7 @@
                   <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Items in this section:</h4>
                   <div class="grid gap-2">
                     {#each section.items as item}
-                      <div class="bg-white rounded border border-gray-200 dark:border-gray-600 p-3" style="background-color: var(--bg-primary);">
+                      <div class="rounded border border-gray-200 dark:border-gray-600 p-3" style="background-color: var(--bg-primary);">
                         {#if item.name}
                           <div class="flex items-center justify-between mb-1">
                             <span class="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>

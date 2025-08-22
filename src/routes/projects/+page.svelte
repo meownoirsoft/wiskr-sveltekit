@@ -6,16 +6,19 @@
   import { supabase } from '$lib/supabase.js';
   import { marked } from 'marked';
   
-  // Import components
-  import Sidebar from '$lib/components/Sidebar.svelte';
-  import IdeasColumn from '$lib/components/IdeasColumn.svelte';
-  import ChatInterface from '$lib/components/ChatInterface.svelte';
-  import FormatModal from '$lib/components/FormatModal.svelte';
-  import BranchModal from '$lib/components/BranchModal.svelte';
-  import NewProjectModal from '$lib/components/NewProjectModal.svelte';
-  import ProjectSettingsModal from '$lib/components/ProjectSettingsModal.svelte';
-  import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
-  import SessionNavigator from '$lib/components/SessionNavigator.svelte';
+// Import components
+import Sidebar from '$lib/components/Sidebar.svelte';
+import IdeasColumn from '$lib/components/IdeasColumn.svelte';
+import ChatInterface from '$lib/components/ChatInterface.svelte';
+import FormatModal from '$lib/components/FormatModal.svelte';
+import BranchModal from '$lib/components/BranchModal.svelte';
+import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+import ProjectSettingsModal from '$lib/components/ProjectSettingsModal.svelte';
+import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+import SessionNavigator from '$lib/components/SessionNavigator.svelte';
+import SessionLogicManager from '$lib/components/SessionLogicManager.svelte';
+import ContextManager from '$lib/components/ContextManager.svelte';
+import ChatManager from '$lib/components/ChatManager.svelte';
 
   
   // Import Lucide icons
@@ -33,8 +36,7 @@
   export let data;
   let projects = data?.projects ?? [];
   
-  // Debug: Log server-side data
-  console.log('🎯 Server-side data.projects:', data?.projects?.map(p => ({ id: p.id, name: p.name, source: 'server' })));
+  // Note: Server-side data loaded
   
   // Debug: Log initial projects state
   $: if (browser && projects) {
@@ -111,18 +113,19 @@
     branches = [];
     
     // Load sessions first, then select active session
-    await loadSessions();
+    if (sessionLogicManager) {
+      await sessionLogicManager.loadSessions();
+    }
     
     // load for this project (now that current is set)
-    await loadContext();
+    if (contextManager) {
+      await contextManager.loadContext();
+    }
     await loadUsage();
     
-    // Load questions for this project from database
-    await loadQuestions();
-    
-    // Load branches for the current session (if we have one)
-    if (currentSession) {
-      await loadSessionBranches(currentSession.id);
+    // Load questions and messages for this project using ChatManager
+    if (chatManager) {
+      await chatManager.loadQuestions();
     }
   }
 
@@ -154,12 +157,7 @@
     search = '';
   }
 
-  // Chat state
-  let input = '';
-  let messages = [];
-  let loadingMessages = false;
-
-  // Platform formatting state
+  // Platform formatting state (kept in main page as these are UI modals)
   let showFormatModal = false;
   let selectedText = '';
   let selectedMessageIndex = -1;
@@ -167,16 +165,25 @@
   let selectedPlatform = '';
   let isFormatting = false;
 
-  // Branching state
-  let currentBranchId = 'main';
-  let currentBranch = null;
-  let branches = [];
+  // Branching state (kept in main page as these are UI modals)
   let messageBranches = []; // Branches for the specific message being branched
   let showBranchModal = false;
   let branchModalMessageIndex = -1;
   let newBranchName = '';
   let isCreatingBranch = false;
   let branchCreateError = '';
+
+  // Chat state - managed by ChatManager
+  let input = '';
+  let messages = [];
+  let loadingMessages = false;
+  let currentBranchId = 'main';
+  let currentBranch = null;
+  let branches = [];
+
+  // Questions state - managed by ChatManager
+  let goodQuestions = [];
+  let loadingQuestions = false;
 
   // Context state
   let facts = [];
@@ -220,12 +227,13 @@
   
   // Component references
   let sidebarComponent;
+  let sessionLogicManager;
+  let contextManager;
+  let chatManager;
 
   // Ideas Column state
-  let goodQuestions = [];
   let relatedIdeas = [];
   let isGeneratingIdeas = false;
-  let loadingQuestions = false;
   
   // Sidebar tab state
   let activeTab = 'facts';
@@ -235,6 +243,7 @@
   let currentSession = null;
   let showSessionNavigator = false;
   let sessionNavigatorElement;
+  
   
   // Panel visibility state - responsive defaults
   let showLeftPanel = false;   // Facts/Docs panel
@@ -433,344 +442,21 @@
     }
   });
 
-  async function loadMessages(projectId = null) {
-    const id = projectId || current?.id;
-    if (!id) return;
-    
-    // For initial load, reset to main branch
-    if (projectId) {
-      currentBranchId = 'main';
-      // Set the main branch object properly
-      currentBranch = {
-        project_id: id,
-        branch_id: 'main',
-        branch_name: 'Main',
-        color_index: 0,
-        colorClass: 'bg-white border-gray-200'
-      };
-    }
-    
-    loadingMessages = true;
-    const startTime = Date.now();
-    
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('project_id', id)
-      .eq('branch_id', currentBranchId)
-      .order('created_at');
-    
-    // Ensure minimum loading duration of 500ms so spinner is visible
-    const elapsed = Date.now() - startTime;
-    const minDuration = 500;
-    if (elapsed < minDuration) {
-      await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
-    }
-    
-    if (error) {
-      console.error('Error loading messages:', error);
-    } else {
-      messages = data ?? [];
-    }
-    loadingMessages = false;
-  }
-
-  async function loadContext() {
-    if (!current) return;
-    loadingFacts = true;
-    const [{ data: f }, { data: d }, { data: p }] = await Promise.all([
-      supabase.from('facts').select('*').eq('project_id', current.id).order('created_at'),
-      supabase.from('docs').select('*').eq('project_id', current.id).order('created_at').limit(10),
-      supabase.from('projects').select('*').eq('id', current.id).single()
-    ]);
-    facts = f ?? [];
-    docs = d ?? [];
-    if (p) current = p; // keeps brief_text fresh
-    loadingFacts = false;
-  }
-
-  async function loadQuestions() {
-    if (!current) return;
-    
-    loadingQuestions = true;
-    
-    try {
-      const res = await fetch(`/api/projects/${current.id}/questions`);
-      if (res.ok) {
-        const data = await res.json();
-        goodQuestions = (data.questions || []).map(q => q.question);
-      } else {
-        console.error('Failed to load questions:', await res.text());
-        goodQuestions = [];
-      }
-    } catch (error) {
-      console.error('Error loading questions:', error);
-      goodQuestions = [];
-    } finally {
-      loadingQuestions = false;
-    }
-  }
-
+  // Delegate send events to ChatManager
   async function send(event) {
-    if (!current || !currentSession || !event.detail.message.trim()) return;
-    const userMsg = event.detail.message;
-    input = '';
-    messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '', model_key: modelKey }];
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: current.id, sessionId: currentSession.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
-    });
-    if (res.status === 429) {
-      const data = await res.json();
-      messages = [...messages, { role: 'assistant', content: data.message || 'Daily limit reached.' }];
-      return;
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantText = '';
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      if (chunk === '[DONE]') break;
-      assistantText += chunk;
-     
-      // live update last assistant message
-      messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText } : m);
-      await loadUsage();
+    if (chatManager) {
+      await chatManager.send(event);
     }
   }
 
   async function regenerateBrief() {
     if (!current) return;
-    await fetch('/api/brief/regenerate', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ projectId: current.id })
-    });
-    await loadContext();
-  }
-
-  // Helper function for auto-regenerating summary when content changes
-  async function autoRegenerateSummary() {
-    if (!current) return;
-    
-    try {
-      // Call regeneration and wait for it to complete
-      await fetch('/api/brief/regenerate', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ projectId: current.id })
-      });
-      
-      // Reload context to refresh the UI with the new summary
-      await loadContext();
-    } catch (error) {
-      console.log('Auto-regeneration failed (not critical):', error);
+    if (contextManager) {
+      await contextManager.regenerateBrief();
     }
   }
 
-  const parseTags = (s) =>
-    s.split(',').map(t => t.trim()).filter(Boolean);
 
-
-  async function addFact() {
-    if (!current) return;
-    if (!factKey?.trim() || !factValue?.trim()) return;
-
-    // Parse tags
-    const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-    const res = await fetch('/api/facts/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: current.id,
-        type: factType || 'note',
-        key: factKey.trim(),
-        value: factValue.trim(),
-        tags: tags,
-        pinned: false
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to save fact');
-      return;
-    }
-
-    const { fact } = await res.json();
-    
-    // Dispatch event for context score refresh
-    if (browser) {
-      window.dispatchEvent(new CustomEvent('fact:created', {
-        detail: { fact, projectId: current.id }
-      }));
-    }
-    
-    // clear form and hide
-    factKey = ''; factValue = ''; factTags = '';
-    showAddFactForm = false;
-
-    // reload lists
-    await loadContext();
-    
-    // Auto-regenerate summary since facts content changed
-    await autoRegenerateSummary();
-  }
-
-  async function addDoc() {
-    if (!current) return;
-    if (!docTitle?.trim()) return;
-
-    // Parse tags
-    const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-    const res = await fetch('/api/docs/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: current.id,
-        title: docTitle.trim(),
-        content: docContent || '',
-        tags: tags,
-        pinned: false
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to create doc');
-      return;
-    }
-    // clear and hide
-    docTitle = ''; docContent = ''; docTags = '';
-    showAddDocForm = false;
-
-    await loadContext();
-    
-    // Auto-regenerate summary since docs content changed
-    await autoRegenerateSummary();
-  }
-
-  function startEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.key, _editValue: x.value, _editTags: (x.tags || []).join(', ') } : x);
-  }
-  function cancelEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
-  }
-
-  async function saveFactEdit(f, { type, key, value, tags }) {
-    const res = await fetch(`/api/facts/create/${f.id}/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type, key, value,
-        tags,
-        reembed: 'auto' // re-embed if text changed
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to update fact');
-      return;
-    }
-    // Refresh lists
-    await loadContext();
-    
-    // Auto-regenerate summary since fact content changed
-    await autoRegenerateSummary();
-  }
-
-  async function deleteFact(f, i) {
-    if (!confirm('Delete this fact?')) return;
-    const { error } = await supabase.from('facts').delete().eq('id', f.id);
-    if (error) { alert(error.message); return; }
-    facts = facts.filter((_, idx) => idx !== i);
-    
-    // Auto-regenerate summary since fact was deleted
-    await autoRegenerateSummary();
-  }
-
-async function toggleFactPin(f) {
-    const wasPinned = f.pinned;
-    const willBePinned = !f.pinned;
-    
-    const res = await fetch(`/api/facts/create/${f.id}/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: willBePinned, reembed: 'skip' }) // pin doesn't change meaning
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to toggle pin');
-      return;
-    }
-    
-    const { fact } = await res.json();
-    
-    // Dispatch event for context score refresh when pinning status changes
-    if (browser && wasPinned !== willBePinned) {
-      const eventType = willBePinned ? 'fact:pinned' : 'fact:unpinned';
-      window.dispatchEvent(new CustomEvent(eventType, {
-        detail: { fact, projectId: current.id }
-      }));
-    }
-    
-    await loadContext();
-  }
-
-  function startEditDoc(d, i) {
-    docs = docs.map((x, idx) =>
-      idx === i ? { ...x, _editing: true, _editTitle: x.title, _editContent: x.content, _editTags: (x.tags || []).join(', ') } : x
-    );
-  }
-function cancelEditDoc(d, i) {
-  docs = docs.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
-}
-async function saveDocEdit(d, { title, content, tags }) {
-    const res = await fetch(`/api/docs/${d.id}/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title, content, tags,
-        reembed: 'auto' // only re-embed if text changed
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to update doc');
-      return;
-    }
-    await loadContext();
-    
-    // Auto-regenerate summary since doc content changed
-    await autoRegenerateSummary();
-  }
-async function deleteDoc(d, i) {
-  if (!confirm('Delete this doc?')) return;
-  const { error } = await supabase.from('docs').delete().eq('id', d.id);
-  if (error) { alert(error.message); return; }
-  docs = docs.filter((_, idx) => idx !== i);
-  
-  // Auto-regenerate summary since doc was deleted
-  await autoRegenerateSummary();
-}
-
-async function toggleDocPin(d) {
-    const res = await fetch(`/api/docs/${d.id}/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: !d.pinned, reembed: 'skip' })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to toggle pin');
-      return;
-    }
-    await loadContext();
-  }
 
 // DELETE handlers
 
@@ -870,8 +556,8 @@ async function copyToClipboard(text) {
 async function loadBranches() {
   // This function is now deprecated in favor of loadSessionBranches
   // We keep it for backward compatibility but redirect to loadSessionBranches
-  if (currentSession) {
-    await loadSessionBranches(currentSession.id);
+  if (currentSession && sessionLogicManager) {
+    await sessionLogicManager.loadSessionBranches(currentSession.id);
   } else {
     console.warn('loadBranches called without currentSession - branches may not load correctly');
   }
@@ -941,7 +627,9 @@ async function createBranch() {
     
     if (res.ok) {
       const data = await res.json();
-      await loadSessionBranches(currentSession.id);
+      if (sessionLogicManager) {
+        await sessionLogicManager.loadSessionBranches(currentSession.id);
+      }
       await switchToBranch(data.branch.branch_id);
       closeBranchModal();
       
@@ -1114,60 +802,75 @@ function handleProjectDelete(event) {
 }
 
 function handleFactAdd(event) {
-  const { type, key, value, tags } = event.detail;
-  factType = type;
-  factKey = key;
-  factValue = value;
-  factTags = tags ? tags.join(', ') : '';
-  addFact();
+  if (contextManager) {
+    contextManager.addFact();
+  }
 }
 
 function handleFactStartEdit(event) {
-  startEditFact(event.detail.fact, event.detail.index);
+  if (contextManager) {
+    contextManager.startEditFact(event.detail.fact, event.detail.index);
+  }
 }
 
 function handleFactCancelEdit(event) {
-  cancelEditFact(event.detail.fact, event.detail.index);
+  if (contextManager) {
+    contextManager.cancelEditFact(event.detail.fact, event.detail.index);
+  }
 }
 
 function handleFactSaveEdit(event) {
-  saveFactEdit(event.detail.fact, event.detail.editData);
+  if (contextManager) {
+    contextManager.saveFactEdit(event.detail.fact, event.detail.editData);
+  }
 }
 
 function handleFactDelete(event) {
-  deleteFact(event.detail.fact, event.detail.index);
+  if (contextManager) {
+    contextManager.deleteFact(event.detail.fact, event.detail.index);
+  }
 }
 
 function handleFactTogglePin(event) {
-  toggleFactPin(event.detail);
+  if (contextManager) {
+    contextManager.toggleFactPin(event.detail);
+  }
 }
 
 function handleDocAdd(event) {
-  const { title, content, tags } = event.detail;
-  docTitle = title;
-  docContent = content;
-  docTags = tags ? tags.join(', ') : '';
-  addDoc();
+  if (contextManager) {
+    contextManager.addDoc();
+  }
 }
 
 function handleDocStartEdit(event) {
-  startEditDoc(event.detail.doc, event.detail.index);
+  if (contextManager) {
+    contextManager.startEditDoc(event.detail.doc, event.detail.index);
+  }
 }
 
 function handleDocCancelEdit(event) {
-  cancelEditDoc(event.detail.doc, event.detail.index);
+  if (contextManager) {
+    contextManager.cancelEditDoc(event.detail.doc, event.detail.index);
+  }
 }
 
 function handleDocSaveEdit(event) {
-  saveDocEdit(event.detail.doc, event.detail.editData);
+  if (contextManager) {
+    contextManager.saveDocEdit(event.detail.doc, event.detail.editData);
+  }
 }
 
 function handleDocDelete(event) {
-  deleteDoc(event.detail.doc, event.detail.index);
+  if (contextManager) {
+    contextManager.deleteDoc(event.detail.doc, event.detail.index);
+  }
 }
 
 function handleDocTogglePin(event) {
-  toggleDocPin(event.detail);
+  if (contextManager) {
+    contextManager.toggleDocPin(event.detail);
+  }
 }
 
 function handleSwitchToBranch(event) {
@@ -1234,8 +937,8 @@ function handleProjectSettingsModalClose() {
 
 async function handleBranchRenamed(event) {
   // Reload branches to get updated branch info
-  if (currentSession) {
-    await loadSessionBranches(currentSession.id);
+  if (currentSession && sessionLogicManager) {
+    await sessionLogicManager.loadSessionBranches(currentSession.id);
     
     // Also update the current branch object with the new name
     if (currentBranch && event.branchId === currentBranch.branch_id) {
@@ -1250,8 +953,8 @@ async function handleBranchRenamed(event) {
 async function handleBranchDeleted(event) {
   // Switch to main branch and reload branches
   await switchToBranch('main');
-  if (currentSession) {
-    await loadSessionBranches(currentSession.id);
+  if (currentSession && sessionLogicManager) {
+    await sessionLogicManager.loadSessionBranches(currentSession.id);
   }
 }
 
@@ -1473,8 +1176,8 @@ function handleTextAddToDocs(event) {
     const { sessionId, sessionName } = event.detail;
     // Find the session in our sessions list and switch to it
     const targetSession = sessions.find(s => s.id === sessionId);
-    if (targetSession) {
-      selectSession(targetSession);
+    if (targetSession && sessionLogicManager) {
+      sessionLogicManager.selectSession(targetSession);
     }
   }
   
@@ -1484,187 +1187,31 @@ function handleTextAddToDocs(event) {
     // Could also clear filters in other components if needed
   }
 
-  // Session Management Functions
-  async function loadSessions() {
-    if (!current) return;
-    
-    try {
-      // Clear current session when loading for a new project
-      // This ensures we don't show sessions from the previous project
-      currentSession = null;
-      sessions = [];
-      messages = [];
-      
-      const res = await fetch(`/api/sessions?projectId=${current.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        sessions = data.sessions || [];
-        
-        // Select the active session or the first one if available
-        if (sessions.length > 0) {
-          const activeSession = sessions.find(s => s.is_active) || sessions[0];
-          currentSession = activeSession;
-          
-          // Load messages and branches for the selected session
-          if (currentSession) {
-            await loadSessionMessages(currentSession.id);
-            await loadSessionBranches(currentSession.id);
-          }
-        } else {
-          // No sessions exist - create a default session for new users
-          try {
-            const createRes = await fetch('/api/sessions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'create',
-                projectId: current.id,
-                sessionName: 'First Chat'
-              })
-            });
-            
-            if (createRes.ok) {
-              const { session } = await createRes.json();
-              sessions = [session];
-              currentSession = session;
-              
-              console.log('✅ Created default session for new project:', session.session_name);
-              
-              // Load messages and branches for the new session
-              await loadSessionMessages(session.id);
-              await loadSessionBranches(session.id);
-            } else {
-              const errorText = await createRes.text();
-              console.error('❌ Failed to create default session:', errorText);
-              
-              // Try to show user-friendly error
-              if (errorText.includes('row-level security')) {
-                console.error('🔒 RLS Policy Error: Please check database permissions');
-              }
-            }
-          } catch (error) {
-            console.error('❌ Error creating default session:', error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading sessions:', error);
-    }
-  }
 
-  async function selectSession(session) {
-    if (session.id === currentSession?.id) return;
-    
-    try {
-      // Activate this session
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'activate',
-          projectId: current.id,
-          sessionId: session.id
-        })
-      });
-      
-      if (res.ok) {
-        currentSession = session;
-        // Load messages and branches for this session
-        await loadSessionMessages(session.id);
-        await loadSessionBranches(session.id, true); // Skip currentBranch updates to prevent conflicts
-      }
-    } catch (error) {
-      console.error('Error selecting session:', error);
-    }
-  }
-
-  async function loadSessionMessages(sessionId) {
-    if (!current || !sessionId) return;
-    
-    loadingMessages = true;
-    const startTime = Date.now();
-    
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('branch_id', currentBranchId)
-        .order('created_at');
-      
-      // Ensure minimum loading duration
-      const elapsed = Date.now() - startTime;
-      const minDuration = 500;
-      if (elapsed < minDuration) {
-        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
-      }
-      
-      if (error) {
-        console.error('Error loading session messages:', error);
-      } else {
-        messages = data || [];
-      }
-    } catch (error) {
-      console.error('Error loading session messages:', error);
-    } finally {
-      loadingMessages = false;
-    }
-  }
-
-  async function loadSessionBranches(sessionId, skipCurrentBranchUpdate = false) {
-    if (!current || !sessionId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('conversation_branches')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at');
-      
-      if (error) {
-        console.error('Error loading session branches:', error);
-      } else {
-        const sessionBranches = data || [];
-        
-        // Always update branches array to ensure names are fresh (not just when IDs change)
-        branches = sessionBranches;
-        
-        // IMPORTANT: Only update currentBranch if specifically requested (not during reactive calls)
-        // This prevents conflicts when switchToBranch() has already set the correct branch state
-        if (!skipCurrentBranchUpdate && (!currentBranch || currentBranch.branch_id === 'main')) {
-          const foundBranch = branches.find(b => b.branch_id === currentBranchId);
-          const mainBranch = branches.find(b => b.branch_id === 'main');
-          const newCurrentBranch = foundBranch || mainBranch || null;
-          
-          // Only update if we actually need to (prevents unnecessary resets)
-          if (!currentBranch || (newCurrentBranch && currentBranch.branch_id !== newCurrentBranch.branch_id)) {
-            currentBranch = newCurrentBranch;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading session branches:', error);
-    }
-  }
-
-  // Session event handlers
+  // Session event handlers for SessionNavigator
   function handleSessionSelect(event) {
-    selectSession(event.detail);
+    if (sessionLogicManager) {
+      sessionLogicManager.selectSession(event.detail);
+    }
     // Close the session navigator panel after selecting a session
     showSessionNavigator = false;
   }
 
   async function handleSessionCreated(event) {
     // Reload sessions and select the new one
-    await loadSessions();
-    if (event.detail) {
-      await selectSession(event.detail);
+    if (sessionLogicManager) {
+      await sessionLogicManager.loadSessions();
+      if (event.detail) {
+        await sessionLogicManager.selectSession(event.detail);
+      }
     }
   }
 
   async function handleSessionUpdated() {
     // Reload sessions to get updated data
-    await loadSessions();
+    if (sessionLogicManager) {
+      await sessionLogicManager.loadSessions();
+    }
   }
 
   async function handleSessionDeleted(event) {
@@ -1673,8 +1220,8 @@ function handleTextAddToDocs(event) {
     
     if (currentSession?.id === event.detail.id) {
       // Select another session if available
-      if (sessions.length > 0) {
-        await selectSession(sessions[0]);
+      if (sessions.length > 0 && sessionLogicManager) {
+        await sessionLogicManager.selectSession(sessions[0]);
       } else {
         currentSession = null;
         messages = [];
@@ -1816,14 +1363,14 @@ function handleTextAddToDocs(event) {
         bind:activeTab
         on:brief-regenerate={regenerateBrief}
         on:fact-add={handleFactAdd}
-        on:fact-cancel-add={() => { factKey = ''; factValue = ''; factTags = ''; }}
+        on:fact-cancel-add={() => { contextManager?.clearFactForm(); }}
         on:fact-start-edit={handleFactStartEdit}
         on:fact-cancel-edit={handleFactCancelEdit}
         on:fact-save-edit={handleFactSaveEdit}
         on:fact-delete={handleFactDelete}
         on:fact-toggle-pin={handleFactTogglePin}
         on:doc-add={handleDocAdd}
-        on:doc-cancel-add={() => { docTitle = ''; docContent = ''; docTags = ''; }}
+        on:doc-cancel-add={() => { contextManager?.clearDocForm(); }}
         on:doc-start-edit={handleDocStartEdit}
         on:doc-cancel-edit={handleDocCancelEdit}
         on:doc-save-edit={handleDocSaveEdit}
@@ -1995,8 +1542,57 @@ function handleTextAddToDocs(event) {
   </div>
 {/if}
 
+<!-- Session Logic Manager (hidden component for session management) -->
+<SessionLogicManager 
+  bind:this={sessionLogicManager}
+  {current}
+  bind:sessions
+  bind:currentSession
+  bind:currentBranchId
+  bind:messages
+  bind:branches
+  bind:loadingMessages
+  bind:currentBranch
+/>
+
+<!-- Context Manager (hidden component for facts/docs management) -->
+<ContextManager
+  bind:this={contextManager}
+  {current}
+  bind:loadingFacts
+  bind:facts
+  bind:docs
+  bind:factType
+  bind:factKey
+  bind:factValue
+  bind:factTags
+  bind:showAddFactForm
+  bind:docTitle
+  bind:docContent
+  bind:docTags
+  bind:showAddDocForm
+  on:project-updated={(e) => current = e.detail}
+/>
+
+<!-- Chat Manager (hidden component for chat/messages/questions management) -->
+<ChatManager 
+  bind:this={chatManager}
+  {current}
+  {currentSession}
+  {modelKey}
+  bind:input
+  bind:messages
+  bind:loadingMessages
+  bind:currentBranchId
+  bind:currentBranch
+  bind:branches
+  bind:goodQuestions
+  bind:loadingQuestions
+  on:usage-updated={() => loadUsage()}
+/>
+
 <!-- Modals -->
-<FormatModal 
+<FormatModal
   {showFormatModal}
   {selectedText}
   {selectedPlatform}

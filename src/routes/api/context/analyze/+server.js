@@ -1,24 +1,51 @@
 // src/routes/api/context/analyze/+server.js
 import { json } from '@sveltejs/kit';
-import { buildContext } from '$lib/server/context/buildContext.js';
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { isAdmin } from '$lib/auth/admin';
+import { calculateContextQualityScore } from '$lib/server/utils/contextScore.js';
 
 export const POST = async ({ request, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
-  if (!user) return new Response('Unauthorized', { status: 401 });
-  
-  const { projectId, userMessage = 'Tell me about this project', branchId = 'main' } = await request.json();
-  
-  if (!projectId) {
-    return json({ error: 'Missing projectId' }, { status: 400 });
-  }
-
   try {
+    const { data: { user } } = await locals.supabase.auth.getUser();
+    if (!user) {
+      console.log('❌ Context analysis: No authenticated user');
+      return new Response(JSON.stringify({ error: 'Authentication required' }), { 
+        status: 401, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    console.log('✅ Context analysis: User authenticated:', user.email);
+    
+    const { projectId, userMessage = 'Tell me about this project', branchId = 'main' } = await request.json();
+    
+    if (!projectId) {
+      return json({ error: 'Missing projectId' }, { status: 400 });
+    }
+
+    // Check if user is admin - if so, use admin client for broader access
+    const adminCheck = await isAdmin(locals.supabase, user);
+    let supabaseClient = locals.supabase;
+    
+    if (adminCheck.isAdmin) {
+      console.log('🔑 Admin user detected - using service role client for broader access');
+      supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    } else {
+      console.log('👤 Regular user - using normal client with RLS');
+    }
+
     // Enhanced buildContext that captures detailed analytics
     const analysis = await analyzeContext({ 
-      supabase: locals.supabase, 
+      supabase: supabaseClient, 
       projectId, 
       userMessage, 
       branchId 
+    });
+    
+    console.log('📊 Final analysis data:', {
+      metrics: analysis.metrics,
+      summary: analysis.summary,
+      sectionsCount: analysis.sections.length
     });
     
     return json(analysis);
@@ -41,12 +68,20 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   };
 
   // Get project info
-  const { data: project } = await supabase
+  console.log('📁 Querying project info for ID:', projectId);
+  const { data: project, error: projectError } = await supabase
     .from('projects')
     .select('name, description, brief_text')
     .eq('id', projectId)
     .single();
 
+  console.log('📁 Project query result:', { 
+    name: project?.name, 
+    hasDescription: !!project?.description?.trim(),
+    hasBrief: !!project?.brief_text?.trim(),
+    error: projectError?.message
+  });
+  
   analysis.projectName = project?.name || 'Unknown Project';
 
   // 1) PROJECT DESCRIPTION
@@ -63,10 +98,22 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   }
 
   // 2) PINNED FACTS & DOCS
-  const [{ data: pinnedFacts }, { data: pinnedDocs }] = await Promise.all([
+  console.log('🔍 Querying facts and docs for project:', projectId);
+  const [{ data: pinnedFacts, error: factsError }, { data: pinnedDocs, error: docsError }] = await Promise.all([
     supabase.from('facts').select('id,type,key,value,pinned').eq('project_id', projectId).eq('pinned', true).limit(50),
     supabase.from('docs').select('id,title,content,pinned').eq('project_id', projectId).eq('pinned', true).limit(25)
   ]);
+  
+  console.log('📊 Pinned facts query result:', { 
+    count: pinnedFacts?.length || 0, 
+    error: factsError?.message,
+    facts: pinnedFacts?.map(f => ({ key: f.key, type: f.type })) || []
+  });
+  console.log('📊 Pinned docs query result:', { 
+    count: pinnedDocs?.length || 0, 
+    error: docsError?.message,
+    docs: pinnedDocs?.map(d => ({ title: d.title })) || []
+  });
 
   if (pinnedFacts?.length) {
     const pinnedFactsContent = pinnedFacts.map(f => `⭐ [${f.type}] ${f.key}: ${f.value}`).join('\n\n');
@@ -99,12 +146,19 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   }
 
   // 3) ENTITY CARDS
-  const { data: entityCards } = await supabase
+  console.log('🎭 Querying entity cards...');
+  const { data: entityCards, error: entityCardsError } = await supabase
     .from('entity_cards')
     .select('id, entity_name, entity_type, summary, confidence_score, fact_count')
     .eq('project_id', projectId)
     .order('confidence_score', { ascending: false })
     .limit(15);
+    
+  console.log('🎭 Entity cards query result:', { 
+    count: entityCards?.length || 0, 
+    error: entityCardsError?.message,
+    cards: entityCards?.map(c => ({ name: c.entity_name, type: c.entity_type, confidence: c.confidence_score })) || []
+  });
 
   if (entityCards?.length) {
     const selectedCards = entityCards.slice(0, 8); // Simplified selection for analysis
@@ -146,18 +200,44 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   }
 
   // 5) Get total fact/doc counts for coverage metrics
-  const [{ count: totalFactsCount }, { count: totalDocsCount }] = await Promise.all([
+  console.log('📊 Counting total facts and docs...');
+  const [{ count: totalFactsCount, error: factsCountError }, { count: totalDocsCount, error: docsCountError }] = await Promise.all([
     supabase.from('facts').select('*', { count: 'exact', head: true }).eq('project_id', projectId),
     supabase.from('docs').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
   ]);
+  
+  console.log('📊 Total counts result:', { 
+    totalFacts: totalFactsCount, 
+    totalDocs: totalDocsCount,
+    factsError: factsCountError?.message,
+    docsError: docsCountError?.message
+  });
 
-  // Calculate metrics
-  const totalCharacters = analysis.sections.reduce((sum, section) => sum + section.charCount, 0);
-  const estimatedTokens = Math.round(totalCharacters / 4); // Rough token estimation
+  // Calculate metrics using same logic as main app
+  const sectionTotalCharacters = analysis.sections.reduce((sum, section) => sum + section.charCount, 0);
+  const estimatedTokens = Math.round(sectionTotalCharacters / 4); // Rough token estimation
+  
+  // Calculate totalCharacters using SAME logic as main app for consistent scoring
+  let consistentTotalCharacters = 0;
+  if (project?.description?.trim()) {
+    consistentTotalCharacters += project.description.trim().length;
+  }
+  if (project?.brief_text) {
+    consistentTotalCharacters += project.brief_text.length;
+  }
+  if (pinnedFacts?.length) {
+    consistentTotalCharacters += pinnedFacts.reduce((sum, fact) => sum + fact.value.length, 0);
+  }
+  
+  console.log('🧮 Character calculation comparison:', {
+    sectionMethod: sectionTotalCharacters,
+    consistentMethod: consistentTotalCharacters,
+    difference: Math.abs(sectionTotalCharacters - consistentTotalCharacters)
+  });
 
   analysis.metrics = {
     totalSections: analysis.sections.length,
-    totalCharacters,
+    totalCharacters: sectionTotalCharacters, // For display purposes
     estimatedTokens,
     pinnedFactsCoverage: pinnedFacts?.length || 0,
     totalFactsInProject: totalFactsCount || 0,
@@ -173,34 +253,18 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
     hasPinnedDocs: (pinnedDocs?.length || 0) > 0,
     hasEntityCards: (entityCards?.length || 0) > 0,
     hasProjectBrief: !!project?.brief_text,
-    pinnedFactsCount: pinnedFacts?.length || 0,  // Add this missing field!
-    entityCardsCount: entityCards?.length || 0,  // Add this missing field!
+    pinnedFactsCount: pinnedFacts?.length || 0,
+    entityCardsCount: entityCards?.length || 0,
     pinnedFactsPercentage: totalFactsCount ? Math.round((pinnedFacts?.length || 0) / totalFactsCount * 100) : 0,
     contextQualityScore: calculateContextQualityScore({
       hasProjectDescription: !!project?.description?.trim(),
       pinnedFactsCount: pinnedFacts?.length || 0,
       entityCardsCount: entityCards?.length || 0,
-      totalCharacters
+      totalCharacters: consistentTotalCharacters // Use consistent calculation method
     })
   };
 
   return analysis;
 }
 
-function calculateContextQualityScore({ hasProjectDescription, pinnedFactsCount, entityCardsCount, totalCharacters }) {
-  let score = 0;
-  
-  // Project description (30 points)
-  if (hasProjectDescription) score += 30;
-  
-  // Pinned facts (40 points max)
-  score += Math.min(pinnedFactsCount * 4, 40);
-  
-  // Entity cards (20 points max)
-  score += Math.min(entityCardsCount * 2.5, 20);
-  
-  // Context richness (10 points max)
-  score += Math.min(totalCharacters / 1000, 10);
-  
-  return Math.min(Math.round(score), 100);
-}
+// Removed duplicate function - now using the one from contextScore.js

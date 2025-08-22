@@ -4,10 +4,11 @@
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
 import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight, Boxes, GitBranch } from 'lucide-svelte';
-  import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
+import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+  import ProjectExport from '$lib/components/ProjectExport.svelte';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import '../app.css';
   import '$lib/components/styles.css';
@@ -219,6 +220,10 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
   let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null };
   let savingPreferences = false;
   
+  // PROJECT EXPORT modal state
+  let showProjectExport = false;
+  let exportingProject = null;
+  
   // Mobile menu state
   let showProjectMenu = false;
   let showMobileMenu = false;
@@ -329,6 +334,13 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
     showAppSettings = true;
     loadUserPreferences();
   }
+  
+  // Handle opening export modal
+  function openProjectExport(project) {
+    console.log('📤 Opening export modal for project:', project?.name, project?.id);
+    exportingProject = project;
+    showProjectExport = true;
+  }
   async function createProject() {
     if (!newProjectName.trim()) { createProjectErr = 'Please enter a name.'; return; }
     createProjectErr = '';
@@ -436,9 +448,10 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
         <!-- Desktop: Mr Wiskr brand -->
         <a href="/projects" class="hidden md:flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
           <span class="text-lg md:text-xl inline-flex items-center">
-            <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
+            <img src="/mr-wiskr-logo.png" alt="Mr Wiskr" class="w-32 bg-white py-2 px-0 mb-0" />
+            <!-- <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
             <span style="color: #5d60dd">Mr Wiskr</span>
-            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" />
+            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" /> -->
           </span>
         </a>
         <!-- Mobile: Wiskr brand -->
@@ -472,6 +485,10 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
               }}
               on:create={() => { showNewProjectModal = true; }}
               on:open-settings={(e) => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail })); }}
+              on:export={(e) => {
+                console.log('📤 Export event received in layout (desktop):', e.detail?.name);
+                openProjectExport(e.detail);
+              }}
               on:delete={async (e) => {
                 const project = e.detail;
                 if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -774,6 +791,11 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
                 window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail }));
                 showProjectMenu = false;
               }}
+              on:export={(e) => {
+                console.log('📤 Export event received in layout:', e.detail?.name);
+                openProjectExport(e.detail);
+                showProjectMenu = false;
+              }}
               on:delete={async (e) => {
                 const project = e.detail;
                 if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -843,6 +865,16 @@ import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLef
     {createProjectErr}
     on:close={handleNewProjectModalClose}
     on:create={handleCreateProject}
+  />
+
+  <!-- PROJECT EXPORT MODAL -->
+  <ProjectExport 
+    project={exportingProject}
+    isOpen={showProjectExport}
+    on:close={() => {
+      showProjectExport = false;
+      exportingProject = null;
+    }}
   />
 
   <!-- APP SETTINGS MODAL -->

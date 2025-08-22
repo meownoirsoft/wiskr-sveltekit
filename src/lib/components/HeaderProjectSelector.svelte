@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Search, ChevronDown, Trash, Settings, X } from 'lucide-svelte';
+  import { Plus, Search, ChevronDown, Trash, Settings, X, Download } from 'lucide-svelte';
 
   export let projects = [];
   export let current = null;
@@ -54,6 +54,13 @@
   function openSettings(project, event) {
     event.stopPropagation();
     dispatch('open-settings', project);
+    closeDropdown();
+  }
+  
+  function exportProject(project, event) {
+    event.stopPropagation();
+    console.log('📤 Export button clicked for project:', project.name, project.id);
+    dispatch('export', project);
     closeDropdown();
   }
 
@@ -131,6 +138,14 @@
               <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
             </button>
             <div class="flex items-center gap-1 px-2">
+              <button
+                class="p-1 transition-colors"
+                style="color: var(--text-header-secondary);"
+                title="Export Project Data"
+                on:click={(e) => exportProject(project, e)}
+              >
+                <Download size="16" />
+              </button>
               <button
                 class="p-1 transition-colors"
                 style="color: var(--text-header-secondary);"
@@ -226,6 +241,14 @@
                 <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
               </button>
               <div class="flex items-center gap-1 px-2">
+                <button
+                  class="p-1 transition-colors"
+                  style="color: var(--text-header-secondary);"
+                  title="Export Project Data"
+                  on:click={(e) => exportProject(project, e)}
+                >
+                  <Download size="16" />
+                </button>
                 <button
                   class="p-1 transition-colors"
                   style="color: var(--text-header-secondary);"

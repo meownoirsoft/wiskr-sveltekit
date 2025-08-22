@@ -14,6 +14,7 @@ import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 import LoadingSpinner from './LoadingSpinner.svelte';
 import BranchPickerModal from './BranchPickerModal.svelte';
+import VirtualMessageList from './VirtualMessageList.svelte';
 
   export let current = null;
   export let messages = [];
@@ -98,18 +99,8 @@ import BranchPickerModal from './BranchPickerModal.svelte';
     return RAINBOW_COLORS[branch.color_index % RAINBOW_COLORS.length];
   }
 
-  function scrollToBottom() {
-    if (chatContainer) {
-      setTimeout(() => {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 100);
-    }
-  }
-
-  // Auto-scroll when messages change
-  $: if (messages && messages.length > 0) {
-    scrollToBottom();
-  }
+  // Note: Scroll functionality is now handled by VirtualMessageList
+  // The chatContainer ref is kept for compatibility but scrolling is managed internally
 
   function send() {
     if (!current || !input.trim()) return;
@@ -233,15 +224,13 @@ import BranchPickerModal from './BranchPickerModal.svelte';
   
   // Add event listener for branch updates and user preferences updates on mount
   import { onMount as onMountChatInterface } from 'svelte';
+    import AskForm from './AskForm.svelte';
   onMountChatInterface(() => {
     // Load available models and user preferences on mount
     loadAvailableModels();
     loadUserPreferences();
     
-    // Scroll to bottom on mount (helpful for page reloads/hot reloads)
-    if (messages && messages.length > 0) {
-      scrollToBottom();
-    }
+    // Note: Auto-scroll is now handled by VirtualMessageList
     
     window.addEventListener('branches-updated', handleBranchesUpdated);
     window.addEventListener('user-preferences-updated', handleUserPreferencesUpdated);
@@ -942,247 +931,36 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     </div>
   {/if}
   
-  <!-- Chat Messages (scrollable) -->
-  <div class="flex-1 overflow-y-auto py-4 pl-4 space-y-3 searchable-chat-area" bind:this={chatContainer} style="background-color: var(--bg-chat);">
-    {#if !current}
-      <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
-    {:else if loadingMessages}
-      <LoadingSpinner 
-        size="md" 
-        text="Loading conversation history..." 
-        center={true} 
-      />
-    {:else if messages.length === 0}
-      <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
-        <div class="text-sm">Look at this brand new space ready for action!</div>
-        <div class="text-xs mt-1">What do you want to do next?</div>
-      </div>
-    {:else}
-      {#each messages as m, index}
-        {@const branchColor = getBranchColor(currentBranch)}
-        <div class="{m.role === 'user' ? 'max-w-[90%] sm:max-w-2xl ml-auto mr-2 sm:mr-4' : 'max-w-[95%] sm:max-w-4xl group'}">
-          <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {m.role === 'user' ? 'text-right' : 'flex items-center gap-3 sm:gap-3'}">
-            {#if m.role === 'user'}
-              <span class="text-sm sm:text-sm font-bold">{userPreferences.display_name || 'You'}</span>
-            {:else}
-              {#if m.model_key}
-                <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
-                  <img src={getAIAvatar(m.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-full" />
-                </div>
-                <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(m.model_key)}</span>
-              {:else}
-                <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
-                  <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-full" />
-                </div>
-                <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
-              {/if}
-            {/if}
-          </div>
-          <div class="rounded-lg p-2 sm:p-3 border border-l-4 transition-colors relative {m.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent}` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent}`}" style="background-color: {m.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {m.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {m.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {m.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
-            {#if m.role === 'assistant'}
-              <div class="prose prose-xs sm:prose-sm max-w-none prose-gray dark:prose-invert">
-                {@html renderMarkdown(m.content)}
-              </div>
-              <!-- Select All button for assistant messages (bottom right) -->
-              <button
-                class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation" style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
-                on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
-                on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
-                on:click={() => selectAllMessage(index)}
-                title="Select all and format for posts"
-              >
-                <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
-                <span class="hidden xs:inline">Select All</span>
-                <span class="xs:hidden">Select</span>
-              </button>
-            {:else}
-              <div class="text-xs sm:text-sm">
-                {m.content}
-              </div>
-            {/if}
-          </div>
-          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center {m.role === 'user' ? '' : 'mr-3 sm:mr-6'} mt-2 gap-2">
-            <!-- Highlight-to-add feature hint (only for assistant messages) -->
-            {#if m.role === 'assistant' && m.content.trim()}
-              <div class="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
-                <Type size="14" class="flex-shrink-0" />
-                <span class="hidden sm:inline">Highlight to capture/format</span>
-                <span class="sm:hidden">Highlight to capture</span>
-              </div>
-            {/if}
-            
-            <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
-              {#if m.role === 'assistant' && m.content.trim()}
-                <!-- Feedback Buttons -->  
-                <div class="">
-                  <FeedbackButtons
-                    messageId={m.id}
-                    projectId={current?.id}
-                    messageContent={m.content}
-                    aiName={m.model_key ? getAIName(m.model_key) : 'Wiskr'}
-                    size="sm"
-                  />
-                </div>
-              {/if}
-              {#if m.content.trim() && currentBranchId === 'main'}
-                {@const messageBranchCount = messageBranchCounts[m.id] || 0}
-                <div class="z-10">
-                  <button id="branch-button-{index}"
-                    class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 touch-action-manipulation"
-                    style="background: var(--color-accent); border-color: var(--color-accent); touch-action: manipulation;"
-                    on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
-                    on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; e.target.style.color = 'var(--text-primary)'; }}
-                    on:click={() => openBranchModal(index)}
-                    title="Create new branch from here"
-                  >
-                    <GitBranch size="14" class="flex-shrink-0" />
-                    Branch
-                    {#if messageBranchCount > 0}
-                      <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
-                        {messageBranchCount}
-                      </span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              {#if m.role === 'assistant' && m.content.trim()}
-                <div class="z-10">
-                <button
-                  class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 touch-action-manipulation"
-                  style="background-color: #5D60DD; border-color: #5D60DD; touch-action: manipulation;"
-                  on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
-                  on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}
-                  on:click={(e) => openMrWiskrForMessage(index, e)}
-                  title="Ask Mr Wiskr for help with this response"
-                >
-                  <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-4 h-4 sm:w-7 sm:h-7 flex-shrink-0" />
-                  <span class="hidden xs:inline">Mr&nbsp;Wiskr</span>
-                  <span class="xs:hidden">Wiskr</span>
-                </button>
-                </div>
-              {/if}
-            </div>
-          </div>
-        </div>
-      {/each}
-    {/if}
-  </div>
+  <!-- Chat Messages (Virtual Scrolling) -->
+  <VirtualMessageList
+    bind:this={chatContainer}
+    {messages}
+    {loadingMessages}
+    {current}
+    {currentBranch}
+    {currentBranchId}
+    {messageBranchCounts}
+    {userPreferences}
+    bufferSize={8}
+    estimatedMessageHeight={120}
+    debugMode={false}
+    on:select-all={selectAllMessage}
+    on:open-branch-modal={openBranchModal}
+    on:open-mr-wiskr={({ detail }) => openMrWiskrForMessage(detail.index, detail.event)}
+  />
 
   <!-- Fixed Ask Form at Bottom -->
-  <div class="flex-shrink-0" style="background-color: var(--bg-ask-form);">
-    
-    <!-- Ask Form -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
-      <!-- Top Row: Friend Selection and ReAsk -->
-      <div class="px-2 sm:px-3 pt-2 pb-1">
-        <!-- First row: Model selector -->
-        <div class="flex items-center justify-between pb-2">
-          <div class="{isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-1 sm:gap-2'} min-w-0">
-            <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">Wiskr:</label>
-            <div class="{isMobile ? 'w-full' : 'flex-1'}">
-              <ModelDropdown
-                bind:modelKey
-                {availableModels}
-                disabled={!current}
-                on:change={(e) => { modelKey = e.detail.value; }}
-              />
-            </div>
-            {#if !isMobile}
-              <InfoPopup
-                title="Da heck is a Wiskr?"
-                content={`<p>Smart friends who get rewarded to do various tasks for you:</p><br />
-                  <ul>
-                    <li><strong>🚀 Speedy</strong> - Quick paws, light on kibble. Handles small tasks with ease.</li>
-                    <li><strong>⭐ Quality</strong> - Sharper whiskers, stronger mind. Suited for tangled problems.</li>
-                    <li><strong>👑 Premium</strong> - Full prowl power. Best for tough hunts and deep thinking.</li>
-                    <li><strong>💰 Micro</strong> - Streamlined swipes. Perfect for neat, simple text tasks.</li>
-                  </ul>
-                  <br />
-                  <p>Each Wiskr has a different rewards for doing their tasks:</p>
-                  <ul>
-                    <li><strong>You talking to them</strong> - Cost for your questions (yes they are elitists)</li>
-                    <li><strong>Them talking to you</strong> - Cost for their insights and number crunching</li>
-                  </ul><br />
-                  <p>Speedy Wiskrs work great for most conversations!</p>`}
-                buttonTitle="Learn about Wiskrs"
-              />
-            {/if}
-          </div>
-          
-          <!-- Action buttons -->
-          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {#if input.trim()}
-              <TLDRButton
-                on:tldr={handleTLDRClick}
-                disabled={!current || !input.trim()}
-                size="sm"
-              />
-            {/if}
-            
-            <!-- ReAsk Button (always visible when there's a last message) -->
-            {#if hasLastUserMessage}
-              <button
-                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation" 
-                style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light); touch-action: manipulation;"
-                on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.borderColor = 'var(--color-accent)'; }}
-                on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
-                on:click={reAskLastQuestion}
-                disabled={!current}
-                title="Try your last question again"
-              >
-                <RotateCcw size={isMobile ? "16" : "12"} class="sm:hidden" />
-                <RotateCcw size="14" class="hidden sm:inline" />
-                {#if !isMobile}
-                  <span class="xs:inline">ReAsk</span>
-                {/if}
-              </button>
-            {/if}
-          </div>
-        </div>
-      </div>
-      
-      <!-- Box and Send -->
-      <form class="px-2 sm:px-3 pb-2 sm:pb-3 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
-        <div class="relative {isMobile ? 'flex-1' : 'w-full'}">
-          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
-          rows="2" 
-          bind:value={input} 
-          placeholder={current ? "Ask…" : "Pick a project"} 
-          disabled={!current} on:keydown={handleKeydown} 
-          style="background-color: var(--ask-box-bg); touch-action: manipulation;" data-theme-bg="#35353D"></textarea>
-          {#if input.trim()}
-            <button
-              type="button"
-              class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 touch-action-manipulation"
-              style="touch-action: manipulation;"
-              on:click={() => input = ''}
-              title="Clear box"
-            >
-              <X size="16" class="sm:hidden" />
-              <X size="20" class="hidden sm:inline" />
-            </button>
-          {/if}
-        </div>
-        <button class="border border-gray-300 dark:border-gray-600 text-white rounded px-2 sm:px-3 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
-        style="background-color: var(--color-accent); touch-action: manipulation;" 
-        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
-        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-        >
-          <div class="flex flex-col items-center justify-center text-xs sm:text-sm leading-tight">
-            {#if isMobile}
-              <span class="font-medium">Wiskr</span>
-            {:else}
-              <!-- <ChevronsRight size="16" class="sm:hidden mb-0.5" /> -->
-              <!-- <ChevronsRight size="20" class="hidden sm:inline mb-1" /> -->
-              <span class="font-medium">Wiskr</span>
-              <!-- <ChevronsLeft size="16" class="sm:hidden mt-0.5" /> -->
-              <!-- <ChevronsLeft size="20" class="hidden sm:inline mt-1" /> -->
-            {/if}
-          </div>
-        </button>
-      </form>
-    </div>
-  </div>
+  <AskForm
+    {current}
+    bind:input={input}
+    bind:modelKey={modelKey}
+    {availableModels}
+    {hasLastUserMessage}
+    {isMobile}
+    on:submit={send}
+    on:reask={reAskLastQuestion}
+    on:tldr={handleTLDRClick}
+  />
 </main>
 
 <!-- Text Selection Menu -->

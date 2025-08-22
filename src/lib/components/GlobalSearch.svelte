@@ -100,13 +100,7 @@
       isSearching = true;
       debouncedSearch();
       } else {
-        // Debug: Log when search results are cleared
-        console.log('🧹 Search results cleared:', {
-          timestamp: new Date().toISOString(),
-          reason: searchTerm.length < 3 ? 'Search term too short' : 'Dropdown disabled',
-          searchTerm,
-          dropdownDisabled
-        });
+        // Search results cleared
         
         searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
         if (!dropdownDisabled) {
@@ -140,16 +134,7 @@
         const data = await response.json();
         searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
         
-        // Debug: Log when search results are populated
-        console.log('🔍 Search results populated:', {
-          timestamp: new Date().toISOString(),
-          searchTerm,
-          factsCount: searchResults.facts?.length || 0,
-          docsCount: searchResults.docs?.length || 0,
-          questionsCount: searchResults.questions?.length || 0,
-          chatMessagesCount: searchResults.chatMessages?.length || 0,
-          sessionGroupsCount: searchResults.sessionGroups?.length || 0
-        });
+        // Search results populated
         
         // Update session navigation state
         updateSessionNavigation();
@@ -158,7 +143,6 @@
         
         // Apply highlighting now that we have search results
         if (highlightedTerm && highlightedTerm === searchTerm) {
-          console.log('🎯 Applying highlighting with fresh search results');
           // Apply highlighting immediately - don't auto-switch sessions
           applyHighlighting();
         }
