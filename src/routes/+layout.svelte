@@ -259,7 +259,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   // Responsive screen detection for layout
   function checkScreenSize() {
     if (browser) {
-      isDesktop = window.innerWidth >= 1024; // lg breakpoint
+      isDesktop = window.innerWidth >= 1280; // Custom breakpoint for mobile mode
     }
   }
   
@@ -446,16 +446,16 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       <!-- Left: Wiskr Brand + Desktop Project Controls -->
       <div class="flex items-center gap-6">
         <!-- Desktop: Mr Wiskr brand -->
-        <a href="/projects" class="hidden md:flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-          <span class="text-lg md:text-xl inline-flex items-center">
-            <img src="/mr-wiskr-logo.png" alt="Mr Wiskr" class="w-32 bg-white py-2 px-0 mb-0" />
+        <a href="/projects" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+          <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
+            <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 px-2 mb-0" />
             <!-- <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
             <span style="color: #5d60dd">Mr Wiskr</span>
             <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" /> -->
           </span>
         </a>
         <!-- Mobile: Wiskr brand -->
-        <a href="/projects" class="md:hidden flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+        <a href="/projects" class="{isDesktop ? 'hidden' : 'flex'} flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
           <span class="text-lg inline-flex items-center">
             <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
             <span style="color: #5d60dd" class="hidden xs:inline">Mr Wiskr</span>
@@ -466,7 +466,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         
         <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
-          <div class="hidden md:flex items-center gap-6">
+          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-6">
             <HeaderProjectSelector 
               {projects}
               current={currentProject}
@@ -530,7 +530,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {#if isProjectsPage}
           <!-- Desktop: Global Search and Usage -->
-          <div class="hidden md:flex items-center gap-4">
+          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
             <GlobalSearch 
               projectId={currentProject?.id}
               on:activate-tab={(e) => {
@@ -560,7 +560,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
           </div>
 
           <!-- Mobile: Menu buttons -->
-          <div class="md:hidden flex items-center gap-1">
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
             <!-- Project Menu Button -->
             <button
               type="button"
@@ -569,14 +569,14 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
               aria-label="Projects and Tools"
             >
               <Boxes class="w-6 h-6" />
-              Projects
+              <span class="text-xs mt-1">Projects</span>
             </button>
             <!-- Context button -->
             <button
               type="button"
               class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => window.dispatchEvent(new CustomEvent('mobile:show-context'))}
-              aria-label="Show Context Panel"
+              on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
+              aria-label="Toggle Context Panel"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -587,8 +587,8 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             <button
               type="button"
               class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => window.dispatchEvent(new CustomEvent('mobile:show-addins'))}
-              aria-label="Show Add-Ins Panel"
+              on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
+              aria-label="Toggle Add-Ins Panel"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
@@ -623,8 +623,8 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
           {/if}
         </div>
         
-        <!-- Mobile hamburger menu (< 768px) -->
-        <div class="md:hidden relative">
+        <!-- Mobile hamburger menu -->
+        <div class="{isDesktop ? 'hidden' : 'block'} relative">
           <button
             type="button"
             class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
@@ -647,25 +647,6 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             >
               <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2" style="background-color: var(--bg-primary);">
                 {#if isProjectsPage}
-                  <!-- Search for mobile -->
-                  <div class="md:hidden px-4 py-2">
-                    <GlobalSearch 
-                      projectId={currentProject?.id}
-                      on:activate-tab={(e) => {
-                        window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-                      }}
-                      on:filter={(e) => {
-                        window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-                      }}
-                      on:navigate-chat={(e) => {
-                        window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-                      }}
-                      on:clear={(e) => {
-                        window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-                      }}
-                    />
-                  </div>
-                  
                   <!-- Sidebar Panel Toggles removed - now handled by dedicated Context/Add-Ins buttons -->
                   <button 
                     type="button"

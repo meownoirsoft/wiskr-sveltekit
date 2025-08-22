@@ -25,7 +25,7 @@
     if (browser) {
       const width = window.innerWidth;
       const wasDesktop = isDesktop;
-      isDesktop = width >= 1024; // lg breakpoint
+      isDesktop = width >= 1280; // Custom breakpoint for mobile mode
       
       // Only set initial panel state on first load, not on resize
       if (wasDesktop === false && isDesktop === true) {
@@ -201,6 +201,31 @@
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
   }
 
+  // Mobile toggle handlers (new)
+  export function handleMobileToggleContext() {
+    if (showLeftPanel) {
+      // If context panel is open, close it
+      showLeftPanel = false;
+    } else {
+      // If context panel is closed, open it and close add-ins
+      showLeftPanel = true;
+      showRightPanel = false;
+    }
+    dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+  }
+
+  export function handleMobileToggleAddins() {
+    if (showRightPanel) {
+      // If add-ins panel is open, close it
+      showRightPanel = false;
+    } else {
+      // If add-ins panel is closed, open it and close context
+      showRightPanel = true;
+      showLeftPanel = false;
+    }
+    dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+  }
+
   // Click outside handler for session navigator
   export function handleClickOutside(event) {
     if (showSessionNavigator && sessionNavigatorElement && !sessionNavigatorElement.contains(event.target)) {
@@ -224,6 +249,10 @@
       // Listen for mobile menu events from header
       window.addEventListener('mobile:show-context', handleMobileShowContext);
       window.addEventListener('mobile:show-addins', handleMobileShowAddins);
+      
+      // Listen for mobile toggle events from header
+      window.addEventListener('mobile:toggle-context', handleMobileToggleContext);
+      window.addEventListener('mobile:toggle-addins', handleMobileToggleAddins);
     }
   });
 
@@ -234,6 +263,8 @@
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('mobile:show-context', handleMobileShowContext);
       window.removeEventListener('mobile:show-addins', handleMobileShowAddins);
+      window.removeEventListener('mobile:toggle-context', handleMobileToggleContext);
+      window.removeEventListener('mobile:toggle-addins', handleMobileToggleAddins);
     }
   });
 </script>

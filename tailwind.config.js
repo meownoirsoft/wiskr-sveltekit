@@ -34,7 +34,7 @@ export default {
     'dark:border-blue-800', 'dark:border-green-800', 'dark:border-purple-800', 'dark:border-orange-800',
     'dark:hover:border-blue-700', 'dark:hover:border-green-700', 'dark:hover:border-purple-700', 'dark:hover:border-orange-700',
     // Prose styles for markdown formatting
-    'prose', 'prose-sm', 'max-w-none'
+    'prose', 'prose-sm', 'max-w-none',
   ],
   theme: { extend: {} },
   plugins: [forms, typography]

@@ -133,7 +133,7 @@
 /* New collapsible panel layout improvements */
 .collapsible-layout {
   /* On mobile, make panels full-width when open */
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     /* Left and right panels take full width on mobile when open */
     .w-80 {
       width: 100% !important;
@@ -158,7 +158,7 @@
 }
 
 /* Mobile-specific section styling */
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   /* Sidebar adjustments */
   section.border-r {
     border-right: none;
@@ -286,7 +286,7 @@
 }
 
 /* Improve scrolling on mobile */
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   .overflow-auto, .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
@@ -356,7 +356,7 @@
 
 /* Component-specific mobile improvements */
 .mobile-sidebar {
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     min-height: 350px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -372,7 +372,7 @@
 }
 
 .mobile-ideas-column {
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     min-height: 250px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -388,7 +388,7 @@
 }
 
 .mobile-chat {
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     min-height: 400px;
   }
   
@@ -402,7 +402,7 @@
 }
 
 /* Mobile keyboard navigation improvements */
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   /* Focus states should be more prominent on mobile */
   textarea:focus, input:focus, select:focus, button:focus {
     outline: 2px solid #3b82f6;
@@ -426,7 +426,7 @@
 }
 
 /* Landscape orientation adjustments */
-@media (max-width: 1023px) and (orientation: landscape) {
+@media (max-width: 1279px) and (orientation: landscape) {
   .mobile-layout {
     grid-template-rows: minmax(250px, 30vh) minmax(200px, 25vh) minmax(300px, 1fr);
   }

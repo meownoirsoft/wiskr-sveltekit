@@ -20,6 +20,11 @@ import SessionLogicManager from '$lib/components/SessionLogicManager.svelte';
 import ContextManager from '$lib/components/ContextManager.svelte';
 import ChatManager from '$lib/components/ChatManager.svelte';
 
+// New management components
+import ProjectState from '$lib/components/ProjectState.svelte';
+import ModalManager from '$lib/components/ModalManager.svelte';
+import PanelManager from '$lib/components/PanelManager.svelte';
+
   
   // Import Lucide icons
   import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash } from 'lucide-svelte';
@@ -230,6 +235,9 @@ import ChatManager from '$lib/components/ChatManager.svelte';
   let sessionLogicManager;
   let contextManager;
   let chatManager;
+  let projectState;
+  let modalManager;
+  let panelManager;
 
   // Ideas Column state
   let relatedIdeas = [];
@@ -260,7 +268,7 @@ import ChatManager from '$lib/components/ChatManager.svelte';
     if (browser) {
       const width = window.innerWidth;
       const wasDesktop = isDesktop;
-      isDesktop = width >= 1024; // lg breakpoint
+      isDesktop = width >= 1280; // Custom breakpoint for mobile mode
       
       // Only set initial panel state on first load, not on resize
       if (wasDesktop === false && isDesktop === true) {
@@ -409,6 +417,10 @@ import ChatManager from '$lib/components/ChatManager.svelte';
       window.addEventListener('mobile:show-context', handleMobileShowContext);
       window.addEventListener('mobile:show-addins', handleMobileShowAddins);
       
+      // Listen for mobile toggle events
+      window.addEventListener('mobile:toggle-context', handleMobileToggleContext);
+      window.addEventListener('mobile:toggle-addins', handleMobileToggleAddins);
+      
       // Add click outside listener for sessions panel
       document.addEventListener('click', handleClickOutside);
     }
@@ -436,6 +448,8 @@ import ChatManager from '$lib/components/ChatManager.svelte';
       // Clean up mobile menu event listeners
       window.removeEventListener('mobile:show-context', handleMobileShowContext);
       window.removeEventListener('mobile:show-addins', handleMobileShowAddins);
+      window.removeEventListener('mobile:toggle-context', handleMobileToggleContext);
+      window.removeEventListener('mobile:toggle-addins', handleMobileToggleAddins);
       
       // Remove click outside listener
       document.removeEventListener('click', handleClickOutside);
@@ -1303,22 +1317,92 @@ function handleTextAddToDocs(event) {
     }
   }
   
+  // Event handlers for new management components
+  
+  // ProjectState event handlers
+  async function handleProjectChanged(event) {
+    const { projectId, project } = event.detail;
+    
+    // Reset branch state when switching projects
+    currentBranchId = 'main';
+    currentBranch = null;
+    branches = [];
+    
+    // Load sessions first, then select active session
+    if (sessionLogicManager) {
+      await sessionLogicManager.loadSessions();
+    }
+    
+    // Load context for this project
+    if (contextManager) {
+      await contextManager.loadContext();
+    }
+    
+    // Load questions and messages for this project using ChatManager
+    if (chatManager) {
+      await chatManager.loadQuestions();
+    }
+  }
+  
+  // ModalManager event handlers
+  async function handleBranchCreated(event) {
+    const { branch, sessionId } = event.detail;
+    
+    // Reload branches for the session
+    if (sessionLogicManager) {
+      await sessionLogicManager.loadSessionBranches(sessionId);
+    }
+    
+    // Switch to the new branch
+    await switchToBranch(branch.branch_id);
+    
+    // Reload message branch counts in the ChatInterface component
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('branches-updated'));
+    }
+  }
+  
+  async function handleProjectCreatedFromModal(event) {
+    const { project } = event.detail;
+    
+    // Refresh projects using ProjectState and select the new one
+    if (projectState) {
+      await projectState.reloadProjects(project.id);
+    }
+  }
+  
+  function handleCopySuccess(event) {
+    // Could add a toast notification here
+    console.log('✅ Content copied to clipboard');
+  }
+  
   // Mobile menu event handlers
   function handleMobileShowContext() {
     console.log('📱 Mobile Context button pressed - showing Facts/Docs panel');
-    // Show the left panel (Facts/Docs)
-    showLeftPanel = true;
-    if (showRightPanel) {
-      showRightPanel = false;
+    if (panelManager) {
+      panelManager.handleMobileShowContext();
     }
   }
   
   function handleMobileShowAddins() {
     console.log('📱 Mobile Add-Ins button pressed - showing Questions/Ideas panel');
-    // Show the right panel (Questions/Ideas)
-    showRightPanel = true;
-    if (showLeftPanel) {
-      showLeftPanel = false;
+    if (panelManager) {
+      panelManager.handleMobileShowAddins();
+    }
+  }
+  
+  // Mobile toggle event handlers (new)
+  function handleMobileToggleContext() {
+    console.log('📱 Mobile Context button toggled - toggling Facts/Docs panel');
+    if (panelManager) {
+      panelManager.handleMobileToggleContext();
+    }
+  }
+  
+  function handleMobileToggleAddins() {
+    console.log('📱 Mobile Add-Ins button toggled - toggling Questions/Ideas panel');
+    if (panelManager) {
+      panelManager.handleMobileToggleAddins();
     }
   }
 
@@ -1630,5 +1714,65 @@ function handleTextAddToDocs(event) {
   {showProjectSettingsModal}
   project={projectSettingsProject}
   on:close={handleProjectSettingsModalClose}
+/>
+
+<!-- Project State Manager (handles project CRUD, selection, usage) -->
+<ProjectState 
+  bind:this={projectState}
+  {data}
+  bind:projects
+  bind:selectedId
+  bind:current
+  bind:hasInit
+  bind:modelKey
+  bind:modelKeyLoaded
+  bind:usage
+  on:project-changed={handleProjectChanged}
+/>
+
+<!-- Modal Manager (handles all modal states) -->
+<ModalManager 
+  bind:this={modalManager}
+  bind:showFormatModal
+  bind:selectedText
+  bind:selectedMessageIndex
+  bind:formattedContent
+  bind:selectedPlatform
+  bind:isFormatting
+  bind:showBranchModal
+  bind:branchModalMessageIndex
+  bind:newBranchName
+  bind:isCreatingBranch
+  bind:branchCreateError
+  bind:messageBranches
+  bind:showNewProjectModal
+  bind:newProjectName
+  bind:newProjectDescription
+  bind:creatingProject
+  bind:createProjectErr
+  bind:showProjectSettingsModal
+  bind:projectSettingsProject
+  bind:showMrWiskrModal
+  bind:mrWiskrLoading
+  bind:mrWiskrModalRef
+  bind:showUsageStats
+  bind:showUsagePopover
+  bind:usageButtonElement
+  on:branch-created={handleBranchCreated}
+  on:project-created={handleProjectCreatedFromModal}
+  on:project-settings-closed={handleProjectSettingsModalClose}
+  on:copy-success={handleCopySuccess}
+/>
+
+<!-- Panel Manager (handles responsive UI state) -->
+<PanelManager 
+  bind:this={panelManager}
+  bind:showLeftPanel
+  bind:showRightPanel
+  bind:isDesktop
+  bind:activeTab
+  bind:showSessionNavigator
+  bind:sessionNavigatorElement
+  bind:search
 />
 

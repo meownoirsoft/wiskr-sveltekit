@@ -14,52 +14,74 @@ Wiskr is a modern, responsive web application for managing AI prompts and conver
 - **AI Integration:** OpenAI API
 - **Authentication:** Supabase Auth
 - **Build:** Vite 7.x with Tailwind CSS 4.x
+- **Package Manager:** pnpm (fast, disk space efficient)
 
 ## Development Commands
 
 ### Core Development
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 
 # Start development server with browser open
-npm run dev -- --open
+pnpm run dev -- --open
 
 # Build for production
-npm run build
+pnpm run build
 
 # Preview production build
-npm run preview
+pnpm run preview
 ```
 
 ### Code Quality
 ```bash
 # Type checking
-npm run check
+pnpm run check
 
 # Type checking with watch mode
-npm run check:watch
+pnpm run check:watch
 
 # Sync SvelteKit files
-npm run prepare
+pnpm run prepare
 ```
 
 ### Database Management
 ```bash
 # Push schema changes to database
-npm run db:push
+pnpm run db:push
 
 # Generate database migrations
-npm run db:generate
+pnpm run db:generate
 
 # Run database migrations
-npm run db:migrate
+pnpm run db:migrate
 
 # Open Drizzle Studio (database GUI)
-npm run db:studio
+pnpm run db:studio
+```
+
+### Package Management
+```bash
+# Add a new dependency
+pnpm add package-name
+
+# Add a dev dependency
+pnpm add -D package-name
+
+# Remove a dependency
+pnpm remove package-name
+
+# Update dependencies
+pnpm update
+
+# Clean install (remove node_modules and reinstall)
+pnpm run clean && pnpm install
+
+# Check for outdated packages
+pnpm outdated
 ```
 
 ## Architecture Overview
@@ -152,7 +174,7 @@ DATABASE_URL=your_postgres_connection_string
 - Primary database operations go through Supabase client, not Drizzle
 - Schema changes should be made in Supabase dashboard first
 - `src/lib/server/db/schema.js` is minimal and may not reflect full schema
-- Use `npm run db:studio` for local database inspection
+- Use `pnpm run db:studio` for local database inspection
 
 ### Working with Authentication
 - Authentication flows handled by Supabase Auth
@@ -178,3 +200,22 @@ DATABASE_URL=your_postgres_connection_string
 - UI components: `BranchModal.svelte` for branch management
 
 This application emphasizes real-time collaboration, conversation flexibility through branching, and a clean, modern UI built with SvelteKit and Supabase.
+
+## Troubleshooting
+
+### pnpm Issues
+
+If pnpm commands hang or crash:
+
+1. **Test with timeout**: `timeout 30s pnpm install` to prevent infinite hangs
+2. **Clear pnpm cache**: `pnpm store prune` then try again
+3. **Clean install**: `rm -rf node_modules && pnpm install`
+4. **Use verbose logging**: `pnpm install --loglevel=debug` to see where it hangs
+5. **Check for lock file conflicts**: Remove any `package-lock.json` or `yarn.lock` files
+6. **Rebuild packages**: `pnpm rebuild` after successful install
+7. **Fallback to npm**: `rm -rf node_modules && npm install` if pnpm fails
+
+Common pnpm advantages:
+- **Faster installs**: Symlinks packages from global store
+- **Disk space efficient**: Deduplicates packages across projects
+- **Strict dependency resolution**: Prevents phantom dependencies

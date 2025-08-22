@@ -242,9 +242,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {#if loadingFacts}
       <LoadingSpinner overlay={true} text="Loading facts..." />
     {/if}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div class="facts-grid gap-2">
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
-    <div class="fact-card flex flex-col md:h-full text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
+    <div class="fact-card flex flex-col text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
       <!-- Header: Title and Menu -->
       <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
@@ -303,7 +303,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       </div>
       
       <!-- Content -->
-      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 md:flex-1 md:min-h-0 md:overflow-y-auto content-scrollbar" style="max-height: 140px;">
+      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 content-scrollbar" style="max-height: 140px;">
         {f.value}
       </div>
       
@@ -331,7 +331,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     </div>
   {/each}
   {#if !facts.length && !loadingFacts}
-    <div class="col-span-1 md:col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No facts.</div>
+    <div class="facts-no-content text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No facts.</div>
   {/if}
     </div>
   </div>
@@ -359,3 +359,49 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   on:add={handleAddModalSave}
   on:close={handleAddModalClose}
 />
+
+<style>
+  /* Facts grid responsive layout */
+  .facts-grid {
+    display: grid;
+  }
+  
+  /* Base: 1 column for screens smaller than 1350px */
+  @media (max-width: 1349px) {
+    .facts-grid {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    
+    .facts-grid .fact-card {
+      height: auto;
+    }
+    
+    .facts-grid .fact-content {
+      flex: none;
+      min-height: auto;
+      overflow: visible;
+    }
+  }
+  
+  /* Large: 3 columns from 1350px and up */
+  @media (min-width: 1350px) {
+    .facts-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    
+    .facts-grid .fact-card {
+      height: 100%;
+    }
+    
+    .facts-grid .fact-content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+  }
+  
+  /* No content message spans all columns */
+  .facts-no-content {
+    grid-column: 1 / -1;
+  }
+</style>

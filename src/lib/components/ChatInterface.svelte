@@ -10,6 +10,7 @@ import TLDRModal from './TLDRModal.svelte';
 import TLDRButton from './TLDRButton.svelte';
 import FeedbackButtons from './FeedbackButtons.svelte';
 import FeedbackModal from './FeedbackModal.svelte';
+import GlobalSearch from './GlobalSearch.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 import LoadingSpinner from './LoadingSpinner.svelte';
@@ -780,6 +781,29 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
             <MessageSquare class="w-6 h-6" />
             <span class="text-xs">Chats</span>
           </button>
+          
+          <!-- Mobile Global Search -->
+          {#if current?.id}
+            <div class="flex flex-col items-center p-2">
+              <GlobalSearch 
+                projectId={current?.id}
+                isMobile={true}
+                on:activate-tab={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+                }}
+                on:filter={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+                }}
+                on:navigate-chat={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+                }}
+                on:clear={(e) => {
+                  window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+                }}
+              />
+            </div>
+          {/if}
+          
           <button
             type="button"
             class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"

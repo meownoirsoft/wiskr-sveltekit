@@ -1,17 +1,45 @@
 import { mdsvex } from 'mdsvex';
 import adapter from '@sveltejs/adapter-auto';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	kit: { // adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-	// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-	// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-	adapter: adapter() },
+	kit: {
+		adapter: adapter(),
+		// Prerender only essential pages in dev for faster startup
+		prerender: {
+			entries: isDev ? [] : ['*']
+		},
+		// Faster builds in dev
+		files: {
+			// Use faster file system operations
+		}
+	},
 	preprocess: [mdsvex()],
 	extensions: ['.svelte', '.svx'],
 	compilerOptions: {
-		dev: true,
-		sourcemap: false
+		// More aggressive optimizations in dev
+		dev: isDev,
+		// Disable sourcemaps for faster compilation (enable when debugging)
+		sourcemap: false,
+		// Faster compilation with reduced CSS generation
+		css: 'injected',
+		// Faster hydration
+		hydratable: true,
+		// Skip some runtime checks in dev for speed
+		accessors: false
+	},
+	vitePlugin: {
+		// Faster inspector and HMR
+		inspector: isDev ? {
+			toggleVisibilityKey: 'meta-shift',
+			showToggleButton: 'never'
+		} : false,
+		// Skip some expensive checks in dev
+		hot: isDev ? {
+			partialAccept: true
+		} : true
 	}
 };
 
