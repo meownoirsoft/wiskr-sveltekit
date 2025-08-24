@@ -2,8 +2,9 @@
 <script>
   import { createEventDispatcher, tick, onMount } from 'svelte';
   import { marked } from 'marked';
-  import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+  import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight, User } from 'lucide-svelte';
   import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
+  import { getUserAvatarUrl } from '$lib/utils/avatars.js';
   import FeedbackButtons from './FeedbackButtons.svelte';
 
   export let message;
@@ -89,21 +90,28 @@
   $: messageBranchCount = messageBranchCounts[message.id] || 0;
 </script>
 
-<div class="{message.role === 'user' ? 'max-w-[90%] sm:max-w-2xl ml-auto mr-2 sm:mr-4' : 'max-w-[95%] sm:max-w-4xl group'}" bind:this={messageElement}>
-  <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {message.role === 'user' ? 'text-right' : 'flex items-center gap-3 sm:gap-3'}">
+<div class="{message.role === 'user' ? 'max-w-[90%] sm:max-w-2xl ml-auto mr-2 sm:mr-4 mt-6 mb-3' : 'max-w-[95%] sm:max-w-4xl group mb-3'}" bind:this={messageElement}>
+  <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {message.role === 'user' ? 'flex items-center gap-3 sm:gap-3 justify-end' : 'flex items-center gap-3 sm:gap-3'}">
     {#if message.role === 'user'}
-      <span class="text-sm sm:text-sm font-bold">{userPreferences.display_name || 'You'}</span>
+      <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{userPreferences.display_name || 'You'}</span>
+      <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+        {#if userPreferences.avatar_type === 'default'}
+          <User size="20" class="sm:size-5 text-gray-500 dark:text-gray-400" />
+        {:else}
+          <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-full" />
+        {/if}
+      </div>
     {:else}
       {#if message.model_key}
-        <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+        <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: #5D60DD;">
           <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-full" />
         </div>
-        <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(message.model_key)}</span>
+        <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(message.model_key)}</span>
       {:else}
-        <div class="w-12 h-12 sm:w-8 sm:h-8 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-white shadow-sm border-2 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+        <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: #5D60DD;">
           <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-full" />
         </div>
-        <span class="text-base sm:text-sm font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
+        <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
       {/if}
     {/if}
   </div>
@@ -130,7 +138,7 @@
         <span class="xs:hidden">Select</span>
       </button>
     {:else}
-      <div class="text-xs sm:text-sm">
+      <div class="text-sm sm:text-base">
         {message.content}
       </div>
     {/if}
@@ -163,10 +171,10 @@
       {#if message.content.trim() && currentBranchId === 'main'}
         <div class="z-10">
           <button id="branch-button-{index}"
-            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 touch-action-manipulation"
+            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 touch-action-manipulation text-white"
             style="background: var(--color-accent); border-color: var(--color-accent); touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
-            on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; e.target.style.color = 'var(--text-primary)'; }}
+            on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; }}
             on:click={() => openBranchModal(index)}
             title="Create new branch from here"
           >
@@ -184,7 +192,7 @@
       {#if message.role === 'assistant' && message.content.trim()}
         <div class="z-10">
           <button
-            class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 touch-action-manipulation"
+            class="flex items-center gap-1 text-xs pl-1 pr-2 py-0 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 touch-action-manipulation"
             style="background-color: #5D60DD; border-color: #5D60DD; touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}

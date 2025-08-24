@@ -45,9 +45,24 @@
 
     if (containerElement) {
       updateContainerHeight();
-      // Initial scroll to bottom if there are messages
+      // Initial scroll to bottom if there are messages - use multiple attempts for reliability
       if (messages.length > 0) {
-        tick().then(() => scrollToBottom(false));
+        // Multiple scroll attempts to ensure we reach true bottom after virtualization
+        const scrollToBottomWithRetry = (attempt = 0) => {
+          if (attempt >= 3) return; // Max 3 attempts
+          
+          tick().then(() => {
+            if (containerElement) {
+              scrollToBottom(false);
+              // Retry after a short delay to account for height measurements
+              if (attempt < 2) {
+                setTimeout(() => scrollToBottomWithRetry(attempt + 1), 50);
+              }
+            }
+          });
+        };
+        
+        scrollToBottomWithRetry();
       }
     }
   });
@@ -153,19 +168,75 @@
 
   // Auto-scroll when new messages arrive (if user is at bottom)
   $: if (messages && messages.length !== lastMessageCount) {
+    const wasFirstLoad = lastMessageCount === 0 && messages.length > 0;
     lastMessageCount = messages.length;
     
-    // If user is at bottom or this is the first message, scroll down
-    if (shouldScrollToBottom || messages.length === 1) {
-      tick().then(() => {
-        if (containerElement && shouldScrollToBottom) {
-          scrollToBottom(messages.length > 1); // Smooth scroll for new messages, instant for first load
-        }
-      });
+    // If user is at bottom, this is first load, or we just got new messages, scroll down
+    if (shouldScrollToBottom || wasFirstLoad) {
+      if (wasFirstLoad) {
+        // For first load, use aggressive scroll-to-bottom that waits for measurements
+        forceScrollToBottomAfterLoad();
+      } else {
+        // For new messages, use normal scroll
+        tick().then(() => {
+          if (containerElement && shouldScrollToBottom) {
+            scrollToBottom(true); // Smooth scroll for new messages
+          }
+        });
+      }
     }
     
     // Recalculate visible range for new messages
     tick().then(calculateVisibleRange);
+  }
+  
+  // Force scroll to bottom for first load - more aggressive approach
+  async function forceScrollToBottomAfterLoad() {
+    if (!containerElement || !messages.length) return;
+    
+    // Temporarily disable virtualization by showing all messages
+    visibleRange = {
+      startIndex: 0,
+      endIndex: messages.length - 1,
+      offsetTop: 0,
+      visibleCount: messages.length
+    };
+    
+    // Clear any existing heights to force re-measurement
+    if (messageMeasurer) {
+      messageMeasurer.clear();
+    }
+    
+    // Wait for all messages to render
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Multiple scroll attempts with increasing delays
+    const scrollAttempts = [0, 100, 200, 500, 1000];
+    
+    for (const delay of scrollAttempts) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      if (containerElement) {
+        const scrollHeight = containerElement.scrollHeight;
+        const clientHeight = containerElement.clientHeight;
+        const maxScroll = scrollHeight - clientHeight;
+        
+        containerElement.scrollTop = scrollHeight;
+        
+        // Verify we actually scrolled to bottom
+        await tick();
+        const actualScrollTop = containerElement.scrollTop;
+        
+        if (Math.abs(actualScrollTop - maxScroll) < 10) {
+          break; // Successfully scrolled to bottom
+        }
+      }
+    }
+    
+    // Re-enable virtualization after successful scroll
+    await tick();
+    calculateVisibleRange();
   }
 
   // Recalculate on resize
@@ -214,7 +285,7 @@
 <svelte:window on:resize={handleResize} />
 
 <div 
-  class="flex-1 overflow-y-auto py-4 pl-4 space-y-3 searchable-chat-area" 
+  class="flex-1 overflow-y-auto py-4 pl-4 searchable-chat-area" 
   style="background-color: var(--bg-chat);"
   bind:this={containerElement}
   on:scroll={handleScroll}
@@ -266,8 +337,7 @@
 <!-- Scroll to bottom button (appears when user scrolled up) -->
 {#if messages.length > 0 && !isAtBottom}
   <button
-    class="fixed bottom-20 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"
-    style="background-color: var(--color-accent); touch-action: manipulation;"
+    class="fixed bottom-20 right-6 z-50 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full p-3 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"
     on:click={() => scrollToBottom(true)}
     title="Scroll to bottom"
   >
@@ -295,11 +365,21 @@
   }
 
   .searchable-chat-area::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(156, 163, 175, 0.5);
     border-radius: 4px;
   }
 
   .searchable-chat-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(156, 163, 175, 0.7);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .searchable-chat-area::-webkit-scrollbar-thumb {
+      background: rgba(75, 85, 99, 0.5);
+    }
+
+    .searchable-chat-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(75, 85, 99, 0.7);
+    }
   }
 </style>

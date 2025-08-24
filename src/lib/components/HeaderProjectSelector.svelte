@@ -140,7 +140,7 @@
             <div class="flex items-center gap-1 px-2">
               <button
                 class="p-1 transition-colors"
-                style="color: var(--text-header-secondary);"
+                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                 title="Export Project Data"
                 on:click={(e) => exportProject(project, e)}
               >
@@ -148,15 +148,15 @@
               </button>
               <button
                 class="p-1 transition-colors"
-                style="color: var(--text-header-secondary);"
+                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                 title="Project Settings"
                 on:click={(e) => openSettings(project, e)}
               >
                 <Settings size="16" />
               </button>
               <button
-                class="p-1 hover:text-red-400 transition-colors"
-                style="color: var(--text-header-secondary);"
+                class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
+                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                 title="Delete"
                 on:click={(e) => deleteProject(project, e)}
               >
@@ -243,7 +243,7 @@
               <div class="flex items-center gap-1 px-2">
                 <button
                   class="p-1 transition-colors"
-                  style="color: var(--text-header-secondary);"
+                  style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                   title="Export Project Data"
                   on:click={(e) => exportProject(project, e)}
                 >
@@ -251,15 +251,15 @@
                 </button>
                 <button
                   class="p-1 transition-colors"
-                  style="color: var(--text-header-secondary);"
+                  style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                   title="Project Settings"
                   on:click={(e) => openSettings(project, e)}
                 >
                   <Settings size="16" />
                 </button>
                 <button
-                  class="p-1 hover:text-red-400 transition-colors"
-                  style="color: var(--text-header-secondary);"
+                  class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
+                  style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
                   title="Delete"
                   on:click={(e) => deleteProject(project, e)}
                 >

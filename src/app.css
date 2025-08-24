@@ -46,6 +46,11 @@
   /* Ask form background - light mode */
   --bg-ask-form: #D9EAFD;
   
+  /* Ask box background - light mode */
+  --ask-box-bg: #ffffff;
+  --ask-box-border: #d1d5db;
+  --ask-box-text: #1f2937;
+  
   /* Accent color - light mode */
   --color-accent: #155DFC;
   --color-accent-hover: #0f4edd;
@@ -84,10 +89,10 @@
 
 .dark {
   /* Dark theme overrides */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: rgba(45, 45, 45, 0.95);
-  --text-primary: #ffffff;
-  --border: #404040;
+  --bg-primary: #1a1a1a !important;
+  --bg-secondary: rgba(45, 45, 45, 0.95) !important;
+  --text-primary: #ffffff !important;
+  --border: #404040 !important;
   color-scheme: dark;
   
   /* Panel backgrounds - dark mode */

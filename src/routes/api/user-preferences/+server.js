@@ -25,14 +25,18 @@ export async function GET({ locals }) {
       return json({
         max_related_ideas: 8,
         accent_color: '#155DFC',
-        display_name: null
+        display_name: null,
+        avatar_type: 'default',
+        avatar_value: null
       });
     }
 
     return json({
       max_related_ideas: preferences.max_related_ideas || 8,
       accent_color: preferences.accent_color || '#155DFC',
-      display_name: preferences.display_name || null
+      display_name: preferences.display_name || null,
+      avatar_type: preferences.avatar_type || 'default',
+      avatar_value: preferences.avatar_value || null
     });
   } catch (error) {
     console.error('Error in user preferences GET:', error);
@@ -48,7 +52,7 @@ export async function POST({ request, locals }) {
 
   try {
     const body = await request.json();
-    const { max_related_ideas, accent_color, display_name } = body;
+    const { max_related_ideas, accent_color, display_name, avatar_type, avatar_value } = body;
 
     // Validate the input
     if (max_related_ideas !== undefined) {
@@ -68,6 +72,18 @@ export async function POST({ request, locals }) {
         return json({ error: 'display_name must be a string with 50 characters or less' }, { status: 400 });
       }
     }
+    
+    if (avatar_type !== undefined) {
+      if (!['default', 'premade', 'custom'].includes(avatar_type)) {
+        return json({ error: 'avatar_type must be default, premade, or custom' }, { status: 400 });
+      }
+    }
+    
+    if (avatar_value !== undefined) {
+      if (avatar_value !== null && typeof avatar_value !== 'string') {
+        return json({ error: 'avatar_value must be a string or null' }, { status: 400 });
+      }
+    }
 
     // Check if preferences already exist
     const { data: existing } = await locals.supabase
@@ -83,6 +99,8 @@ export async function POST({ request, locals }) {
       if (max_related_ideas !== undefined) updateData.max_related_ideas = max_related_ideas;
       if (accent_color !== undefined) updateData.accent_color = accent_color;
       if (display_name !== undefined) updateData.display_name = display_name?.trim() || null;
+      if (avatar_type !== undefined) updateData.avatar_type = avatar_type;
+      if (avatar_value !== undefined) updateData.avatar_value = avatar_value;
       
       const { data, error } = await locals.supabase
         .from('user_preferences')
@@ -98,6 +116,8 @@ export async function POST({ request, locals }) {
       if (max_related_ideas !== undefined) insertData.max_related_ideas = max_related_ideas;
       if (accent_color !== undefined) insertData.accent_color = accent_color;
       if (display_name !== undefined) insertData.display_name = display_name?.trim() || null;
+      if (avatar_type !== undefined) insertData.avatar_type = avatar_type;
+      if (avatar_value !== undefined) insertData.avatar_value = avatar_value;
       
       const { data, error } = await locals.supabase
         .from('user_preferences')
@@ -118,7 +138,9 @@ export async function POST({ request, locals }) {
       preferences: {
         max_related_ideas: result.data.max_related_ideas,
         accent_color: result.data.accent_color,
-        display_name: result.data.display_name
+        display_name: result.data.display_name,
+        avatar_type: result.data.avatar_type,
+        avatar_value: result.data.avatar_value
       }
     });
   } catch (error) {

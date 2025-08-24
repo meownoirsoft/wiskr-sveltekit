@@ -16,6 +16,9 @@
   export let messages = [];
   export let branches = [];
   export let currentBranch = null;
+  
+  // Chat state tracking
+  let isChatting = false;
 
   // Session Management Functions
   export async function loadSessions() {
@@ -115,8 +118,12 @@
   }
 
   export async function loadSessionMessages(sessionId) {
-    if (!current || !sessionId) return;
+    if (!current || !sessionId) {
+      console.warn('💾 loadSessionMessages: Missing requirements', { current: !!current, sessionId });
+      return;
+    }
     
+    console.log('💾 loadSessionMessages: Starting', { sessionId, currentBranchId });
     loadingMessages = true;
     const startTime = Date.now();
     
@@ -136,12 +143,13 @@
       }
       
       if (error) {
-        console.error('Error loading session messages:', error);
+        console.error('❌ Error loading session messages:', error);
       } else {
+        console.log('✅ Loaded session messages:', { count: data?.length || 0, sessionId, branchId: currentBranchId });
         messages = data || [];
       }
     } catch (error) {
-      console.error('Error loading session messages:', error);
+      console.error('❌ Error loading session messages:', error);
     } finally {
       loadingMessages = false;
     }

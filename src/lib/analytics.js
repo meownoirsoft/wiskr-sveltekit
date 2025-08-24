@@ -1,27 +1,57 @@
 import { browser } from '$app/environment';
-import { PUBLIC_POSTHOG_KEY, PUBLIC_POSTHOG_HOST } from '$env/static/public';
-import posthog from 'posthog-js';
 
 let analyticsInitialized = false;
+let posthog = null;
+let analyticsAvailable = false;
 
 /**
  * Initialize PostHog analytics
  */
-export function initAnalytics() {
-	if (!browser || analyticsInitialized || !PUBLIC_POSTHOG_KEY) {
+export async function initAnalytics() {
+	if (!browser || analyticsInitialized) {
 		return;
 	}
 
-	posthog.init(PUBLIC_POSTHOG_KEY, {
-		api_host: PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-		defaults: '2025-05-24',
-		person_profiles: 'identified_only',
-		capture_pageview: false, // We'll handle this manually
-		capture_pageleave: true,
-		session_recording: {
-			recordCrossOriginIframes: true
-		}
-	});
+	// Get environment variables dynamically
+	let PUBLIC_POSTHOG_KEY, PUBLIC_POSTHOG_HOST;
+	try {
+		const env = await import('$env/static/public');
+		PUBLIC_POSTHOG_KEY = env.PUBLIC_POSTHOG_KEY;
+		PUBLIC_POSTHOG_HOST = env.PUBLIC_POSTHOG_HOST;
+	} catch {
+		// Environment variables not configured
+		PUBLIC_POSTHOG_KEY = undefined;
+		PUBLIC_POSTHOG_HOST = 'https://app.posthog.com';
+	}
+
+	// Check if PostHog configuration is available
+	if (!PUBLIC_POSTHOG_KEY || PUBLIC_POSTHOG_KEY === 'your_posthog_project_api_key') {
+		console.log('PostHog analytics disabled: No API key configured');
+		analyticsInitialized = true;
+		return;
+	}
+
+	try {
+		// Dynamically import PostHog to handle missing dependency gracefully
+		const module = await import('posthog-js');
+		posthog = module.default;
+		
+		posthog.init(PUBLIC_POSTHOG_KEY, {
+			api_host: PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+			defaults: '2025-05-24',
+			person_profiles: 'identified_only',
+			capture_pageview: false, // We'll handle this manually
+			capture_pageleave: true,
+			session_recording: {
+				recordCrossOriginIframes: true
+			}
+		});
+		
+		analyticsAvailable = true;
+		console.log('PostHog analytics initialized successfully');
+	} catch (error) {
+		console.warn('PostHog analytics not available:', error);
+	}
 
 	analyticsInitialized = true;
 }
@@ -32,11 +62,15 @@ export function initAnalytics() {
  * @param {object} properties - Event properties
  */
 export function trackEvent(eventName, properties = {}) {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	posthog.capture(eventName, properties);
+	try {
+		posthog.capture(eventName, properties);
+	} catch (error) {
+		console.warn('Failed to track event:', eventName, error);
+	}
 }
 
 /**
@@ -44,14 +78,18 @@ export function trackEvent(eventName, properties = {}) {
  * @param {string} path - The page path
  */
 export function trackPageView(path) {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	posthog.capture('$pageview', {
-		$current_url: window.location.href,
-		path
-	});
+	try {
+		posthog.capture('$pageview', {
+			$current_url: window.location.href,
+			path
+		});
+	} catch (error) {
+		console.warn('Failed to track page view:', path, error);
+	}
 }
 
 /**
@@ -60,27 +98,31 @@ export function trackPageView(path) {
  * @param {string} projectName - The project name
  */
 export function trackProjectNavigation(projectId, projectName) {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	// Track as a custom pageview-like event for project switching
-	posthog.capture('project_navigation', {
-		$current_url: window.location.href,
-		project_id: projectId,
-		project_name: projectName,
-		path: `/projects/${projectId}`, // Virtual path for project
-		navigation_type: 'project_switch'
-	});
+	try {
+		// Track as a custom pageview-like event for project switching
+		posthog.capture('project_navigation', {
+			$current_url: window.location.href,
+			project_id: projectId,
+			project_name: projectName,
+			path: `/projects/${projectId}`, // Virtual path for project
+			navigation_type: 'project_switch'
+		});
 
-	// Also track as a virtual pageview for better funnel analysis
-	posthog.capture('$pageview', {
-		$current_url: `${window.location.origin}/projects/${projectId}`,
-		path: `/projects/${projectId}`,
-		project_id: projectId,
-		project_name: projectName,
-		virtual_navigation: true
-	});
+		// Also track as a virtual pageview for better funnel analysis
+		posthog.capture('$pageview', {
+			$current_url: `${window.location.origin}/projects/${projectId}`,
+			path: `/projects/${projectId}`,
+			project_id: projectId,
+			project_name: projectName,
+			virtual_navigation: true
+		});
+	} catch (error) {
+		console.warn('Failed to track project navigation:', projectId, error);
+	}
 }
 
 /**
@@ -89,22 +131,30 @@ export function trackProjectNavigation(projectId, projectName) {
  * @param {object} properties - User properties
  */
 export function identifyUser(userId, properties = {}) {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	posthog.identify(userId, properties);
+	try {
+		posthog.identify(userId, properties);
+	} catch (error) {
+		console.warn('Failed to identify user:', userId, error);
+	}
 }
 
 /**
  * Reset user identity (for logout)
  */
 export function resetUser() {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	posthog.reset();
+	try {
+		posthog.reset();
+	} catch (error) {
+		console.warn('Failed to reset user:', error);
+	}
 }
 
 /**
@@ -112,11 +162,15 @@ export function resetUser() {
  * @param {object} properties - User properties to set
  */
 export function setUserProperties(properties = {}) {
-	if (!browser || !analyticsInitialized) {
+	if (!browser || !analyticsInitialized || !analyticsAvailable || !posthog) {
 		return;
 	}
 
-	posthog.people.set(properties);
+	try {
+		posthog.people.set(properties);
+	} catch (error) {
+		console.warn('Failed to set user properties:', error);
+	}
 }
 
 // Pre-defined tracking events for common actions

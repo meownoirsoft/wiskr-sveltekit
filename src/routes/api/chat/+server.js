@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { buildContext } from '$lib/server/context/buildContext.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { postProcessStreamedResponse } from '$lib/server/responseProcessor.js';
+import { autoUpdateSessionTitle } from '$lib/server/services/autoTitling.js';
 import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
@@ -138,6 +139,19 @@ export const POST = async ({ request, locals }) => {
           console.error('❌ Error saving assistant message:', assistantMsgError);
         } else {
           console.log('✅ Assistant message saved:', assistantMsgResult);
+        }
+
+        // 7.5) Auto-generate session title if needed (don't await, let it run in background)
+        if (sessionId) {
+          autoUpdateSessionTitle(sessionId, projectId, locals.supabase, modelKey)
+            .then(newTitle => {
+              if (newTitle) {
+                console.log('🏷️ Auto-generated session title:', newTitle);
+              }
+            })
+            .catch(err => {
+              console.error('❌ Error auto-generating session title:', err);
+            });
         }
 
         // 8) Log usage ONCE (after you have the full reply)

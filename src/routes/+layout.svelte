@@ -9,6 +9,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
   import ProjectExport from '$lib/components/ProjectExport.svelte';
+  import AvatarSelector from '$lib/components/AvatarSelector.svelte';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import '../app.css';
   import '$lib/components/styles.css';
@@ -65,11 +66,42 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   
   function applyTheme() {
     if (browser) {
+      const root = document.documentElement;
+      
       if (darkMode) {
-        document.documentElement.classList.add('dark');
+        root.classList.add('dark');
+        // Force update CSS variables for dark mode
+        root.style.setProperty('--bg-primary', '#1a1a1a');
+        root.style.setProperty('--bg-panel-left', '#1b1b1e');
+        root.style.setProperty('--bg-panel-right', '#1b1b1e');
+        root.style.setProperty('--bg-header', '#222226');
+        root.style.setProperty('--bg-chat', '#222226');
+        root.style.setProperty('--bg-chat-header', '#1b1b1e');
+        root.style.setProperty('--bg-card', '#35353d');
+        root.style.setProperty('--text-primary', '#ffffff');
+        root.style.setProperty('--bg-modal', '#1b1b1e');
+        root.style.setProperty('--bg-sessions-panel', '#222226');
+        root.style.backgroundColor = '#1a1a1a';
       } else {
-        document.documentElement.classList.remove('dark');
+        root.classList.remove('dark');
+        // Force update CSS variables for light mode
+        root.style.setProperty('--bg-primary', '#ffffff');
+        root.style.setProperty('--bg-panel-left', '#EEF1FF');
+        root.style.setProperty('--bg-panel-right', '#EEF1FF');
+        root.style.setProperty('--bg-header', '#D2DAFF');
+        root.style.setProperty('--bg-chat', '#D2DAFF');
+        root.style.setProperty('--bg-chat-header', '#EEF1FF');
+        root.style.setProperty('--bg-card', '#ffffff');
+        root.style.setProperty('--text-primary', '#1f2937');
+        root.style.setProperty('--bg-modal', '#ffffff');
+        root.style.setProperty('--bg-sessions-panel', '#ffffff');
+        root.style.backgroundColor = '#ffffff';
       }
+      
+      // Force a repaint to ensure all components update
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('theme-changed', { detail: { darkMode } }));
+      }, 0);
     }
   }
   
@@ -217,7 +249,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
 
   // APP SETTINGS modal state
   let showAppSettings = false;
-  let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null };
+  let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null };
   let savingPreferences = false;
   
   // PROJECT EXPORT modal state
@@ -966,6 +998,20 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
                     <span class="text-xs" style="color: var(--color-accent);">Saving...</span>
                   {/if}
                 </div>
+              </div>
+              
+              <!-- Avatar Section -->
+              <div class="border-t border-gray-200 dark:border-gray-600 pt-3">
+                <AvatarSelector
+                  currentAvatarType={userPreferences.avatar_type}
+                  currentAvatarValue={userPreferences.avatar_value}
+                  saving={savingPreferences}
+                  on:change={(e) => {
+                    userPreferences.avatar_type = e.detail.type;
+                    userPreferences.avatar_value = e.detail.value;
+                    saveUserPreferences();
+                  }}
+                />
               </div>
               
               <div class="flex items-center justify-between">

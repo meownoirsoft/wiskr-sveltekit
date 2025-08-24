@@ -1663,6 +1663,7 @@ function handleTextAddToDocs(event) {
   bind:this={chatManager}
   {current}
   {currentSession}
+  {sessionLogicManager}
   {modelKey}
   bind:input
   bind:messages

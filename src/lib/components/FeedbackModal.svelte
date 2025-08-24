@@ -78,11 +78,11 @@
   >
     <div 
       bind:this={modalElement}
-      class="bg-white rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-auto" style="background-color: var(--bg-modal);"
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-auto"
     >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100" style="color: var(--text-primary);">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
           {titleText}
         </h3>
         <button
@@ -105,7 +105,6 @@
             </div>
             <div 
               class="text-sm p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 line-clamp-3 overflow-hidden"
-              style="background-color: #35353d; color: var(--text-secondary);"
             >
               {messageContent.slice(0, 150)}{messageContent.length > 150 ? '...' : ''}
             </div>
@@ -118,7 +117,6 @@
           <label 
             for="feedback-comment" 
             class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            style="color: var(--text-primary);"
           >
             Your thoughts (optional):
           </label>
@@ -127,8 +125,7 @@
             bind:value={comment}
             placeholder={placeholderText}
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-            style="background-color: #1b1b1e; color: var(--text-primary); --tw-ring-color: var(--color-accent);"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             disabled={isSubmitting}
             on:keydown={handleKeydown}
           ></textarea>
@@ -139,7 +136,7 @@
       </div>
       
       <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 rounded-b-lg" style="background-color: var(--bg-primary);">
+      <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-b-lg">
         <button
           class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
           on:click={handleCancel}
@@ -148,10 +145,7 @@
           Cancel
         </button>
         <button
-          class="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-          style="background-color: var(--color-accent);"
-          on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-          on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
           on:click={handleSubmit}
           disabled={isSubmitting}
         >

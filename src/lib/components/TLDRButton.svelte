@@ -34,10 +34,7 @@
 </script>
 
 <button
-  class={buttonClass}
-  style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light);"
-  on:mouseenter={(e) => !disabled && (e.target.style.backgroundColor = 'var(--color-accent-light)')}
-  on:mouseleave={(e) => !disabled && (e.target.style.backgroundColor = 'var(--bg-sessions-button)')}
+  class="{buttonClass} bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
   on:click={handleClick}
   {disabled}
   {title}

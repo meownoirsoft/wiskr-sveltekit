@@ -21,13 +21,16 @@
   let statusMessage = '';
   let showStatus = false;
   
-  // Load existing feedback on mount and when messageId changes
-  $: if (messageId && projectId) {
+  // Check if messageId is a temporary message (not persisted to database)
+  $: isTemporaryMessage = messageId && (typeof messageId === 'string' && messageId.startsWith('temp_'));
+  
+  // Load existing feedback on mount and when messageId changes (but not for temporary messages)
+  $: if (messageId && projectId && !isTemporaryMessage) {
     loadExistingFeedback();
   }
   
   async function loadExistingFeedback() {
-    if (!messageId || isLoading) return;
+    if (!messageId || isLoading || isTemporaryMessage) return;
     
     isLoading = true;
     try {
@@ -48,7 +51,7 @@
   }
   
   function handleThumbsUp() {
-    if (isSubmitting || !messageId || !projectId) return;
+    if (isSubmitting || !messageId || !projectId || isTemporaryMessage) return;
     
     // If already thumbs up, allow quick resubmit without modal
     if (currentFeedback?.rating === 1) {
@@ -61,7 +64,7 @@
   }
   
   function handleThumbsDown() {
-    if (isSubmitting || !messageId || !projectId) return;
+    if (isSubmitting || !messageId || !projectId || isTemporaryMessage) return;
     
     // If already thumbs down, allow quick resubmit without modal
     if (currentFeedback?.rating === -1) {
@@ -74,7 +77,7 @@
   }
   
   async function submitFeedback(rating, comment = null) {
-    if (isSubmitting || !messageId || !projectId) return;
+    if (isSubmitting || !messageId || !projectId || isTemporaryMessage) return;
     
     isSubmitting = true;
     
@@ -150,21 +153,25 @@
   <button
     class="{buttonClass} text-xs rounded border transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
     class:border-green-300={currentFeedback?.rating === 1}
+    class:dark:border-green-600={currentFeedback?.rating === 1}
     class:bg-green-50={currentFeedback?.rating === 1}
+    class:dark:bg-green-900={currentFeedback?.rating === 1}
     class:text-green-600={currentFeedback?.rating === 1}
+    class:dark:text-green-400={currentFeedback?.rating === 1}
     class:border-gray-300={currentFeedback?.rating !== 1}
+    class:dark:border-gray-600={currentFeedback?.rating !== 1}
     class:text-gray-600={currentFeedback?.rating !== 1}
-    style="border-color: {currentFeedback?.rating === 1 ? '#10b981' : '#d1d5db'}; background-color: {currentFeedback?.rating === 1 ? '#f0fdf4' : 'transparent'}; color: {currentFeedback?.rating === 1 ? '#10b981' : '#6b7280'};"
+    class:dark:text-gray-400={currentFeedback?.rating !== 1}
     on:mouseenter={(e) => {
       if (currentFeedback?.rating !== 1) {
-        e.target.style.backgroundColor = '#f9fafb';
-        e.target.style.borderColor = '#9ca3af';
+        e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)';
+        e.target.style.borderColor = 'var(--border-hover)';
       }
     }}
     on:mouseleave={(e) => {
       if (currentFeedback?.rating !== 1) {
         e.target.style.backgroundColor = 'transparent';
-        e.target.style.borderColor = '#d1d5db';
+        e.target.style.borderColor = currentFeedback?.rating !== 1 ? 'var(--border-default)' : '';
       }
     }}
     on:click={handleThumbsUp}
@@ -185,21 +192,25 @@
   <button
     class="{buttonClass} text-xs rounded border transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
     class:border-red-300={currentFeedback?.rating === -1}
+    class:dark:border-red-600={currentFeedback?.rating === -1}
     class:bg-red-50={currentFeedback?.rating === -1}
+    class:dark:bg-red-900={currentFeedback?.rating === -1}
     class:text-red-600={currentFeedback?.rating === -1}
+    class:dark:text-red-400={currentFeedback?.rating === -1}
     class:border-gray-300={currentFeedback?.rating !== -1}
+    class:dark:border-gray-600={currentFeedback?.rating !== -1}
     class:text-gray-600={currentFeedback?.rating !== -1}
-    style="border-color: {currentFeedback?.rating === -1 ? '#ef4444' : '#d1d5db'}; background-color: {currentFeedback?.rating === -1 ? '#fef2f2' : 'transparent'}; color: {currentFeedback?.rating === -1 ? '#ef4444' : '#6b7280'};"
+    class:dark:text-gray-400={currentFeedback?.rating !== -1}
     on:mouseenter={(e) => {
       if (currentFeedback?.rating !== -1) {
-        e.target.style.backgroundColor = '#f9fafb';
-        e.target.style.borderColor = '#9ca3af';
+        e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)';
+        e.target.style.borderColor = 'var(--border-hover)';
       }
     }}
     on:mouseleave={(e) => {
       if (currentFeedback?.rating !== -1) {
         e.target.style.backgroundColor = 'transparent';
-        e.target.style.borderColor = '#d1d5db';
+        e.target.style.borderColor = currentFeedback?.rating !== -1 ? 'var(--border-default)' : '';
       }
     }}
     on:click={handleThumbsDown}
@@ -227,8 +238,8 @@
   
   <!-- Loading indicator for initial load -->
   {#if isLoading}
-    <div class="text-xs text-gray-400 flex items-center gap-1">
-      <div class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></div>
+    <div class="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+      <div class="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 dark:border-gray-500 border-t-transparent"></div>
     </div>
   {/if}
 </div>

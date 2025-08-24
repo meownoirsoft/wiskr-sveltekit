@@ -58,7 +58,10 @@
   // Message Management Functions
   export async function loadMessages(projectId = null) {
     const id = projectId || current?.id;
-    if (!id) return;
+    if (!id || !currentSession) {
+      console.warn('Cannot load messages: missing project ID or session');
+      return;
+    }
     
     // For initial load, reset to main branch
     if (projectId) {
@@ -81,6 +84,7 @@
       .select('*')
       .eq('project_id', id)
       .eq('branch_id', currentBranchId)
+      .eq('session_id', currentSession?.id)
       .order('created_at');
     
     // Ensure minimum loading duration of 500ms so spinner is visible
@@ -100,33 +104,77 @@
 
   export async function send(event) {
     if (!current || !currentSession || !event.detail.message.trim()) return;
-    const userMsg = event.detail.message;
-    input = '';
-    messages = [...messages, { role: 'user', content: userMsg }, { role: 'assistant', content: '', model_key: modelKey }];
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: current.id, sessionId: currentSession.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
-    });
-    if (res.status === 429) {
-      const data = await res.json();
-      messages = [...messages, { role: 'assistant', content: data.message || 'Daily limit reached.' }];
-      return;
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantText = '';
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      if (chunk === '[DONE]') break;
-      assistantText += chunk;
-     
-      // live update last assistant message
-      messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText } : m);
-      dispatch('usage-update');
+    
+    try {
+      const userMsg = event.detail.message;
+      input = '';
+      
+      // Generate temporary IDs to avoid Svelte key conflicts
+      const tempUserMsgId = 'temp_user_' + Date.now();
+      const tempAssistantMsgId = 'temp_assistant_' + Date.now();
+      messages = [
+        ...messages, 
+        { id: tempUserMsgId, role: 'user', content: userMsg, created_at: new Date().toISOString() }, 
+        { id: tempAssistantMsgId, role: 'assistant', content: '', model_key: modelKey, created_at: new Date().toISOString() }
+      ];
+      
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: current.id, sessionId: currentSession.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
+      });
+      
+      if (res.status === 429) {
+        const data = await res.json();
+        messages = [...messages, { role: 'assistant', content: data.message || 'Daily limit reached.' }];
+        return;
+      }
+      
+      if (!res.ok) {
+        console.error('ChatManager: API request failed', { status: res.status, statusText: res.statusText });
+        const errorText = await res.text();
+        console.error('ChatManager: Error details:', errorText);
+        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Error: Failed to get response' } : m);
+        return;
+      }
+      
+      if (!res.body) {
+        console.error('ChatManager: No response body for streaming');
+        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Error: No response body' } : m);
+        return;
+      }
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = '';
+      
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          
+          if (chunk === '[DONE]') break;
+          
+          assistantText += chunk;
+         
+          // Live update last assistant message
+          messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText } : m);
+          dispatch('usage-update');
+        }
+      } catch (streamError) {
+        console.error('ChatManager: Streaming error:', streamError);
+        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText || 'Error during streaming: ' + streamError.message } : m);
+      }
+      
+    } catch (error) {
+      console.error('ChatManager: Fatal error in send function:', error);
+      // Update the assistant message with error
+      messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Fatal error: ' + error.message } : m);
     }
   }
 

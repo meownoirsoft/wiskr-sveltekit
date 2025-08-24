@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { RotateCcw, X } from 'lucide-svelte';
+  import { RotateCcw, X, ChevronsRight } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
   import ModelDropdown from './ModelDropdown.svelte';
   import TLDRButton from './TLDRButton.svelte';
@@ -90,10 +90,8 @@
             <!-- ReAsk Button (always visible when there's a last message) -->
             {#if hasLastUserMessage}
               <button
-                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation" 
-                style="background-color: var(--bg-sessions-button); color: var(--color-accent); border-color: var(--color-accent-light); touch-action: manipulation;"
-                on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.borderColor = 'var(--color-accent)'; }}
-                on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--bg-sessions-button)'; e.target.style.borderColor = 'var(--color-accent-light)'; }}
+                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" 
+                style="touch-action: manipulation;"
                 on:click={reAskLastQuestion}
                 disabled={!current}
                 title="Try your last question again"
@@ -112,12 +110,12 @@
       <!-- Box and Send -->
       <form class="px-2 sm:px-3 pb-2 sm:pb-3 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
         <div class="relative {isMobile ? 'flex-1' : 'w-full'}">
-          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
+          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
           rows="2" 
           bind:value={input} 
           placeholder={current ? "Ask…" : "Pick a project"} 
           disabled={!current} on:keydown={handleKeydown} 
-          style="background-color: var(--ask-box-bg); touch-action: manipulation;" data-theme-bg="#35353D"></textarea>
+          style="touch-action: manipulation;"></textarea>
           {#if input.trim()}
             <button
               type="button"
@@ -131,18 +129,18 @@
             </button>
           {/if}
         </div>
-        <button class="border border-gray-300 dark:border-gray-600 text-white rounded px-2 sm:px-3 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
+        <button class="border border-gray-300 dark:border-gray-600 text-white rounded pl-1 pr-2 sm:pl-1.5 sm:pr-2 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
         style="background-color: var(--color-accent); touch-action: manipulation;" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         >
           <div class="flex flex-col items-center justify-center text-xs sm:text-sm leading-tight">
             {#if isMobile}
-              <span class="font-medium">Wiskr</span>
+              <span class="font-medium"><ChevronsRight size="24" /></span>
             {:else}
               <!-- <ChevronsRight size="16" class="sm:hidden mb-0.5" /> -->
               <!-- <ChevronsRight size="20" class="hidden sm:inline mb-1" /> -->
-              <span class="font-medium">Wiskr</span>
+              <span class="font-medium"><ChevronsRight size="24" /></span>
               <!-- <ChevronsLeft size="16" class="sm:hidden mt-0.5" /> -->
               <!-- <ChevronsLeft size="20" class="hidden sm:inline mt-1" /> -->
             {/if}

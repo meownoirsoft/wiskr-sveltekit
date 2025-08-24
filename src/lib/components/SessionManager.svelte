@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { supabase } from '$lib/supabase.js';
   import { DateTime } from 'luxon';
-  import { Plus, Calendar } from 'lucide-svelte';
+  import { Plus, Calendar, Edit2, Check, X, RotateCcw } from 'lucide-svelte';
 
   export let currentProject;
   export let sessions = [];
@@ -14,6 +14,12 @@
   let isCreatingSession = false;
   let newSessionName = '';
   let sessionsError = '';
+  
+  // Title editing state
+  let editingSessionId = null;
+  let editingTitle = '';
+  let isUpdatingTitle = false;
+  let isRegeneratingTitle = false;
 
   // Load sessions for the current project
   export async function loadSessions() {
@@ -99,6 +105,108 @@
     if (diff < 7) return date.toFormat('cccc'); // Day name
     return date.toFormat('MMM d'); // Month day
   }
+
+  // Title editing functions
+  function startEditingTitle(session, event) {
+    event.stopPropagation();
+    editingSessionId = session.id;
+    editingTitle = session.session_name || session.name;
+  }
+
+  function cancelEditingTitle() {
+    editingSessionId = null;
+    editingTitle = '';
+  }
+
+  async function saveTitle(sessionId) {
+    if (!editingTitle.trim() || isUpdatingTitle) return;
+    
+    isUpdatingTitle = true;
+    try {
+      const response = await fetch('/api/sessions/title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          sessionId,
+          projectId: currentProject.id,
+          customTitle: editingTitle.trim()
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local sessions array
+        sessions = sessions.map(s => 
+          s.id === sessionId 
+            ? { ...s, session_name: result.title, name: result.title }
+            : s
+        );
+        
+        // Update current session if it's the one being edited
+        if (currentSession?.id === sessionId) {
+          currentSession = { ...currentSession, session_name: result.title, name: result.title };
+        }
+        
+        cancelEditingTitle();
+      } else {
+        sessionsError = result.error || 'Failed to update title';
+      }
+    } catch (error) {
+      console.error('Error updating session title:', error);
+      sessionsError = 'Failed to update title';
+    } finally {
+      isUpdatingTitle = false;
+    }
+  }
+
+  async function regenerateTitle(sessionId, event) {
+    event.stopPropagation();
+    if (isRegeneratingTitle) return;
+    
+    isRegeneratingTitle = true;
+    try {
+      const response = await fetch('/api/sessions/title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'regenerate',
+          sessionId,
+          projectId: currentProject.id
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local sessions array
+        sessions = sessions.map(s => 
+          s.id === sessionId 
+            ? { ...s, session_name: result.title, name: result.title }
+            : s
+        );
+        
+        // Update current session if it's the one being regenerated
+        if (currentSession?.id === sessionId) {
+          currentSession = { ...currentSession, session_name: result.title, name: result.title };
+        }
+      } else {
+        sessionsError = result.error || 'Failed to regenerate title';
+      }
+    } catch (error) {
+      console.error('Error regenerating session title:', error);
+      sessionsError = 'Failed to regenerate title';
+    } finally {
+      isRegeneratingTitle = false;
+    }
+  }
+
+  // Check if a title is generic
+  function isGenericTitle(title) {
+    const genericTitles = ['New Session', 'General Discussion', 'New Chat', 'First Chat'];
+    return genericTitles.includes(title);
+  }
 </script>
 
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -143,29 +251,111 @@
   <!-- Sessions list -->
   <div class="space-y-2 max-h-96 overflow-y-auto">
     {#each sessions as session (session.id)}
-      <button
-        on:click={() => selectSession(session)}
-        class="w-full p-3 text-left rounded-lg border transition-colors {
+      <div class="relative rounded-lg border transition-colors {
           currentSession?.id === session.id
             ? 'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20'
             : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
-        }"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <Calendar class="w-4 h-4 text-gray-400" />
-            <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">{session.name}</h4>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {formatSessionDate(session.created_at)}
-              </p>
+        }">
+        
+        {#if editingSessionId === session.id}
+          <!-- Editing mode -->
+          <div class="p-3">
+            <div class="flex items-center space-x-2">
+              <Calendar class="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                bind:value={editingTitle}
+                on:keydown={(e) => {
+                  if (e.key === 'Enter') saveTitle(session.id);
+                  if (e.key === 'Escape') cancelEditingTitle();
+                }}
+                class="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-#1b1b1e dark:bg-#1b1b1e text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Session title..."
+                disabled={isUpdatingTitle}
+              />
+              <button
+                on:click={() => saveTitle(session.id)}
+                disabled={isUpdatingTitle || !editingTitle.trim()}
+                class="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
+                title="Save title"
+              >
+                <Check class="w-4 h-4" />
+              </button>
+              <button
+                on:click={cancelEditingTitle}
+                disabled={isUpdatingTitle}
+                class="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                title="Cancel"
+              >
+                <X class="w-4 h-4" />
+              </button>
             </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+              {formatSessionDate(session.created_at)}
+            </p>
           </div>
-          {#if currentSession?.id === session.id}
-            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-          {/if}
-        </div>
-      </button>
+        {:else}
+          <!-- Display mode -->
+          <button
+            on:click={() => selectSession(session)}
+            class="w-full p-3 text-left group"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3 flex-1 min-w-0">
+                <Calendar class="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2">
+                    <h4 class="font-medium text-gray-900 dark:text-white truncate">
+                      {session.session_name || session.name}
+                    </h4>
+                    {#if isGenericTitle(session.session_name || session.name)}
+                      <span class="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-nowrap" title="This session could have a smarter auto-generated title">
+                        auto-title ready
+                      </span>
+                    {/if}
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {formatSessionDate(session.created_at)}
+                  </p>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-1">
+                <!-- Title actions - only show on current session -->
+                {#if currentSession?.id === session.id}
+                  <button
+                    on:click={(e) => startEditingTitle(session, e)}
+                    class="p-1 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Edit title"
+                  >
+                    <Edit2 class="w-3 h-3" />
+                  </button>
+                  
+                  {#if isGenericTitle(session.session_name || session.name)}
+                    <button
+                      on:click={(e) => regenerateTitle(session.id, e)}
+                      disabled={isRegeneratingTitle}
+                      class="p-1 text-blue-500 hover:text-blue-600 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Generate smart title"
+                    >
+                      {#if isRegeneratingTitle}
+                        <div class="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      {:else}
+                        <RotateCcw class="w-3 h-3" />
+                      {/if}
+                    </button>
+                  {/if}
+                {/if}
+                
+                <!-- Active indicator -->
+                {#if currentSession?.id === session.id}
+                  <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                {/if}
+              </div>
+            </div>
+          </button>
+        {/if}
+      </div>
     {/each}
 
     {#if sessions.length === 0}
