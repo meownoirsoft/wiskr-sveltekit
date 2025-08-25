@@ -27,8 +27,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   
   // Import Lucide icons
-  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash } from 'lucide-svelte';
-  
+  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+
   // Import styles
   import '$lib/components/styles.css';
   
@@ -180,6 +180,10 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let showLeftPanel = false;   // Facts/Docs panel
   let showRightPanel = false;  // Questions/Ideas panel
   let isDesktop = false;       // Track if we're on desktop
+  
+  // Desktop-only collapse state for panels
+  let leftPanelCollapsed = false;   // Whether left panel is collapsed on desktop
+  let rightPanelCollapsed = false;  // Whether right panel is collapsed on desktop
   
 
   // Store the handler reference so it can be properly cleaned up
@@ -1039,6 +1043,17 @@ function handleTextAddToDocs(event) {
     }
   }
   
+  // Desktop-only collapse functions
+  function toggleLeftPanelCollapse() {
+    if (!isDesktop) return; // Only works on desktop
+    leftPanelCollapsed = !leftPanelCollapsed;
+  }
+  
+  function toggleRightPanelCollapse() {
+    if (!isDesktop) return; // Only works on desktop
+    rightPanelCollapsed = !rightPanelCollapsed;
+  }
+  
   // Global search event handlers
   function handleSearchActivateTab(event) {
     const tabName = event.detail;
@@ -1286,19 +1301,16 @@ function handleTextAddToDocs(event) {
   
   function handleCopySuccess(event) {
     // Could add a toast notification here
-    console.log('✅ Content copied to clipboard');
   }
   
   // Mobile menu event handlers
   function handleMobileShowContext() {
-    console.log('📱 Mobile Context button pressed - showing Facts/Docs panel');
     if (panelManager) {
       panelManager.handleMobileShowContext();
     }
   }
   
   function handleMobileShowAddins() {
-    console.log('📱 Mobile Add-Ins button pressed - showing Questions/Ideas panel');
     if (panelManager) {
       panelManager.handleMobileShowAddins();
     }
@@ -1306,14 +1318,12 @@ function handleTextAddToDocs(event) {
   
   // Mobile toggle event handlers (new)
   function handleMobileToggleContext() {
-    console.log('📱 Mobile Context button toggled - toggling Facts/Docs panel');
     if (panelManager) {
       panelManager.handleMobileToggleContext();
     }
   }
   
   function handleMobileToggleAddins() {
-    console.log('📱 Mobile Add-Ins button toggled - toggling Questions/Ideas panel');
     if (panelManager) {
       panelManager.handleMobileToggleAddins();
     }
@@ -1325,7 +1335,8 @@ function handleTextAddToDocs(event) {
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
+  <div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'flex-1' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
+    
     {#if showLeftPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1333,6 +1344,7 @@ function handleTextAddToDocs(event) {
         <button 
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           on:click={() => showLeftPanel = false}
+          aria-label="Close Facts & Docs panel"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1340,14 +1352,15 @@ function handleTextAddToDocs(event) {
         </button>
       </div>
     {/if}
-    {#if showLeftPanel}
-      <Sidebar 
+    {#if showLeftPanel && !leftPanelCollapsed}
+      <Sidebar
         bind:this={sidebarComponent}
         {current}
         {facts}
         {docs}
         {loadingFacts}
         {search}
+        {isDesktop}
         bind:showAddFactForm
         bind:factType
         bind:factKey
@@ -1384,7 +1397,7 @@ function handleTextAddToDocs(event) {
     <!-- Chat Container -->
     <div class="w-full flex flex-col relative">
 
-    <ChatInterface 
+    <ChatInterface
       {current}
       {messages}
       {loadingMessages}
@@ -1412,6 +1425,43 @@ function handleTextAddToDocs(event) {
       on:format-text={handleFormatText}
       on:toggle-session-navigator={handleToggleSessionNavigator}
     />
+    
+    <!-- Fixed position collapse/expand buttons with changing icons -->
+    {#if isDesktop}
+      <!-- Left panel toggle button (always visible, icon changes based on state) -->
+      <div class="absolute left-0 top-0 z-50">
+        <button
+          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={toggleLeftPanelCollapse}
+          title={leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
+        >
+          {#if leftPanelCollapsed}
+            <!-- Double chevrons pointing right (expand) -->
+            <ChevronsRight size="24" />
+          {:else}
+            <!-- Double chevrons pointing left (collapse) -->
+            <ChevronsLeft size="24" />
+          {/if}
+        </button>
+      </div>
+      
+      <!-- Right panel toggle button (always visible, icon changes based on state) -->
+      <div class="absolute right-0 top-0 z-50">
+        <button
+          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={toggleRightPanelCollapse}
+          title={rightPanelCollapsed ? "Expand Questions & Ideas" : "Collapse Questions & Ideas"}
+        >
+          {#if rightPanelCollapsed}
+            <!-- Double chevrons pointing left (expand) -->
+            <ChevronsLeft size="24" />
+          {:else}
+            <!-- Double chevrons pointing right (collapse) -->
+            <ChevronsRight size="24" />
+          {/if}
+        </button>
+      </div>
+    {/if}
     
     <!-- SESSION NAVIGATOR (overlays chat below header) -->
     <div 
@@ -1466,7 +1516,9 @@ function handleTextAddToDocs(event) {
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-  <div class="{showRightPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {showRightPanel && !isDesktop ? 'top: 4rem;' : ''}">
+  <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'flex-1' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {showRightPanel && !isDesktop ? 'top: 4rem;' : ''}">
+    
+    
     {#if showRightPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1474,6 +1526,7 @@ function handleTextAddToDocs(event) {
         <button 
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           on:click={() => showRightPanel = false}
+          aria-label="Close Questions & Ideas panel"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1481,13 +1534,14 @@ function handleTextAddToDocs(event) {
         </button>
       </div>
     {/if}
-    {#if showRightPanel}
-      <IdeasColumn 
+    {#if showRightPanel && !rightPanelCollapsed}
+      <IdeasColumn
         {goodQuestions}
         {relatedIdeas}
         {isGeneratingIdeas}
         {loadingQuestions}
         {search}
+        {isDesktop}
         projectId={current?.id}
         on:questions-update={handleQuestionsUpdate}
         on:insert-text={handleInsertText}

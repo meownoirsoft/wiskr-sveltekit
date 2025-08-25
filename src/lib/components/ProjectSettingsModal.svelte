@@ -183,7 +183,7 @@
 {#if showProjectSettingsModal}
   <!-- Modal Backdrop -->
   <div 
-    class="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
     style="background-color: rgba(0, 0, 0, 0.25);"
     on:click={handleBackdropClick}
     on:keydown={handleKeydown}

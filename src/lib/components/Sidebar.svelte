@@ -4,7 +4,7 @@
   import FactsManager from './FactsManager.svelte';
   import DocsManager from './DocsManager.svelte';
   import EntityCards from './EntityCards.svelte';
-  import { Search, X, ToggleLeft, ToggleRight, Info } from 'lucide-svelte';
+  import { Search, X, ToggleLeft, ToggleRight, Info, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
   import { supabase } from '$lib/supabase.js';
 
@@ -22,6 +22,12 @@
   export let docContent = '';
   export let docTags = '';
   export let search = ''; // Search term from global search
+  
+  // Desktop collapse button props
+  export let isDesktop = false;
+  export let showCollapseButton = false;
+  export let isCollapsed = false;
+  export let onToggleCollapse = null;
 
   const dispatch = createEventDispatcher();
   
@@ -312,12 +318,30 @@
 
 <section class="h-full border-r border-gray-200 dark:border-gray-700 p-3 flex flex-col mobile-sidebar">
   <div class="flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
-    <InfoPopup
-      title="Project Context"
-      content="<p><strong>Project Context</strong> is your AI assistant's memory system for each project.</p><p>It consists of three main components:</p><ul><li><strong>Facts</strong> - Key information about people, places, processes, terms, and things in your project. These help the AI understand your domain.</li><li><strong>Docs</strong> - Longer form documents, notes, and references that provide detailed background information.</li><li><strong>Summary</strong> - An AI-generated overview of your project based on facts and docs.</li></ul><p><strong>Pinning</strong> prioritizes important items for AI context. Use <strong>filtering</strong> to focus on specific topics or tags.</p><p>The AI uses pinned items first, then pulls from the broader context as needed for each conversation.</p>"
-      buttonTitle="Learn about Project Context"
-    />
+    <div class="flex items-center gap-2">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
+	  <InfoPopup
+        title="Project Context"
+        content="<p><strong>Project Context</strong> is your AI assistant's memory system for each project.</p><p>It consists of three main components:</p><ul><li><strong>Facts</strong> - Key information about people, places, processes, terms, and things in your project. These help the AI understand your domain.</li><li><strong>Docs</strong> - Longer form documents, notes, and references that provide detailed background information.</li><li><strong>Summary</strong> - An AI-generated overview of your project based on facts and docs.</li></ul><p><strong>Pinning</strong> prioritizes important items for AI context. Use <strong>filtering</strong> to focus on specific topics or tags.</p><p>The AI uses pinned items first, then pulls from the broader context as needed for each conversation.</p>"
+        buttonTitle="Learn about Project Context"
+      />
+    </div>
+    
+    {#if isDesktop && showCollapseButton && onToggleCollapse}
+      <button
+        class="p-1 text-xs bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+		on:click={onToggleCollapse}
+        title={isCollapsed ? 'Expand Facts & Docs' : 'Collapse Facts & Docs'}
+      >
+        {#if isCollapsed}
+          <!-- Expand - double chevrons pointing right -->
+          <ChevronsRight size="24" />
+        {:else}
+          <!-- Collapse - double chevrons pointing left -->
+          <ChevronsLeft size="24" />
+        {/if}
+      </button>
+    {/if}
   </div>
 
   {#if current}

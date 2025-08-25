@@ -172,19 +172,17 @@
     const newMessageAdded = messages.length > lastMessageCount;
     lastMessageCount = messages.length;
     
-    // If user is at bottom, this is first load, or we just got new messages, scroll down
-    if (shouldScrollToBottom || wasFirstLoad) {
-      if (wasFirstLoad) {
-        // For first load, use aggressive scroll-to-bottom that waits for measurements
-        forceScrollToBottomAfterLoad();
-      } else if (newMessageAdded) {
-        // For new messages, use smooth scroll
-        tick().then(() => {
-          if (containerElement && shouldScrollToBottom) {
-            scrollToBottom(true); // Smooth scroll for new messages
-          }
-        });
-      }
+    // Only scroll to bottom on first load or if user is already at bottom
+    if (wasFirstLoad) {
+      // For first load, use aggressive scroll-to-bottom that waits for measurements
+      forceScrollToBottomAfterLoad();
+    } else if (newMessageAdded && shouldScrollToBottom && isAtBottom) {
+      // For new messages, only scroll if user is at bottom
+      tick().then(() => {
+        if (containerElement && shouldScrollToBottom && isAtBottom) {
+          scrollToBottom(true); // Smooth scroll for new messages
+        }
+      });
     }
     
     // Recalculate visible range for new messages
@@ -192,7 +190,8 @@
   }
   
   // Also auto-scroll when message content changes (during streaming)
-  $: if (messages && messages.length > 0 && shouldScrollToBottom) {
+  // Only if user is at bottom to avoid disrupting reading
+  $: if (messages && messages.length > 0 && shouldScrollToBottom && isAtBottom) {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
       // Debounce scroll during streaming to avoid excessive scrolling

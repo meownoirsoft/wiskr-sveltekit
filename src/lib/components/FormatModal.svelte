@@ -69,7 +69,7 @@
 </script>
 
 {#if showFormatModal}
-  <div class="fixed inset-0 backdrop-blur-sm bg-black  flex items-center justify-center p-4 z-50">
+  <div class="fixed inset-0 backdrop-blur-sm bg-black  flex items-center justify-center p-4 z-[60]">
     <div class="rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal);">
       <!-- Modal Header -->
       <div class="border-b px-6 py-4 flex items-center justify-between">

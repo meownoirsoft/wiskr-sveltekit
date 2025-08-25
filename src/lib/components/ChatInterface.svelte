@@ -815,8 +815,8 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
           </button>
         </div>
       {:else}
-      <!-- Two Column Layout -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Two Column Layout with padding for collapse buttons -->
+      <div class="grid grid-cols-2 gap-4" style="padding-left: 3rem; padding-right: 3rem;">
         <!-- Sessions Column -->
         <div class="flex flex-col gap-1">
           <!-- Sessions Label -->

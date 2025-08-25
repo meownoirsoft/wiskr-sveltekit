@@ -140,38 +140,32 @@
     pendingRating = null;
   }
   
-  // Button sizing
-  $: buttonSize = size === 'md' ? '18' : '16';
+  // Button sizing - made icons bigger and adjusted height to match other buttons (h-8 = 32px)
+  $: buttonSize = size === 'md' ? '20' : '18';
   $: buttonClass = size === 'md' 
-    ? 'px-2 py-1.5' 
-    : 'px-2 py-1';
+    ? 'px-2 py-1.5 h-8' 
+    : 'px-2 py-1 h-8';
 </script>
 
 <!-- Feedback Buttons -->
 <div class="flex items-center gap-1 relative">
   <!-- Thumbs Up Button -->
   <button
-    class="{buttonClass} text-xs rounded border transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
-    class:border-green-300={currentFeedback?.rating === 1}
-    class:dark:border-green-600={currentFeedback?.rating === 1}
+    class="{buttonClass} text-xs rounded transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
     class:bg-green-50={currentFeedback?.rating === 1}
     class:dark:bg-green-900={currentFeedback?.rating === 1}
     class:text-green-600={currentFeedback?.rating === 1}
     class:dark:text-green-400={currentFeedback?.rating === 1}
-    class:border-gray-300={currentFeedback?.rating !== 1}
-    class:dark:border-gray-600={currentFeedback?.rating !== 1}
-    class:text-gray-600={currentFeedback?.rating !== 1}
-    class:dark:text-gray-400={currentFeedback?.rating !== 1}
+    class:text-blue-500={currentFeedback?.rating !== 1}
+    class:dark:text-blue-400={currentFeedback?.rating !== 1}
     on:mouseenter={(e) => {
       if (currentFeedback?.rating !== 1) {
         e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)';
-        e.target.style.borderColor = 'var(--border-hover)';
       }
     }}
     on:mouseleave={(e) => {
       if (currentFeedback?.rating !== 1) {
         e.target.style.backgroundColor = 'transparent';
-        e.target.style.borderColor = currentFeedback?.rating !== 1 ? 'var(--border-default)' : '';
       }
     }}
     on:click={handleThumbsUp}
@@ -190,27 +184,21 @@
   
   <!-- Thumbs Down Button -->
   <button
-    class="{buttonClass} text-xs rounded border transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
-    class:border-red-300={currentFeedback?.rating === -1}
-    class:dark:border-red-600={currentFeedback?.rating === -1}
+    class="{buttonClass} text-xs rounded transition-colors flex items-center gap-1 relative disabled:opacity-50 min-w-0"
     class:bg-red-50={currentFeedback?.rating === -1}
     class:dark:bg-red-900={currentFeedback?.rating === -1}
     class:text-red-600={currentFeedback?.rating === -1}
     class:dark:text-red-400={currentFeedback?.rating === -1}
-    class:border-gray-300={currentFeedback?.rating !== -1}
-    class:dark:border-gray-600={currentFeedback?.rating !== -1}
-    class:text-gray-600={currentFeedback?.rating !== -1}
-    class:dark:text-gray-400={currentFeedback?.rating !== -1}
+    class:text-blue-500={currentFeedback?.rating !== -1}
+    class:dark:text-blue-400={currentFeedback?.rating !== -1}
     on:mouseenter={(e) => {
       if (currentFeedback?.rating !== -1) {
         e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)';
-        e.target.style.borderColor = 'var(--border-hover)';
       }
     }}
     on:mouseleave={(e) => {
       if (currentFeedback?.rating !== -1) {
         e.target.style.backgroundColor = 'transparent';
-        e.target.style.borderColor = currentFeedback?.rating !== -1 ? 'var(--border-default)' : '';
       }
     }}
     on:click={handleThumbsDown}

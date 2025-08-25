@@ -19,6 +19,19 @@
   export let onHeightChange = null;
   let messageElement;
   let lastMeasuredHeight = 0;
+  
+  // Dynamic width based on chat column width
+  let isWideChat = false;
+  
+  // Check if chat column is wider than 1000px
+  function checkChatWidth() {
+    if (typeof window !== 'undefined' && messageElement) {
+      const chatColumn = messageElement.closest('.flex-1'); // Find the main chat area
+      if (chatColumn) {
+        isWideChat = chatColumn.offsetWidth > 1000;
+      }
+    }
+  }
 
   const dispatch = createEventDispatcher();
 
@@ -79,18 +92,39 @@
   // Measure on mount and when content changes
   onMount(() => {
     measureHeight();
+    checkChatWidth();
+    
+    // Listen for resize events to update width constraint
+    const resizeObserver = new ResizeObserver(() => {
+      checkChatWidth();
+    });
+    
+    if (messageElement) {
+      const chatColumn = messageElement.closest('.flex-1');
+      if (chatColumn) {
+        resizeObserver.observe(chatColumn);
+      }
+    }
+    
+    // Cleanup resize observer
+    return () => {
+      resizeObserver.disconnect();
+    };
   });
 
   // Re-measure when message content changes
   $: if (message && messageElement) {
-    tick().then(measureHeight);
+    tick().then(() => {
+      measureHeight();
+      checkChatWidth();
+    });
   }
 
   $: branchColor = getBranchColor(currentBranch);
   $: messageBranchCount = messageBranchCounts[message.id] || 0;
 </script>
 
-<div class="{message.role === 'user' ? 'max-w-[90%] sm:max-w-2xl ml-auto mr-2 sm:mr-4 mt-6 mb-3' : 'max-w-[95%] sm:max-w-4xl group mb-3'}" bind:this={messageElement}>
+<div class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-6 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3`}" bind:this={messageElement}>
   <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {message.role === 'user' ? 'flex items-center gap-3 sm:gap-3 justify-end' : 'flex items-center gap-3 sm:gap-3'}">
     {#if message.role === 'user'}
       <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{userPreferences.display_name || 'You'}</span>
@@ -120,7 +154,7 @@
        style="background-color: {message.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {message.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {message.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {message.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
     
     {#if message.role === 'assistant'}
-      <div class="prose prose-xs sm:prose-sm max-w-none prose-gray dark:prose-invert">
+      <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert">
         {@html renderMarkdown(message.content)}
       </div>
       
@@ -138,7 +172,7 @@
         <span class="xs:hidden">Select</span>
       </button>
     {:else}
-      <div class="text-sm sm:text-base">
+      <div class="text-base sm:text-lg">
         {message.content}
       </div>
     {/if}

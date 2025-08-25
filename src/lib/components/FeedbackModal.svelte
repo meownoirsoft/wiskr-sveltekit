@@ -72,7 +72,7 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/20 dark:bg-black/40"
+    class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm bg-black/20 dark:bg-black/40"
     on:click={handleBackdropClick}
     on:keydown={handleKeydown}
   >
