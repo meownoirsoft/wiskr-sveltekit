@@ -94,22 +94,22 @@
   <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {message.role === 'user' ? 'flex items-center gap-3 sm:gap-3 justify-end' : 'flex items-center gap-3 sm:gap-3'}">
     {#if message.role === 'user'}
       <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{userPreferences.display_name || 'You'}</span>
-      <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: var(--color-accent);">
+      <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: var(--color-accent);">
         {#if userPreferences.avatar_type === 'default'}
-          <User size="20" class="sm:size-5 text-gray-500 dark:text-gray-400" />
+          <User size="24" class="sm:size-9 text-gray-500 dark:text-gray-400" />
         {:else}
-          <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-full" />
+          <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-md" />
         {/if}
       </div>
     {:else}
       {#if message.model_key}
-        <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: #5D60DD;">
-          <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-full" />
+        <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
+          <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-md" />
         </div>
         <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(message.model_key)}</span>
       {:else}
-        <div class="w-16 h-16 sm:w-12 sm:h-12 -mb-2 sm:-mb-2 z-10 rounded-full bg-white dark:bg-gray-800 shadow-sm border-4 flex items-center justify-center p-0.5 sm:p-1 flex-shrink-0" style="border-color: #5D60DD;">
-          <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-full" />
+        <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
+          <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" />
         </div>
         <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
       {/if}

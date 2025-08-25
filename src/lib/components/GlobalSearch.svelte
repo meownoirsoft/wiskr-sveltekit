@@ -1280,7 +1280,7 @@
   }
 </script>
 
-<div class="relative w-full max-w-md" bind:this={searchContainer}>
+<div class="relative w-full max-w-md" bind:this={searchContainer} data-tutorial="global-search">
   <!-- Search Box -->
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

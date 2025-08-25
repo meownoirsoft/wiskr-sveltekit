@@ -1,0 +1,46 @@
+# Phase.dev Configuration for Wiskr SvelteKit
+# This file defines the secret management configuration for different environments
+
+version: "1.0"
+app_name: "wiskr-sveltekit"
+
+# Environment configurations
+environments:
+  development:
+    description: "Local development environment"
+    secrets:
+      - PUBLIC_SUPABASE_URL
+      - SUPABASE_URL
+      - PUBLIC_SUPABASE_ANON_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - OPENAI_API_KEY
+      - OPENROUTER_API_KEY
+      - PUBLIC_POSTHOG_KEY
+      - PUBLIC_POSTHOG_HOST
+    
+  staging:
+    description: "Staging environment for testing"
+    secrets:
+      - PUBLIC_SUPABASE_URL
+      - SUPABASE_URL
+      - PUBLIC_SUPABASE_ANON_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - OPENAI_API_KEY
+      - OPENROUTER_API_KEY
+      - PUBLIC_POSTHOG_KEY
+      - PUBLIC_POSTHOG_HOST
+    
+  production:
+    description: "Production environment"
+    secrets:
+      - PUBLIC_SUPABASE_URL
+      - SUPABASE_URL
+      - PUBLIC_SUPABASE_ANON_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - OPENAI_API_KEY
+      - OPENROUTER_API_KEY
+      - PUBLIC_POSTHOG_KEY
+      - PUBLIC_POSTHOG_HOST
+
+# Default environment for local development
+default_environment: development

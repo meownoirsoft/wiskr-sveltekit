@@ -166,9 +166,10 @@
     }
   }
 
-  // Auto-scroll when new messages arrive (if user is at bottom)
+  // Auto-scroll when messages change (new messages or content updates)
   $: if (messages && messages.length !== lastMessageCount) {
     const wasFirstLoad = lastMessageCount === 0 && messages.length > 0;
+    const newMessageAdded = messages.length > lastMessageCount;
     lastMessageCount = messages.length;
     
     // If user is at bottom, this is first load, or we just got new messages, scroll down
@@ -176,8 +177,8 @@
       if (wasFirstLoad) {
         // For first load, use aggressive scroll-to-bottom that waits for measurements
         forceScrollToBottomAfterLoad();
-      } else {
-        // For new messages, use normal scroll
+      } else if (newMessageAdded) {
+        // For new messages, use smooth scroll
         tick().then(() => {
           if (containerElement && shouldScrollToBottom) {
             scrollToBottom(true); // Smooth scroll for new messages
@@ -190,6 +191,50 @@
     tick().then(calculateVisibleRange);
   }
   
+  // Also auto-scroll when message content changes (during streaming)
+  $: if (messages && messages.length > 0 && shouldScrollToBottom) {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
+      // Debounce scroll during streaming to avoid excessive scrolling
+      clearTimeout(streamingScrollTimeout);
+      streamingScrollTimeout = setTimeout(() => {
+        if (containerElement && shouldScrollToBottom && isAtBottom) {
+          scrollToBottom(false); // Immediate scroll during streaming
+        }
+      }, 50);
+    }
+  }
+  
+  let streamingScrollTimeout = null;
+  
+  // Force scroll to bottom immediately (for button click) - ensures single click works
+  async function forceScrollToBottomImmediate() {
+    if (!containerElement || !messages.length) return;
+    
+    // Temporarily disable virtualization to show all messages and get accurate scroll height
+    visibleRange = {
+      startIndex: 0,
+      endIndex: messages.length - 1,
+      offsetTop: 0,
+      visibleCount: messages.length
+    };
+    
+    // Wait for DOM update
+    await tick();
+    
+    // Force immediate scroll to the very bottom
+    containerElement.scrollTop = containerElement.scrollHeight;
+    
+    // Set state to reflect we're at bottom
+    isAtBottom = true;
+    shouldScrollToBottom = true;
+    
+    // Re-enable virtualization after a short delay
+    setTimeout(() => {
+      calculateVisibleRange();
+    }, 100);
+  }
+
   // Force scroll to bottom for first load - more aggressive approach
   async function forceScrollToBottomAfterLoad() {
     if (!containerElement || !messages.length) return;
@@ -267,6 +312,9 @@
     if (scrollTimeoutId) {
       clearTimeout(scrollTimeoutId);
     }
+    if (streamingScrollTimeout) {
+      clearTimeout(streamingScrollTimeout);
+    }
   });
 
   // Debug info for development
@@ -336,13 +384,15 @@
 
 <!-- Scroll to bottom button (appears when user scrolled up) -->
 {#if messages.length > 0 && !isAtBottom}
-  <button
-    class="fixed bottom-20 right-6 z-50 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full p-3 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"
-    on:click={() => scrollToBottom(true)}
-    title="Scroll to bottom"
-  >
-    ↓ New messages
-  </button>
+  <div class="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20">
+    <button
+      class="bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full px-4 py-2 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"
+      on:click={() => forceScrollToBottomImmediate()}
+      title="Scroll to bottom"
+    >
+      ↓ New messages
+    </button>
+  </div>
 {/if}
 
 <style>

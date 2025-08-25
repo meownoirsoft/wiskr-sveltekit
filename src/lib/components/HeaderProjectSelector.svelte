@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Search, ChevronDown, Trash, Settings, X, Download } from 'lucide-svelte';
+  import { Plus, Search, ChevronDown, Trash, Settings, X } from 'lucide-svelte';
 
   export let projects = [];
   export let current = null;
@@ -56,13 +56,6 @@
     dispatch('open-settings', project);
     closeDropdown();
   }
-  
-  function exportProject(project, event) {
-    event.stopPropagation();
-    console.log('📤 Export button clicked for project:', project.name, project.id);
-    dispatch('export', project);
-    closeDropdown();
-  }
 
   // Close dropdown when clicking outside
   function handleOutsideClick(event) {
@@ -89,41 +82,29 @@
   }
 </script>
 
-<div class="relative" bind:this={dropdownEl}>
+<div class="relative" bind:this={dropdownEl} data-tutorial="project-selector">
   {#if isMobile}
     <!-- Mobile: Direct search and project list -->
     <div class="space-y-3">
-      <!-- Search and New button -->
-      <div class="flex items-center gap-2">
-        <div class="relative flex-1">
-          <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
-          <input
-            type="text"
-            class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
-            style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
-            placeholder="Search projects..."
-            bind:value={search}
-          />
-          {#if search}
-            <button
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
-              style="color: var(--text-header-secondary);"
-              on:click={() => search = ''}
-            >
-              <X size="16" />
-            </button>
-          {/if}
-        </div>
-        <button
-          class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded transition-colors flex-shrink-0"
-          style="background-color: var(--color-accent);"
-          on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-          on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-          on:click={createNewProject}
-        >
-          <Plus size="16" />
-          New
-        </button>
+      <!-- Search box -->
+      <div class="relative">
+        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
+        <input
+          type="text"
+          class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
+          style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
+          placeholder="Search projects..."
+          bind:value={search}
+        />
+        {#if search}
+          <button
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
+            style="color: var(--text-header-secondary);"
+            on:click={() => search = ''}
+          >
+            <X size="16" />
+          </button>
+        {/if}
       </div>
       
       <!-- Project list -->
@@ -138,14 +119,6 @@
               <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
             </button>
             <div class="flex items-center gap-1 px-2">
-              <button
-                class="p-1 transition-colors"
-                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
-                title="Export Project Data"
-                on:click={(e) => exportProject(project, e)}
-              >
-                <Download size="16" />
-              </button>
               <button
                 class="p-1 transition-colors"
                 style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
@@ -192,21 +165,9 @@
     <!-- Desktop Dropdown -->
     {#if showDropdown}
       <div class="absolute top-full left-0 w-80 mt-1 border rounded-lg shadow-lg z-[100] max-h-[70vh] overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
-        <!-- Header with search and new button -->
+        <!-- Header with search -->
         <div class="p-3 border-b" style="border-color: var(--border-header-input);">
-          <div class="flex items-center gap-2 mb-2">
-            <h4 class="font-semibold text-sm" style="color: var(--text-header);">Projects</h4>
-            <button
-              class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded ml-auto transition-colors"
-              style="background-color: var(--color-accent);"
-              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-              on:click={createNewProject}
-            >
-              <Plus size="16" />
-              New
-            </button>
-          </div>
+          <h4 class="font-semibold text-sm mb-2" style="color: var(--text-header);">Projects</h4>
           
           <div class="relative">
             <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
@@ -241,14 +202,6 @@
                 <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
               </button>
               <div class="flex items-center gap-1 px-2">
-                <button
-                  class="p-1 transition-colors"
-                  style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
-                  title="Export Project Data"
-                  on:click={(e) => exportProject(project, e)}
-                >
-                  <Download size="16" />
-                </button>
                 <button
                   class="p-1 transition-colors"
                   style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"

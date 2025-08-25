@@ -38,14 +38,16 @@
     if (score >= 80) return '#10b981'; // green
     if (score >= 60) return '#f59e0b'; // amber  
     if (score >= 40) return '#f97316'; // orange
-    return '#ef4444'; // red
+    if (score === 0) return '#6b7280'; // neutral gray for "Brand new"
+    return '#ef4444'; // red for "Needs work"
   }
 
   function getScoreLabel(score) {
     if (score >= 80) return 'Excellent';
     if (score >= 60) return 'Good';
     if (score >= 40) return 'Fair';
-    return 'Needs Work';
+    if (score === 0) return 'Brand new';
+    return 'Needs work';
   }
 
   async function toggleTooltip() {
@@ -144,7 +146,7 @@
   }
 </script>
 
-<div class="quality-tooltip-container relative">
+<div class="quality-tooltip-container relative" data-tutorial="context-quality">
   {#if isMobile}
     <!-- Mobile: Score display + Inline suggestions -->
     <div class="space-y-3">

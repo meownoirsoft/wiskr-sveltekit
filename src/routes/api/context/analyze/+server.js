@@ -258,6 +258,7 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
     pinnedFactsPercentage: totalFactsCount ? Math.round((pinnedFacts?.length || 0) / totalFactsCount * 100) : 0,
     contextQualityScore: calculateContextQualityScore({
       hasProjectDescription: !!project?.description?.trim(),
+      projectDescription: project?.description || '',
       pinnedFactsCount: pinnedFacts?.length || 0,
       entityCardsCount: entityCards?.length || 0,
       totalCharacters: consistentTotalCharacters // Use consistent calculation method

@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
-import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight, Boxes, GitBranch } from 'lucide-svelte';
+import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight, Boxes, GitBranch, Plus } from 'lucide-svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
@@ -11,6 +11,8 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   import ProjectExport from '$lib/components/ProjectExport.svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
+  import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
+  import TutorialOverlay from '$lib/components/TutorialOverlay.svelte';
   import '../app.css';
   import '$lib/components/styles.css';
   
@@ -180,6 +182,15 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     
     // Initialize PostHog analytics
     initAnalytics();
+    
+    // PWA functionality removed for simplicity
+    
+    // Initialize tutorial system
+    if (shouldShowTutorial($page.url.pathname)) {
+      setTimeout(() => {
+        initTutorial();
+      }, 2000); // Wait for app to fully load
+    }
     
     // IMPORTANT: Don't load projects directly in layout - this bypasses RLS!
     // Projects should be loaded by the page server-side with proper auth context
@@ -490,7 +501,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         <a href="/projects" class="{isDesktop ? 'hidden' : 'flex'} flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
           <span class="text-lg inline-flex items-center">
             <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
-            <span style="color: #5d60dd" class="hidden xs:inline">Mr Wiskr</span>
+            <span style="color: #5d60dd" class="hidden xs:inline">Wiskr</span>
             <span style="color: #5d60dd" class="xs:hidden">Wiskr</span>
             <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" />
           </span>
@@ -498,7 +509,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         
         <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
-          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-6">
+          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
             <HeaderProjectSelector 
               {projects}
               current={currentProject}
@@ -515,7 +526,6 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
                   loadContextQualityScore(e.detail.id);
                 }
               }}
-              on:create={() => { showNewProjectModal = true; }}
               on:open-settings={(e) => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail })); }}
               on:export={(e) => {
                 console.log('📤 Export event received in layout (desktop):', e.detail?.name);
@@ -537,6 +547,20 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
                 }
               }}
             />
+            
+            <!-- New Project Button -->
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-white rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
+              style="background-color: var(--color-accent);"
+              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+              on:click={() => { showNewProjectModal = true; }}
+              title="Create New Project"
+            >
+              <Plus size="16" />
+              <span>New</span>
+            </button>
+            
             {#if currentProject?.id}
               <ContextQualityIndicator 
                 score={contextQualityScore}
@@ -762,7 +786,22 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       <div class="absolute top-16 left-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl w-80 max-w-[90vw] py-4" style="background-color: var(--bg-primary);">
         <!-- Header -->
         <div class="px-4 pb-3 border-b border-gray-200 dark:border-gray-600">
-          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</h3>
+            <button
+              class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded transition-colors"
+              style="background-color: var(--color-accent);"
+              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+              on:click={() => {
+                showNewProjectModal = true;
+                showProjectMenu = false;
+              }}
+            >
+              <Plus size="14" />
+              New
+            </button>
+          </div>
         </div>
         
         <!-- Project Selector Section -->
@@ -1071,7 +1110,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">About</h4>
             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Mr. Wiskr</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Wiskr</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">v1.0.0</span>
               </div>
               <div class="flex gap-3 text-xs">
@@ -1095,4 +1134,9 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       </div>
     </div>
   {/if}
+  
+  <!-- PWA functionality removed -->
+  
+  <!-- Tutorial Overlay -->
+  <TutorialOverlay />
 </div>

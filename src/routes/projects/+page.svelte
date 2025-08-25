@@ -39,98 +39,21 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   });
   
   export let data;
+  
+  // Project state is now managed by ProjectState component
+  // These will be bound to ProjectState component
   let projects = data?.projects ?? [];
-  
-  // Note: Server-side data loaded
-  
-  // Debug: Log initial projects state
-  $: if (browser && projects) {
-    console.log('🔍 Projects array updated:', {
-      count: projects.length,
-      projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
-    });
-  }
   let selectedId = null;
   let current = null;
   let hasInit = false;
   let modelKey = 'speed'; // 'speed' | 'quality' | 'micro' | etc.
   let modelKeyLoaded = false; // Flag to prevent saving before loading
-
-  // Save modelKey to localStorage whenever it changes (but only after initial load)
-  $: if (browser && modelKey && modelKeyLoaded) {
-    localStorage.setItem('wiskr_model_key', modelKey);
-  }
-
-  // init once - with localStorage validation
-  $: (async () => {
-    if (!browser || hasInit || !projects?.length) return;
-    const lastSelectedId = localStorage.getItem('wiskr_last_project_id');
-    
-    // Validate that the cached project ID actually exists for this user
-    const foundByStorage = lastSelectedId ? projects.find(p => p.id === lastSelectedId) : null;
-    
-    let selectedId;
-    if (foundByStorage) {
-      // Use the cached project if it exists
-      selectedId = foundByStorage.id;
-      console.log('✅ Using cached project:', foundByStorage.name);
-    } else {
-      // If cached project doesn't exist, use first project and clear bad cache
-      selectedId = projects[0].id;
-      if (lastSelectedId) {
-        console.log('🧽 Clearing invalid cached project ID:', lastSelectedId);
-        localStorage.removeItem('wiskr_last_project_id');
-      }
-      console.log('✅ Using first available project:', projects[0].name);
-    }
-    
-    hasInit = true;
-    await selectProjectById(selectedId);
-    
-    // Send project data to layout for header dropdown
-    window.dispatchEvent(new CustomEvent('layout:update-projects', {
-      detail: {
-        projects: projects,
-        currentProjectId: selectedId
-      }
-    }));
-  })();
-
-  // keep current derived from id
-  $: current = projects.find(p => p.id === selectedId) || null;
   
 
+  // Project selection is now handled by ProjectState component
   async function selectProjectById(id) {
-    if (!id || selectedId === id) return;
-    selectedId = id;
-
-    // Save to localStorage for persistence across page reloads
-    if (browser) {
-      localStorage.setItem('wiskr_last_project_id', id);
-    }
-
-    // Wait for reactive update to set current project
-    await tick();
-    
-    // Reset branch state when switching projects
-    currentBranchId = 'main';
-    currentBranch = null;
-    branches = [];
-    
-    // Load sessions first, then select active session
-    if (sessionLogicManager) {
-      await sessionLogicManager.loadSessions();
-    }
-    
-    // load for this project (now that current is set)
-    if (contextManager) {
-      await contextManager.loadContext();
-    }
-    await loadUsage();
-    
-    // Load questions and messages for this project using ChatManager
-    if (chatManager) {
-      await chatManager.loadQuestions();
+    if (projectState) {
+      await projectState.selectProjectById(id);
     }
   }
 
@@ -325,37 +248,27 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   }
 
   onMount(async () => {
-    // If the server didn't preload, fetch projects
-    if (!projects.length) {
-      console.log('📋 No projects preloaded, fetching from database...');
-      const { data: p } = await supabase.from('projects').select('*').order('created_at');
-      projects = p ?? [];
-      console.log(`📊 Found ${projects.length} existing projects`);
+    // Server should have preloaded projects (including creating default for new users)
+    // Only fetch fresh if server didn't preload properly
+    if (!projects || projects.length === 0) {
+      console.log('📋 No projects preloaded, fetching fresh from database...');
+      const { data: p, error } = await supabase.from('projects').select('*').order('created_at');
       
-      // If still no projects after fetching, create a default first project for new users
-      if (projects.length === 0) {
-        console.log('🆕 New user detected, creating first project...');
-        try {
-          const res = await fetch('/api/projects/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'My First Project',
-              description: 'Welcome to Wiskr! This is your first project to get you started.'
-            })
-          });
-          
-          if (res.ok) {
-            const { project } = await res.json();
-            projects = [project];
-            console.log('✅ Created first project for new user:', project.name);
-          } else {
-            console.error('❌ Failed to create first project:', await res.text());
-          }
-        } catch (error) {
-          console.error('❌ Error creating first project:', error);
-        }
+      if (error) {
+        console.error('❌ Error fetching projects:', error);
+        projects = [];
+      } else {
+        projects = p ?? [];
+        console.log(`📊 Found ${projects.length} existing projects from database`);
       }
+      
+      // Note: Default project creation is now handled server-side in +page.server.js
+      // This prevents race conditions and duplicate projects
+      if (projects.length === 0) {
+        console.log('⚠️  No projects found even after database fetch - this should not happen for authenticated users');
+      }
+    } else {
+      console.log('📊 Using preloaded projects:', projects.length, 'projects');
     }
     
     // Clean up any stale localStorage data
@@ -1412,7 +1325,7 @@ function handleTextAddToDocs(event) {
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}">
+  <div class="{showLeftPanel ? (isDesktop ? 'flex-1' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
     {#if showLeftPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1486,6 +1399,7 @@ function handleTextAddToDocs(event) {
       {sessions}
       {currentSession}
       isMobile={!isDesktop}
+      data-tutorial="chat-area"
       on:send={send}
       on:switch-branch={handleSwitchToBranch}
       on:open-format-modal={handleOpenFormatModal}
@@ -1503,6 +1417,7 @@ function handleTextAddToDocs(event) {
     <div 
       bind:this={sessionNavigatorElement}
       class="absolute z-50 transition-all duration-300 ease-in-out {showSessionNavigator ? 'translate-x-0 visible opacity-100' : '-translate-x-full invisible opacity-0'} {isDesktop ? 'left-0 top-16 bottom-0 w-80' : 'fixed inset-0 top-16 w-full h-full'}"
+      data-tutorial="sessions-panel"
     >
       {#if showSessionNavigator && !isDesktop}
         <!-- Mobile session navigator header -->

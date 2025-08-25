@@ -1,0 +1,8 @@
+{
+  "version": "2",
+  "phaseApp": "Wiskr",
+  "appId": "b735502f-4b43-488a-9eb6-84ee14dd66a6",
+  "defaultEnv": "Development",
+  "envId": "d92a0791-3df6-47fc-8f06-d4678c442b68",
+  "monorepoSupport": false
+}

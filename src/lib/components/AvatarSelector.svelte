@@ -102,7 +102,7 @@
 <div class="space-y-4">
   <!-- Current Avatar Preview -->
   <div class="flex items-center gap-4">
-    <div class="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600 overflow-hidden" style="border-color: var(--color-accent);">
+    <div class="w-16 h-16 rounded-lg border-2 border-gray-200 dark:border-gray-600 overflow-hidden" style="border-color: var(--color-accent);">
       <img 
         src={previewUrl} 
         alt="Avatar preview" 
@@ -123,7 +123,7 @@
         class="flex-shrink-0 relative"
         on:click={selectDefault}
       >
-        <div class="w-12 h-12 rounded-full border-2 overflow-hidden" 
+        <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" 
              class:border-gray-200={selectedType !== 'default'}
              class:dark:border-gray-600={selectedType !== 'default'}
              style={selectedType === 'default' ? 'border-color: var(--color-accent);' : ''}>
@@ -152,7 +152,7 @@
             class="relative"
             on:click={() => selectPremade(avatar)}
           >
-            <div class="w-12 h-12 rounded-full border-2 overflow-hidden" 
+            <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" 
                  class:border-gray-200={!(selectedType === 'premade' && selectedValue === avatar)}
                  class:dark:border-gray-600={!(selectedType === 'premade' && selectedValue === avatar)}
                  style={selectedType === 'premade' && selectedValue === avatar ? 'border-color: var(--color-accent);' : ''}>
@@ -178,7 +178,7 @@
       <div class="flex items-center gap-3">
         {#if selectedType === 'custom' && selectedValue}
           <div class="relative">
-            <div class="w-12 h-12 rounded-full border-2 overflow-hidden" style="border-color: var(--color-accent);">
+            <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" style="border-color: var(--color-accent);">
               <img 
                 src={selectedValue} 
                 alt="Custom avatar" 

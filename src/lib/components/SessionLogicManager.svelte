@@ -24,6 +24,8 @@
   export async function loadSessions() {
     if (!current) return;
     
+    console.log('🔄 loadSessions: Starting for project', current.id);
+    
     try {
       // Clear current session when loading for a new project
       // This ensures we don't show sessions from the previous project
@@ -35,11 +37,13 @@
       if (res.ok) {
         const data = await res.json();
         sessions = data.sessions || [];
+        console.log(`🔍 Found ${sessions.length} existing sessions for project ${current.id}`);
         
         // Select the active session or the first one if available
         if (sessions.length > 0) {
           const activeSession = sessions.find(s => s.is_active) || sessions[0];
           currentSession = activeSession;
+          console.log('✅ Selected session:', activeSession.session_name);
           
           // Load messages and branches for the selected session
           if (currentSession) {
@@ -47,7 +51,9 @@
             await loadSessionBranches(currentSession.id);
           }
         } else {
-          // No sessions exist - create a default session for new users
+          // No sessions exist - this should not happen for projects created server-side
+          // But we'll handle it gracefully by creating a fallback session
+          console.log('⚠️ No sessions found for project - creating fallback session');
           try {
             const createRes = await fetch('/api/sessions', {
               method: 'POST',
@@ -55,7 +61,8 @@
               body: JSON.stringify({
                 action: 'create',
                 projectId: current.id,
-                sessionName: 'First Chat'
+                sessionName: 'Main Chat',
+                topicSummary: 'Your main conversation with Wiskrs'
               })
             });
             
@@ -64,27 +71,38 @@
               sessions = [session];
               currentSession = session;
               
-              console.log('✅ Created default session for new project:', session.session_name);
+              console.log('✅ Created fallback session for project:', session.session_name);
               
               // Load messages and branches for the new session
               await loadSessionMessages(session.id);
               await loadSessionBranches(session.id);
             } else {
               const errorText = await createRes.text();
-              console.error('❌ Failed to create default session:', errorText);
+              console.error('❌ Failed to create fallback session:', errorText);
               
               // Try to show user-friendly error
               if (errorText.includes('row-level security')) {
                 console.error('🔒 RLS Policy Error: Please check database permissions');
               }
+              
+              // Additional debugging for new users
+              console.error('🐛 Debug info:', {
+                projectId: current.id,
+                projectName: current.name,
+                userId: 'check auth',
+                timestamp: new Date().toISOString()
+              });
             }
           } catch (error) {
-            console.error('❌ Error creating default session:', error);
+            console.error('❌ Error creating fallback session:', error);
           }
         }
+      } else {
+        const errorText = await res.text();
+        console.error('❌ Failed to fetch sessions:', res.status, errorText);
       }
     } catch (error) {
-      console.error('Error loading sessions:', error);
+      console.error('❌ Error in loadSessions:', error);
     }
   }
 

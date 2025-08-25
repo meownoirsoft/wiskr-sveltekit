@@ -1,9 +1,11 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X } from 'lucide-svelte';
+  import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
   import FactTypesManager from './FactTypesManager.svelte';
   import TLDRModal from './TLDRModal.svelte';
   import TLDRButton from './TLDRButton.svelte';
+  import ProjectExport from './ProjectExport.svelte';
+  import ProjectImport from './ProjectImport.svelte';
 
   export let showProjectSettingsModal = false;
   export let project = null;
@@ -32,6 +34,7 @@
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'fact-types', label: 'Fact Types', icon: Settings },
+    { id: 'data', label: 'Data Management', icon: Database },
     // Future tabs can be added here
   ];
 
@@ -153,6 +156,26 @@
     showTLDRModal = false;
     tldrOriginalText = '';
   }
+  
+  // Import/Export modal state
+  let showExportModal = false;
+  let showImportModal = false;
+  
+  function openExportModal() {
+    showExportModal = true;
+  }
+  
+  function openImportModal() {
+    showImportModal = true;
+  }
+  
+  function closeExportModal() {
+    showExportModal = false;
+  }
+  
+  function closeImportModal() {
+    showImportModal = false;
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -214,6 +237,87 @@
             </div>
             
             <FactTypesManager projectId={project?.id} />
+          </div>
+        {:else if activeTab === 'data'}
+          <div>
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Data Management</h3>
+              <p class="text-gray-600 dark:text-gray-400">Import and export your project data. Create backups or migrate data between projects.</p>
+            </div>
+            
+            <!-- Import & Export Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Export Section -->
+              <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="flex items-center mb-4">
+                  <div class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                    <Download size="20" class="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">Export Project</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Create a backup of your project data</p>
+                  </div>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Export all facts, documents, and project settings as a JSON file that can be imported later.
+                </p>
+                
+                <button
+                  on:click={openExportModal}
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                  disabled={!project?.id}
+                >
+                  <Download size="18" />
+                  Export Project
+                </button>
+              </div>
+              
+              <!-- Import Section -->
+              <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="flex items-center mb-4">
+                  <div class="flex items-center justify-center w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3">
+                    <Upload size="20" class="text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">Import Data</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Import from a project export file</p>
+                  </div>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Import facts and documents from a previously exported project file. You can merge with existing data or create a new project.
+                </p>
+                
+                <button
+                  on:click={openImportModal}
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <Upload size="18" />
+                  Import Data
+                </button>
+              </div>
+            </div>
+            
+            <!-- Data Management Tips -->
+            <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-blue-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Data Management Tips</h5>
+                  <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                    <li>• Export your project regularly to create backups</li>
+                    <li>• Use import to restore data or migrate between environments</li>
+                    <li>• When importing, you can choose to merge with existing data or create a new project</li>
+                    <li>• All relationships between facts, documents, and tags are preserved during export/import</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         {:else if activeTab === 'general'}
           <div>
@@ -326,6 +430,23 @@
     on:replace={handleTLDRReplace}
   />
 {/if}
+
+<!-- Export Modal -->
+<ProjectExport
+  bind:isOpen={showExportModal}
+  project={project}
+  on:close={closeExportModal}
+/>
+
+<!-- Import Modal -->
+<ProjectImport
+  bind:isOpen={showImportModal}
+  on:close={closeImportModal}
+  on:import-success={() => {
+    // Handle successful import - maybe refresh the current project data or navigate
+    console.log('Import completed successfully');
+  }}
+/>
 
 <style>
   /* Ensure modal is above other content */

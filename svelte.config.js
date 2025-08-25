@@ -31,11 +31,8 @@ const config = {
 		accessors: false
 	},
 	vitePlugin: {
-		// Faster inspector and HMR
-		inspector: isDev ? {
-			toggleVisibilityKey: 'meta-shift',
-			showToggleButton: 'never'
-		} : false,
+		// Disable inspector to prevent hydration errors
+		inspector: false,
 		// Skip some expensive checks in dev
 		hot: isDev ? {
 			partialAccept: true

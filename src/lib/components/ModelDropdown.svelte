@@ -118,10 +118,12 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
   >
     <div class="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
       {#if currentAIInfo}
-        <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-12 h-12 md:w-8 md:h-8 rounded-full flex-shrink-0" />
+        <div class="bg-white rounded-lg p-px md:p-px">
+          <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-11 h-11 md:w-12 md:h-12 rounded-md flex-shrink-0" />
+        </div>
         <div class="flex flex-col min-w-0 flex-1">
-          <span class="truncate text-sm md:text-xs">{getAINameWithTeam(currentModel?.key || modelKey)}</span>
-          <span class="truncate text-xs text-gray-500 dark:text-gray-400">{currentAIInfo.bestFor || 'General tasks'}</span>
+          <span class="truncate text-base md:text-sm font-medium">{getAINameWithTeam(currentModel?.key || modelKey)}</span>
+          <span class="truncate text-sm md:text-xs text-gray-500 dark:text-gray-400">{currentAIInfo.bestFor || 'General tasks'}</span>
         </div>
       {:else}
         <span class="truncate">Loading Wiskrs...</span>
@@ -142,7 +144,9 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
           on:mouseenter={(e) => showTooltip(model, aiInfo, e)}
           on:mouseleave={hideTooltip}
         >
-          <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex-shrink-0" />
+          <div class="bg-white rounded-lg p-px sm:p-px">
+            <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-9 h-9 sm:w-12 sm:h-12 rounded-md flex-shrink-0" />
+          </div>
           <div class="flex flex-col min-w-0 flex-1 items-start">
             <span class="truncate text-sm md:text-xs">{getAINameWithTeam(model.key)}</span>
             <span class="truncate text-xs text-gray-500 dark:text-gray-400">{aiInfo.bestFor || 'General tasks'}</span>

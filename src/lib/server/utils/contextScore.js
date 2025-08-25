@@ -2,19 +2,102 @@
 // Utility functions for calculating and caching project context quality scores
 
 /**
+ * Check if a description is a generic welcome message that shouldn't count toward context score
+ * @param {string} description - The project description
+ * @returns {boolean} True if it's a generic welcome message
+ */
+function isGenericWelcomeDescription(description) {
+  if (!description) return false;
+  const normalizedDesc = description.toLowerCase().trim();
+  
+  // Check for generic welcome patterns
+  const genericPatterns = [
+    'welcome to wiskr',
+    'this is your first project to get you started',
+    'welcome to wiskr! this is your first project to get you started.',
+    'your first project to get you started'
+  ];
+  
+  return genericPatterns.some(pattern => normalizedDesc.includes(pattern));
+}
+
+/**
+ * Calculate the quality score for a project description based on length, detail, and content
+ * @param {string} description - The project description
+ * @returns {number} Score from 0-30 based on description quality
+ */
+function calculateDescriptionQualityScore(description) {
+  if (!description || isGenericWelcomeDescription(description)) {
+    return 0;
+  }
+  
+  const trimmed = description.trim();
+  const length = trimmed.length;
+  const wordCount = trimmed.split(/\s+/).length;
+  const sentences = trimmed.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  
+  let score = 0;
+  
+  // Length scoring (0-15 points)
+  if (length < 50) {
+    score += 0; // Too short to be meaningful
+  } else if (length < 100) {
+    score += 5; // Very brief but something
+  } else if (length < 200) {
+    score += 10; // Good basic description
+  } else if (length < 500) {
+    score += 15; // Detailed description
+  } else {
+    score += 15; // Very detailed (cap at 15)
+  }
+  
+  // Word count scoring (0-8 points)
+  if (wordCount >= 10 && wordCount < 20) {
+    score += 2;
+  } else if (wordCount >= 20 && wordCount < 50) {
+    score += 5;
+  } else if (wordCount >= 50) {
+    score += 8;
+  }
+  
+  // Sentence structure scoring (0-4 points)
+  if (sentences >= 2) {
+    score += 2;
+  }
+  if (sentences >= 4) {
+    score += 2; // Additional points for multiple sentences
+  }
+  
+  // Content quality indicators (0-3 points)
+  const qualityIndicators = [
+    /\b(goal|objective|purpose|aim)\b/i,
+    /\b(feature|functionality|capability)\b/i,
+    /\b(user|customer|client)\b/i,
+    /\b(problem|solution|challenge)\b/i,
+    /\b(technology|framework|platform)\b/i
+  ];
+  
+  const matchedIndicators = qualityIndicators.filter(regex => regex.test(trimmed)).length;
+  score += Math.min(matchedIndicators, 3); // Max 3 points for quality indicators
+  
+  return Math.min(score, 30); // Cap at 30 points
+}
+
+/**
  * Calculate the context quality score for a project
  * @param {Object} params
- * @param {boolean} params.hasProjectDescription - Whether the project has a description
+ * @param {boolean} params.hasProjectDescription - Whether the project has a meaningful description
+ * @param {string} params.projectDescription - The actual project description text
  * @param {number} params.pinnedFactsCount - Number of pinned facts 
  * @param {number} params.entityCardsCount - Number of entity cards
  * @param {number} params.totalCharacters - Total character count in context
  * @returns {number} Score from 0-100
  */
-export function calculateContextQualityScore({ hasProjectDescription, pinnedFactsCount, entityCardsCount, totalCharacters }) {
+export function calculateContextQualityScore({ hasProjectDescription, projectDescription, pinnedFactsCount, entityCardsCount, totalCharacters }) {
   let score = 0;
   
-  // Project description (30 points)
-  if (hasProjectDescription) score += 30;
+  // Project description (0-30 points) - based on quality, length, and detail
+  score += calculateDescriptionQualityScore(projectDescription);
   
   // Pinned facts (40 points max)
   score += Math.min(pinnedFactsCount * 4, 40);
@@ -69,6 +152,7 @@ export async function refreshContextScore(supabase, projectId) {
     // Calculate the score
     const score = calculateContextQualityScore({
       hasProjectDescription: !!project?.description?.trim(),
+      projectDescription: project?.description || '',
       pinnedFactsCount: pinnedFacts?.length || 0,
       entityCardsCount: entityCards?.length || 0,
       totalCharacters

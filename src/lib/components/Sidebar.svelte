@@ -1,11 +1,12 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import ContextSummary from './ContextSummary.svelte';
   import FactsManager from './FactsManager.svelte';
   import DocsManager from './DocsManager.svelte';
   import EntityCards from './EntityCards.svelte';
   import { Search, X, ToggleLeft, ToggleRight, Info } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
+  import { supabase } from '$lib/supabase.js';
 
   export let current = null;
   export let facts = [];
@@ -36,6 +37,30 @@
   
   // Project fact types for filtering
   let projectFactTypes = [];
+  
+  // Admin check state
+  let userIsAdmin = false;
+  
+  // Load admin status on mount
+  onMount(async () => {
+    try {
+      const response = await fetch('/api/auth/admin');
+      if (response.ok) {
+        const data = await response.json();
+        userIsAdmin = data.isAdmin || false;
+      } else {
+        userIsAdmin = false;
+      }
+      
+      // If non-admin user was on entities tab, switch to facts tab
+      if (!userIsAdmin && activeTab === 'entities') {
+        activeTab = 'facts';
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      userIsAdmin = false;
+    }
+  });
   
   // Load project fact types when current project changes
   $: if (current?.id) {
@@ -400,17 +425,19 @@
         >
           Docs ({selectedTags.length > 0 ? filteredDocs.length : docs.length})
         </button>
-        <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
-          style="{
-            activeTab === 'entities' 
-              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
-              : 'border-color: transparent;'
-          } {activeTab !== 'entities' ? 'color: #6b7280;' : ''}"
-          on:click={() => activeTab = 'entities'}
-        >
-          Entities
-        </button>
+        {#if userIsAdmin}
+          <button
+            class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+            style="{
+              activeTab === 'entities' 
+                ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
+                : 'border-color: transparent;'
+            } {activeTab !== 'entities' ? 'color: #6b7280;' : ''}"
+            on:click={() => activeTab = 'entities'}
+          >
+            Entities
+          </button>
+        {/if}
         <button
           class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
           style="{
