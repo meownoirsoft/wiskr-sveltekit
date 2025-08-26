@@ -64,6 +64,12 @@
       showRightPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   export function toggleRightPanel() {
@@ -73,6 +79,12 @@
       showLeftPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   // Force show left panel (for search results)
@@ -82,6 +94,12 @@
       showRightPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   // Force show right panel (for search results)
@@ -91,6 +109,12 @@
       showLeftPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   // Close both panels (show chat only)
@@ -98,6 +122,12 @@
     showLeftPanel = false;
     showRightPanel = false;
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   // Tab management
@@ -193,37 +223,57 @@
     showLeftPanel = true;
     showRightPanel = false;
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   export function handleMobileShowAddins() {
     showRightPanel = true;
     showLeftPanel = false;
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
-  // Mobile toggle handlers (new)
+  // Mobile toggle handlers (main ones used by header buttons)
   export function handleMobileToggleContext() {
     if (showLeftPanel) {
-      // If context panel is open, close it
       showLeftPanel = false;
     } else {
-      // If context panel is closed, open it and close add-ins
       showLeftPanel = true;
       showRightPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   export function handleMobileToggleAddins() {
     if (showRightPanel) {
-      // If add-ins panel is open, close it
       showRightPanel = false;
     } else {
-      // If add-ins panel is closed, open it and close context
       showRightPanel = true;
       showLeftPanel = false;
     }
     dispatch('panel-state-changed', { showLeftPanel, showRightPanel, isDesktop });
+    // Also dispatch global window event for layout to listen to
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('panel-state-changed', { 
+        detail: { showLeftPanel, showRightPanel, isDesktop } 
+      }));
+    }
   }
 
   // Click outside handler for session navigator

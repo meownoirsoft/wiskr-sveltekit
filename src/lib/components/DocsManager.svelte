@@ -19,6 +19,12 @@ import LoadingSpinner from './LoadingSpinner.svelte';
 
   const dispatch = createEventDispatcher();
   
+  // React to showAddDocForm prop changes from parent
+  $: if (showAddDocForm && !showAddModal) {
+    showAddModal = true;
+    // Reset the parent prop to prevent infinite loop
+    showAddDocForm = false;
+  }
 
   function openAddModal() {
     showAddModal = true;
@@ -203,6 +209,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
 <!-- Add Doc Modal -->
 <AddDocModal 
   bind:showModal={showAddModal}
+  bind:docTitle
+  bind:docContent
+  bind:docTags
   on:save={handleAddModalSave}
   on:close={handleAddModalClose}
 />

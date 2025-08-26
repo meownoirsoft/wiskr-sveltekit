@@ -302,7 +302,7 @@
     <!-- Desktop Tooltip -->
     {#if showTooltip}
       <section
-        class="absolute top-full left-0 mt-2 w-80 bg-white border dark:border-gray-600 rounded-lg shadow-xl z-50" style="background-color: var(--bg-primary);"
+        class="absolute top-full left-0 mt-2 w-80 bg-white border dark:border-gray-600 rounded-lg shadow-xl z-[100]" style="background-color: var(--bg-primary);"
         role="dialog"
         aria-modal="true"
         tabindex="0"

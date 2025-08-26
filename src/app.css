@@ -412,7 +412,7 @@ code {
 }
 
 /* Mobile-optimized styles */
-@media (max-width: 768px) {
+@media (max-width: 1279px) {
   /* Override desktop grid card heights on mobile */
   .grid .fact-card,
   .grid .doc-card {
@@ -437,6 +437,19 @@ code {
   
   .mobile-panel-exit {
     transform: translateX(-100%);
+  }
+  
+  /* Mobile panel transitions for right panels (slide from right) */
+  .mobile-panel-right {
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-panel-right-enter {
+    transform: translateX(0);
+  }
+  
+  .mobile-panel-right-exit {
+    transform: translateX(100%);
   }
   
   /* Mobile modal adjustments */

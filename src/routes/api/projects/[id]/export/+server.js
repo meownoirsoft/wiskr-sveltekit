@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { generateSingleMarkdown, generateMultipleMarkdown, generateExportFilename } from '$lib/server/exportUtils.js';
+import { generateSingleMarkdown, generateMultipleMarkdown, generateDocx, generateExportFilename } from '$lib/server/exportUtils.js';
 
 /**
  * Export a complete project with all associated data
@@ -247,6 +247,18 @@ export async function GET({ params, locals, url }) {
         headers: {
           'Content-Type': 'application/zip',
           'Content-Disposition': `attachment; filename="${zipFilename}"`
+        }
+      });
+    }
+    
+    if (format === 'docx') {
+      const filename = generateExportFilename(project.name, 'wiskr_project', 'docx');
+      const docxBuffer = await generateDocx(exportData);
+      
+      return new Response(docxBuffer, {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `attachment; filename="${filename}"`
         }
       });
     }

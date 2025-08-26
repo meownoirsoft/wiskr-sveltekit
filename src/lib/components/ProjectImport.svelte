@@ -206,7 +206,7 @@
 
 {#if isOpen}
   <div 
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+    class="fixed inset-0 z-[70] flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
     role="dialog"
     aria-modal="true"
     aria-labelledby="import-title"

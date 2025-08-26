@@ -181,6 +181,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let showRightPanel = false;  // Questions/Ideas panel
   let isDesktop = false;       // Track if we're on desktop
   
+  
   // Desktop-only collapse state for panels
   let leftPanelCollapsed = false;   // Whether left panel is collapsed on desktop
   let rightPanelCollapsed = false;  // Whether right panel is collapsed on desktop
@@ -197,27 +198,17 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const wasDesktop = isDesktop;
       isDesktop = width >= 1280; // Custom breakpoint for mobile mode
       
-      // Only set initial panel state on first load, not on resize
-      if (wasDesktop === false && isDesktop === true) {
-        // Switching from mobile to desktop - show both panels
-        showLeftPanel = true;
-        showRightPanel = true;
-      } else if (wasDesktop === true && isDesktop === false) {
-        // Switching from desktop to mobile - hide both panels to show chat
-        showLeftPanel = false;
-        showRightPanel = false;
-      }
-      // If this is the very first time checkScreenSize runs (both were false)
-      else if (wasDesktop === false && isDesktop === false) {
-        // Mobile initial load - ensure panels are hidden to show chat
-        showLeftPanel = false;
-        showRightPanel = false;
-      }
-      // If switching to desktop for the first time
-      else if (wasDesktop === false && isDesktop === true) {
-        // Desktop initial load - show both panels
-        showLeftPanel = true;
-        showRightPanel = true;
+      // Initial load - set panel state based on screen size
+      if (wasDesktop !== isDesktop) {
+        if (isDesktop) {
+          // Switch to desktop mode - show both panels
+          showLeftPanel = true;
+          showRightPanel = true;
+        } else {
+          // Switch to mobile mode - hide both panels to show chat
+          showLeftPanel = false;
+          showRightPanel = false;
+        }
       }
     }
   }
@@ -294,6 +285,18 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Setup responsive detection (browser-only)
     if (browser) {
       checkScreenSize();
+      
+      // Force initial panel state after checkScreenSize runs
+      if (isDesktop) {
+        console.log('Desktop detected on mount - showing panels');
+        showLeftPanel = true;
+        showRightPanel = true;
+      } else {
+        console.log('Mobile detected on mount - hiding panels');
+        showLeftPanel = false;
+        showRightPanel = false;
+      }
+      
       window.addEventListener('resize', checkScreenSize);
 
       // Listen for "projects:refresh" after create (from +layout.svelte)
@@ -990,8 +993,13 @@ function handleTextAddToFacts(event) {
   factValue = text;
   factType = 'note'; // Default type for selected text
   showAddFactForm = true;
-  // Switch to facts tab
+  // Switch to facts tab and ensure left panel is visible
   activeTab = 'facts';
+  showLeftPanel = true;
+  // On mobile, close right panel if both are open
+  if (!isDesktop && showRightPanel) {
+    showRightPanel = false;
+  }
 }
 
 function handleTextAddToDocs(event) {
@@ -1000,8 +1008,13 @@ function handleTextAddToDocs(event) {
   docTitle = text.length > 100 ? text.substring(0, 100) + '...' : text;
   docContent = text;
   showAddDocForm = true;
-  // Switch to docs tab
+  // Switch to docs tab and ensure left panel is visible
   activeTab = 'docs';
+  showLeftPanel = true;
+  // On mobile, close right panel if both are open
+  if (!isDesktop && showRightPanel) {
+    showRightPanel = false;
+  }
 }
 
   function handleTextAddToQuestions(event) {
@@ -1043,14 +1056,12 @@ function handleTextAddToDocs(event) {
     }
   }
   
-  // Desktop-only collapse functions
+  // Panel collapse functions (work on both desktop and mobile)
   function toggleLeftPanelCollapse() {
-    if (!isDesktop) return; // Only works on desktop
     leftPanelCollapsed = !leftPanelCollapsed;
   }
   
   function toggleRightPanelCollapse() {
-    if (!isDesktop) return; // Only works on desktop
     rightPanelCollapsed = !rightPanelCollapsed;
   }
   
@@ -1316,16 +1327,26 @@ function handleTextAddToDocs(event) {
     }
   }
   
-  // Mobile toggle event handlers (new)
+  // Mobile toggle event handlers - directly update local variables
   function handleMobileToggleContext() {
-    if (panelManager) {
-      panelManager.handleMobileToggleContext();
+    if (showLeftPanel) {
+      // If context panel is open, close it
+      showLeftPanel = false;
+    } else {
+      // If context panel is closed, open it and close add-ins  
+      showRightPanel = false;
+      showLeftPanel = true;
     }
   }
   
   function handleMobileToggleAddins() {
-    if (panelManager) {
-      panelManager.handleMobileToggleAddins();
+    if (showRightPanel) {
+      // If add-ins panel is open, close it
+      showRightPanel = false;
+    } else {
+      // If add-ins panel is closed, open it and close context
+      showLeftPanel = false;
+      showRightPanel = true;
     }
   }
 
@@ -1335,7 +1356,7 @@ function handleTextAddToDocs(event) {
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'flex-1' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {showLeftPanel && !isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
+  <div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'flex-1' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
     
     {#if showLeftPanel && !isDesktop}
       <!-- Mobile panel header -->
@@ -1352,7 +1373,7 @@ function handleTextAddToDocs(event) {
         </button>
       </div>
     {/if}
-    {#if showLeftPanel && !leftPanelCollapsed}
+    {#if showLeftPanel}
       <Sidebar
         bind:this={sidebarComponent}
         {current}
@@ -1399,6 +1420,7 @@ function handleTextAddToDocs(event) {
 
     <ChatInterface
       {current}
+      {hasInit}
       {messages}
       {loadingMessages}
       bind:input
@@ -1516,7 +1538,7 @@ function handleTextAddToDocs(event) {
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-  <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'flex-1' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : 'w-0'} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {showRightPanel && !isDesktop ? 'top: 4rem;' : ''}">
+  <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'flex-1' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
     
     
     {#if showRightPanel && !isDesktop}
@@ -1534,7 +1556,7 @@ function handleTextAddToDocs(event) {
         </button>
       </div>
     {/if}
-    {#if showRightPanel && !rightPanelCollapsed}
+    {#if showRightPanel}
       <IdeasColumn
         {goodQuestions}
         {relatedIdeas}
@@ -1737,8 +1759,8 @@ function handleTextAddToDocs(event) {
 <!-- Panel Manager (handles responsive UI state) -->
 <PanelManager 
   bind:this={panelManager}
-  bind:showLeftPanel
-  bind:showRightPanel
+  showLeftPanel={showLeftPanel}
+  showRightPanel={showRightPanel}
   bind:isDesktop
   bind:activeTab
   bind:showSessionNavigator

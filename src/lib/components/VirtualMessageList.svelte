@@ -8,6 +8,7 @@
   export let messages = [];
   export let loadingMessages = false;
   export let current = null;
+  export let hasInit = false;
   export let currentBranch = null;
   export let currentBranchId = 'main';
   export let messageBranchCounts = {};
@@ -172,17 +173,31 @@
     const newMessageAdded = messages.length > lastMessageCount;
     lastMessageCount = messages.length;
     
-    // Only scroll to bottom on first load or if user is already at bottom
+    // Check if the new message is from the user
+    const isNewUserMessage = newMessageAdded && messages.length > 0 && 
+      messages[messages.length - 1]?.role === 'user';
+    
     if (wasFirstLoad) {
       // For first load, use aggressive scroll-to-bottom that waits for measurements
       forceScrollToBottomAfterLoad();
-    } else if (newMessageAdded && shouldScrollToBottom && isAtBottom) {
-      // For new messages, only scroll if user is at bottom
-      tick().then(() => {
-        if (containerElement && shouldScrollToBottom && isAtBottom) {
-          scrollToBottom(true); // Smooth scroll for new messages
-        }
-      });
+    } else if (newMessageAdded) {
+      if (isNewUserMessage) {
+        // Always scroll to bottom for new user messages
+        shouldScrollToBottom = true;
+        isAtBottom = true;
+        tick().then(() => {
+          if (containerElement) {
+            scrollToBottom(true); // Smooth scroll for new user messages
+          }
+        });
+      } else if (shouldScrollToBottom && isAtBottom) {
+        // For assistant messages, only scroll if user is at bottom
+        tick().then(() => {
+          if (containerElement && shouldScrollToBottom && isAtBottom) {
+            scrollToBottom(true); // Smooth scroll for new messages
+          }
+        });
+      }
     }
     
     // Recalculate visible range for new messages
@@ -210,7 +225,7 @@
   async function forceScrollToBottomImmediate() {
     if (!containerElement || !messages.length) return;
     
-    // Temporarily disable virtualization to show all messages and get accurate scroll height
+    // Disable virtualization to render all messages
     visibleRange = {
       startIndex: 0,
       endIndex: messages.length - 1,
@@ -218,20 +233,47 @@
       visibleCount: messages.length
     };
     
-    // Wait for DOM update
+    // Wait for all messages to render in DOM
     await tick();
     
-    // Force immediate scroll to the very bottom
-    containerElement.scrollTop = containerElement.scrollHeight;
+    // Multiple attempts to ensure we reach the bottom
+    const maxAttempts = 5;
+    let attempt = 0;
     
-    // Set state to reflect we're at bottom
-    isAtBottom = true;
-    shouldScrollToBottom = true;
+    const scrollToBottomWithRetry = async () => {
+      if (attempt >= maxAttempts) return;
+      
+      attempt++;
+      
+      // Force scroll to bottom
+      const scrollHeight = containerElement.scrollHeight;
+      const clientHeight = containerElement.clientHeight;
+      const maxScroll = scrollHeight - clientHeight;
+      
+      containerElement.scrollTop = scrollHeight;
+      
+      // Check if we actually reached the bottom
+      await tick();
+      const actualScrollTop = containerElement.scrollTop;
+      
+      // If we're not at bottom (within 10px tolerance), retry
+      if (Math.abs(actualScrollTop - maxScroll) > 10 && attempt < maxAttempts) {
+        setTimeout(scrollToBottomWithRetry, 50);
+      } else {
+        // Successfully at bottom, update state
+        isAtBottom = true;
+        shouldScrollToBottom = true;
+        scrollTop = actualScrollTop;
+        
+        // Re-enable virtualization after successful scroll
+        setTimeout(() => {
+          calculateVisibleRange();
+        }, 100);
+      }
+    };
     
-    // Re-enable virtualization after a short delay
-    setTimeout(() => {
-      calculateVisibleRange();
-    }, 100);
+    // Start the retry process
+    await scrollToBottomWithRetry();
   }
 
   // Force scroll to bottom for first load - more aggressive approach
@@ -337,7 +379,13 @@
   bind:this={containerElement}
   on:scroll={handleScroll}
 >
-  {#if !current}
+  {#if !current && !hasInit}
+    <LoadingSpinner 
+      size="md" 
+      text="Loading projects..." 
+      center={true} 
+    />
+  {:else if !current && hasInit}
     <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
   {:else if loadingMessages}
     <LoadingSpinner 

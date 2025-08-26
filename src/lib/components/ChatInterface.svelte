@@ -18,6 +18,7 @@ import BranchPickerModal from './BranchPickerModal.svelte';
 import VirtualMessageList from './VirtualMessageList.svelte';
 
   export let current = null;
+  export let hasInit = false;
   export let messages = [];
   export let loadingMessages = false;
   export let input = '';
@@ -349,7 +350,10 @@ import VirtualMessageList from './VirtualMessageList.svelte';
     showMrWiskr(text, 'selection');
   }
 
-  function selectAllMessage(messageIndex) {
+  function selectAllMessage(event) {
+    // Extract the actual index from event.detail
+    const messageIndex = event.detail || event;
+    
     const message = messages[messageIndex];
     if (message && message.role === 'assistant' && message.content.trim()) {
       // Dispatch the format-text event directly with the full message content
@@ -961,6 +965,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {messages}
     {loadingMessages}
     {current}
+    {hasInit}
     {currentBranch}
     {currentBranchId}
     {messageBranchCounts}

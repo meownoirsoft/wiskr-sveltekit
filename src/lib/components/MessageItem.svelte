@@ -164,7 +164,7 @@
         style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
-        on:click={() => selectAllMessage(index)}
+        on:click={() => dispatch('select-all', index)}
         title="Select all and format for posts"
       >
         <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
@@ -205,7 +205,7 @@
       {#if message.content.trim() && currentBranchId === 'main'}
         <div class="z-10">
           <button id="branch-button-{index}"
-            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 touch-action-manipulation text-white"
+            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 sm:h-8 touch-action-manipulation text-white"
             style="background: var(--color-accent); border-color: var(--color-accent); touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; }}
@@ -226,15 +226,15 @@
       {#if message.role === 'assistant' && message.content.trim()}
         <div class="z-10">
           <button
-            class="flex items-center gap-1 text-xs pl-1 pr-2 py-0 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 touch-action-manipulation"
+            class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 sm:h-8 touch-action-manipulation overflow-hidden"
             style="background-color: #5D60DD; border-color: #5D60DD; touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}
             on:click={(e) => openMrWiskrForMessage(index, e)}
-            title="Ask Mr Wiskr for help with this response"
+            title="Ask Wiskr for help with this response"
           >
-            <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-4 h-4 sm:w-7 sm:h-7 flex-shrink-0" />
-            <span class="hidden xs:inline">Mr&nbsp;Wiskr</span>
+            <img src="/mr-wiskr-emoji.png" alt="Wiskr" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" />
+            <span class="hidden xs:inline">Wiskr</span>
             <span class="xs:hidden">Wiskr</span>
           </button>
         </div>

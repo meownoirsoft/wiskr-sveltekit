@@ -25,7 +25,8 @@ export default defineConfig({
 		// Enable filesystem caching
 		fs: {
 			cachedChecks: true
-		}
+		},
+		allowedHosts: ['.localhost', '.localdomain', '::1', '127.0.0.1',  'aff832e63fe5.ngrok-free.app'],
 	},
 	
 	build: {

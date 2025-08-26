@@ -3,6 +3,8 @@
   import { createEventDispatcher } from 'svelte';
   import { supabase } from '$lib/supabase.js';
   import { browser } from '$app/environment';
+  import { robustFetch, robustFetchJSON, getNetworkStatus, offlineQueue } from '$lib/utils/networkUtils.js';
+  import { incrementPendingOperations, decrementPendingOperations, addNetworkError } from '$lib/stores/networkStore.js';
 
   const dispatch = createEventDispatcher();
 
@@ -54,17 +56,23 @@
     if (!current) return;
     
     try {
-      // Call regeneration and wait for it to complete
-      await fetch('/api/brief/regenerate', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ projectId: current.id })
-      });
-      
-      // Reload context to refresh the UI with the new summary
-      await loadContext();
+      // Only auto-regenerate if online - this is not critical
+      if (getNetworkStatus()) {
+        await robustFetchJSON('/api/brief/regenerate', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ projectId: current.id })
+        }, {
+          timeout: 10000,
+          maxRetries: 1 // Keep retries low for background operations
+        });
+        
+        // Reload context to refresh the UI with the new summary
+        await loadContext();
+      }
     } catch (error) {
       console.log('Auto-regeneration failed (not critical):', error);
+      // Don't show error toasts for background operations
     }
   }
 
@@ -77,42 +85,94 @@
     // Parse tags
     const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-    const res = await fetch('/api/facts/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: current.id,
-        type: factType || 'note',
-        key: factKey.trim(),
-        value: factValue.trim(),
-        tags: tags,
-        pinned: false
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to save fact');
+    // Check if offline - queue the request
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/facts/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: current.id,
+            type: factType || 'note',
+            key: factKey.trim(),
+            value: factValue.trim(),
+            tags: tags,
+            pinned: false
+          })
+        });
+        // Reload context after sync
+        await loadContext();
+      }, { type: 'create_fact', factKey: factKey.trim() });
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Fact will be saved when you come back online.');
+      }
+      
+      // Clear form optimistically
+      factKey = ''; factValue = ''; factTags = '';
+      showAddFactForm = false;
       return;
     }
 
-    const { fact } = await res.json();
+    incrementPendingOperations();
     
-    // Dispatch event for context score refresh
-    if (browser) {
-      window.dispatchEvent(new CustomEvent('fact:created', {
-        detail: { fact, projectId: current.id }
-      }));
-    }
-    
-    // clear form and hide
-    factKey = ''; factValue = ''; factTags = '';
-    showAddFactForm = false;
+    try {
+      const { fact } = await robustFetchJSON('/api/facts/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: current.id,
+          type: factType || 'note',
+          key: factKey.trim(),
+          value: factValue.trim(),
+          tags: tags,
+          pinned: false
+        })
+      }, {
+        timeout: 15000,
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying fact creation', attempt, 3);
+          }
+        }
+      });
+      
+      // Dispatch event for context score refresh
+      if (browser) {
+        window.dispatchEvent(new CustomEvent('fact:created', {
+          detail: { fact, projectId: current.id }
+        }));
+      }
+      
+      // clear form and hide
+      factKey = ''; factValue = ''; factTags = '';
+      showAddFactForm = false;
 
-    // reload lists
-    await loadContext();
-    
-    // Auto-regenerate summary since facts content changed
-    await autoRegenerateSummary();
+      // reload lists
+      await loadContext();
+      
+      // Auto-regenerate summary since facts content changed
+      await autoRegenerateSummary();
+      
+    } catch (error) {
+      console.error('ContextManager: Error adding fact:', error);
+      addNetworkError(error);
+      
+      const errorMessage = error.message.includes('Network connection failed') ?
+        'Network error. Fact will be saved when connection is restored.' :
+        error.message.includes('timeout') ?
+        'Request timed out. Please try again.' :
+        `Failed to save fact: ${error.message}`;
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      decrementPendingOperations();
+    }
   }
 
   export function startEditFact(f, i) {
@@ -192,30 +252,83 @@
     // Parse tags
     const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-    const res = await fetch('/api/docs/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: current.id,
-        title: docTitle.trim(),
-        content: docContent || '',
-        tags: tags,
-        pinned: false
-      })
-    });
-    if (!res.ok) {
-      console.error(await res.text());
-      alert('Failed to create doc');
+    // Check if offline - queue the request
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/docs/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: current.id,
+            title: docTitle.trim(),
+            content: docContent || '',
+            tags: tags,
+            pinned: false
+          })
+        });
+        await loadContext();
+      }, { type: 'create_doc', docTitle: docTitle.trim() });
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Document will be saved when you come back online.');
+      }
+      
+      // Clear form optimistically
+      docTitle = ''; docContent = ''; docTags = '';
+      showAddDocForm = false;
       return;
     }
-    // clear and hide
-    docTitle = ''; docContent = ''; docTags = '';
-    showAddDocForm = false;
 
-    await loadContext();
+    incrementPendingOperations();
     
-    // Auto-regenerate summary since docs content changed
-    await autoRegenerateSummary();
+    try {
+      await robustFetchJSON('/api/docs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: current.id,
+          title: docTitle.trim(),
+          content: docContent || '',
+          tags: tags,
+          pinned: false
+        })
+      }, {
+        timeout: 20000, // Longer timeout for docs (might be larger)
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying document creation', attempt, 3);
+          }
+        }
+      });
+      
+      // Clear and hide form
+      docTitle = ''; docContent = ''; docTags = '';
+      showAddDocForm = false;
+
+      await loadContext();
+      
+      // Auto-regenerate summary since docs content changed
+      await autoRegenerateSummary();
+      
+    } catch (error) {
+      console.error('ContextManager: Error adding document:', error);
+      addNetworkError(error);
+      
+      const errorMessage = error.message.includes('Network connection failed') ?
+        'Network error. Document will be saved when connection is restored.' :
+        error.message.includes('timeout') ?
+        'Request timed out. Please try again.' :
+        `Failed to create document: ${error.message}`;
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      decrementPendingOperations();
+    }
   }
 
   export function startEditDoc(d, i) {

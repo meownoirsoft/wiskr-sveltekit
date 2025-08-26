@@ -40,6 +40,13 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export function refreshFactTypes() {
     loadProjectFactTypes();
   }
+  
+  // React to showAddFactForm prop changes from parent
+  $: if (showAddFactForm && !showAddModal) {
+    showAddModal = true;
+    // Reset the parent prop to prevent infinite loop
+    showAddFactForm = false;
+  }
 
   async function loadProjectFactTypes() {
     if (!projectId) return;

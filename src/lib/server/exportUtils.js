@@ -339,12 +339,12 @@ export function generateSingleMarkdown(exportData) {
   if (exportData.fact_types?.length > 0) {
     markdown += `## Fact Types\n\n`;
     exportData.fact_types.forEach(type => {
-      markdown += `### ${escapeMarkdown(type.name || 'Unnamed Type')}\n\n`;
+      markdown += `### ${escapeMarkdown(type.display_name || type.type_key || 'Unnamed Type')}\n\n`;
       if (type.description) {
         markdown += `${escapeMarkdown(type.description)}\n\n`;
       }
-      if (type.color) {
-        markdown += `**Color:** ${type.color}\n\n`;
+      if (type.color_class || type.color) {
+        markdown += `**Color:** ${type.color_class || type.color}\n\n`;
       }
     });
   }
@@ -514,12 +514,12 @@ export function generateMultipleMarkdown(exportData) {
   if (exportData.fact_types?.length > 0) {
     let factTypesContent = `# Fact Types\n\n`;
     exportData.fact_types.forEach(type => {
-      factTypesContent += `## ${escapeMarkdown(type.name || 'Unnamed Type')}\n\n`;
+      factTypesContent += `## ${escapeMarkdown(type.display_name || type.type_key || 'Unnamed Type')}\n\n`;
       if (type.description) {
         factTypesContent += `${escapeMarkdown(type.description)}\n\n`;
       }
-      if (type.color) {
-        factTypesContent += `**Color:** ${type.color}\n\n`;
+      if (type.color_class || type.color) {
+        factTypesContent += `**Color:** ${type.color_class || type.color}\n\n`;
       }
       factTypesContent += `---\n\n`;
     });
@@ -633,4 +633,793 @@ export function generateMultipleMarkdown(exportData) {
   }
   
   return files;
+}
+
+/**
+ * Convert markdown-style text to TextRun array with formatting
+ * @param {string} text - Text that may contain markdown formatting
+ * @param {Object} defaultStyle - Default style options
+ * @returns {Promise<Array>} Array of TextRun objects
+ */
+async function parseMarkdownToTextRuns(text, defaultStyle = {}) {
+  if (!text) return [];
+  
+  const { TextRun } = await import('docx');
+  const runs = [];
+  
+  // Simple sequential processing for markdown patterns
+  let remainingText = text;
+  let currentIndex = 0;
+  
+  const patterns = [
+    // Bold: **text** or __text__ (process these first as they're more specific)
+    { regex: /\*\*([^*]+?)\*\*/g, style: { bold: true } },
+    { regex: /__([^_]+?)__/g, style: { bold: true } },
+    // Italic: *text* or _text_ (but not when part of bold)
+    { regex: /\*([^*]+?)\*/g, style: { italics: true } },
+    { regex: /_([^_]+?)_/g, style: { italics: true } },
+    // Underline: <u>text</u>
+    { regex: /<u>([^<]+?)<\/u>/gi, style: { underline: {} } },
+    // Strikethrough: ~~text~~
+    { regex: /~~([^~]+?)~~/g, style: { strike: true } },
+    // Code: `text` (monospace font)
+    { regex: /`([^`]+?)`/g, style: { font: 'Consolas', color: '333333' } }
+  ];
+  
+  // Process text sequentially
+  const segments = [];
+  
+  // Find all matches across all patterns
+  patterns.forEach(pattern => {
+    let match;
+    const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
+    while ((match = regex.exec(text)) !== null) {
+      segments.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        content: match[1], // The captured group (text without markdown)
+        style: pattern.style,
+        original: match[0] // The full match including markdown
+      });
+    }
+  });
+  
+  // Sort segments by start position
+  segments.sort((a, b) => a.start - b.start);
+  
+  // Remove overlapping segments (keep the first one)
+  const cleanSegments = [];
+  let lastEnd = 0;
+  
+  segments.forEach(segment => {
+    if (segment.start >= lastEnd) {
+      cleanSegments.push(segment);
+      lastEnd = segment.end;
+    }
+  });
+  
+  if (cleanSegments.length === 0) {
+    // No formatting found, return single run
+    return [new TextRun({ text, ...defaultStyle })];
+  }
+  
+  // Build TextRuns
+  let currentPos = 0;
+  
+  cleanSegments.forEach(segment => {
+    // Add text before this segment
+    if (segment.start > currentPos) {
+      const beforeText = text.substring(currentPos, segment.start);
+      if (beforeText) {
+        runs.push(new TextRun({ text: beforeText, ...defaultStyle }));
+      }
+    }
+    
+    // Add the formatted segment
+    runs.push(new TextRun({ 
+      text: segment.content, 
+      ...defaultStyle,
+      ...segment.style 
+    }));
+    
+    currentPos = segment.end;
+  });
+  
+  // Add remaining text
+  if (currentPos < text.length) {
+    const remainingText = text.substring(currentPos);
+    if (remainingText) {
+      runs.push(new TextRun({ text: remainingText, ...defaultStyle }));
+    }
+  }
+  
+  return runs;
+}
+
+/**
+ * Generate DOCX document with all project data
+ * @param {Object} exportData - The export data
+ * @returns {Promise<Buffer>} DOCX document buffer
+ */
+export async function generateDocx(exportData) {
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, UnderlineType } = await import('docx');
+  
+  const project = exportData.project || {};
+  const stats = exportData.meta?.statistics || {};
+  
+  // Default font styles - clean sans-serif
+  const defaultFont = 'Calibri'; // Clean, readable sans-serif font
+  const headingFont = 'Calibri'; // Consistent font throughout
+  const baseTextStyle = {
+    font: defaultFont,
+    size: 22 // 11pt
+  };
+  const headingTextStyle = {
+    font: headingFont,
+    bold: true
+  };
+  
+  // Document sections
+  const children = [];
+  
+  // Title
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: project.name || 'Untitled Project',
+          bold: true,
+          size: 32,
+        }),
+      ],
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+    })
+  );
+  
+  // Project Description
+  if (project.description) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Description',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: project.description,
+            size: 22,
+          }),
+        ],
+        spacing: { after: 200 },
+      })
+    );
+  }
+  
+  // Project Information
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'Project Information',
+          bold: true,
+          size: 24,
+        }),
+      ],
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 400, after: 200 },
+    })
+  );
+  
+  const projectInfo = [
+    `Created: ${formatDocxDate(project.created_at)}`,
+    `Icon: ${project.icon || '📁'}`,
+    `Export Date: ${formatDocxDate(exportData.meta?.export_date)}`,
+  ];
+  
+  projectInfo.forEach(info => {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `• ${info}`,
+            size: 20,
+          }),
+        ],
+        spacing: { after: 100 },
+      })
+    );
+  });
+  
+  // Handle brief text separately with markdown parsing
+  if (project.brief_text) {
+    const briefRuns = await parseMarkdownToTextRuns(project.brief_text, {
+      font: defaultFont,
+      size: 20
+    });
+    
+    const briefParagraph = new Paragraph({
+      children: [
+        new TextRun({
+          text: '• Brief: ',
+          size: 20,
+        }),
+        ...briefRuns
+      ],
+      spacing: { after: 100 },
+    });
+    
+    children.push(briefParagraph);
+  }
+  
+  // Export Statistics
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'Export Statistics',
+          bold: true,
+          size: 24,
+        }),
+      ],
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 400, after: 200 },
+    })
+  );
+  
+  const statisticsInfo = [
+    `Sessions: ${stats.sessions_count || 0}`,
+    `Messages: ${stats.messages_count || 0}`,
+    `Facts: ${stats.facts_count || 0}`,
+    `Questions: ${stats.questions_count || 0}`,
+    `Fact Types: ${stats.fact_types_count || 0}`,
+  ];
+  
+  statisticsInfo.forEach(stat => {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `• ${stat}`,
+            size: 20,
+          }),
+        ],
+        spacing: { after: 100 },
+      })
+    );
+  });
+  
+  // Wiskr Personas
+  if (exportData.personas?.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Wiskr Personas',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    exportData.personas.forEach(persona => {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: persona.name || 'Unnamed Persona',
+              bold: true,
+              size: 22,
+            }),
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        })
+      );
+      
+      if (persona.style_json) {
+        const style = typeof persona.style_json === 'string' ? 
+          JSON.parse(persona.style_json) : persona.style_json;
+        
+        const personaDetails = [
+          `Tone: ${style.tone || 'Not specified'}`,
+          `Emoji Level: ${style.emoji_level || 'Not specified'}`,
+          `Sentence Length: ${style.sentence_length || 'Not specified'}`,
+          ...(style.do?.length > 0 ? [`Do: ${style.do.join(', ')}`] : []),
+          ...(style.dont?.length > 0 ? [`Don't: ${style.dont.join(', ')}`] : []),
+        ];
+        
+        personaDetails.forEach(detail => {
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `• ${detail}`,
+                  size: 20,
+                }),
+              ],
+              spacing: { after: 100 },
+            })
+          );
+        });
+      }
+    });
+  }
+  
+  // Fact Types
+  if (exportData.fact_types?.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Fact Types',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    exportData.fact_types.forEach(type => {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: type.display_name || type.type_key || 'Unnamed Type',
+              bold: true,
+              size: 22,
+            }),
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        })
+      );
+      
+      if (type.description) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: type.description,
+                size: 20,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      if (type.color_class || type.color) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Color: ${type.color_class || type.color}`,
+                size: 20,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          })
+        );
+      }
+    });
+  }
+  
+  // Saved Questions
+  if (exportData.questions?.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Saved Questions',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    exportData.questions.forEach((question, index) => {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Question ${index + 1}`,
+              bold: true,
+              size: 22,
+            }),
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        })
+      );
+      
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Question: ',
+              bold: true,
+              size: 20,
+            }),
+            new TextRun({
+              text: question.question || 'No question text',
+              size: 20,
+            }),
+          ],
+          spacing: { after: 100 },
+        })
+      );
+      
+      if (question.context) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Context: ',
+                bold: true,
+                size: 20,
+              }),
+              new TextRun({
+                text: question.context,
+                size: 20,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      if (question.tags?.length > 0) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Tags: ',
+                bold: true,
+                size: 20,
+              }),
+              new TextRun({
+                text: question.tags.join(', '),
+                size: 20,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Created: ${formatDocxDate(question.created_at)}`,
+              size: 18,
+              italics: true,
+            }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+    });
+  }
+  
+  // Facts
+  if (exportData.facts?.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Facts',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    exportData.facts.forEach((fact, index) => {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Fact ${index + 1}`,
+              bold: true,
+              size: 22,
+            }),
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        })
+      );
+      
+      if (fact.content) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: fact.content,
+                size: 20,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      if (fact.description && fact.description !== fact.content) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Description: ',
+                bold: true,
+                size: 20,
+              }),
+              new TextRun({
+                text: fact.description,
+                size: 20,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      if (fact.tags?.length > 0) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Tags: ',
+                bold: true,
+                size: 20,
+              }),
+              new TextRun({
+                text: fact.tags.join(', '),
+                size: 20,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      }
+      
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Created: ${formatDocxDate(fact.created_at)}`,
+              size: 18,
+              italics: true,
+            }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+    });
+  }
+  
+  // Conversation Sessions
+  if (exportData.sessions?.length > 0 && exportData.messages?.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Conversation Sessions',
+            bold: true,
+            size: 24,
+          }),
+        ],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 },
+      })
+    );
+    
+    // Group messages by session
+    const messagesBySession = {};
+    exportData.messages.forEach(message => {
+      if (!messagesBySession[message.session_id]) {
+        messagesBySession[message.session_id] = [];
+      }
+      messagesBySession[message.session_id].push(message);
+    });
+    
+    // Sort sessions by date
+    const sortedSessions = [...exportData.sessions].sort((a, b) => 
+      new Date(a.created_at) - new Date(b.created_at)
+    );
+    
+    // Process sessions sequentially to handle async operations
+    for (const session of sortedSessions) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: session.session_name || 'Unnamed Session',
+              bold: true,
+              size: 22,
+            }),
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 300, after: 100 },
+        })
+      );
+      
+      const sessionInfo = [
+        `Date: ${session.session_date || 'Unknown'}`,
+        ...(session.topic_summary ? [`Topic: ${session.topic_summary}`] : []),
+        `Status: ${session.is_active ? 'Active' : 'Inactive'}`,
+      ];
+      
+      sessionInfo.forEach(info => {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: info,
+                size: 18,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 50 },
+          })
+        );
+      });
+      
+      // Add messages for this session
+      const sessionMessages = messagesBySession[session.id] || [];
+      if (sessionMessages.length > 0) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Messages',
+                bold: true,
+                size: 20,
+                underline: { type: UnderlineType.SINGLE },
+              }),
+            ],
+            spacing: { before: 200, after: 100 },
+          })
+        );
+        
+        // Sort messages by creation date
+        const sortedMessages = [...sessionMessages].sort((a, b) => 
+          new Date(a.created_at) - new Date(b.created_at)
+        );
+        
+        // Process messages sequentially to handle async markdown parsing
+        for (const message of sortedMessages) {
+          const roleIcon = message.role === 'user' ? '👤' : '🤖';
+          const roleName = message.role === 'user' ? 'User' : 'Wiskr';
+          
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `${roleIcon} ${roleName}`,
+                  bold: true,
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ` (${formatDocxDate(message.created_at)})`,
+                  size: 16,
+                  italics: true,
+                }),
+              ],
+              spacing: { before: 150, after: 50 },
+            })
+          );
+          
+          if (message.content) {
+            // Split content into paragraphs and process markdown formatting
+            const paragraphs = message.content.split('\n\n');
+            const processedParagraphs = await Promise.all(
+              paragraphs.map(async (paragraph) => {
+                if (paragraph.trim()) {
+                  return await parseMarkdownToTextRuns(paragraph.trim(), {
+                    font: defaultFont,
+                    size: 18
+                  });
+                }
+                return null;
+              })
+            );
+            
+            processedParagraphs.forEach(formattedRuns => {
+              if (formattedRuns) {
+                children.push(
+                  new Paragraph({
+                    children: formattedRuns,
+                    spacing: { after: 100 },
+                  })
+                );
+              }
+            });
+          }
+          
+          if (message.branch_id && message.branch_id !== 'main') {
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Branch: ${message.branch_id}`,
+                    size: 16,
+                    italics: true,
+                    color: '666666',
+                  }),
+                ],
+                spacing: { after: 100 },
+              })
+            );
+          }
+        }
+      }
+    }
+  }
+  
+  // Create the document with font settings
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: children,
+      },
+    ],
+    creator: 'Wiskr',
+    title: project.name || 'Wiskr Project Export',
+    description: project.description || 'Project export from Wiskr',
+    // Default document font settings
+    styles: {
+      paragraphStyles: [
+        {
+          id: 'Normal',
+          name: 'Normal',
+          basedOn: 'Normal',
+          next: 'Normal',
+          run: {
+            font: defaultFont,
+            size: 22
+          }
+        }
+      ]
+    }
+  });
+  
+  // Generate and return the buffer
+  return await Packer.toBuffer(doc);
+}
+
+/**
+ * Format date for DOCX document
+ * @param {string} dateStr - ISO date string
+ * @returns {string} Formatted date
+ */
+function formatDocxDate(dateStr) {
+  if (!dateStr) return 'Unknown';
+  return new Date(dateStr).toLocaleString();
 }

@@ -140,11 +140,11 @@
     pendingRating = null;
   }
   
-  // Button sizing - made icons bigger and adjusted height to match other buttons (h-8 = 32px)
+  // Button sizing - made icons bigger and adjusted height for touch targets (h-11 = 44px on mobile)
   $: buttonSize = size === 'md' ? '20' : '18';
   $: buttonClass = size === 'md' 
-    ? 'px-2 py-1.5 h-8' 
-    : 'px-2 py-1 h-8';
+    ? 'px-2 py-1.5 h-11 sm:h-8' 
+    : 'px-2 py-1 h-11 sm:h-8';
 </script>
 
 <!-- Feedback Buttons -->

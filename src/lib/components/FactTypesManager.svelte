@@ -165,6 +165,15 @@
     };
     return colorMap[colorClass] || '#f3f4f6';
   }
+  
+  // Hover handlers for the "Add Custom Fact Type" button
+  function handleHover(event) {
+    event.target.style.backgroundColor = 'var(--color-accent-light)';
+  }
+  
+  function handleLeave(event) {
+    event.target.style.backgroundColor = 'transparent';
+  }
 </script>
 
 <div class="space-y-3">
@@ -175,15 +184,15 @@
   {:else}
     <!-- Field Labels -->
     <div class="flex items-center gap-4 px-1 pb-0.5">
-      <div class="cursor-move text-gray-400 w-5"></div>
+      <div class="cursor-move text-gray-400 dark:text-gray-500 w-5"></div>
       <div class="w-96">
-        <label class="text-xs font-medium text-gray-600 uppercase tracking-wide" for="fact-type-name">Name</label>
+        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide" for="fact-type-name">Name</label>
       </div>
       <div class="w-32">
-        <label class="text-xs font-medium text-gray-600 uppercase tracking-wide" for="fact-type-color">Color</label>
+        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide" for="fact-type-color">Color</label>
       </div>
       <div class="w-32">
-        <label class="text-xs font-medium text-gray-600 uppercase tracking-wide ml-0" for="fact-type-preview">Preview</label>
+        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide ml-0" for="fact-type-preview">Preview</label>
       </div>
       <div class="flex-1"></div>
     </div>
@@ -191,9 +200,9 @@
     <!-- Current Fact Types -->
     <div class="space-y-0.5">
       {#each factTypes as factType, index}
-        <div class="flex items-center gap-4 px-1 py-0.5 hover:bg-gray-50 rounded">
+        <div class="flex items-center gap-4 px-1 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
           <!-- Drag Handle -->
-          <div class="cursor-move text-gray-400 w-5">
+          <div class="cursor-move text-gray-400 dark:text-gray-500 w-5">
             <GripVertical size="20" />
           </div>
           
@@ -202,7 +211,7 @@
             <input
               type="text"
               bind:value={factType.display_name}
-            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent); border-color: gray;" 
+              class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
               on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
               on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
               placeholder="Fact type name"
@@ -213,7 +222,7 @@
           <div class="w-32">
             <select
               bind:value={factType.color_class}
-              class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent); border-color: gray;" 
+              class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
               on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
               on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
             >
@@ -237,7 +246,7 @@
               <button
                 on:click={() => moveUp(index)}
                 disabled={index === 0}
-                class="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                class="p-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 title="Move up"
               >
                 ↑
@@ -245,7 +254,7 @@
               <button
                 on:click={() => moveDown(index)}
                 disabled={index === factTypes.length - 1}
-                class="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                class="p-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 title="Move down"
               >
                 ↓
@@ -255,7 +264,7 @@
             <!-- Remove Button -->
             <button
               on:click={() => removeFactType(index)}
-              class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
+              class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded cursor-pointer"
               title="Remove fact type"
             >
               <Trash2 size="16" />
@@ -266,7 +275,7 @@
     </div>
     
     <!-- Add New Fact Type -->
-    <div class="border-t pt-2">
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
       {#if !showAddForm}
         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
         <button
@@ -279,44 +288,44 @@
           Add Custom Fact Type
         </button>
       {:else}
-        <div class="p-3 border border-gray-300 rounded bg-white">
-          <h3 class="text-base font-medium mb-3">Add New Fact Type</h3>
+        <div class="p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
+          <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Add New Fact Type</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1" for="fact-type-key">Type Key</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-key">Type Key</label>
               <input
                 type="text"
                 bind:value={newFactType.type_key}
-                class="w-full px-2 py-1.5 text-sm font-mono border border-gray-300 rounded focus:outline-none focus:ring-2" 
-                style="--tw-ring-color: var(--color-accent); border-color: gray;" 
+                class="w-full px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" 
+                style="--tw-ring-color: var(--color-accent);" 
                 on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
                 on:blur={() => { this.style.borderColor=''; this.style.boxShadow=''; }}
                 placeholder="e.g., organization"
               />
-              <p class="text-xs text-gray-500 mt-1">Lowercase, no spaces (used internally)</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lowercase, no spaces (used internally)</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1" for="fact-type-display-name">Display Name</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-display-name">Display Name</label>
               <input
                 type="text"
                 bind:value={newFactType.display_name}
-                class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2" 
-                style="--tw-ring-color: var(--color-accent); border-color: gray;" 
+                class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" 
+                style="--tw-ring-color: var(--color-accent);" 
                 on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
                 on:blur={() => { this.style.borderColor=''; this.style.boxShadow=''; }}
                 placeholder="e.g., Organization"
               />
-              <p class="text-xs text-gray-500 mt-1">What users will see</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">What users will see</p>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1" for="fact-type-color">Color</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-color">Color</label>
               <select
                 bind:value={newFactType.color_class}
-                class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2" 
-                style="--tw-ring-color: var(--color-accent); border-color: gray;" 
+                class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" 
+                style="--tw-ring-color: var(--color-accent);" 
                 on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
                 on:blur={() => { this.style.borderColor=''; this.style.boxShadow=''; }}
               >
@@ -338,7 +347,7 @@
             
             <button
               on:click={() => showAddForm = false}
-              class="flex items-center gap-2 px-3 py-1.5 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
+              class="flex items-center gap-2 px-3 py-1.5 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
             >
               <X size="16" />
               Cancel

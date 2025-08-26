@@ -3,6 +3,9 @@
   import { supabase } from '$lib/supabase.js';
   import { DateTime } from 'luxon';
   import { Plus, Calendar, Edit2, Check, X, RotateCcw } from 'lucide-svelte';
+  import { robustFetchJSON, getNetworkStatus, offlineQueue } from '$lib/utils/networkUtils.js';
+  import { incrementPendingOperations, decrementPendingOperations, addNetworkError } from '$lib/stores/networkStore.js';
+  import { browser } from '$app/environment';
 
   export let currentProject;
   export let sessions = [];
@@ -121,43 +124,111 @@
   async function saveTitle(sessionId) {
     if (!editingTitle.trim() || isUpdatingTitle) return;
     
+    const newTitle = editingTitle.trim();
+    const originalSession = sessions.find(s => s.id === sessionId);
+    const originalTitle = originalSession?.session_name || originalSession?.name;
+    
+    // Optimistic update
+    sessions = sessions.map(s => 
+      s.id === sessionId 
+        ? { ...s, session_name: newTitle, name: newTitle }
+        : s
+    );
+    
+    if (currentSession?.id === sessionId) {
+      currentSession = { ...currentSession, session_name: newTitle, name: newTitle };
+    }
+    
+    cancelEditingTitle();
+    
+    // Check if offline - queue the request
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/sessions/title', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            sessionId,
+            projectId: currentProject.id,
+            customTitle: newTitle
+          })
+        });
+      }, { type: 'update_session_title', sessionId, newTitle });
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Session title will be updated when you come back online.');
+      }
+      return;
+    }
+    
     isUpdatingTitle = true;
+    incrementPendingOperations();
+    
     try {
-      const response = await fetch('/api/sessions/title', {
+      const result = await robustFetchJSON('/api/sessions/title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update',
           sessionId,
           projectId: currentProject.id,
-          customTitle: editingTitle.trim()
+          customTitle: newTitle
         })
+      }, {
+        timeout: 10000,
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying session title update', attempt, 3);
+          }
+        }
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        // Update local sessions array
-        sessions = sessions.map(s => 
-          s.id === sessionId 
-            ? { ...s, session_name: result.title, name: result.title }
-            : s
-        );
-        
-        // Update current session if it's the one being edited
-        if (currentSession?.id === sessionId) {
-          currentSession = { ...currentSession, session_name: result.title, name: result.title };
-        }
-        
-        cancelEditingTitle();
-      } else {
-        sessionsError = result.error || 'Failed to update title';
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update title');
       }
+      
+      // Confirm the update with server response
+      sessions = sessions.map(s => 
+        s.id === sessionId 
+          ? { ...s, session_name: result.title, name: result.title }
+          : s
+      );
+      
+      if (currentSession?.id === sessionId) {
+        currentSession = { ...currentSession, session_name: result.title, name: result.title };
+      }
+      
     } catch (error) {
-      console.error('Error updating session title:', error);
-      sessionsError = 'Failed to update title';
+      console.error('SessionManager: Error updating session title:', error);
+      addNetworkError(error);
+      
+      // Revert optimistic update
+      sessions = sessions.map(s => 
+        s.id === sessionId 
+          ? { ...s, session_name: originalTitle, name: originalTitle }
+          : s
+      );
+      
+      if (currentSession?.id === sessionId) {
+        currentSession = { ...currentSession, session_name: originalTitle, name: originalTitle };
+      }
+      
+      const errorMessage = error.message.includes('Network connection failed') ?
+        'Network error. Please try again when connection is restored.' :
+        error.message.includes('timeout') ?
+        'Request timed out. Please try again.' :
+        `Failed to update title: ${error.message}`;
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error(errorMessage);
+      } else {
+        sessionsError = errorMessage;
+      }
     } finally {
       isUpdatingTitle = false;
+      decrementPendingOperations();
     }
   }
 

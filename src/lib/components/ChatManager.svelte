@@ -3,6 +3,8 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase.js';
+  import { robustFetch, robustFetchJSON, robustStreamingFetch, offlineQueue, getNetworkStatus } from '$lib/utils/networkUtils.js';
+  import { incrementPendingOperations, decrementPendingOperations, addNetworkError } from '$lib/stores/networkStore.js';
 
   const dispatch = createEventDispatcher();
 
@@ -105,77 +107,131 @@
   export async function send(event) {
     if (!current || !currentSession || !event.detail.message.trim()) return;
     
+    const userMsg = event.detail.message;
+    input = '';
+    
+    // Optimistic UI - show user message immediately
+    const tempUserMsgId = 'temp_user_' + Date.now();
+    const tempAssistantMsgId = 'temp_assistant_' + Date.now();
+    
+    messages = [
+      ...messages, 
+      { id: tempUserMsgId, role: 'user', content: userMsg, created_at: new Date().toISOString() }, 
+      { 
+        id: tempAssistantMsgId, 
+        role: 'assistant', 
+        content: '', 
+        model_key: modelKey, 
+        created_at: new Date().toISOString(),
+        isLoading: true // Add loading indicator
+      }
+    ];
+
+    // Check if offline - queue the request
+    if (!getNetworkStatus()) {
+      messages = messages.map((m, i, arr) => 
+        i === arr.length - 1 ? 
+        { ...m, content: 'You are offline. This message will be sent when you reconnect.', isOffline: true, isLoading: false } : 
+        m
+      );
+      
+      offlineQueue.add(async () => {
+        await sendMessage(current.id, currentSession.id, userMsg, modelKey, currentBranchId);
+      }, { type: 'chat_message', userMsg });
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Message queued for when you come back online.');
+      }
+      return;
+    }
+
+    incrementPendingOperations();
+    
     try {
-      const userMsg = event.detail.message;
-      input = '';
-      
-      // Generate temporary IDs to avoid Svelte key conflicts
-      const tempUserMsgId = 'temp_user_' + Date.now();
-      const tempAssistantMsgId = 'temp_assistant_' + Date.now();
-      messages = [
-        ...messages, 
-        { id: tempUserMsgId, role: 'user', content: userMsg, created_at: new Date().toISOString() }, 
-        { id: tempAssistantMsgId, role: 'assistant', content: '', model_key: modelKey, created_at: new Date().toISOString() }
-      ];
-      
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: current.id, sessionId: currentSession.id, message: userMsg, modelKey, tz, branchId: currentBranchId })
-      });
-      
-      if (res.status === 429) {
-        const data = await res.json();
-        messages = [...messages, { role: 'assistant', content: data.message || 'Daily limit reached.' }];
-        return;
-      }
-      
-      if (!res.ok) {
-        console.error('ChatManager: API request failed', { status: res.status, statusText: res.statusText });
-        const errorText = await res.text();
-        console.error('ChatManager: Error details:', errorText);
-        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Error: Failed to get response' } : m);
-        return;
-      }
-      
-      if (!res.body) {
-        console.error('ChatManager: No response body for streaming');
-        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Error: No response body' } : m);
-        return;
-      }
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let assistantText = '';
       
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          
-          if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
-          
-          if (chunk === '[DONE]') break;
-          
-          assistantText += chunk;
-         
-          // Live update last assistant message
-          messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText } : m);
-          dispatch('usage-update');
+      await robustStreamingFetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          projectId: current.id, 
+          sessionId: currentSession.id, 
+          message: userMsg, 
+          modelKey, 
+          tz, 
+          branchId: currentBranchId 
+        })
+      }, (chunk) => {
+        if (chunk === '[DONE]') return;
+        
+        assistantText += chunk;
+        
+        // Live update last assistant message
+        messages = messages.map((m, i, arr) => 
+          i === arr.length - 1 ? 
+          { ...m, content: assistantText, isLoading: false } : 
+          m
+        );
+      }, {
+        timeout: 120000, // 2 minutes for chat
+        maxRetries: 2,
+        onRetry: (attempt, error, delay) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry(`Retrying chat request`, attempt, 3);
+          }
+          // Show retry indicator in message
+          messages = messages.map((m, i, arr) => 
+            i === arr.length - 1 ? 
+            { ...m, content: `Retrying... (${attempt}/3)`, isLoading: true, isRetrying: true } : 
+            m
+          );
         }
-      } catch (streamError) {
-        console.error('ChatManager: Streaming error:', streamError);
-        messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: assistantText || 'Error during streaming: ' + streamError.message } : m);
-      }
+      });
+      
+      dispatch('usage-updated');
       
     } catch (error) {
-      console.error('ChatManager: Fatal error in send function:', error);
+      console.error('ChatManager: Error sending message:', error);
+      addNetworkError(error);
+      
       // Update the assistant message with error
-      messages = messages.map((m, i, arr) => i === arr.length - 1 ? { ...m, content: 'Fatal error: ' + error.message } : m);
+      const errorMessage = error.message.includes('Network connection failed') ?
+        'Network error. Please check your connection and try again.' :
+        error.message.includes('timeout') ?
+        'Request timed out. Please try again.' :
+        `Error: ${error.message}`;
+      
+      messages = messages.map((m, i, arr) => 
+        i === arr.length - 1 ? 
+        { ...m, content: errorMessage, isLoading: false, isError: true } : 
+        m
+      );
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error('Failed to send message. ' + errorMessage);
+      }
+    } finally {
+      decrementPendingOperations();
     }
+  }
+
+  // Helper function for sending messages (used by offline queue)
+  async function sendMessage(projectId, sessionId, message, modelKey, branchId) {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    return await robustFetchJSON('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        projectId, 
+        sessionId, 
+        message, 
+        modelKey, 
+        tz, 
+        branchId 
+      })
+    });
   }
 
   // Questions Management Functions

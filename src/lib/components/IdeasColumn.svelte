@@ -48,7 +48,7 @@
 <div class="flex flex-col h-full border-r border-gray-200 dark:border-gray-700 overflow-hidden mobile-ideas-column">
   <!-- Header -->
   <div class="p-4">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center">
       {#if isDesktop && showCollapseButton && onToggleCollapse}
         <button
           class="p-1 text-xs bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -65,8 +65,6 @@
             <ChevronsRight size="24" />
           {/if}
         </button>
-      {:else}
-        <div></div> <!-- Empty div to maintain spacing when button not shown -->
       {/if}
       
       <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Prompt Add-Ins</h2>

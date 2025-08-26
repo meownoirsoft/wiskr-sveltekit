@@ -10,6 +10,8 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
   import ProjectExport from '$lib/components/ProjectExport.svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
+  import ToastNotification from '$lib/components/ToastNotification.svelte';
+  import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
   import TutorialOverlay from '$lib/components/TutorialOverlay.svelte';
@@ -161,6 +163,16 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   // Check if we're on the projects page
   $: isProjectsPage = $page.url.pathname === '/projects';
   
+  // Check if we should show the logo (authenticated pages + login/signup)
+  $: shouldShowLogo = isProjectsPage || 
+    $page.url.pathname.startsWith('/admin') ||
+    $page.url.pathname.startsWith('/context-dashboard') ||
+    $page.url.pathname.startsWith('/debug-context') ||
+    $page.url.pathname.startsWith('/shared') ||
+    $page.url.pathname === '/login' ||
+    $page.url.pathname === '/signup' ||
+    $page.url.pathname === '/legal';
+  
   // Track page views
   $: if (browser && $page.url.pathname) {
     trackPageView($page.url.pathname);
@@ -191,6 +203,25 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         initTutorial();
       }, 2000); // Wait for app to fully load
     }
+    
+    // Listen for panel state changes to update chevron icons
+    window.addEventListener('sidebar:left-panel-changed', (e) => {
+      showLeftPanel = e.detail.visible;
+    });
+    
+    window.addEventListener('sidebar:right-panel-changed', (e) => {
+      showRightPanel = e.detail.visible;
+    });
+    
+    // Listen for panel state changes from PanelManager
+    window.addEventListener('panel-state-changed', (e) => {
+      if (e.detail && typeof e.detail.showLeftPanel === 'boolean') {
+        showLeftPanel = e.detail.showLeftPanel;
+      }
+      if (e.detail && typeof e.detail.showRightPanel === 'boolean') {
+        showRightPanel = e.detail.showRightPanel;
+      }
+    });
     
     // IMPORTANT: Don't load projects directly in layout - this bypasses RLS!
     // Projects should be loaded by the page server-side with proper auth context
@@ -272,6 +303,10 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   let showMobileMenu = false;
   let showContextMenu = false;
   let showAddInsMenu = false;
+  
+  // Panel state tracking for mobile chevron icons
+  let showLeftPanel = true; // Default state, will be synced with actual panel state
+  let showRightPanel = true; // Default state, will be synced with actual panel state
   
   // Responsive state
   let isDesktop = false;
@@ -486,26 +521,49 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   <!-- Header -->
   <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-50 transition-colors" style="background-color: var(--bg-header);">
     <div class="w-full px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
-      <!-- Left: Wiskr Brand + Desktop Project Controls -->
-      <div class="flex items-center gap-6">
-        <!-- Desktop: Mr Wiskr brand -->
-        <a href="/projects" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-          <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
-            <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 px-2 mb-0" />
-            <!-- <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
-            <span style="color: #5d60dd">Mr Wiskr</span>
-            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" /> -->
-          </span>
-        </a>
-        <!-- Mobile: Wiskr brand -->
-        <a href="/projects" class="{isDesktop ? 'hidden' : 'flex'} flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-          <span class="text-lg inline-flex items-center">
-            <ChevronsRight className="inline-block align-middle" size={18} style="color: white;" />
-            <span style="color: #5d60dd" class="hidden xs:inline">Wiskr</span>
-            <span style="color: #5d60dd" class="xs:hidden">Wiskr</span>
-            <ChevronsLeft className="inline-block align-middle" size={18} style="color: white;" />
-          </span>
-        </a>
+      <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
+      <div class="flex items-center gap-2">
+        <!-- Mobile: Left-side controls (Facts & Projects) -->
+        {#if isProjectsPage}
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
+            <!-- Left panel toggle (Context/Facts) -->
+            <button
+              type="button"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
+              aria-label="Toggle Facts & Docs"
+              title="Facts & Docs"
+            >
+              {#if showLeftPanel}
+                <!-- Panel is open - chevrons pointing left (hide panel) -->
+                <ChevronsLeft size="20" />
+              {:else}
+                <!-- Panel is closed - chevrons pointing right (show panel) -->
+                <ChevronsRight size="20" />
+              {/if}
+              <span class="text-xs mt-1">Facts</span>
+            </button>
+            <!-- Project Menu Button -->
+            <button
+              type="button"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => showProjectMenu = !showProjectMenu}
+              aria-label="Projects and Tools"
+            >
+              <Boxes class="w-6 h-6" />
+              <span class="text-xs mt-1">Projects</span>
+            </button>
+          </div>
+        {/if}
+        
+        <!-- Desktop: Wiskr brand (show on authenticated pages + login/signup) -->
+        {#if shouldShowLogo}
+          <a href="/projects" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+            <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
+              <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 px-2 mb-0" />
+            </span>
+          </a>
+        {/if}
         
         <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
@@ -534,7 +592,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
               on:delete={async (e) => {
                 const project = e.detail;
                 if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
-                if (!confirm(`Delete \"{project.name}\"? This can't be undone.`)) return;
+                if (!confirm(`Delete "${project.name}"? This can't be undone.`)) return;
                 try {
                   const res = await fetch(`/api/projects/${project.id}/delete`, { method: 'POST' });
                   if (res.ok) {
@@ -579,8 +637,19 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         {/if}
       </div>
       
-      <!-- Spacer -->
-      <div class="flex-1"></div>
+      <!-- Center: Mobile Wiskr logo -->
+      {#if shouldShowLogo}
+        <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 justify-center">
+          <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+            <span class="text-xl inline-flex items-center">
+              <img src="/wiskr-logo.png" alt="Wiskr" class="w-28 py-2 px-2 mb-0" />
+            </span>
+          </a>
+        </div>
+      {:else}
+        <!-- Spacer for when logo is not shown -->
+        <div class="flex-1"></div>
+      {/if}
 
       <!-- Right side: Menus and controls -->
       <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -615,41 +684,38 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             </button>
           </div>
 
-          <!-- Mobile: Menu buttons -->
-          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
-            <!-- Project Menu Button -->
+          <!-- Mobile hamburger menu -->
+          <div class="{isDesktop ? 'hidden' : 'block'} relative">
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => showProjectMenu = !showProjectMenu}
-              aria-label="Projects and Tools"
-            >
-              <Boxes class="w-6 h-6" />
-              <span class="text-xs mt-1">Projects</span>
-            </button>
-            <!-- Context button -->
-            <button
-              type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
-              aria-label="Toggle Context Panel"
+              class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => showMobileMenu = !showMobileMenu}
+              aria-label="Menu"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-              <span class="text-xs mt-1">Context</span>
             </button>
-            <!-- Add-Ins button -->
+          </div>
+          
+          <!-- Mobile: Right panel control (Ideas) -->
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
+            <!-- Right panel toggle (Add-Ins) -->
             <button
               type="button"
               class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
-              aria-label="Toggle Add-Ins Panel"
+              aria-label="Toggle Questions & Ideas"
+              title="Questions & Ideas"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-              </svg>
-              <span class="text-xs mt-1">Add-Ins</span>
+              {#if !showRightPanel}
+                <!-- Chevrons pointing left (show panel) -->
+                <ChevronsLeft size="20" />
+              {:else}
+                <!-- Chevrons pointing right (hide panel) -->
+                <ChevronsRight size="20" />
+              {/if}
+              <span class="text-xs mt-1">Ideas</span>
             </button>
           </div>
         {/if}
@@ -679,93 +745,78 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
           {/if}
         </div>
         
-        <!-- Mobile hamburger menu -->
-        <div class="{isDesktop ? 'hidden' : 'block'} relative">
-          <button
-            type="button"
-            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-            on:click={() => showMobileMenu = !showMobileMenu}
-            aria-label="Menu"
+        <!-- Mobile menu dropdown -->
+        {#if showMobileMenu}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div 
+            class="fixed inset-0 z-50" 
+            on:click={() => showMobileMenu = false}
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          
-          
-          <!-- Mobile menu dropdown -->
-          {#if showMobileMenu}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div 
-              class="fixed inset-0 z-50" 
-              on:click={() => showMobileMenu = false}
-            >
-              <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2" style="background-color: var(--bg-primary);">
-                {#if isProjectsPage}
-                  <!-- Sidebar Panel Toggles removed - now handled by dedicated Context/Add-Ins buttons -->
-                  <button 
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
-                    on:click={() => {
-                      window.dispatchEvent(new CustomEvent('usage:toggle'));
-                      showMobileMenu = false;
-                    }}
-                  >
-                    <BarChart3 size="16" />
-                    <span>Usage</span>
-                  </button>
-                  <a 
-                    href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    on:click={() => showMobileMenu = false}
-                  >
-                    <Settings2 size="16" />
-                    <span>Context Dashboard</span>
-                  </a>
-                {/if}
+            <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2" style="background-color: var(--bg-primary);">
+              {#if isProjectsPage}
+                <!-- Sidebar Panel Toggles removed - now handled by dedicated Context/Add-Ins buttons -->
+                <button 
+                  type="button"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
+                  on:click={() => {
+                    window.dispatchEvent(new CustomEvent('usage:toggle'));
+                    showMobileMenu = false;
+                  }}
+                >
+                  <BarChart3 size="16" />
+                  <span>Usage</span>
+                </button>
+                <a 
+                  href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  on:click={() => showMobileMenu = false}
+                >
+                  <Settings2 size="16" />
+                  <span>Context Dashboard</span>
+                </a>
+              {/if}
+              
+              {#if data?.user}
+                <button 
+                  type="button"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  on:click={() => {
+                    openAppSettings();
+                    showMobileMenu = false;
+                  }}
+                >
+                  <Settings size="16" />
+                  <span>Settings</span>
+                </button>
                 
-                {#if data?.user}
-                  <button 
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    on:click={() => {
-                      openAppSettings();
-                      showMobileMenu = false;
-                    }}
-                  >
-                    <Settings size="16" />
-                    <span>Settings</span>
-                  </button>
-                  
-                  <a 
-                    href="/logout" 
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    on:click={() => showMobileMenu = false}
-                  >
-                    <LogOut size="16" />
-                    <span>Logout</span>
-                  </a>
-                {:else}
-                  <a 
-                    href="/login" 
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    on:click={() => showMobileMenu = false}
-                  >
-                    Login
-                  </a>
-                  <a 
-                    href="/signup" 
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    on:click={() => showMobileMenu = false}
-                  >
-                    Sign Up
-                  </a>
-                {/if}
-              </div>
+                <a 
+                  href="/logout" 
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  on:click={() => showMobileMenu = false}
+                >
+                  <LogOut size="16" />
+                  <span>Logout</span>
+                </a>
+              {:else}
+                <a 
+                  href="/login" 
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  on:click={() => showMobileMenu = false}
+                >
+                  Login
+                </a>
+                <a 
+                  href="/signup" 
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  on:click={() => showMobileMenu = false}
+                >
+                  Sign Up
+                </a>
+              {/if}
             </div>
-          {/if}
-        </div>
+          </div>
+        {/if}
       </div>
     </div>
   </header>
@@ -1139,4 +1190,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   
   <!-- Tutorial Overlay -->
   <TutorialOverlay />
+  
+  <!-- Toast Notifications -->
+  <ToastNotification />
 </div>

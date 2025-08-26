@@ -183,7 +183,7 @@
 
 {#if isOpen}
   <div 
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+    class="fixed inset-0 z-[70] flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
     role="dialog"
     aria-modal="true"
     aria-labelledby="export-title"
@@ -267,6 +267,7 @@
                 <option value="json">JSON (Complete data)</option>
                 <option value="markdown-single">Markdown (Single file)</option>
                 <option value="markdown-multi">Markdown (Multiple files in ZIP)</option>
+                <option value="docx">Microsoft Word (DOCX)</option>
               </select>
               
               {#if exportOptions.format.startsWith('markdown')}
@@ -276,6 +277,10 @@
                   {:else if exportOptions.format === 'markdown-multi'}
                     📁 ZIP archive with organized markdown files (README.md, conversations/, facts.md, etc.)
                   {/if}
+                </p>
+              {:else if exportOptions.format === 'docx'}
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  📝 Microsoft Word document with formatted text, headings, and proper document structure
                 </p>
               {/if}
             </div>

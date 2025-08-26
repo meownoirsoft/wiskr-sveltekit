@@ -34,7 +34,7 @@
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'fact-types', label: 'Fact Types', icon: Settings },
-    { id: 'data', label: 'Data Management', icon: Database },
+    { id: 'data', label: 'Import/Export', icon: Database },
     // Future tabs can be added here
   ];
 
@@ -241,7 +241,7 @@
         {:else if activeTab === 'data'}
           <div>
             <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Data Management</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Import/Export</h3>
               <p class="text-gray-600 dark:text-gray-400">Import and export your project data. Create backups or migrate data between projects.</p>
             </div>
             
@@ -308,10 +308,8 @@
                   </svg>
                 </div>
                 <div class="ml-3">
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Data Management Tips</h5>
+                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Export/Import Details</h5>
                   <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                    <li>• Export your project regularly to create backups</li>
-                    <li>• Use import to restore data or migrate between environments</li>
                     <li>• When importing, you can choose to merge with existing data or create a new project</li>
                     <li>• All relationships between facts, documents, and tags are preserved during export/import</li>
                   </ul>
@@ -335,7 +333,7 @@
                   />
                 </div>
                 <div>
-                  <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for AI Performance</h4>
+                  <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for Wiskr Performance</h4>
                   <div class="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
                     <div class="flex items-start">
                       <div class="flex-shrink-0">
@@ -345,11 +343,12 @@
                       </div>
                     
                       <div class="ml-3">
-                        <p class="text-xs text-blue-700 dark:text-blue-300">The description below is the <strong>most important context</strong> for Mr Wiskr (and friends). It's their <strong>"north star"</strong> for providing targeted assistance. This should clearly define:</p>
+                        <p class="text-xs text-blue-700 dark:text-blue-300">
+                          The description below is the <strong>most important context</strong> for Wiskrs. It's their <strong>"north star"</strong> for providing targeted assistance. This should clearly define:</p>
                         <ul class="font-medium text-xs text-blue-700 dark:text-blue-300 my-4 mb-0 list-disc space-y-1">
                           <li>What you're trying to achieve or build</li>
-                          <li>Your project's main goals and objectives</li>
-                          <li>The scope and focus areas, and any specific requirements or constraints</li>
+                          <li>Your main goals and objectives</li>
+                          <li>The scope and focus areas, and any specifics or constraints</li>
                         </ul>
                       </div>
                     </div>

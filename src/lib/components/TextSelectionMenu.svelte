@@ -89,12 +89,6 @@
     }
   }
 
-  function simplifyThis() {
-    if (selectedText) {
-      dispatch('simplify-this', { text: selectedText });
-      hideMenu();
-    }
-  }
 
   onMount(() => {
     if (browser) {
@@ -113,8 +107,8 @@
 
 {#if menuVisible && selectedText}
   <div 
-    class="selection-menu fixed z-50 bg-white border border-gray-300 dark:border-gray-600 rounded-md shadow-lg py-0.5 min-w-[130px]"
-    style="left: {menuX}px; top: {menuY}px; background-color: var(--bg-menu, white);"
+    class="selection-menu fixed z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg py-0.5 min-w-[130px]"
+    style="left: {menuX}px; top: {menuY}px;"
   >
     <button
       class="w-full flex items-center gap-2 px-2 py-1 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left cursor-pointer"
@@ -143,16 +137,6 @@
     >
       <BrushCleaning size="16" />
       <span>Format for Posts</span>
-    </button>
-    <div class="border-t border-gray-200 dark:border-gray-600 my-0.5"></div>
-    <button
-      class="w-full flex items-center gap-2 px-2 py-1 text-sm transition-colors text-left cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/30"
-      style="color: #5D60DD;"
-      on:click={simplifyThis}
-    >
-      <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-4 h-4 block dark:hidden" />
-      <img src="/mr-wiskr-dark-emoji.png" alt="Mr Wiskr" class="w-4 h-4 hidden dark:block" />
-      <span>Simplify This</span>
     </button>
   </div>
 {/if}
