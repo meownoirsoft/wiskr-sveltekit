@@ -7,6 +7,18 @@
   // FAQ data
   const faqItems = [
     {
+      question: "What is Wiskr?",
+      answer: "Wiskr is a creative AI workspace that helps you organize prompts, results, and projects in one place. It’s designed to make working with AI faster, clearer, and more enjoyable."
+    },
+    {
+      question: "Do I need technical skills to use Wiskr?",
+      answer: "Not at all. Wiskr is designed to be simple and friendly. If you can copy and paste, you can use it. Developers and power-users will also find advanced options available."
+    },
+    {
+      question: "Is there a free plan?",
+      answer: "Yes! We offer a free plan so you can explore Wiskr and see how it fits your workflow before upgrading. <a href=\"https://wiskrapp.com/plans\">Check it out here</a>."
+    },
+    {
       question: "How do I create my first project?",
       answer: "Click the 'New' button in the header or go to Projects and select 'Create New Project'. Give your project a name and description, then start adding facts and having conversations with your Wiskrs."
     },
@@ -29,8 +41,37 @@
     {
       question: "What are project questions and ideas?",
       answer: "The Ideas panel on the right suggests relevant questions and related concepts based on your project context. Use these to explore new conversation topics and discover insights."
+    },
+    {
+      question: "Which AI models can I use?",
+      answer: "Wiskr supports multiple AI models (like GPT, Claude, Gemini, etc.). Availability depends on your plan. Free plans start with a small set of models, while paid tiers unlock more choices."
+    },
+    {
+      question: "Is my data private?",
+      answer: "Yes. Your prompts and results are yours. We never sell user data. Some anonymized usage data may be collected to improve the service."
+    },
+    {
+      question: "How do I upgrade or downgrade my plan?",
+      answer: "Go to Account Settings → Billing to change your plan anytime. Changes take effect immediately, and you'll only be billed for the portion of the billing cycle you use."
+    }, // what is the problem with this bracket
+    {
+      question: "Can I cancel my subscription?",
+      answer: "Absolutely. You can cancel at any time from your account page. Your data will remain safe, and you can re-subscribe whenever you like."
+    },
+    {
+      question: "What payment methods are supported?",
+      answer: "We accept major credit/debit cards. Additional payment options (like PayPal) may be added in the future."
+    },
+    {
+      question: "How do I contact support?",
+      answer: "You can reach us via the in-app support link, email at support@wiskr.app, or join our Discord community for quick help."
+    },
+    {
+      question: "Where do I suggest new features?",
+      answer: "We love feedback! You can submit ideas through the feedback button in the app or share them directly in our community channels."
     }
   ];
+
   
   let openFaqIndex = null;
   

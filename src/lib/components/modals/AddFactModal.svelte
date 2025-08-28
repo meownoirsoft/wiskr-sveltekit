@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte';
   import { X } from 'lucide-svelte';
   import TLDRModal from './TLDRModal.svelte';
-  import TLDRButton from './TLDRButton.svelte';
-  import TagSuggest from './TagSuggest.svelte';
+  import TLDRButton from '../TLDRButton.svelte';
+  import TagSuggest from '../TagSuggest.svelte';
   
   export let showModal = false;
   export let projectFactTypes = [];

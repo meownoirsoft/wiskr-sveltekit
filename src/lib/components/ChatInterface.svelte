@@ -6,15 +6,15 @@ import TextSelectionMenu from './TextSelectionMenu.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import MrWiskrPopup from './MrWiskrPopup.svelte';
 import ModelDropdown from './ModelDropdown.svelte';
-import TLDRModal from './TLDRModal.svelte';
+import TLDRModal from './modals/TLDRModal.svelte';
 import TLDRButton from './TLDRButton.svelte';
 import FeedbackButtons from './FeedbackButtons.svelte';
-import FeedbackModal from './FeedbackModal.svelte';
+import FeedbackModal from './modals/FeedbackModal.svelte';
 import GlobalSearch from './GlobalSearch.svelte';
 import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
 import { getModelFriendlyName } from '$lib/client/modelHelpers.js';
 import LoadingSpinner from './LoadingSpinner.svelte';
-import BranchPickerModal from './BranchPickerModal.svelte';
+import BranchPickerModal from './modals/BranchPickerModal.svelte';
 import VirtualMessageList from './VirtualMessageList.svelte';
 
   export let current = null;

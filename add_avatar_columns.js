@@ -11,7 +11,7 @@ async function addAvatarColumns() {
 
   // Add avatar_type column
   try {
-    console.log('📝 Adding avatar_type column...');
+    //console.log('📝 Adding avatar_type column...');
     const { data, error } = await supabase.rpc('exec_sql', {
       sql_query: "ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS avatar_type VARCHAR(20) DEFAULT 'default' CHECK (avatar_type IN ('default', 'premade', 'custom'));"
     });

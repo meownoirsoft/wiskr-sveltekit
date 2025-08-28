@@ -355,7 +355,7 @@
         <div class="p-6">
           <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">What happens to my data if I cancel?</h3>
           <p class="text-gray-600 dark:text-gray-400">
-            Your data remains accessible for 30 days after cancellation. You can export all your projects, conversations, and facts before the data is deleted.
+            Your data remains accessible for 90 days after cancellation. You can export all your projects, conversations, and facts before the data is archived. If you have any problems, please contact our support team.
           </p>
         </div>
       </div>

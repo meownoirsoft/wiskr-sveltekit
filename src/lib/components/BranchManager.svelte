@@ -31,7 +31,7 @@
   export async function loadSessionBranches(sessionId) {
     if (!sessionId || !currentProject) return;
     
-    console.log('🌳 Loading branches for session:', sessionId);
+    //console.log('🌳 Loading branches for session:', sessionId);
     
     const { data, error } = await supabase
       .from('conversation_branches')
@@ -46,7 +46,7 @@
     }
     
     branches = data || [];
-    console.log('🌳 Loaded branches:', branches.length);
+    //console.log('🌳 Loaded branches:', branches.length);
     
     // Set current branch
     currentBranch = branches.find(b => b.id === currentBranchId) || null;
@@ -90,7 +90,7 @@
     currentBranchId = branch.id;
     currentBranch = branch;
     
-    console.log('🌳 Selected branch:', branch.name);
+    //console.log('🌳 Selected branch:', branch.name);
     dispatch('branchChanged', { branch });
   }
 
@@ -125,7 +125,7 @@
       // Reset form
       newBranchName = '';
       
-      console.log('✅ Created branch:', data.name);
+      //console.log('✅ Created branch:', data.name);
       
     } catch (error) {
       console.error('Error creating branch:', error);

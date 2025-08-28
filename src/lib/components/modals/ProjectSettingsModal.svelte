@@ -1,11 +1,11 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
-  import FactTypesManager from './FactTypesManager.svelte';
+  import FactTypesManager from '../FactTypesManager.svelte';
   import TLDRModal from './TLDRModal.svelte';
-  import TLDRButton from './TLDRButton.svelte';
-  import ProjectExport from './ProjectExport.svelte';
-  import ProjectImport from './ProjectImport.svelte';
+  import TLDRButton from '../TLDRButton.svelte';
+  import ProjectExport from '../ProjectExport.svelte';
+  import ProjectImport from '../ProjectImport.svelte';
 
   export let showProjectSettingsModal = false;
   export let project = null;

@@ -7,14 +7,15 @@ import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Boxes, Plus }
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
-  import NewProjectModal from '$lib/components/NewProjectModal.svelte';
+  import NewProjectModal from '$lib/components/modals/NewProjectModal.svelte';
   import ProjectExport from '$lib/components/ProjectExport.svelte';
-  import AppSettingsModal from '$lib/components/AppSettingsModal.svelte';
-  import ToastNotification from '$lib/components/ToastNotification.svelte';
+import AppSettingsModal from '$lib/components/modals/AppSettingsModal.svelte';
+import TLDRModal from '$lib/components/modals/TLDRModal.svelte';
   import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
   import TutorialOverlay from '$lib/components/TutorialOverlay.svelte';
+  import ToastNotification from '$lib/components/ToastNotification.svelte';
   import '../app.css';
   import '$lib/components/styles.css';
   

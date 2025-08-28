@@ -2,7 +2,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { ThumbsUp, ThumbsDown, Check, X } from 'lucide-svelte';
-  import FeedbackModal from './FeedbackModal.svelte';
+  import FeedbackModal from './modals/FeedbackModal.svelte';
   
   export let messageId = null;
   export let projectId = null;

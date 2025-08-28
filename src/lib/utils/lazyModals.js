@@ -9,28 +9,43 @@
 export async function loadModal(modalName) {
   switch (modalName) {
     case 'FormatModal':
-      return (await import('$lib/components/FormatModal.svelte')).default;
+      return (await import('$lib/components/modals/FormatModal.svelte')).default;
     
     case 'BranchModal':
-      return (await import('$lib/components/BranchModal.svelte')).default;
+      return (await import('$lib/components/modals/BranchModal.svelte')).default;
     
     case 'ProjectSettingsModal':
-      return (await import('$lib/components/ProjectSettingsModal.svelte')).default;
+      return (await import('$lib/components/modals/ProjectSettingsModal.svelte')).default;
     
     case 'AppSettingsModal':
-      return (await import('$lib/components/AppSettingsModal.svelte')).default;
+      return (await import('$lib/components/modals/AppSettingsModal.svelte')).default;
     
     case 'NewProjectModal':
-      return (await import('$lib/components/NewProjectModal.svelte')).default;
+      return (await import('$lib/components/modals/NewProjectModal.svelte')).default;
     
     case 'ProjectExport':
       return (await import('$lib/components/ProjectExport.svelte')).default;
     
     case 'TLDRModal':
-      return (await import('$lib/components/TLDRModal.svelte')).default;
+      return (await import('$lib/components/modals/TLDRModal.svelte')).default;
     
     case 'FeedbackModal':
-      return (await import('$lib/components/FeedbackModal.svelte')).default;
+      return (await import('$lib/components/modals/FeedbackModal.svelte')).default;
+    
+    case 'AddFactModal':
+      return (await import('$lib/components/modals/AddFactModal.svelte')).default;
+    
+    case 'AddDocModal':
+      return (await import('$lib/components/modals/AddDocModal.svelte')).default;
+    
+    case 'EditFactModal':
+      return (await import('$lib/components/modals/EditFactModal.svelte')).default;
+    
+    case 'EditDocModal':
+      return (await import('$lib/components/modals/EditDocModal.svelte')).default;
+    
+    case 'BranchPickerModal':
+      return (await import('$lib/components/modals/BranchPickerModal.svelte')).default;
     
     case 'MrWiskrPopup':
       return (await import('$lib/components/MrWiskrPopup.svelte')).default;

@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Plus, Pin, PinOff, Pencil, Trash, MoreHorizontal } from 'lucide-svelte';
-  import EditDocModal from './EditDocModal.svelte';
-  import AddDocModal from './AddDocModal.svelte';
+  import EditDocModal from './modals/EditDocModal.svelte';
+  import AddDocModal from './modals/AddDocModal.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import LoadingSpinner from './LoadingSpinner.svelte';
 
