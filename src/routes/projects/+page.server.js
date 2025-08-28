@@ -1,5 +1,6 @@
 // src/routes/projects/+page.server.js
 import { redirect } from '@sveltejs/kit';
+import { isAdmin } from '$lib/auth/admin.js';
 
 export const load = async ({ locals }) => {
   // locals.supabase + locals.user should be set in your hooks.server.js (@supabase/ssr)
@@ -125,5 +126,12 @@ export const load = async ({ locals }) => {
     }
   }
 
-  return { projects: finalProjects };
+  // Check if user has admin permissions
+  const adminCheck = await isAdmin(locals.supabase, user);
+
+  return { 
+    projects: finalProjects,
+    user,
+    isAdmin: adminCheck.isAdmin
+  };
 };

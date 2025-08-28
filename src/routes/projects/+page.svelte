@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase.js';
+  import { loadAvatars } from '$lib/stores/avatars.js';
   import { marked } from 'marked';
   
 // Import components
@@ -27,7 +28,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   
   // Import Lucide icons
-  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight, BarChart3, Settings, Settings2, LogOut } from 'lucide-svelte';
 
   // Import styles
   import '$lib/components/styles.css';
@@ -181,6 +182,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let showRightPanel = false;  // Questions/Ideas panel
   let isDesktop = false;       // Track if we're on desktop
   
+  // Mobile menu state
+  let showMobileMenu = false;  // Mobile hamburger menu
+  
   
   // Desktop-only collapse state for panels
   let leftPanelCollapsed = false;   // Whether left panel is collapsed on desktop
@@ -266,8 +270,40 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       console.log('📊 Using preloaded projects:', projects.length, 'projects');
     }
     
-    // Clean up any stale localStorage data
+    // Clean up stale localStorage data
     clearStaleProjectData();
+
+    // Check for avatar refresh cookie
+    const needsAvatarRefresh = document.cookie.includes('wiskr_refresh_avatars=1');
+    if (needsAvatarRefresh) {
+      // Clear the cookie
+      document.cookie = 'wiskr_refresh_avatars=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      // Force refresh avatars
+      await loadAvatars(true);
+    }
+    
+    // Notify layout about projects and current project
+    if (browser && projects.length > 0) {
+      // Try to restore last selected project or use first available
+      const lastProjectId = localStorage.getItem('wiskr_last_project_id');
+      const lastProject = lastProjectId ? projects.find(p => p.id === lastProjectId) : null;
+      const projectToSelect = lastProject || projects[0];
+      
+      console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
+      
+      // Dispatch event to notify layout about projects and current selection
+      window.dispatchEvent(new CustomEvent('layout:update-projects', {
+        detail: {
+          projects: projects,
+          currentProjectId: projectToSelect.id
+        }
+      }));
+      
+      // Also dispatch project selection if we have a project
+      if (projectToSelect && projectState) {
+        await projectState.selectProjectById(projectToSelect.id);
+      }
+    }
 
     // Load usage once on page load
     await loadUsage();
@@ -341,6 +377,16 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.addEventListener('mobile:toggle-context', handleMobileToggleContext);
       window.addEventListener('mobile:toggle-addins', handleMobileToggleAddins);
       
+      // Listen for mobile menu toggle from header hamburger button
+      window.addEventListener('mobile:toggle-menu', () => {
+        showMobileMenu = !showMobileMenu;
+      });
+      
+    // Listen for project menu toggle from mobile menu button
+    window.addEventListener('mobile:toggle-projects', () => {
+      window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
+    });
+      
       // Add click outside listener for sessions panel
       document.addEventListener('click', handleClickOutside);
     }
@@ -370,6 +416,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.removeEventListener('mobile:show-addins', handleMobileShowAddins);
       window.removeEventListener('mobile:toggle-context', handleMobileToggleContext);
       window.removeEventListener('mobile:toggle-addins', handleMobileToggleAddins);
+      window.removeEventListener('mobile:toggle-menu', () => {
+        showMobileMenu = !showMobileMenu;
+      });
+      window.removeEventListener('mobile:toggle-projects', () => {
+        window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
+      });
       
       // Remove click outside listener
       document.removeEventListener('click', handleClickOutside);
@@ -1356,8 +1408,7 @@ function handleTextAddToDocs(event) {
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-  <div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'flex-1' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}" data-tutorial="context-panel">
-    
+<div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-[30%]' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1414,9 +1465,9 @@ function handleTextAddToDocs(event) {
 
 
   <!-- MAIN AREA: Chat (Center) -->
-  <div class="flex-1 flex justify-center relative">
+  <div class="w-[40%] flex flex-col relative">
     <!-- Chat Container -->
-    <div class="w-full flex flex-col relative">
+    <div class="w-full h-full flex flex-col relative">
 
     <ChatInterface
       {current}
@@ -1538,9 +1589,7 @@ function handleTextAddToDocs(event) {
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-  <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'flex-1' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
-    
-    
+<div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'w-[30%]' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showRightPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1572,6 +1621,106 @@ function handleTextAddToDocs(event) {
     {/if}
   </div>
 </div>
+
+<!-- Mobile Hamburger Menu (positioned after columns for proper z-order) -->
+{#if showMobileMenu && !isDesktop}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div 
+    class="fixed inset-0 z-[100]" 
+    on:click={() => showMobileMenu = false}
+  >
+    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2 z-[101]" style="background-color: var(--bg-primary);">
+      <!-- Usage Stats -->
+      <button 
+        type="button"
+        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
+        on:click={() => {
+          showUsagePopover = !showUsagePopover;
+          showMobileMenu = false;
+          showLeftPanel = false;
+          showRightPanel = false;
+        }}
+      >
+        <BarChart3 size="16" />
+        <span>Usage</span>
+      </button>
+      
+      <!-- Context Dashboard (Admin Only) -->
+      {#if data?.isAdmin}
+        <a 
+          href="/context-dashboard{current?.id ? `?projectId=${current.id}` : ''}"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={() => {
+            showMobileMenu = false;
+            showLeftPanel = false;
+            showRightPanel = false;
+          }}
+        >
+          <Settings2 size="16" />
+          <span>Context Dashboard</span>
+        </a>
+      {/if}
+      
+      {#if data?.user}
+        <!-- Settings -->
+        <button 
+          type="button"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={() => {
+            window.dispatchEvent(new CustomEvent('layout:open-settings'));
+            showMobileMenu = false;
+            showLeftPanel = false;
+            showRightPanel = false;
+          }}
+        >
+          <Settings size="16" />
+          <span>Settings</span>
+        </button>
+        
+        <!-- Logout -->
+        <a 
+          href="/logout" 
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={() => {
+            showMobileMenu = false;
+            showLeftPanel = false;
+            showRightPanel = false;
+          }}
+        >
+          <LogOut size="16" />
+          <span>Logout</span>
+        </a>
+      {:else}
+        <!-- Login -->
+        <a 
+          href="/login" 
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={() => {
+            showMobileMenu = false;
+            showLeftPanel = false;
+            showRightPanel = false;
+          }}
+        >
+          Login
+        </a>
+        
+        <!-- Sign Up -->
+        <a 
+          href="/signup" 
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          on:click={() => {
+            showMobileMenu = false;
+            showLeftPanel = false;
+            showRightPanel = false;
+          }}
+        >
+          Sign Up
+        </a>
+      {/if}
+    </div>
+  </div>
+{/if}
 
 <!-- Usage Popover -->
 {#if showUsagePopover && usage}

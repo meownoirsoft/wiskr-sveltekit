@@ -31,6 +31,13 @@ export const handle = async ({ event, resolve }) => {
       
       if (data?.session) {
         console.log('OAuth login successful for user:', data.user?.email);
+        
+        // Set cookie to trigger avatar refresh
+        event.cookies.set('wiskr_refresh_avatars', '1', {
+          path: '/',
+          maxAge: 60 * 5 // 5 minutes
+        });
+        
         throw redirect(303, next);
       }
     } catch (err) {

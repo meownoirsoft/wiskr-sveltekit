@@ -164,8 +164,8 @@ import { browser } from '$app/environment';
         />
       </div>
       <button 
-        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer" 
-        style="background-color: var(--color-accent); transition: background-color 0.2s ease;" 
+        class="flex items-center gap-1 text-sm px-2 py-1 rounded cursor-pointer" 
+        style="background-color: var(--color-accent); color: var(--color-accent-text); transition: background-color 0.2s ease;" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         on:click={() => showAddForm = !showAddForm}
@@ -190,8 +190,8 @@ import { browser } from '$app/environment';
             on:keydown={handleKeydown}
           />
           <button 
-            class="text-white rounded px-3 py-1 cursor-pointer" 
-            style="background-color: var(--color-accent); transition: background-color 0.2s ease;" 
+            class="rounded px-3 py-1 cursor-pointer" 
+            style="background-color: var(--color-accent); color: var(--color-accent-text); transition: background-color 0.2s ease;" 
             on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
             on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
             on:click={addQuestion}

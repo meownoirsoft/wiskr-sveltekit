@@ -265,7 +265,8 @@
                 
                 <button
                   on:click={openExportModal}
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors font-medium" 
+                  style="background-color: var(--color-accent); color: var(--color-accent-text);"
                   disabled={!project?.id}
                 >
                   <Download size="18" />
@@ -291,7 +292,8 @@
                 
                 <button
                   on:click={openImportModal}
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors font-medium" 
+                  style="background-color: var(--color-accent); color: var(--color-accent-text);"
                 >
                   <Upload size="18" />
                   Import Data
@@ -405,7 +407,7 @@
                   on:mouseenter={(e) => !savingGeneral && (e.target.style.backgroundColor = 'var(--color-accent-hover)')}
                   on:mouseleave={(e) => !savingGeneral && (e.target.style.backgroundColor = 'var(--color-accent)')}
                   disabled={savingGeneral}
-                  class="flex items-center gap-2 px-6 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors" style="background-color: var(--color-accent);"
+                  class="flex items-center gap-2 px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors" style="background-color: var(--color-accent); color: var(--color-accent-text);"
                 >
                   <Save size="16" />
                   {savingGeneral ? 'Saving...' : 'Save'}

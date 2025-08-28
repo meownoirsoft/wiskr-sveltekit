@@ -374,7 +374,7 @@
 <svelte:window on:resize={handleResize} />
 
 <div 
-  class="flex-1 overflow-y-auto py-4 pl-4 searchable-chat-area" 
+  class="flex-1 overflow-y-auto overflow-x-hidden py-4 pl-4 pr-2 searchable-chat-area" 
   style="background-color: var(--bg-chat);"
   bind:this={containerElement}
   on:scroll={handleScroll}
@@ -450,6 +450,16 @@
     will-change: scroll-position;
     /* Optimize for scrolling */
     -webkit-overflow-scrolling: touch;
+    /* Prevent horizontal overflow at all costs */
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Ensure all child elements respect container bounds */
+  .searchable-chat-area * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   /* Hide scrollbar in some browsers for cleaner look (optional) */

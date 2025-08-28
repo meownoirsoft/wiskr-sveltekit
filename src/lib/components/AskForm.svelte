@@ -129,8 +129,8 @@
             </button>
           {/if}
         </div>
-        <button class="border border-gray-300 dark:border-gray-600 text-white rounded pl-1 pr-2 sm:pl-1.5 sm:pr-2 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
-        style="background-color: var(--color-accent); touch-action: manipulation;" 
+        <button class="border border-gray-300 dark:border-gray-600 rounded pl-1 pr-2 sm:pl-1.5 sm:pr-2 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
+        style="background-color: var(--color-accent); color: var(--color-accent-text);" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         >

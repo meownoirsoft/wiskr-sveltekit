@@ -41,8 +41,8 @@
   <div class="flex items-center justify-between mb-3">
     <h3 class="font-semibold text-gray-800">Projects</h3>
     <button 
-      class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded transition-colors" 
-      style="background-color: var(--color-accent);"
+      class="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors" 
+      style="background-color: var(--color-accent); color: var(--color-accent-text);"
       on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
       on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
       on:click={createNewProject}

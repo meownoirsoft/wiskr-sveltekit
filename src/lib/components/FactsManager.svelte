@@ -227,8 +227,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
         />
       </div>
       <button 
-        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer" 
-        style="background-color: var(--color-accent);"
+        class="flex items-center gap-1 text-sm px-2 py-1 rounded cursor-pointer" 
+        style="background-color: var(--color-accent); color: var(--color-accent-text);"
         on:click={openAddModal}
         on:mouseenter={(e) => e.target.style.backgroundColor='var(--color-accent-hover)'}
         on:mouseleave={(e) => e.target.style.backgroundColor='var(--color-accent)'}

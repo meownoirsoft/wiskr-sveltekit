@@ -1,5 +1,34 @@
 /* Common styles for the application */
 
+/* Accent color helpers */
+.accent-text {
+  color: var(--color-accent);
+}
+
+.accent-text-contrast {
+  color: var(--color-accent-text);
+}
+
+.accent-bg {
+  background-color: var(--color-accent);
+}
+
+.accent-bg-hover {
+  background-color: var(--color-accent-hover);
+}
+
+.accent-border {
+  border-color: var(--color-accent);
+}
+
+.accent-fill {
+  fill: var(--color-accent);
+}
+
+.accent-stroke {
+  stroke: var(--color-accent);
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

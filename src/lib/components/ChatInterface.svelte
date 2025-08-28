@@ -768,7 +768,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
   }
 </script>
 
-<main class="flex flex-col h-full overflow-hidden mobile-chat" style="background-color: var(--bg-chat);">
+<main class="flex flex-col h-full overflow-hidden overflow-x-hidden mobile-chat" style="background-color: var(--bg-chat);">
   <!-- Chat Header -->
   {#if current}
     <div class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">

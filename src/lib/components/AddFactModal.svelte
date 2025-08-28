@@ -232,8 +232,8 @@
           Cancel
         </button>
         <button 
-          class="px-4 py-2 text-sm text-white rounded-md hover:opacity-90" 
-          style="background-color: var(--color-accent);"
+          class="px-4 py-2 text-sm rounded-md hover:opacity-90" 
+          style="background-color: var(--color-accent); color: var(--color-accent-text);"
           on:click={handleSave}
         >
           Add Fact

@@ -221,7 +221,8 @@
           Cancel
         </button>
         <button 
-          class="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          class="px-4 py-2 text-sm rounded-md" 
+          style="background-color: var(--color-accent); color: var(--color-accent-text);"
           on:click={handleSave}
         >
           Save

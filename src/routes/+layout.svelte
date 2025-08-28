@@ -3,13 +3,13 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
-import { Settings, BarChart3, LogOut, Settings2, Sun, Moon, Palette, ChevronsLeft, ChevronsRight, Boxes, GitBranch, Plus } from 'lucide-svelte';
+import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Boxes, Plus } from 'lucide-svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import NewProjectModal from '$lib/components/NewProjectModal.svelte';
   import ProjectExport from '$lib/components/ProjectExport.svelte';
-  import AvatarSelector from '$lib/components/AvatarSelector.svelte';
+  import AppSettingsModal from '$lib/components/AppSettingsModal.svelte';
   import ToastNotification from '$lib/components/ToastNotification.svelte';
   import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
@@ -120,6 +120,9 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         document.documentElement.style.setProperty('--color-accent-hover', hoverColor);
         document.documentElement.style.setProperty('--color-accent-light', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${darkMode ? 0.2 : 0.1})`);
         document.documentElement.style.setProperty('--color-accent-border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${darkMode ? 0.4 : 0.3})`);
+        
+        // Set contrasting text color for accent elements
+        document.documentElement.style.setProperty('--color-accent-text', getContrastColor(color));
       }
     }
   }
@@ -131,6 +134,21 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
     } : null;
+  }
+
+  function getContrastColor(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return '#000000';
+    
+    // Calculate relative luminance using sRGB
+    const { r, g, b } = rgb;
+    const [rs, gs, bs] = [r / 255, g / 255, b / 255].map(c => {
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    const luminance = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    
+    // Use white text if background is dark, black if it's light
+    return luminance > 0.5 ? '#000000' : '#ffffff';
   }
   
   function darkenColor(hex, percent) {
@@ -273,6 +291,16 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         console.error('Error refreshing projects:', error);
       }
     });
+    
+    // Listen for mobile project menu toggle
+    window.addEventListener('layout:toggle-project-menu', () => {
+      showProjectMenu = !showProjectMenu;
+    });
+    
+    // Listen for layout settings open event
+    window.addEventListener('layout:open-settings', () => {
+      openAppSettings();
+    });
   });
 
   // tiny helper
@@ -323,7 +351,12 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
       const res = await fetch('/api/user-preferences');
       if (res.ok) {
         const prefs = await res.json();
-        userPreferences = prefs;
+        // Ensure avatar fields exist with defaults
+        userPreferences = {
+          ...prefs,
+          avatar_type: prefs.avatar_type || 'default',
+          avatar_value: prefs.avatar_value || null
+        };
         // Apply accent color immediately
         if (prefs.accent_color) {
           applyAccentColor(prefs.accent_color);
@@ -355,6 +388,14 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   onDestroy(() => {
     if (browser) {
       window.removeEventListener('resize', checkScreenSize);
+      // Clean up project menu toggle listener
+      window.removeEventListener('layout:toggle-project-menu', () => {
+        showProjectMenu = !showProjectMenu;
+      });
+      // Clean up layout settings open listener
+      window.removeEventListener('layout:open-settings', () => {
+        openAppSettings();
+      });
     }
   });
   
@@ -411,6 +452,20 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   function openAppSettings() {
     showAppSettings = true;
     loadUserPreferences();
+  }
+  
+  // Handle settings modal events
+  function handleSettingsClose() {
+    showAppSettings = false;
+  }
+  
+  function handleSettingsSave(event) {
+    userPreferences = event.detail;
+    saveUserPreferences();
+  }
+  
+  function handleSettingsThemeChange(event) {
+    darkMode = event.detail.darkMode;
   }
   
   // Handle opening export modal
@@ -547,7 +602,9 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             <button
               type="button"
               class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => showProjectMenu = !showProjectMenu}
+              on:click={() => {
+                window.dispatchEvent(new CustomEvent('mobile:toggle-projects'));
+              }}
               aria-label="Projects and Tools"
             >
               <Boxes class="w-6 h-6" />
@@ -608,8 +665,8 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             
             <!-- New Project Button -->
             <button
-              class="flex items-center gap-2 px-3 py-1.5 text-sm text-white rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
-              style="background-color: var(--color-accent);"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
+              style="background-color: var(--color-accent); color: var(--color-accent-text);"
               on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
               on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
               on:click={() => { showNewProjectModal = true; }}
@@ -689,7 +746,9 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
             <button
               type="button"
               class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => showMobileMenu = !showMobileMenu}
+              on:click={() => {
+                window.dispatchEvent(new CustomEvent('mobile:toggle-menu'));
+              }}
               aria-label="Menu"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -745,78 +804,6 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
           {/if}
         </div>
         
-        <!-- Mobile menu dropdown -->
-        {#if showMobileMenu}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div 
-            class="fixed inset-0 z-50" 
-            on:click={() => showMobileMenu = false}
-          >
-            <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2" style="background-color: var(--bg-primary);">
-              {#if isProjectsPage}
-                <!-- Sidebar Panel Toggles removed - now handled by dedicated Context/Add-Ins buttons -->
-                <button 
-                  type="button"
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
-                  on:click={() => {
-                    window.dispatchEvent(new CustomEvent('usage:toggle'));
-                    showMobileMenu = false;
-                  }}
-                >
-                  <BarChart3 size="16" />
-                  <span>Usage</span>
-                </button>
-                <a 
-                  href="/context-dashboard{currentProject?.id ? `?projectId=${currentProject.id}` : ''}"
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  on:click={() => showMobileMenu = false}
-                >
-                  <Settings2 size="16" />
-                  <span>Context Dashboard</span>
-                </a>
-              {/if}
-              
-              {#if data?.user}
-                <button 
-                  type="button"
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  on:click={() => {
-                    openAppSettings();
-                    showMobileMenu = false;
-                  }}
-                >
-                  <Settings size="16" />
-                  <span>Settings</span>
-                </button>
-                
-                <a 
-                  href="/logout" 
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  on:click={() => showMobileMenu = false}
-                >
-                  <LogOut size="16" />
-                  <span>Logout</span>
-                </a>
-              {:else}
-                <a 
-                  href="/login" 
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  on:click={() => showMobileMenu = false}
-                >
-                  Login
-                </a>
-                <a 
-                  href="/signup" 
-                  class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  on:click={() => showMobileMenu = false}
-                >
-                  Sign Up
-                </a>
-              {/if}
-            </div>
-          </div>
-        {/if}
       </div>
     </div>
   </header>
@@ -826,7 +813,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div 
-      class="fixed inset-0 z-50" 
+      class="fixed inset-0 z-[60]" 
       on:click={(e) => {
         // Only close if clicking on the backdrop itself, not on dropdown content
         if (e.target === e.currentTarget) {
@@ -981,210 +968,16 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   />
 
   <!-- APP SETTINGS MODAL -->
-  {#if showAppSettings}
-    <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-lg p-6" style="background-color: var(--bg-modal, white);">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Account Settings</h3>
-          <button 
-            class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none"
-            on:click={() => showAppSettings = false}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Account Section -->
-          <div>
-            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Account</h4>
-            <div class="space-y-3">
-              {#if data?.user}
-                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div>
-                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{data.user.email}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Logged in</div>
-                  </div>
-                  <a 
-                    href="/logout" 
-                    class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
-                    on:click={() => showAppSettings = false}
-                  >
-                    Logout
-                  </a>
-                </div>
-              {:else}
-                <div class="text-center py-4">
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Not logged in</p>
-                  <div class="flex gap-2 justify-center">
-                    <a href="/login" 
-                       class="text-sm text-white px-4 py-2 rounded transition-colors" 
-                       style="background-color: var(--color-accent);" 
-                       on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-                       on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-                    >Login</a>
-                    <a href="/signup" class="text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded transition-colors" 
-                    style="background-color: var(--bg-button-secondary);" 
-                    on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
-                    on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}>Sign Up</a>
-                  </div>
-                </div>
-              {/if}
-            </div>
-          </div>
-
-          <!-- Preferences Section -->
-          <div>
-            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Preferences</h4>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Theme</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">Choose your preferred theme</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button
-                    class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:white transition-colors" 
-                    style={!darkMode ? 'background-color: var(--color-accent-light); border-color: var(--color-accent-border);' : ''}
-                    title="Light mode"
-                    on:click={() => {
-                      darkMode = false;
-                      localStorage.setItem('wiskr_theme', 'light');
-                      applyTheme();
-                    }}
-                  >
-                    <Sun size="16" class={!darkMode ? '' : 'text-gray-500 dark:text-gray-400'} style={!darkMode ? 'color: var(--color-accent);' : ''} />
-                  </button>
-                  <button
-                    class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" 
-                    style={darkMode ? 'background-color: var(--color-accent-light); border-color: var(--color-accent-border);' : ''}
-                    title="Dark mode"
-                    on:click={() => {
-                      darkMode = true;
-                      localStorage.setItem('wiskr_theme', 'dark');
-                      applyTheme();
-                    }}
-                  >
-                    <Moon size="16" class={darkMode ? '' : 'text-gray-500 dark:text-gray-400'} style={darkMode ? 'color: var(--color-accent);' : ''} />
-                  </button>
-                </div>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Display Name</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">Your name in chat messages</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    maxlength="50" 
-                    placeholder="Your name (e.g., Sym)"
-                    bind:value={userPreferences.display_name}
-                    on:change={saveUserPreferences}
-                    class="w-32 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);"
-                  />
-                  {#if savingPreferences}
-                    <span class="text-xs" style="color: var(--color-accent);">Saving...</span>
-                  {/if}
-                </div>
-              </div>
-              
-              <!-- Avatar Section -->
-              <div class="border-t border-gray-200 dark:border-gray-600 pt-3">
-                <AvatarSelector
-                  currentAvatarType={userPreferences.avatar_type}
-                  currentAvatarValue={userPreferences.avatar_value}
-                  saving={savingPreferences}
-                  on:change={(e) => {
-                    userPreferences.avatar_type = e.detail.type;
-                    userPreferences.avatar_value = e.detail.value;
-                    saveUserPreferences();
-                  }}
-                />
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Max Related Ideas</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">Number of ideas generated (1-20)</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    min="1" 
-                    max="20" 
-                    bind:value={userPreferences.max_related_ideas}
-                    on:change={saveUserPreferences}
-                    class="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);"
-                  />
-                  {#if savingPreferences}
-                    <span class="text-xs" style="color: var(--color-accent);">Saving...</span>
-                  {/if}
-                </div>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Accent Color</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">Choose your preferred accent color</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input 
-                    type="color" 
-                    bind:value={userPreferences.accent_color}
-                    on:change={handleAccentColorChange}
-                    class="w-12 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                    title="Choose accent color"
-                  />
-                  <div 
-                    class="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xs font-mono text-gray-600 dark:text-gray-400"
-                    style="background-color: {userPreferences.accent_color}; color: {userPreferences.accent_color === '#FFFFFF' || userPreferences.accent_color === '#ffffff' ? '#000' : '#fff'}"
-                  >
-                    ✓
-                  </div>
-                </div>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Notifications</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">Enable browser notifications</div>
-                </div>
-                <input type="checkbox" class="rounded" checked />
-              </div>
-            </div>
-          </div>
-
-          <!-- About Section -->
-          <div>
-            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">About</h4>
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Wiskr</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">v1.0.0</span>
-              </div>
-              <div class="flex gap-3 text-xs">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Close button -->
-        <div class="flex justify-end mt-6">
-          <button 
-            class="px-4 py-2 text-white text-sm rounded-lg transition-colors" 
-            style="background-color: var(--color-accent);" 
-            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-            on:click={() => showAppSettings = false}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  {/if}
+  <AppSettingsModal
+    isOpen={showAppSettings}
+    userData={data?.user}
+    bind:userPreferences
+    {savingPreferences}
+    {darkMode}
+    on:close={handleSettingsClose}
+    on:save-preferences={handleSettingsSave}
+    on:theme-changed={handleSettingsThemeChange}
+  />
   
   <!-- PWA functionality removed -->
   

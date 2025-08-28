@@ -122,7 +122,8 @@
               </h4>
               {#if formattedContent && !isFormatting}
                 <button
-                  class="flex items-center gap-1 text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors cursor-pointer"
+                  class="flex items-center gap-1 text-sm rounded hover:bg-blue-700 transition-colors cursor-pointer px-3 py-1" 
+                  style="background-color: var(--color-accent); color: var(--color-accent-text);"
                   on:click={copyToClipboard}
                 >
                   <svelte:component this={iconComponents['Clipboard']} size={12} />

@@ -220,8 +220,8 @@
             
             <button
               on:click={replace}
-              class="flex items-center gap-2 px-4 py-2 text-sm text-white rounded-lg transition-colors"
-              style="background-color: var(--color-accent);"
+              class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors hover:bg-opacity-90" 
+              style="background-color: var(--color-accent); color: var(--color-accent-text);"
               on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
               on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
             >

@@ -145,7 +145,8 @@
           Cancel
         </button>
         <button
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+          class="px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2" 
+          style="background-color: var(--color-accent); color: var(--color-accent-text);"
           on:click={handleSubmit}
           disabled={isSubmitting}
         >

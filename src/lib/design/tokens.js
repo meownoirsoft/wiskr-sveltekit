@@ -73,6 +73,22 @@ export const tokens = {
 };
 
 // CSS Variable mappings
+
+// Guide: CSS Helper Classes for Accent Colors
+//
+// The following helper classes are available for working with accent colors:
+//
+// - .accent-text: Use for text that should be the accent color
+// - .accent-text-contrast: Use for text that should contrast with the accent color background
+// - .accent-bg: Use for background color using accent color
+// - .accent-bg-hover: Use for background color using accent hover color
+// - .accent-border: Use for border color using accent color
+// - .accent-fill: Use for SVG fill using accent color
+// - .accent-stroke: Use for SVG stroke using accent color
+//
+// Example usage:
+// <button class="accent-bg accent-text-contrast">Button</button>
+//
 export const cssVars = {
   // Colors
   colors: {
@@ -106,7 +122,7 @@ export const getButtonClasses = (size = 'md', variant = 'primary') => {
   };
   
   const variantClasses = {
-    primary: 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white focus:ring-[var(--color-accent)]',
+    primary: 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-text)] focus:ring-[var(--color-accent)]',
     secondary: 'bg-[var(--bg-button-secondary)] hover:bg-[var(--bg-button-secondary-hover)] text-[var(--text-primary)] border border-[var(--border-header-input)]',
     ghost: 'hover:bg-[var(--bg-button-secondary)] text-[var(--text-primary)]'
   };

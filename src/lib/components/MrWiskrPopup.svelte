@@ -419,8 +419,8 @@
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('translate')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Let me break this down for you</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I'll unravel the ball of yarn into plain language that makes sense</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">Let me break it down for you</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">I'll unravel this in plain language that makes sense</div>
               </button>
               
               <button
@@ -429,7 +429,7 @@
                 on:click={() => handleHelpOption('examples')}
               >
                 <div class="font-medium mb-1" style="color: #5D60DD;">Can I show you what this looks like?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I can give you some examples of how this actually works.</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Need some examples of how this actually works?</div>
               </button>
               
               <button
@@ -438,7 +438,7 @@
                 on:click={() => handleHelpOption('next-steps')}
               >
                 <div class="font-medium mb-1" style="color: #5D60DD;">So, what's next?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I can help you figure out the practical steps you should take</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">I'll give you practical steps to take</div>
               </button>
               
               <button
@@ -447,7 +447,7 @@
                 on:click={() => handleHelpOption('critique')}
               >
                 <div class="font-medium mb-1" style="color: #5D60DD;">Wait, is this actually right?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Let me check for you. I will hunt down red flags or missing pieces</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">I'll hunt down red flags or missing pieces</div>
               </button>
               
               <button
@@ -456,7 +456,7 @@
                 on:click={() => handleHelpOption('alternative')}
               >
                 <div class="font-medium mb-1" style="color: #5D60DD;">Let's ask a friend</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Maybe one of my other friends could explain this better?</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Maybe another wiskr could explain this better?</div>
               </button>
               
               <button
@@ -465,7 +465,7 @@
                 on:click={() => handleHelpOption('report-problem')}
               >
                 <div class="font-medium mb-1" style="color: #ef4444;">There's a problem</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Report bugs, offensive content, or other issues that need attention</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Bugs, offensive content, or issues that need attention</div>
               </button>
             </div>
           </div>

@@ -32,6 +32,9 @@
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        
+        // Set cookie to indicate avatar refresh needed
+        document.cookie = 'wiskr_refresh_avatars=1;path=/;max-age=300';
       }
       window.location.href = '/projects';
     } catch (e) {

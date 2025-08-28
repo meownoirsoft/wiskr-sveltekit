@@ -143,8 +143,8 @@
               Cancel
             </button>
             <button
-              class="px-3 py-2 text-sm txt-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              style="background-color: var(--color-accent);"
+              class="px-3 py-2 text-sm txt-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1" 
+              style="background-color: var(--color-accent); color: var(--color-accent-text);"
               on:click={createBranch}
               disabled={isCreatingBranch || !newBranchName.trim()}
             >

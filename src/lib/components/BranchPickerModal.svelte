@@ -45,7 +45,10 @@
         {/if}
       </div>
       <div class="p-3 flex justify-end gap-2">
-        <button class="px-3 py-1.5 text-sm rounded border" style="background-color: var(--bg-button-secondary); border-color: var(--border-header-input); color: var(--text-header);" on:click={close}>Close</button>
+        <button 
+          class="px-3 py-1.5 text-sm rounded border" 
+          style="background-color: var(--color-accent); color: var(--color-accent-text);" 
+          on:click={close}>Close</button>
       </div>
     </div>
   </div>

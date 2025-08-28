@@ -124,37 +124,41 @@
   $: messageBranchCount = messageBranchCounts[message.id] || 0;
 </script>
 
-<div class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-6 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3`}" bind:this={messageElement}>
-  <div class="text-sm sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1 {message.role === 'user' ? 'flex items-center gap-3 sm:gap-3 justify-end' : 'flex items-center gap-3 sm:gap-3'}">
+<div class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-16 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3 mt-16`} relative" bind:this={messageElement}>
+  
+  <!-- Message Bubble -->
+  <div id="message-bubble" class="rounded-lg px-2 sm:px-2 border border-l-4 transition-colors relative {message.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent} pb-4 sm:pb-4 pt-1 sm:pt-1` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent} pb-5 sm:pb-5 pt-4 sm:pt-4`}"
+       style="background-color: {message.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {message.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {message.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {message.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
+    
+    <!-- Avatar positioned absolutely over message bubble -->
     {#if message.role === 'user'}
-      <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{userPreferences.display_name || 'You'}</span>
-      <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: var(--color-accent);">
+      <div id="user-avatar" class="absolute -top-6 sm:-top-12 right-2 sm:right-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: var(--color-accent);">
         {#if userPreferences.avatar_type === 'default'}
           <User size="24" class="sm:size-9 text-gray-500 dark:text-gray-400" />
         {:else}
           <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-md" />
         {/if}
       </div>
+      <!-- Name positioned absolutely -->
+      <div id="user-name" class="absolute -top-8 sm:-top-8 right-20 sm:right-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{userPreferences.display_name || 'You'}</div>
     {:else}
       {#if message.model_key}
-        <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
+        <div id="ai-avatar" class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
           <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-md" />
         </div>
-        <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">{getAIName(message.model_key)}</span>
+        <!-- Name positioned absolutely -->
+        <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(message.model_key)}</div>
       {:else}
-        <div class="w-16 h-16 sm:w-[56px] sm:h-[56px] -mb-2 sm:-mb-2 z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
+        <div class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
           <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" />
         </div>
-        <span class="text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300 min-w-0">Wiskr</span>
+        <!-- Name positioned absolutely -->
+        <div class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</div>
       {/if}
     {/if}
-  </div>
-  
-  <div class="rounded-lg p-2 sm:p-3 border border-l-4 transition-colors relative {message.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent}` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent}`}" 
-       style="background-color: {message.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {message.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {message.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {message.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
     
     {#if message.role === 'assistant'}
-      <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert">
+      <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
         {@html renderMarkdown(message.content)}
       </div>
       
@@ -172,12 +176,12 @@
         <span class="xs:hidden">Select</span>
       </button>
     {:else}
-      <div class="text-base sm:text-lg">
+      <div class="text-sm sm:text-base -mt-2 leading-normal">
         {message.content}
       </div>
     {/if}
   </div>
-  
+
   <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center {message.role === 'user' ? '' : 'mr-3 sm:mr-6'} mt-2 gap-2">
     <!-- Highlight-to-add feature hint (only for assistant messages) -->
     {#if message.role === 'assistant' && message.content.trim()}
@@ -202,11 +206,11 @@
         </div>
       {/if}
       
-      {#if message.content.trim() && currentBranchId === 'main'}
+      {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main'}
         <div class="z-10">
           <button id="branch-button-{index}"
-            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 sm:h-8 touch-action-manipulation text-white"
-            style="background: var(--color-accent); border-color: var(--color-accent); touch-action: manipulation;"
+            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 sm:h-8 touch-action-manipulation"
+            style="background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-text); touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; }}
             on:click={() => openBranchModal(index)}
@@ -215,7 +219,7 @@
             <GitBranch size="14" class="flex-shrink-0" />
             Branch
             {#if messageBranchCount > 0}
-              <span class="text-white text-xs rounded-full px-1.5 py-0.5 min-w-[16px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent);">
+              <span class="text-xs rounded-full px-1.5 py-0.5 min-w-[16px] h-4 flex items-center justify-center leading-none ml-1" style="background-color: var(--color-accent); color: var(--color-accent-text);">
                 {messageBranchCount}
               </span>
             {/if}

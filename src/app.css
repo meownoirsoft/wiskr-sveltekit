@@ -85,6 +85,10 @@
   --mobile-panel-width: 100vw;
   --mobile-chat-input-height: 3.5rem;
   --mobile-touch-target: 44px;
+  
+  /* Input height variables for AskForm */
+  --input-height: 2.5rem;
+  --input-height-mobile: 3rem;
 }
 
 .dark {
@@ -164,6 +168,10 @@
   --mobile-panel-width: 100vw;
   --mobile-chat-input-height: 3.5rem;
   --mobile-touch-target: 44px;
+  
+  /* Input height variables for AskForm */
+  --input-height: 2.5rem;
+  --input-height-mobile: 3rem;
 }
 
 html, body {
