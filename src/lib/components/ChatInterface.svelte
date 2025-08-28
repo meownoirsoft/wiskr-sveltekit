@@ -147,20 +147,29 @@ import VirtualMessageList from './VirtualMessageList.svelte';
       if (res.ok) {
         const data = await res.json();
         availableModels = data.models || [];
+        
+        // Ensure the current model is available, if not switch to the first available one
+        const currentModel = availableModels.find(m => m.key === modelKey);
+        if (!currentModel || currentModel.isAvailable === false) {
+          const firstAvailable = availableModels.find(m => m.isAvailable !== false);
+          if (firstAvailable) {
+            modelKey = firstAvailable.key;
+          }
+        }
       } else {
         console.error('Failed to load models');
         // Fallback to hardcoded options
         availableModels = [
-          { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai' },
-          { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai' }
+          { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai', isAvailable: true },
+          { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai', isAvailable: true }
         ];
       }
     } catch (error) {
       console.error('Error loading models:', error);
       // Fallback to hardcoded options
       availableModels = [
-        { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai' },
-        { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai' }
+        { key: 'speed', name: 'Speed (GPT-4o-mini)', provider: 'openai', isAvailable: true },
+        { key: 'quality', name: 'Quality (GPT-4o)', provider: 'openai', isAvailable: true }
       ];
     }
   }

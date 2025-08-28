@@ -53,6 +53,25 @@ export const handle = async ({ event, resolve }) => {
   // Get current user
   const { data: { user } } = await event.locals.supabase.auth.getUser();
   event.locals.user = user ?? null;
+  
+  // Add tier information to locals for server-side access
+  if (user) {
+    const metadata = user.user_metadata || {};
+    event.locals.userTier = metadata.tier ?? 0;
+    event.locals.trialEndsAt = metadata.trial_ends_at || null;
+    
+    // Calculate effective tier (handles trial expiration)
+    const now = new Date();
+    let effectiveTier = event.locals.userTier;
+    if (event.locals.trialEndsAt && now > new Date(event.locals.trialEndsAt)) {
+      effectiveTier = 0; // Expired trial falls back to free tier
+    }
+    event.locals.effectiveTier = effectiveTier;
+  } else {
+    event.locals.userTier = 0;
+    event.locals.trialEndsAt = null;
+    event.locals.effectiveTier = 0;
+  }
 
   return resolve(event);
 };

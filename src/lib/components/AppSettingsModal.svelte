@@ -1,8 +1,9 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
-  import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon } from 'lucide-svelte';
+  import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift } from 'lucide-svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
+  import { getTierDisplayInfo } from '$lib/tiers.js';
   
   const dispatch = createEventDispatcher();
   
@@ -12,6 +13,9 @@
   export let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null };
   export let savingPreferences = false;
   export let darkMode = false;
+  export let userTier = 0;
+  export let effectiveTier = 0;
+  export let trialEndsAt = null;
   
   // Internal state
   let activeTab = 'account'; // 'account', 'profile', 'preferences', 'appearance', 'about'
@@ -160,7 +164,7 @@
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-50">
+  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]">
     <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
@@ -232,6 +236,64 @@
                         </div>
                         <div class="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full">
                           Verified
+                        </div>
+                      </div>
+                      
+                      <!-- Subscription Tier Information -->
+                      <div class="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            {#if getTierDisplayInfo(userTier, trialEndsAt).status === 'trial'}
+                              <Gift size="16" class="text-amber-500" />
+                            {:else if userTier > 0}
+                              <Crown size="16" class="text-amber-500" />
+                            {/if}
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {getTierDisplayInfo(userTier, trialEndsAt).name}
+                            </div>
+                          </div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">Subscription Tier</div>
+                          {#if getTierDisplayInfo(userTier, trialEndsAt).status === 'trial'}
+                            <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              Trial ends: {new Date(trialEndsAt).toLocaleDateString()}
+                            </div>
+                          {:else if getTierDisplayInfo(userTier, trialEndsAt).status === 'expired'}
+                            <div class="text-xs text-red-600 dark:text-red-400 mt-1">
+                              Trial expired - Consider upgrading to Pro
+                            </div>
+                          {/if}
+                        </div>
+                        <div class="text-right flex flex-col items-end gap-2">
+                          <div class="text-xs text-gray-500 dark:text-gray-400">
+                            {#if getTierDisplayInfo(userTier, trialEndsAt).isUnlimited}
+                              Unlimited projects
+                            {:else}
+                              Up to {getTierDisplayInfo(userTier, trialEndsAt).maxProjects} projects
+                            {/if}
+                          </div>
+                          {#if effectiveTier === 0 || getTierDisplayInfo(userTier, trialEndsAt).status === 'trial' || getTierDisplayInfo(userTier, trialEndsAt).status === 'expired'}
+                            <a 
+                              href="/upgrade" 
+                              class="px-3 py-1 text-xs font-medium rounded-lg transition-colors border"
+                              style="background-color: var(--color-accent); color: var(--color-accent-text); border-color: var(--color-accent);"
+                              on:mouseenter={(e) => {
+                                e.target.style.backgroundColor = 'var(--color-accent-hover)';
+                                e.target.style.borderColor = 'var(--color-accent-hover)';
+                              }}
+                              on:mouseleave={(e) => {
+                                e.target.style.backgroundColor = 'var(--color-accent)';
+                                e.target.style.borderColor = 'var(--color-accent)';
+                              }}
+                            >
+                              {#if getTierDisplayInfo(userTier, trialEndsAt).status === 'trial'}
+                                Upgrade Now
+                              {:else if getTierDisplayInfo(userTier, trialEndsAt).status === 'expired'}
+                                Reactivate Pro
+                              {:else}
+                                Upgrade to Pro
+                              {/if}
+                            </a>
+                          {/if}
                         </div>
                       </div>
                       
@@ -451,6 +513,36 @@
                           <li>• Mobile responsive</li>
                         </ul>
                       </div>
+                    </div>
+                    
+                    <!-- Legal Links -->
+                    <div class="flex items-center justify-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <a 
+                        href="/terms" 
+                        class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Terms of Service
+                      </a>
+                      <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
+                      <a 
+                        href="/privacy" 
+                        class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Privacy Policy
+                      </a>
+                      <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
+                      <a 
+                        href="/support" 
+                        class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Support
+                      </a>
                     </div>
                   </div>
                 </div>

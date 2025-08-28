@@ -26,7 +26,7 @@
 {#if showNewProjectModal}
   <!-- Modal Backdrop -->
   <div 
-    class="fixed inset-0 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+    class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
     style="background-color: rgba(0, 0, 0, 0.25);"
     on:click={(e) => e.target === e.currentTarget && closeModal()}
     on:keydown={(e) => e.key === 'Escape' && closeModal()}

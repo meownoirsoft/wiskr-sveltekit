@@ -76,7 +76,7 @@
 
 {#if showModal}
   <!-- Modal Overlay -->
-  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
     <!-- Modal Content -->
     <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->

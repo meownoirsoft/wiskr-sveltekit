@@ -91,7 +91,7 @@
 <!-- Toast Container -->
 <div 
   bind:this={toastContainer}
-  class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"
+  class="fixed top-20 right-4 z-[99999] flex flex-col gap-2 max-w-sm w-full"
   role="region" 
   aria-label="Notifications"
 >

@@ -20,8 +20,8 @@
   async function analyzeContext() {
     if (!projectId) return;
 
-    console.log('🔍 ContextDashboard: Starting analysis for project:', projectId);
-    console.log('📝 User message:', userMessage);
+    //console.log('🔍 ContextDashboard: Starting analysis for project:', projectId);
+    //console.log('📝 User message:', userMessage);
     
     loading = true;
     error = null;
@@ -33,8 +33,8 @@
         body: JSON.stringify({ projectId, userMessage })
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
+      //console.log('📡 Response status:', response.status);
+      //console.log('📡 Response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -43,11 +43,11 @@
       }
 
       analysis = await response.json();
-      console.log('✅ Analysis received:', analysis);
-      console.log('📊 Metrics:', analysis?.metrics);
-      console.log('📈 Summary:', analysis?.summary);
-      console.log('🎯 Context Quality Score:', analysis?.summary?.contextQualityScore);
-      console.log('🔎 Estimated Tokens:', analysis?.metrics?.estimatedTokens);
+      // console.log('✅ Analysis received:', analysis);
+      // console.log('📊 Metrics:', analysis?.metrics);
+      // console.log('📈 Summary:', analysis?.summary);
+      // console.log('🎯 Context Quality Score:', analysis?.summary?.contextQualityScore);
+      // console.log('🔎 Estimated Tokens:', analysis?.metrics?.estimatedTokens);
     } catch (err) {
       console.error('Context analysis error:', err);
       error = err.message;

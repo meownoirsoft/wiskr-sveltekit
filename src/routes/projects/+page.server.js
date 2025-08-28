@@ -132,6 +132,9 @@ export const load = async ({ locals }) => {
   return { 
     projects: finalProjects,
     user,
-    isAdmin: adminCheck.isAdmin
+    isAdmin: adminCheck.isAdmin,
+    userTier: locals.userTier || 0,
+    effectiveTier: locals.effectiveTier || 0,
+    trialEndsAt: locals.trialEndsAt || null
   };
 };

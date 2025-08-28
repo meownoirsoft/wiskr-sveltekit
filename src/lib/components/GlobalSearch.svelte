@@ -399,24 +399,24 @@
     }
     
     // Debug logging to help troubleshoot
-    console.log('🔍 Highlight count comparison:', {
-      searchTerm: highlightedTerm,
-      visibleHighlightsCount,
-      theoreticalHighlights,
-      difference: theoreticalHighlights - visibleHighlightsCount,
-      willUseVisible: visibleHighlightsCount > 0
-    });
+    // console.log('🔍 Highlight count comparison:', {
+    //   searchTerm: highlightedTerm,
+    //   visibleHighlightsCount,
+    //   theoreticalHighlights,
+    //   difference: theoreticalHighlights - visibleHighlightsCount,
+    //   willUseVisible: visibleHighlightsCount > 0
+    // });
     
     // Use visible highlights count if we have highlights, otherwise fall back to theoretical
     if (visibleHighlightsCount > 0) {
       totalHighlights = visibleHighlightsCount;
-      console.log('✅ Using visible highlights count:', totalHighlights);
+      //console.log('✅ Using visible highlights count:', totalHighlights);
     } else if (theoreticalHighlights > 0) {
       totalHighlights = theoreticalHighlights;
-      console.log('✅ Using theoretical highlights count:', totalHighlights);
+      //console.log('✅ Using theoretical highlights count:', totalHighlights);
     } else {
       totalHighlights = 0;
-      console.log('📍 No highlights found');
+      //console.log('📍 No highlights found');
     }
     
     // Set current index
@@ -436,7 +436,7 @@
     // Always start at index 0 (first highlight) when we first apply highlighting
     currentHighlightIndex = 0;
     
-    console.log('🎯 Setting initial highlight index to 0 (first highlight)');
+    //console.log('🎯 Setting initial highlight index to 0 (first highlight)');
   }
   
   // Get current session ID from the actual app state, not search results
@@ -446,7 +446,7 @@
       const url = window.location.href;
       const sessionMatch = url.match(/session[\/_-]([a-f0-9-]+)/i);
       if (sessionMatch) {
-        console.log('📍 Current session from URL:', sessionMatch[1]);
+        //console.log('📍 Current session from URL:', sessionMatch[1]);
         return sessionMatch[1];
       }
     }
@@ -457,7 +457,7 @@
       const sessionElement = document.querySelector('[data-session-id]');
       if (sessionElement) {
         const sessionId = sessionElement.getAttribute('data-session-id');
-        console.log('📍 Current session from DOM:', sessionId);
+        //console.log('📍 Current session from DOM:', sessionId);
         return sessionId;
       }
     }
@@ -466,28 +466,28 @@
     const activeSession = searchResults.sessionGroups?.find(s => s.is_active);
     const fallbackId = activeSession?.session_id || searchResults.sessionGroups?.[0]?.session_id;
     
-    console.log('📍 Current session fallback (from search results):', fallbackId);
+    //console.log('📍 Current session fallback (from search results):', fallbackId);
     return fallbackId;
   }
   
   // Check if current session has any search results
   async function checkCurrentSessionHasResults() {
     if (!searchResults.sessionGroups || searchResults.sessionGroups.length === 0) {
-      console.log('🔍 No session groups found');
+      //console.log('🔍 No session groups found');
       return false;
     }
     
     const currentSessionId = getCurrentSessionId();
     const currentSession = searchResults.sessionGroups.find(s => s.session_id === currentSessionId);
     
-    console.log('🔍 Session detection debug:', {
-      currentSessionId,
-      allSessions: searchResults.sessionGroups.map(s => ({ id: s.session_id, name: s.session_name, is_active: s.is_active })),
-      foundCurrentSession: !!currentSession
-    });
+    //console.log('🔍 Session detection debug:', {
+    //  currentSessionId,
+    //  allSessions: searchResults.sessionGroups.map(s => ({ id: s.session_id, name: s.session_name, is_active: s.is_active })),
+    //  foundCurrentSession: !!currentSession
+    //});
     
     if (!currentSession) {
-      console.log('🔍 Current session not found in search results');
+      //console.log('🔍 Current session not found in search results');
       return false;
     }
     
@@ -499,14 +499,14 @@
     
     const hasCurrentSessionResults = currentSessionMessages.length > 0 || hasNonSessionResults;
     
-    console.log('🔍 Current session results check:', {
-      currentSessionId,
-      currentSessionName: currentSession.session_name,
-      currentSessionMessages: currentSessionMessages.length,
-      hasNonSessionResults,
-      hasCurrentSessionResults,
-      allChatMessages: searchResults.chatMessages?.map(m => ({ id: m.session_id, name: m.session_name })) || []
-    });
+    // console.log('🔍 Current session results check:', {
+    //   currentSessionId,
+    //   currentSessionName: currentSession.session_name,
+    //   currentSessionMessages: currentSessionMessages.length,
+    //   hasNonSessionResults,
+    //   hasCurrentSessionResults,
+    //   allChatMessages: searchResults.chatMessages?.map(m => ({ id: m.session_id, name: m.session_name })) || []
+    // });
     
     return hasCurrentSessionResults;
   }
@@ -727,19 +727,19 @@
       // Calculate next highlight index
       const nextIndex = (currentHighlightIndex + 1) % totalHighlights;
       
-      console.log('🔍 Next highlight navigation:', {
-        currentIndex: currentHighlightIndex,
-        nextIndex,
-        totalHighlights,
-        currentSessionId: getCurrentSessionId()
-      });
+      // console.log('🔍 Next highlight navigation:', {
+      //   currentIndex: currentHighlightIndex,
+      //   nextIndex,
+      //   totalHighlights,
+      //   currentSessionId: getCurrentSessionId()
+      // });
       
       // First, try to find if this highlight exists in current visible content
       const targetHighlight = findHighlightAtIndex(nextIndex);
       
       if (targetHighlight) {
         // Highlight exists in current visible content - navigate directly
-        console.log('✅ Found target highlight in current view');
+        //console.log('✅ Found target highlight in current view');
         currentHighlightIndex = nextIndex;
         navigateToCurrentHighlight();
         return;
@@ -747,19 +747,19 @@
       
       // Target highlight not in current view - check if we need session switch
       const needsSessionSwitch = await shouldSwitchSessionForIndex(nextIndex);
-      console.log('🔄 Session switch check:', { needsSessionSwitch });
+      //console.log('🔄 Session switch check:', { needsSessionSwitch });
       
       if (needsSessionSwitch) {
         const targetSession = await getSessionForHighlightIndex(nextIndex);
-        console.log('🎯 Target session:', {
-          sessionId: targetSession?.session_id,
-          sessionName: targetSession?.session_name
-        });
+        //console.log('🎯 Target session:', {
+        //  sessionId: targetSession?.session_id,
+        //  sessionName: targetSession?.session_name
+        //});
         
         if (targetSession) {
           // Switch to the target session first
           if (browser) {
-            console.log('📡 Dispatching session switch event');
+            //console.log('📡 Dispatching session switch event');
             window.dispatchEvent(new CustomEvent('search:navigate-session', {
               detail: {
                 sessionId: targetSession.session_id,
@@ -910,24 +910,24 @@
     wordHighlights.forEach(h => h.classList.remove('current'));
     containerHighlights.forEach(h => h.classList.remove('current'));
     
-    console.log('🎯 Navigating to current highlight:', {
-      currentHighlightIndex,
-      totalWordHighlights: wordHighlights.length,
-      totalContainerHighlights: containerHighlights.length
-    });
+    // console.log('🎯 Navigating to current highlight:', {
+    //   currentHighlightIndex,
+    //   totalWordHighlights: wordHighlights.length,
+    //   totalContainerHighlights: containerHighlights.length
+    // });
     
     // Try to find the specific highlight based on our index
     const targetHighlight = findHighlightAtIndex(currentHighlightIndex);
     
     if (targetHighlight) {
       targetHighlight.classList.add('current');
-      
-      console.log('📍 Scrolling to specific highlight:', {
-        element: targetHighlight.tagName,
-        text: targetHighlight.textContent?.substring(0, 50),
-        index: currentHighlightIndex
-      });
-      
+
+      // console.log('📍 Scrolling to specific highlight:', {
+      // //   element: targetHighlight.tagName,
+      // //   text: targetHighlight.textContent?.substring(0, 50),
+      // //   index: currentHighlightIndex
+      // });
+
       // Scroll to the specific highlight
       targetHighlight.scrollIntoView({ 
         behavior: 'smooth', 
@@ -944,7 +944,7 @@
       }
     } else if (wordHighlights.length > 0) {
       // Fallback: navigate to first visible highlight
-      console.log('⚠️ Fallback to first visible highlight');
+      //console.log('⚠️ Fallback to first visible highlight');
       const firstVisibleHighlight = wordHighlights[0];
       firstVisibleHighlight.classList.add('current');
       firstVisibleHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -962,10 +962,10 @@
     // Get all word highlights in document order
     const allWordHighlights = document.querySelectorAll('.search-highlight');
     
-    console.log('🔍 Finding highlight at index:', {
-      targetIndex,
-      totalVisible: allWordHighlights.length
-    });
+    // console.log('🔍 Finding highlight at index:', {
+    //   targetIndex,
+    //   totalVisible: allWordHighlights.length
+    // });
     
     // Simple approach: if we're not dealing with cross-session navigation,
     // just use the visible highlights directly
@@ -1011,19 +1011,19 @@
     const nonSessionHighlights = factsHighlights + docsHighlights + questionsHighlights;
     globalRunningIndex = nonSessionHighlights;
     
-    console.log('🧮 Highlight distribution analysis:', {
-      factsHighlights,
-      docsHighlights,
-      questionsHighlights,
-      nonSessionHighlights,
-      targetIndex,
-      currentSessionId
-    });
+    // console.log('🧮 Highlight distribution analysis:', {
+    //   factsHighlights,
+    //   docsHighlights,
+    //   questionsHighlights,
+    //   nonSessionHighlights,
+    //   targetIndex,
+    //   currentSessionId
+    // });
     
     // If the target index is within non-session content (facts, docs, questions),
     // it maps directly to visible highlights
     if (targetIndex < nonSessionHighlights) {
-      console.log('📝 Target is in non-session content, using direct index:', targetIndex);
+      //console.log('📝 Target is in non-session content, using direct index:', targetIndex);
       return allWordHighlights[targetIndex] || null;
     }
     
@@ -1049,24 +1049,24 @@
           const indexWithinSession = targetIndex - globalRunningIndex;
           const visibleIndex = nonSessionHighlights + indexWithinSession;
           
-          console.log('💬 Target is in current session:', {
-            sessionId: currentSessionId,
-            sessionName: sessionGroup.session_name,
-            globalIndex: targetIndex,
-            indexWithinSession,
-            visibleIndex,
-            totalVisibleHighlights: allWordHighlights.length
-          });
+          // console.log('💬 Target is in current session:', {
+          //   sessionId: currentSessionId,
+          //   sessionName: sessionGroup.session_name,
+          //   globalIndex: targetIndex,
+          //   indexWithinSession,
+          //   visibleIndex,
+          //   totalVisibleHighlights: allWordHighlights.length
+          // });
           
           return allWordHighlights[visibleIndex] || null;
         } else {
           // Target is in a different session - return null to trigger session switch
-          console.log('🔄 Target is in different session:', {
-            targetSessionId: sessionGroup.session_id,
-            targetSessionName: sessionGroup.session_name,
-            currentSessionId,
-            needsSessionSwitch: true
-          });
+          // console.log('🔄 Target is in different session:', {
+          //   targetSessionId: sessionGroup.session_id,
+          //   targetSessionName: sessionGroup.session_name,
+          //   currentSessionId,
+          //   needsSessionSwitch: true
+          // });
           return null;
         }
       }
@@ -1074,7 +1074,7 @@
       globalRunningIndex += sessionHighlights;
     }
     
-    console.log('⚠️ Could not find target highlight, using fallback');
+    //console.log('⚠️ Could not find target highlight, using fallback');
     return allWordHighlights[0] || null;
   }
   
@@ -1376,7 +1376,7 @@
 
   <!-- Search Results Dropdown -->
   {#if showDropdown && hasResults()}
-    <div class="absolute z-50 w-full mt-1 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal);">
+    <div class="absolute z-[99999] w-full mt-1 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal);">
       <!-- Facts Results (Left Column) -->
       {#if searchResults.facts.length > 0}
         <div class="p-3 border-b border-gray-100 dark:border-gray-700">

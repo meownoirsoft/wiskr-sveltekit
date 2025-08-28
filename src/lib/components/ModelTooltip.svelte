@@ -59,7 +59,7 @@
 {#if visible && aiInfo && model}
   <div
     bind:this={tooltipElement}
-    class="fixed z-[60] bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm rounded-lg shadow-xl border border-gray-300 dark:border-gray-700 p-3 pointer-events-none max-w-xs"
+    class="fixed z-[45] bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm rounded-lg shadow-xl border border-gray-300 dark:border-gray-700 p-3 pointer-events-none max-w-xs"
     style="left: {position.x}px; top: {position.y}px;"
   >
     <!-- AI Name -->
@@ -72,17 +72,26 @@
       {model.name}
     </div>
     
-    <!-- Pricing -->
-    <div class="text-gray-500 dark:text-gray-400 text-xs space-y-1">
-      <div class="flex justify-between">
-        <span>Input:</span>
-        <span class="font-mono">${model.costPer1kTokens.input}/1k</span>
+    <!-- Pricing (only show if available) -->
+    {#if model.costPer1kTokens && model.costPer1kTokens.input !== undefined && model.costPer1kTokens.output !== undefined}
+      <div class="text-gray-500 dark:text-gray-400 text-xs space-y-1">
+        <div class="flex justify-between">
+          <span>Input:</span>
+          <span class="font-mono">${model.costPer1kTokens.input}/1k</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Output:</span>
+          <span class="font-mono">${model.costPer1kTokens.output}/1k</span>
+        </div>
       </div>
-      <div class="flex justify-between">
-        <span>Output:</span>
-        <span class="font-mono">${model.costPer1kTokens.output}/1k</span>
+    {/if}
+    
+    <!-- Description (show if available) -->
+    {#if model.description}
+      <div class="text-gray-600 dark:text-gray-400 text-xs mt-2">
+        {model.description}
       </div>
-    </div>
+    {/if}
     
     <!-- Category/Tier -->
     {#if model.category}
@@ -97,8 +106,8 @@
 {/if}
 
 <style>
-  /* Ensure tooltip appears above everything */
-  .z-\[60\] {
-    z-index: 60;
+  /* Ensure tooltip appears above dropdowns but below modals */
+  .z-\[45\] {
+    z-index: 45;
   }
 </style>

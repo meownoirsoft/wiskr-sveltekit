@@ -187,7 +187,7 @@
   {#if isOpen}
     <div 
       bind:this={popupElement}
-      class="info-popup-content fixed z-[60] w-80 sm:w-96 md:w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white"
+      class="info-popup-content fixed z-[99999] w-80 sm:w-96 md:w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white"
       style="max-height: calc(100vh - 32px); max-width: calc(100vw - 32px); background-color: var(--bg-primary);"
     >
       <!-- Header with close button -->

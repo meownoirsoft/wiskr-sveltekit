@@ -736,14 +736,23 @@ async function createProject() {
     });
 
     if (!res.ok) {
-      const raw = await res.text();
-      console.error('Create project failed:', raw);
-      // Try to extract a short message
-      let msg = '';
-      try { msg = (JSON.parse(raw).message) || raw; } catch { msg = raw; }
-      // Strip tags and truncate
-      msg = msg.replace(/<[^>]+>/g, '').slice(0, 200);
-      createProjectErr = msg || 'Failed to create project';
+      try {
+        const errorData = await res.json();
+        console.error('Create project failed:', errorData);
+        
+        // Handle specific project limit error
+        if (errorData.error === 'PROJECT_LIMIT_EXCEEDED') {
+          createProjectErr = `${errorData.message} Consider upgrading to Pro for unlimited projects.`;
+        } else {
+          createProjectErr = errorData.message || 'Failed to create project';
+        }
+      } catch {
+        // Fallback for non-JSON responses
+        const raw = await res.text();
+        console.error('Create project failed:', raw);
+        let msg = raw.replace(/<[^>]+>/g, '').slice(0, 200);
+        createProjectErr = msg || 'Failed to create project';
+      }
       creatingProject = false;
       return;
     }
@@ -1465,7 +1474,7 @@ function handleTextAddToDocs(event) {
 
 
   <!-- MAIN AREA: Chat (Center) -->
-  <div class="w-[40%] flex flex-col relative">
+  <div class="flex-1 flex flex-col relative">
     <!-- Chat Container -->
     <div class="w-full h-full flex flex-col relative">
 
@@ -1627,10 +1636,10 @@ function handleTextAddToDocs(event) {
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
-    class="fixed inset-0 z-[100]" 
+    class="fixed inset-0 z-[50]" 
     on:click={() => showMobileMenu = false}
   >
-    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2 z-[101]" style="background-color: var(--bg-primary);">
+    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2 z-[51]" style="background-color: var(--bg-primary);">
       <!-- Usage Stats -->
       <button 
         type="button"

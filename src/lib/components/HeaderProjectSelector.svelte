@@ -164,7 +164,7 @@
 
     <!-- Desktop Dropdown -->
     {#if showDropdown}
-      <div class="absolute top-full left-0 w-80 mt-1 border rounded-lg shadow-lg z-[100] max-h-[70vh] overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
+      <div class="absolute top-full left-0 w-80 mt-1 border rounded-lg shadow-lg z-[50] max-h-[70vh] overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
         <!-- Header with search -->
         <div class="p-3 border-b" style="border-color: var(--border-header-input);">
           <h4 class="font-semibold text-sm mb-2" style="color: var(--text-header);">Projects</h4>

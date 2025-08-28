@@ -79,7 +79,7 @@ export const AI_AVATARS = {
   },
   'mistral-large': {
     name: 'Gale',
-    avatar: 'misty.png',
+    avatar: 'gale.png',
     description: 'European wiskr from the innovative minds at Mistral',
     bestFor: 'European perspective & coding',
     company: 'mistral'
@@ -171,7 +171,7 @@ export const AI_AVATARS = {
   },
   'mistral-large': {
     name: 'Gale',
-    avatar: 'misty.png',
+    avatar: 'gale.png',
     description: 'European wiskr from the innovative minds at Mistral',
     bestFor: 'European perspective & coding',
     company: 'mistral'
@@ -189,6 +189,13 @@ export const AI_AVATARS = {
     description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
     bestFor: 'Math(s) logic & code',
     company: 'deepseek'
+  },
+  'gpt-5': {
+    name: 'Vega',
+    avatar: 'vega.png',
+    description: 'Next-generation wiskr from OpenAI',
+    bestFor: 'Advanced reasoning & future tasks',
+    company: 'openai'
   }
 };
 

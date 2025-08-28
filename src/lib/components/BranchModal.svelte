@@ -47,7 +47,7 @@
 </script>
 
 {#if showBranchModal}
-  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+  <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-[99999]">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->
       <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">

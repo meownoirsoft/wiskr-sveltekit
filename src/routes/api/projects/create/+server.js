@@ -1,5 +1,6 @@
 // src/routes/api/projects/create/+server.js
 import { json } from '@sveltejs/kit';
+import { canCreateProject, getTierConfig } from '$lib/tiers.js';
 
 export const POST = async ({ request, locals }) => {
   try {
@@ -8,6 +9,33 @@ export const POST = async ({ request, locals }) => {
 
     const { name, icon = '📁', color = '#6366f1', brief_text = '', description = '' } = await request.json();
     if (!name?.trim()) return json({ message: 'Name required' }, { status: 400 });
+
+    // Get user tier info from locals (set in hooks.server.js)
+    const effectiveTier = locals.effectiveTier || 0;
+    
+    // Check current project count
+    const { count: projectCount, error: countError } = await locals.supabase
+      .from('projects')
+      .select('id', { count: 'exact' })
+      .eq('user_id', user.id);
+      
+    if (countError) {
+      console.error('Error counting projects:', countError);
+      return json({ message: 'Failed to check project limits' }, { status: 500 });
+    }
+    
+    // Check if user can create another project
+    const projectCheck = canCreateProject(effectiveTier, projectCount);
+    if (!projectCheck.canCreate) {
+      const tierConfig = getTierConfig(effectiveTier);
+      return json({
+        message: projectCheck.reason,
+        error: 'PROJECT_LIMIT_EXCEEDED',
+        tierName: tierConfig.name,
+        maxProjects: tierConfig.maxProjects,
+        currentProjects: projectCount
+      }, { status: 403 });
+    }
 
     // persona: get or create
     let { data: persona } = await locals.supabase

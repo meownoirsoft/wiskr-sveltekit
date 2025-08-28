@@ -18,7 +18,7 @@
 </script>
 
 {#if visible}
-  <div class="fixed inset-0 z-50" on:click={(e) => { if (e.target === e.currentTarget) close(); }}>
+  <div class="fixed inset-0 z-[99999]" on:click={(e) => { if (e.target === e.currentTarget) close(); }}>
     <div class="absolute inset-0 backdrop-blur-sm bg-black/30 dark:bg-black/40"></div>
     <div class="absolute left-1/2 -translate-x-1/2 top-20 w-[92vw] max-w-sm rounded-lg border shadow-xl" style="background-color: var(--bg-primary); border-color: var(--border-header-input);">
       <div class="p-3 border-b" style="border-color: var(--border-header-input);">

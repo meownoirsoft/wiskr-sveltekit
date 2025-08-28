@@ -136,7 +136,7 @@
         {#if userPreferences.avatar_type === 'default'}
           <User size="24" class="sm:size-9 text-gray-500 dark:text-gray-400" />
         {:else}
-          <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-md" />
+          <img src={getUserAvatarUrl(userPreferences)} alt="Your Avatar" class="w-full h-full rounded-md" loading="lazy" decoding="async" />
         {/if}
       </div>
       <!-- Name positioned absolutely -->
@@ -144,13 +144,13 @@
     {:else}
       {#if message.model_key}
         <div id="ai-avatar" class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
-          <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-md" />
+          <img src={getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-md" fetchpriority="high" />
         </div>
         <!-- Name positioned absolutely -->
         <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(message.model_key)}</div>
       {:else}
         <div class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
-          <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" />
+          <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" fetchpriority="high" />
         </div>
         <!-- Name positioned absolutely -->
         <div class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</div>
@@ -195,15 +195,17 @@
     <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
       {#if message.role === 'assistant' && message.content.trim()}
         <!-- Feedback Buttons -->  
-        <div class="">
-          <FeedbackButtons
-            messageId={message.id}
-            projectId={current?.id}
-            messageContent={message.content}
-            aiName={message.model_key ? getAIName(message.model_key) : 'Wiskr'}
-            size="sm"
-          />
-        </div>
+        {#if current?.id}
+          <div class="">
+            <FeedbackButtons
+              messageId={message.id}
+              projectId={current.id}
+              messageContent={message.content}
+              aiName={message.model_key ? getAIName(message.model_key) : 'Wiskr'}
+              size="sm"
+            />
+          </div>
+        {/if}
       {/if}
       
       {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main'}
@@ -237,7 +239,7 @@
             on:click={(e) => openMrWiskrForMessage(index, e)}
             title="Ask Wiskr for help with this response"
           >
-            <img src="/mr-wiskr-emoji.png" alt="Wiskr" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" />
+            <img src="/mr-wiskr-emoji.png" alt="Wiskr" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" fetchpriority="high" />
             <span class="hidden xs:inline">Wiskr</span>
             <span class="xs:hidden">Wiskr</span>
           </button>

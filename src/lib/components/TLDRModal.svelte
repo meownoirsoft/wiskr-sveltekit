@@ -101,7 +101,7 @@
 {#if visible}
   <!-- Modal Backdrop -->
   <div 
-    class="fixed inset-0 -blur-sm z-[60] flex items-center justify-center p-4"
+    class="fixed inset-0 -blur-sm z-[99999] flex items-center justify-center p-4"
     style="background-color: rgba(0, 0, 0, 0.3);"
     on:click|self={close}
     role="dialog"

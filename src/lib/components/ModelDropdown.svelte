@@ -1,8 +1,8 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { ChevronDown } from 'lucide-svelte';
   import { getAIInfo, getAINameWithTeam } from '$lib/config/aiAvatars.js';
-  import ModelTooltip from './ModelTooltip.svelte';
+  import ProBadge from './ProBadge.svelte';
 
   export let modelKey = 'speed';
   export let availableModels = [];
@@ -36,74 +36,44 @@
   let isOpen = false;
   let dropdownElement;
   
-  // Tooltip state
-  let tooltipVisible = false;
-  let tooltipAiInfo = null;
-  let tooltipModel = null;
-  let tooltipTargetElement = null;
-  let hoverTimeout = null;
 
-  function toggleDropdown() {
+  function toggleDropdown(event) {
     if (disabled) return;
+    event.stopPropagation();
+    
     isOpen = !isOpen;
-    // Hide tooltip when dropdown closes
-    if (!isOpen) {
-      hideTooltip();
-    }
   }
 
   function selectModel(model) {
+    // Prevent selection of unavailable models
+    if (model.isAvailable === false) {
+      return;
+    }
+    
     modelKey = model.key;
     isOpen = false;
-    hideTooltip(); // Hide tooltip when selecting a model
     dispatch('change', { value: model.key });
   }
 
   function handleKeydown(event) {
     if (event.key === 'Escape') {
       isOpen = false;
-      hideTooltip(); // Hide tooltip when closing with Escape
     }
   }
 
-  function handleClickOutside(event) {
-    if (dropdownElement && !dropdownElement.contains(event.target)) {
-      isOpen = false;
-      hideTooltip(); // Hide tooltip when clicking outside
-    }
-  }
-
-  // Close dropdown when clicking outside
-  $: if (typeof window !== 'undefined') {
-    if (isOpen) {
-      document.addEventListener('click', handleClickOutside);
-    } else {
-      document.removeEventListener('click', handleClickOutside);
-    }
-  }
+  // Simple approach: just handle clicks directly
 
   // Get current selected model info
   $: currentModel = availableModels.find(m => m.key === modelKey) || availableModels[0];
   $: currentAIInfo = currentModel ? getAIInfo(currentModel.key) : null;
   
-  // Tooltip functions
-  function showTooltip(model, aiInfo, event) {
-    clearTimeout(hoverTimeout);
-    hoverTimeout = setTimeout(() => {
-      tooltipTargetElement = event.target;
-      tooltipModel = model;
-      tooltipAiInfo = aiInfo;
-      tooltipVisible = true;
-    }, 500); // 500ms delay
-  }
+  // Separate available and unavailable models
+  $: availableModelsList = availableModels.filter(m => m.isAvailable !== false);
+  $: unavailableModels = availableModels.filter(m => m.isAvailable === false);
   
-  function hideTooltip() {
-    clearTimeout(hoverTimeout);
-    tooltipVisible = false;
-    tooltipTargetElement = null;
-    tooltipModel = null;
-    tooltipAiInfo = null;
-  }
+  // Combined list with available models first, then unavailable
+  $: sortedModels = [...availableModelsList, ...unavailableModels];
+  
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -112,7 +82,7 @@
   <!-- Dropdown Button -->
   <button
     type="button"
-class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[300px] max-w-[300px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
+    class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded p-1 text-xs min-w-[300px] max-w-[300px] flex items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" style="background-color: var(--bg-input);"
     on:click={toggleDropdown}
     {disabled}
   >
@@ -134,21 +104,39 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
 
   <!-- Dropdown Menu -->
   {#if isOpen && availableModels.length > 0}
-    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto" style="background-color: var(--bg-input);">
-      {#each availableModels as model}
+    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto" style="background-color: var(--bg-input); z-index: 50 !important;">
+      {#each sortedModels as model, index}
         {@const aiInfo = getAIInfo(model.key)}
+        {@const isUnavailable = model.isAvailable === false}
+        {@const isFirstUnavailable = index === availableModelsList.length && unavailableModels.length > 0}
+        
+        <!-- Section separator before unavailable models -->
+        {#if isFirstUnavailable}
+          <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+          <div class="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Upgrade to unlock:</div>
+        {/if}
+        
         <button
           type="button"
-          class="w-full px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 md:gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-blue-900' : ''}"
-          on:click={() => selectModel(model)}
-          on:mouseenter={(e) => showTooltip(model, aiInfo, e)}
-          on:mouseleave={hideTooltip}
+          class="w-full px-3 py-2 text-left text-xs flex items-center gap-2 md:gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-blue-900' : ''} {isUnavailable ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'}"
+          on:click={() => {
+            if (!isUnavailable) {
+              selectModel(model);
+            }
+          }}
+          disabled={isUnavailable}
+          tabindex={isUnavailable ? -1 : 0}
         >
-          <div class="bg-white rounded-lg p-px sm:p-px">
+          <div class="bg-white rounded-lg p-px sm:p-px {isUnavailable ? 'grayscale' : ''}">
             <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-9 h-9 sm:w-12 sm:h-12 rounded-md flex-shrink-0" />
           </div>
           <div class="flex flex-col min-w-0 flex-1 items-start">
-            <span class="truncate text-sm md:text-xs">{getAINameWithTeam(model.key)}</span>
+            <div class="flex items-center gap-2 w-full">
+              <span class="truncate text-sm md:text-xs {isUnavailable ? 'text-gray-400 dark:text-gray-500' : ''}">{getAINameWithTeam(model.key)}</span>
+              {#if isUnavailable && model.requiredTier}
+                <ProBadge tier={model.requiredTier} size="xs" variant="minimal" />
+              {/if}
+            </div>
             <span class="truncate text-xs text-gray-500 dark:text-gray-400">{aiInfo.bestFor || 'General tasks'}</span>
           </div>
           {#if model.key === modelKey}
@@ -161,23 +149,15 @@ class="border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-
 
   <!-- Fallback dropdown when no models loaded -->
   {#if isOpen && availableModels.length === 0}
-    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-50 px-3 py-2" style="background-color: var(--bg-input);">
+    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg px-3 py-2" style="background-color: var(--bg-input); z-index: 50 !important;">
       <div class="text-xs text-gray-500 dark:text-gray-400">Loading Wiskrs...</div>
     </div>
   {/if}
 </div>
 
-<!-- Custom Tooltip -->
-<ModelTooltip
-  visible={tooltipVisible}
-  aiInfo={tooltipAiInfo}
-  model={tooltipModel}
-  targetElement={tooltipTargetElement}
-/>
-
 <style>
-  /* Ensure dropdown appears above other elements */
+  /* Ensure dropdown appears above other elements but below modals */
   .relative {
-    z-index: 10;
+    z-index: 40 !important;
   }
 </style>

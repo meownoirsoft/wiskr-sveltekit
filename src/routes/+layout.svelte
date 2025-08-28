@@ -181,7 +181,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   // Check if we're on the projects page
   $: isProjectsPage = $page.url.pathname === '/projects';
   
-  // Check if we should show the logo (authenticated pages + login/signup)
+  // Check if we should show the logo (authenticated pages + public pages)
   $: shouldShowLogo = isProjectsPage || 
     $page.url.pathname.startsWith('/admin') ||
     $page.url.pathname.startsWith('/context-dashboard') ||
@@ -189,7 +189,11 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     $page.url.pathname.startsWith('/shared') ||
     $page.url.pathname === '/login' ||
     $page.url.pathname === '/signup' ||
-    $page.url.pathname === '/legal';
+    $page.url.pathname === '/legal' ||
+    $page.url.pathname === '/support' ||
+    $page.url.pathname === '/privacy' ||
+    $page.url.pathname === '/terms' ||
+    $page.url.pathname === '/plans';
   
   // Track page views
   $: if (browser && $page.url.pathname) {
@@ -247,12 +251,12 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     
     // Try to get last selected project from localStorage (will be validated later)
     const lastId = localStorage.getItem('wiskr_last_project_id');
-    console.log('🎯 Layout: Found cached project ID:', lastId);
+    // console.log('🎯 Layout: Found cached project ID:', lastId);
     
     // Listen for projects data from the projects page
     window.addEventListener('layout:update-projects', (e) => {
       const { projects: pageProjects, currentProjectId } = e.detail;
-      console.log('🎯 Layout: Received projects from page:', pageProjects.length, 'projects');
+      // console.log('🎯 Layout: Received projects from page:', pageProjects.length, 'projects');
       
       projects = pageProjects || [];
       
@@ -261,7 +265,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         const foundProject = projects.find(p => p.id === currentProjectId);
         if (foundProject) {
           currentProject = foundProject;
-          console.log('🎯 Layout: Updated current project to:', foundProject.name);
+          // console.log('🎯 Layout: Updated current project to:', foundProject.name);
           // Load context quality score for the new project
           loadContextQualityScore(foundProject.id);
         }
@@ -574,7 +578,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
 <div class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
 
   <!-- Header -->
-  <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-50 transition-colors" style="background-color: var(--bg-header);">
+  <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
     <div class="w-full px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
       <div class="flex items-center gap-2">
@@ -617,7 +621,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         {#if shouldShowLogo}
           <a href="/projects" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
             <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
-              <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 px-2 mb-0" />
+              <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
             </span>
           </a>
         {/if}
@@ -699,7 +703,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
         <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 justify-center">
           <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
             <span class="text-xl inline-flex items-center">
-              <img src="/wiskr-logo.png" alt="Wiskr" class="w-28 py-2 px-2 mb-0" />
+              <img src="/wiskr-logo.png" alt="Wiskr" class="w-28 py-2 mb-0" />
             </span>
           </a>
         </div>
@@ -813,7 +817,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div 
-      class="fixed inset-0 z-[60]" 
+      class="fixed inset-0 z-[99999]" 
       on:click={(e) => {
         // Only close if clicking on the backdrop itself, not on dropdown content
         if (e.target === e.currentTarget) {
@@ -974,6 +978,9 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
     bind:userPreferences
     {savingPreferences}
     {darkMode}
+    userTier={data?.userTier || 0}
+    effectiveTier={data?.effectiveTier || 0}
+    trialEndsAt={data?.trialEndsAt || null}
     on:close={handleSettingsClose}
     on:save-preferences={handleSettingsSave}
     on:theme-changed={handleSettingsThemeChange}

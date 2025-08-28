@@ -25,7 +25,7 @@
 {#if overlay}
   <!-- Overlay Mode -->
   <div 
-    class="absolute inset-0 flex items-center justify-center z-50 rounded transition-opacity duration-200"
+    class="absolute inset-0 flex items-center justify-center z-[99999] rounded transition-opacity duration-200"
     style="background: {backgroundColor}; backdrop-filter: blur(4px);"
   >
     <div class="text-center {sizeConfig.padding}">

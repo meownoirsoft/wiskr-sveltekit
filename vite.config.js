@@ -15,10 +15,13 @@ export default defineConfig({
 			'@supabase/supabase-js',
 			'@floating-ui/dom',
 			'luxon',
-			'jszip'
+			'jszip',
+			'posthog-js'
 		],
 		// Exclude problematic dependencies that should not be pre-bundled
-		exclude: ['@supabase/auth-helpers-sveltekit']
+		exclude: ['@supabase/auth-helpers-sveltekit'],
+		// Force re-optimization on dep changes
+		force: process.env.NODE_ENV === 'development'
 	},
 	
 	server: {
@@ -26,7 +29,16 @@ export default defineConfig({
 		fs: {
 			cachedChecks: true
 		},
-		allowedHosts: ['.localhost', '.localdomain', '::1', '127.0.0.1',  'aff832e63fe5.ngrok-free.app'],
+		allowedHosts: ['.localhost', '.localdomain', '::1', '127.0.0.1'],
+		// Faster HMR updates
+		hmr: {
+			overlay: process.env.NODE_ENV === 'development'
+		},
+		// Skip some file watching for better performance
+		watch: {
+			// Ignore large directories
+			ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
+		}
 	},
 	
 	build: {
