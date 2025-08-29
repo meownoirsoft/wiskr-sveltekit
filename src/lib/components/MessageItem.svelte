@@ -127,7 +127,7 @@
 <div class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-16 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3 mt-16`} relative" bind:this={messageElement}>
   
   <!-- Message Bubble -->
-  <div id="message-bubble" class="rounded-lg px-2 sm:px-2 border border-l-4 transition-colors relative {message.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent} pb-4 sm:pb-4 pt-1 sm:pt-1` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent} pb-5 sm:pb-5 pt-4 sm:pt-4`}"
+  <div id="message-bubble" class="rounded-lg px-2 sm:px-2 border border-l-4 transition-colors relative {message.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent} pb-6 sm:pb-6 pt-1 sm:pt-1` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent} pb-5 sm:pb-5 pt-4 sm:pt-4`}"
        style="background-color: {message.role === 'user' ? 'var(--bg-message-user)' : 'var(--bg-message-assistant)'}; border-color: {message.role === 'user' ? 'var(--color-accent)' : '#4a4a52'}; border-left-color: {message.role === 'user' ? 'var(--color-accent)' : '#5D60DD'}; box-shadow: {message.role === 'user' ? '0 0 0 1px var(--color-accent-light)' : '-2px 0 8px rgba(93, 96, 221, 0.15)'}; color: var(--text-primary);">
     
     <!-- Avatar positioned absolutely over message bubble -->
@@ -169,7 +169,7 @@
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
         on:click={() => dispatch('select-all', index)}
-        title="Select all and format for posts"
+        title="Select all and format for socials"
       >
         <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
         <span class="hidden xs:inline">Select All</span>
@@ -187,8 +187,8 @@
     {#if message.role === 'assistant' && message.content.trim()}
       <div class="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
         <Type size="14" class="flex-shrink-0" />
-        <span class="hidden sm:inline">Highlight to capture/format</span>
-        <span class="sm:hidden">Highlight to capture</span>
+        <span class="hidden sm:inline">Click & drag to capture/format</span>
+        <span class="sm:hidden">Tap & drag to capture/format</span>
       </div>
     {/if}
     

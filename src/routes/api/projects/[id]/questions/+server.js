@@ -14,7 +14,7 @@ export async function GET({ params, locals }) {
   try {
     const { data: questions, error: fetchError } = await supabase
       .from('project_questions')
-      .select('*')
+      .select('id, question, sort_order, completed, created_at, updated_at')
       .eq('project_id', projectId)
       .order('sort_order', { ascending: true });
 
@@ -40,7 +40,7 @@ export async function POST({ request, params, locals }) {
   const projectId = params.id;
 
   try {
-    const { action, question, questions } = await request.json();
+    const { action, question, questions, questionId, completed } = await request.json();
 
     if (action === 'add') {
       // Add a single question
@@ -125,6 +125,27 @@ export async function POST({ request, params, locals }) {
       }
 
       return json({ questions: updatedQuestions || [] });
+
+    } else if (action === 'toggle_completed') {
+      // Toggle completion status of a specific question
+      if (!questionId) {
+        throw error(400, 'Question ID is required');
+      }
+
+      const { data: updatedQuestion, error: updateError } = await supabase
+        .from('project_questions')
+        .update({ completed: completed })
+        .eq('id', questionId)
+        .eq('project_id', projectId) // Extra security check
+        .select('id, question, sort_order, completed, created_at, updated_at')
+        .single();
+
+      if (updateError) {
+        console.error('Error updating question completion:', updateError);
+        throw error(500, 'Failed to update question completion');
+      }
+
+      return json({ question: updatedQuestion });
 
     } else {
       throw error(400, 'Invalid action');

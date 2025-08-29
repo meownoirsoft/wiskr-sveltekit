@@ -3,7 +3,7 @@
   import { RotateCcw, X, ChevronsRight } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
   import ModelDropdown from './ModelDropdown.svelte';
-  import TLDRButton from './TLDRButton.svelte';
+  import SayLessButton from './SayLessButton.svelte';
   
   // Props
   export let current = null;
@@ -32,8 +32,8 @@
     dispatch('reask');
   }
   
-  function handleTLDRClick() {
-    dispatch('tldr');
+  function handleSayLessClick() {
+    dispatch('sayless');
   }
 </script>
 <!-- Fixed Ask Form at Bottom -->
@@ -80,8 +80,8 @@
           <!-- Action buttons -->
           <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {#if input.trim()}
-              <TLDRButton
-                on:tldr={handleTLDRClick}
+              <SayLessButton
+                on:sayless={handleSayLessClick}
                 disabled={!current || !input.trim()}
                 size="sm"
               />

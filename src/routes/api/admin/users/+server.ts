@@ -47,13 +47,20 @@ export const GET: RequestHandler = async ({ locals, url }) => {
       );
     }
 
-    // Get project counts for each user
+        // Get project counts and tier info for each user
     const usersWithProjects = await Promise.all(
       filteredUsers.map(async (user) => {
         const { count } = await supabaseAdmin
           .from('projects')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
+        
+        // Get tier info from profiles table
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('tier, trial_ends_at')
+          .eq('user_id', user.id)
+          .single();
         
         return {
           id: user.id,
@@ -63,6 +70,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
           updated_at: user.updated_at,
           is_admin: user.user_metadata?.is_admin || false,
           project_count: count || 0,
+          tier: profile?.tier || 0,
+          trial_ends_at: profile?.trial_ends_at || null,
           user_metadata: user.user_metadata
         };
       })
@@ -174,6 +183,49 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
 
         return json({ success: true, message: 'User deleted successfully' });
+
+      case 'change_tier':
+        // Update user tier in profiles table
+        const { tier, trial_ends_at } = updateData;
+        
+        if (tier === undefined || tier < 0 || tier > 2) {
+          return json({ error: 'Invalid tier value' }, { status: 400 });
+        }
+        
+        // Update profiles table
+        const { error: tierUpdateError } = await supabaseAdmin
+          .from('profiles')
+          .upsert({
+            user_id: userId,
+            tier: tier,
+            trial_ends_at: trial_ends_at || null
+          }, {
+            onConflict: 'user_id'
+          });
+        
+        if (tierUpdateError) {
+          console.error('Profile update error:', tierUpdateError);
+          return json({ error: 'Failed to update user tier in profiles' }, { status: 500 });
+        }
+        
+        // Also store tier in user metadata for quick access
+        const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(
+          userId,
+          {
+            user_metadata: {
+              ...updateData.currentMetadata,
+              tier: tier,
+              trial_ends_at: trial_ends_at || null
+            }
+          }
+        );
+        
+        if (metadataError) {
+          console.error('Metadata update error:', metadataError);
+          // Don't fail here since profiles table was updated successfully
+        }
+        
+        return json({ success: true, message: 'User tier updated successfully' });
 
       default:
         return json({ error: 'Invalid action' }, { status: 400 });

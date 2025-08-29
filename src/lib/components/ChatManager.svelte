@@ -244,7 +244,8 @@
       const res = await fetch(`/api/projects/${current.id}/questions`);
       if (res.ok) {
         const data = await res.json();
-        goodQuestions = (data.questions || []).map(q => q.question);
+        // Now store the full question objects with id, question, completed, etc.
+        goodQuestions = data.questions || [];
       } else {
         console.error('Failed to load questions:', await res.text());
         goodQuestions = [];

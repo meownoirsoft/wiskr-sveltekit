@@ -46,18 +46,27 @@
 
     if (containerElement) {
       updateContainerHeight();
-      // Initial scroll to bottom if there are messages - use multiple attempts for reliability
+      // Immediate scroll to bottom if there are messages - this runs first to avoid initial scroll position
       if (messages.length > 0) {
-        // Multiple scroll attempts to ensure we reach true bottom after virtualization
+        // Immediately set scroll position to bottom without waiting
+        containerElement.scrollTop = containerElement.scrollHeight;
+        isAtBottom = true;
+        shouldScrollToBottom = true;
+        
+        // Then use aggressive retry mechanism to ensure we stay at bottom
         const scrollToBottomWithRetry = (attempt = 0) => {
-          if (attempt >= 3) return; // Max 3 attempts
+          if (attempt >= 5) return; // Max 5 attempts
           
           tick().then(() => {
             if (containerElement) {
+              // Force immediate scroll to bottom
+              containerElement.scrollTop = containerElement.scrollHeight;
+              // Also try smooth scroll as backup
               scrollToBottom(false);
-              // Retry after a short delay to account for height measurements
-              if (attempt < 2) {
-                setTimeout(() => scrollToBottomWithRetry(attempt + 1), 50);
+              // Retry with increasing delays for height measurements
+              if (attempt < 4) {
+                const delay = attempt < 2 ? 50 : attempt < 3 ? 200 : 500;
+                setTimeout(() => scrollToBottomWithRetry(attempt + 1), delay);
               }
             }
           });

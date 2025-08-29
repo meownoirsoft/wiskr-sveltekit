@@ -6,14 +6,11 @@ import InfoPopup from './InfoPopup.svelte';
 import LoadingSpinner from './LoadingSpinner.svelte';
 import { browser } from '$app/environment';
 
-  export let goodQuestions = [];
+  export let goodQuestions = []; // Now expects array of objects with {id, question, completed, sort_order}
   export let loadingQuestions = false;
   export let projectId = null;
 
   const dispatch = createEventDispatcher();
-  
-  // Track completed questions (per project) - use array of booleans indexed by question position
-  let completedQuestions = [];
   
   let newQuestion = '';
   let showAddForm = false;
@@ -22,27 +19,30 @@ import { browser } from '$app/environment';
 
   function addQuestion() {
     if (newQuestion.trim()) {
-      const updatedQuestions = [...goodQuestions, newQuestion.trim()];
-      goodQuestions = updatedQuestions;
-      dispatch('update', { questions: updatedQuestions });
+      // Convert questions to strings for the API (maintain backward compatibility)
+      const questionStrings = [...goodQuestions.map(q => q.question || q), newQuestion.trim()];
+      dispatch('update', { questions: questionStrings });
       newQuestion = '';
       showAddForm = false;
     }
   }
 
   function removeQuestion(index) {
-    const updatedQuestions = goodQuestions.filter((_, i) => i !== index);
-    goodQuestions = updatedQuestions;
+    // Convert to strings for backward compatibility with the update API
+    const updatedQuestions = goodQuestions
+      .filter((_, i) => i !== index)
+      .map(q => q.question || q);
     dispatch('update', { questions: updatedQuestions });
   }
 
-  function insertQuestion(question) {
-    dispatch('insert-text', { text: question });
+  function insertQuestion(questionObj) {
+    const questionText = questionObj.question || questionObj;
+    dispatch('insert-text', { text: questionText });
   }
 
   function startEdit(index) {
     editingIndex = index;
-    editingText = goodQuestions[index];
+    editingText = goodQuestions[index].question || goodQuestions[index];
   }
 
   function cancelEdit() {
@@ -52,9 +52,10 @@ import { browser } from '$app/environment';
 
   function saveEdit() {
     if (editingText.trim() && editingIndex >= 0) {
-      const updatedQuestions = [...goodQuestions];
-      updatedQuestions[editingIndex] = editingText.trim();
-      goodQuestions = updatedQuestions;
+      // Convert to strings for the update API
+      const updatedQuestions = goodQuestions.map((q, i) => 
+        i === editingIndex ? editingText.trim() : (q.question || q)
+      );
       dispatch('update', { questions: updatedQuestions });
       editingIndex = -1;
       editingText = '';
@@ -81,71 +82,51 @@ import { browser } from '$app/environment';
     // Regular Enter now creates new lines in textarea
   }
   
-  // Load completed questions from localStorage
-  function loadCompletedQuestions() {
-    if (!browser || !projectId) return [];
-    try {
-      const stored = localStorage.getItem(`completed_questions_${projectId}`);
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error loading completed questions:', error);
-      return [];
+  // Toggle completion status via API
+  async function toggleCompleted(index) {
+    if (!projectId || !goodQuestions[index]) return;
+    
+    const question = goodQuestions[index];
+    const questionId = question.id;
+    const newCompletedStatus = !question.completed;
+    
+    if (!questionId) {
+      console.error('Question ID missing for completion toggle');
+      return;
     }
-  }
-  
-  // Save completed questions to localStorage
-  function saveCompletedQuestions() {
-    if (!browser || !projectId) return;
+
     try {
-      localStorage.setItem(`completed_questions_${projectId}`, JSON.stringify(completedQuestions));
+      const res = await fetch(`/api/projects/${projectId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle_completed',
+          questionId: questionId,
+          completed: newCompletedStatus
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Update the local state with the returned question data
+        goodQuestions = goodQuestions.map((q, i) => 
+          i === index ? data.question : q
+        );
+      } else {
+        console.error('Failed to toggle question completion:', await res.text());
+      }
     } catch (error) {
-      console.error('Error saving completed questions:', error);
+      console.error('Error toggling question completion:', error);
     }
-  }
-  
-  function toggleCompleted(index) {
-    completedQuestions[index] = !completedQuestions[index];
-    // Trigger reactivity by reassigning the array
-    completedQuestions = [...completedQuestions];
-    // Save to localStorage
-    saveCompletedQuestions();
   }
   
   function isCompleted(question, index) {
-    return completedQuestions[index] || false;
+    // Now we get completion status directly from the question object
+    return question.completed || false;
   }
   
-  // Load completed questions from localStorage when projectId changes
-  $: if (browser && projectId) {
-    const storedCompleted = loadCompletedQuestions();
-    // Initialize with stored data or empty array
-    if (goodQuestions.length > 0) {
-      const newCompleted = new Array(goodQuestions.length).fill(false);
-      // Apply stored completion states
-      for (let i = 0; i < Math.min(storedCompleted.length, goodQuestions.length); i++) {
-        newCompleted[i] = storedCompleted[i] || false;
-      }
-      completedQuestions = newCompleted;
-    }
-  }
-  
-  // Keep completedQuestions array synchronized with goodQuestions length
-  $: {
-    // Ensure completedQuestions array matches goodQuestions length
-    if (completedQuestions.length !== goodQuestions.length && goodQuestions.length > 0) {
-      const storedCompleted = loadCompletedQuestions();
-      const newCompleted = new Array(goodQuestions.length).fill(false);
-      // Preserve existing completion states from localStorage and current state
-      for (let i = 0; i < goodQuestions.length; i++) {
-        // Priority: current state > stored state > false
-        newCompleted[i] = completedQuestions[i] || storedCompleted[i] || false;
-      }
-      completedQuestions = newCompleted;
-    }
-  }
-  
-  // Create reactive computed properties for UI updates
-  $: completedStates = completedQuestions.map(Boolean);
+  // Create reactive computed properties for UI updates based on question objects
+  $: completedStates = goodQuestions.map(q => q.completed || false);
 </script>
 
 <div class="flex flex-col h-full max-h-full overflow-hidden">
@@ -257,14 +238,14 @@ import { browser } from '$app/environment';
               <input 
                 type="checkbox" 
                 class="rounded cursor-pointer mt-0.5 flex-shrink-0"
-                checked={completedQuestions[i] || false}
+                checked={question.completed || false}
                 on:change={() => toggleCompleted(i)}
                 title="Mark as answered"
               />
               
               <!-- Center section: question text -->
               <div class="flex-1 leading-snug {completedStates[i] ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}" style={completedStates[i] ? 'text-decoration: line-through !important;' : 'text-decoration: none;'}>
-                {question}
+                {question.question || question}
               </div>
               
               <!-- Right section: edit and delete buttons -->

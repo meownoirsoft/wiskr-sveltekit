@@ -26,8 +26,8 @@ export async function loadModal(modalName) {
     case 'ProjectExport':
       return (await import('$lib/components/ProjectExport.svelte')).default;
     
-    case 'TLDRModal':
-      return (await import('$lib/components/modals/TLDRModal.svelte')).default;
+    case 'SayLessModal':
+      return (await import('$lib/components/modals/SayLessModal.svelte')).default;
     
     case 'FeedbackModal':
       return (await import('$lib/components/modals/FeedbackModal.svelte')).default;

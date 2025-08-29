@@ -5,12 +5,12 @@
   export let disabled = false;
   export let size = 'sm'; // 'sm', 'md', 'lg'
   export let variant = 'outline'; // 'outline', 'filled'
-  export let title = 'Make text more concise with TL;DR';
+  export let title = 'Make text more concise with SayLess';
 
   const dispatch = createEventDispatcher();
 
   function handleClick() {
-    dispatch('tldr');
+    dispatch('sayless');
   }
 
   // Size configurations
@@ -40,5 +40,5 @@
   {title}
 >
   <FileText size={16} />
-  <span>TL;DR</span>
+  <span>SayLess</span>
 </button>

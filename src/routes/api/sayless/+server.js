@@ -1,4 +1,4 @@
-// src/routes/api/tldr/+server.js
+// src/routes/api/sayless/+server.js
 import { json } from '@sveltejs/kit';
 import { getModelConfig } from '$lib/server/openrouter.js';
 
@@ -14,7 +14,7 @@ export async function POST({ request }) {
     const { config, client } = getModelConfig('speed');
 
     // Build context-aware prompt
-    let systemPrompt = `You are a professional editor specializing in concise, impactful writing. Your task is to create a TL;DR (Too Long; Didn't Read) version that:
+    let systemPrompt = `You are a professional editor specializing in concise, impactful writing. Your task is to create a SayLess version that:
 
 1. Preserves ALL key information and meaning from the original text
 2. Removes unnecessary words, redundancies, and fluff
@@ -60,7 +60,7 @@ Your response should contain nothing except the shortened version of the provide
         systemPrompt += `\n\nThis is general text content. Make it more concise while preserving meaning and clarity.`;
     }
 
-    const userPrompt = `Please create a TL;DR version of the following text:
+    const userPrompt = `Please create a SayLess version of the following text:
 
 ${text}`;
 
@@ -75,29 +75,29 @@ ${text}`;
       max_tokens: Math.min(Math.ceil(text.length * 0.8), 1000) // Reasonable limit based on input
     });
 
-    const tldrText = completion.choices[0]?.message?.content?.trim();
+    const saylessText = completion.choices[0]?.message?.content?.trim();
 
-    if (!tldrText) {
-      return json({ error: 'Failed to generate TL;DR' }, { status: 500 });
+    if (!saylessText) {
+      return json({ error: 'Failed to generate SayLess' }, { status: 500 });
     }
 
     // Basic validation - ensure we actually made it more concise
     const originalLength = text.length;
-    const tldrLength = tldrText.length;
-    const reductionPercentage = ((originalLength - tldrLength) / originalLength) * 100;
+    const saylessLength = saylessText.length;
+    const reductionPercentage = ((originalLength - saylessLength) / originalLength) * 100;
 
     return json({
-      tldr: tldrText,
+      sayless: saylessText,
       stats: {
         originalLength,
-        tldrLength,
+        saylessLength,
         reductionPercentage: Math.round(reductionPercentage),
         tokensUsed: completion.usage?.total_tokens || 0
       }
     });
 
   } catch (error) {
-    console.error('TL;DR API error:', error);
+    console.error('SayLess API error:', error);
     return json({ error: 'Internal server error' }, { status: 500 });
   }
 }

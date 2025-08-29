@@ -136,7 +136,7 @@
       on:click={formatText}
     >
       <BrushCleaning size="16" />
-      <span>Format for Posts</span>
+      <span>Format for Socials</span>
     </button>
   </div>
 {/if}

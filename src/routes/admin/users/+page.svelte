@@ -13,8 +13,13 @@
     ChevronRight,
     AlertCircle,
     CheckCircle,
-    X
+    X,
+    Crown,
+    Gift,
+    User as UserIcon
   } from 'lucide-svelte';
+  import TierChangeModal from '$lib/components/modals/TierChangeModal.svelte';
+  import { TIER_NAMES } from '$lib/config/tiers.js';
 
   let users = [];
   let loading = true;
@@ -32,6 +37,11 @@
   // Delete confirmation state  
   let showDeleteModal = false;
   let deletingUser = null;
+
+  // Tier change modal state
+  let showTierModal = false;
+  let changingTierUser = null;
+  let savingTierChange = false;
 
   $: totalPages = Math.ceil(totalUsers / pageSize);
   $: offset = currentPage * pageSize;
@@ -117,6 +127,17 @@
   function closeDeleteModal() {
     showDeleteModal = false;
     deletingUser = null;
+  }
+
+  function openTierModal(user) {
+    changingTierUser = user;
+    showTierModal = true;
+  }
+
+  function closeTierModal() {
+    showTierModal = false;
+    changingTierUser = null;
+    savingTierChange = false;
   }
 
   async function handleUpdateUser() {
@@ -217,6 +238,68 @@
 
   function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString();
+  }
+
+  function getTierDisplayInfo(tier, trialEndsAt) {
+    const tierName = TIER_NAMES[tier] || 'Free';
+    if (tier > 0 && trialEndsAt) {
+      const trialEnd = new Date(trialEndsAt);
+      const now = new Date();
+      if (now < trialEnd) {
+        return `${tierName} (Trial)`;
+      } else {
+        return `${tierName} (Expired)`;
+      }
+    }
+    return tierName;
+  }
+
+  function getTierIcon(tier) {
+    switch (tier) {
+      case 1: return Crown;
+      case 2: return Gift;
+      default: return UserIcon;
+    }
+  }
+
+  async function handleTierChange(event) {
+    const { userId, tier, trial_ends_at } = event.detail;
+    
+    if (!changingTierUser) return;
+    
+    savingTierChange = true;
+    
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: userId,
+          action: 'change_tier',
+          data: {
+            tier: tier,
+            trial_ends_at: trial_ends_at,
+            currentMetadata: changingTierUser.user_metadata || {}
+          }
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        actionResult = { success: true, message: result.message };
+        closeTierModal();
+        loadUsers(); // Refresh to show updated tier
+      } else {
+        actionResult = { success: false, message: result.error };
+      }
+    } catch (error) {
+      actionResult = { success: false, message: 'Failed to update user tier' };
+    } finally {
+      savingTierChange = false;
+    }
   }
 </script>
 
@@ -322,6 +405,9 @@
                 Projects
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Tier
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Status
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -365,6 +451,17 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
+                    <svelte:component 
+                      this={getTierIcon(user.tier)} 
+                      class="h-4 w-4 mr-2 {user.tier > 0 ? 'text-amber-500' : 'text-gray-400'}" 
+                    />
+                    <span class="text-sm text-gray-900 dark:text-gray-100">
+                      {getTierDisplayInfo(user.tier, user.trial_ends_at)}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
                     {#if user.is_admin}
                       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                         <ShieldCheck class="h-3 w-3 mr-1" />
@@ -391,6 +488,13 @@
                       title="Edit user"
                     >
                       <Edit3 class="h-4 w-4" />
+                    </button>
+                    <button
+                      on:click={() => openTierModal(user)}
+                      class="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 p-1 rounded"
+                      title="Change tier"
+                    >
+                      <Crown class="h-4 w-4" />
                     </button>
                     <button
                       on:click={() => handleToggleAdmin(user)}
@@ -567,3 +671,12 @@
     </div>
   </div>
 {/if}
+
+<!-- Tier Change Modal -->
+<TierChangeModal 
+  bind:show={showTierModal}
+  bind:user={changingTierUser}
+  bind:saving={savingTierChange}
+  on:close={closeTierModal}
+  on:save={handleTierChange}
+/>

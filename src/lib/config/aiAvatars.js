@@ -36,7 +36,7 @@ export const AI_AVATARS = {
     company: 'google'
   },
   'gpt-oss': {
-    name: 'Pixel',
+    name: 'Prism',
     avatar: 'moe.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
     bestFor: 'Cost-effective quick help',
@@ -128,7 +128,7 @@ export const AI_AVATARS = {
     company: 'google'
   },
   'gpt-4o-mini-2024-07-18': {
-    name: 'Pixel',
+    name: 'Prism',
     avatar: 'moe.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
     bestFor: 'Cost-effective quick help',

@@ -6,8 +6,8 @@ import TextSelectionMenu from './TextSelectionMenu.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import MrWiskrPopup from './MrWiskrPopup.svelte';
 import ModelDropdown from './ModelDropdown.svelte';
-import TLDRModal from './modals/TLDRModal.svelte';
-import TLDRButton from './TLDRButton.svelte';
+import SayLessModal from './modals/SayLessModal.svelte';
+import SayLessButton from './SayLessButton.svelte';
 import FeedbackButtons from './FeedbackButtons.svelte';
 import FeedbackModal from './modals/FeedbackModal.svelte';
 import GlobalSearch from './GlobalSearch.svelte';
@@ -61,10 +61,10 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   let mrWiskrOriginalText = ''; // Store original message text
   let mrWiskrFriendName = ''; // Store the friend's name who wrote the message
   
-  // TL;DR state
-  let showTLDRModal = false;
-  let tldrOriginalText = '';
-  let tldrFieldType = 'ask-prompt';
+  // SayLess state
+  let showSayLessModal = false;
+  let saylessOriginalText = '';
+  let saylessFieldType = 'ask-prompt';
   
   // Problem Report Modal state
   let showProblemReportModal = false;
@@ -656,35 +656,35 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     event.target.style.color = 'var(--color-accent)';
   }
   
-  // TL;DR handlers
-  function handleTLDRClick() {
+  // SayLess handlers
+  function handleSayLessClick() {
     if (!input.trim()) return;
-    tldrOriginalText = input;
-    tldrFieldType = 'ask-prompt';
-    showTLDRModal = true;
+    saylessOriginalText = input;
+    saylessFieldType = 'ask-prompt';
+    showSayLessModal = true;
   }
   
-  function handleTLDRModalClose() {
-    showTLDRModal = false;
-    tldrOriginalText = '';
+  function handleSayLessModalClose() {
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
-  function handleTLDRReplace(event) {
-    const { tldrText } = event.detail;
-    input = tldrText;
-    showTLDRModal = false;
-    tldrOriginalText = '';
+  function handleSayLessReplace(event) {
+    const { saylessText } = event.detail;
+    input = saylessText;
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
-  function handleTLDRCopy(event) {
-    const { tldrText } = event.detail;
+  function handleSayLessCopy(event) {
+    const { saylessText } = event.detail;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(tldrText).then(() => {
+      navigator.clipboard.writeText(saylessText).then(() => {
         // Optional: show success feedback
       });
     }
-    showTLDRModal = false;
-    tldrOriginalText = '';
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
   // ReAsk functionality - get the last user message from current conversation
@@ -997,7 +997,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {isMobile}
     on:submit={send}
     on:reask={reAskLastQuestion}
-    on:tldr={handleTLDRClick}
+    on:sayless={handleSayLessClick}
   />
 </main>
 
@@ -1028,15 +1028,15 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     on:back-to-options={handleMrWiskrBackToOptions}
   />
   
-  <!-- TL;DR Modal -->
-  <TLDRModal 
-    bind:visible={showTLDRModal}
-    originalText={tldrOriginalText}
-    fieldType={tldrFieldType}
+  <!-- SayLess Modal -->
+  <SayLessModal 
+    bind:visible={showSayLessModal}
+    originalText={saylessOriginalText}
+    fieldType={saylessFieldType}
     projectContext={current ? { name: current.name, description: current.description } : null}
-    on:close={handleTLDRModalClose}
-    on:replace={handleTLDRReplace}
-    on:copy={handleTLDRCopy}
+    on:close={handleSayLessModalClose}
+    on:replace={handleSayLessReplace}
+    on:copy={handleSayLessCopy}
   />
   
   <!-- Branch Picker (Mobile) -->

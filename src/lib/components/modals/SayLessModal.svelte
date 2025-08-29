@@ -10,13 +10,13 @@
   const dispatch = createEventDispatcher();
 
   let isProcessing = false;
-  let tldrText = '';
+  let saylessText = '';
   let error = '';
   let copied = false;
 
   // Reset state when modal opens
   $: if (visible && originalText) {
-    generateTLDR();
+    generateSayLess();
   }
 
   // Reset state when modal closes
@@ -26,20 +26,20 @@
 
   function resetState() {
     isProcessing = false;
-    tldrText = '';
+    saylessText = '';
     error = '';
     copied = false;
   }
 
-  async function generateTLDR() {
+  async function generateSayLess() {
     if (!originalText.trim()) return;
 
     isProcessing = true;
     error = '';
-    tldrText = '';
+    saylessText = '';
 
     try {
-      const response = await fetch('/api/tldr', {
+      const response = await fetch('/api/sayless', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,14 +51,14 @@
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || 'Failed to generate TL;DR');
+        throw new Error(errorData || 'Failed to generate SayLess');
       }
 
       const data = await response.json();
-      tldrText = data.tldr;
+      saylessText = data.sayless;
     } catch (err) {
-      console.error('TL;DR generation error:', err);
-      error = 'Failed to generate TL;DR. Please try again.';
+      console.error('SayLess generation error:', err);
+      error = 'Failed to generate SayLess. Please try again.';
     } finally {
       isProcessing = false;
     }
@@ -70,13 +70,13 @@
   }
 
   function replace() {
-    dispatch('replace', { newText: tldrText });
+    dispatch('replace', { newText: saylessText });
     close();
   }
 
   async function copyToClipboard() {
     try {
-      await navigator.clipboard.writeText(tldrText);
+      await navigator.clipboard.writeText(saylessText);
       copied = true;
       setTimeout(() => copied = false, 2000);
     } catch (err) {
@@ -85,7 +85,7 @@
   }
 
   function regenerate() {
-    generateTLDR();
+    generateSayLess();
   }
 
   // Close on escape key
@@ -106,20 +106,20 @@
     on:click|self={close}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="tldr-modal-title"
+    aria-labelledby="sayless-modal-title"
   >
     <!-- Modal Content -->
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style="background-color: var(--bg-primary);">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 pb-2 border-b border-gray-200 dark:border-gray-700">
         <div>
-          <h2 id="tldr-modal-title" class="text-xl font-bold text-gray-900 dark:text-gray-100">TL;DR - Make It Concise</h2>
+          <h2 id="sayless-modal-title" class="text-xl font-bold text-gray-900 dark:text-gray-100">SayLess - Make It Concise</h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Generate a concise, meaningful summary without the fluff</p>
         </div>
         <button
           on:click={close}
           class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          aria-label="Close TL;DR modal"
+          aria-label="Close SayLess modal"
         >
           <X size="24" />
         </button>
@@ -135,18 +135,18 @@
           </div>
         </div>
 
-        <!-- TL;DR Result -->
+        <!-- SayLess Result -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">TL;DR Version:</h3>
-            {#if tldrText && !isProcessing}
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">SayLess Version:</h3>
+            {#if saylessText && !isProcessing}
               <button
                 on:click={regenerate}
                 class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors"
                 style="color: var(--color-accent); border-color: var(--color-accent-light);"
                 on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; }}
                 on:mouseleave={(e) => { e.target.style.backgroundColor = ''; }}
-                title="Generate a different TL;DR version"
+                title="Generate a different SayLess version"
               >
                 <RotateCcw size="12" />
                 Regenerate
@@ -173,19 +173,19 @@
                   Try Again
                 </button>
               </div>
-            {:else if tldrText}
-              <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap w-full">{tldrText}</div>
+            {:else if saylessText}
+              <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap w-full">{saylessText}</div>
             {/if}
           </div>
         </div>
 
         <!-- Stats (when available) -->
-        {#if tldrText && originalText}
+        {#if saylessText && originalText}
           <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded p-2">
             <span>Original: {originalText.length} characters</span>
-            <span>TL;DR: {tldrText.length} characters</span>
+            <span>SayLess: {saylessText.length} characters</span>
             <span class="font-medium" style="color: var(--color-accent);">
-              {Math.round(((originalText.length - tldrText.length) / originalText.length) * 100)}% shorter
+              {Math.round(((originalText.length - saylessText.length) / originalText.length) * 100)}% shorter
             </span>
           </div>
         {/if}
@@ -194,7 +194,7 @@
       <!-- Footer Actions -->
       <div class="flex items-center justify-between p-4 pt-2 border-t border-gray-200 dark:border-gray-700">
         <div class="text-xs text-gray-500 dark:text-gray-400">
-          💡 <strong>Tip:</strong> Review the TL;DR version to ensure it captures your key points
+          💡 <strong>Tip:</strong> Review the SayLess version to ensure it captures your key points
         </div>
         
         <div class="flex items-center gap-2">
@@ -205,7 +205,7 @@
             Cancel
           </button>
           
-          {#if tldrText}
+          {#if saylessText}
             <button
               on:click={copyToClipboard}
               class="flex items-center gap-2 px-4 py-2 text-sm border rounded-lg transition-colors text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"

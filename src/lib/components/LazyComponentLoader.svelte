@@ -37,7 +37,7 @@
     'EditFactModal': () => import('./modals/EditFactModal.svelte'),
     'EditDocModal': () => import('./modals/EditDocModal.svelte'),
     'FeedbackModal': () => import('./modals/FeedbackModal.svelte'),
-    'TLDRModal': () => import('./modals/TLDRModal.svelte'),
+    'SayLessModal': () => import('./modals/SayLessModal.svelte'),
     'BranchPickerModal': () => import('./modals/BranchPickerModal.svelte'),
     'SessionNavigator': () => import('./SessionNavigator.svelte'),
     'IdeasColumn': () => import('./IdeasColumn.svelte'),

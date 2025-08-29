@@ -15,7 +15,7 @@ export const TIER_CONFIG = {
       'qwen-2.5-72b-instruct',    // Quest
       'llama-3.1-70b-instruct',   // Tina  
       'gemini-flash-1.5',         // Spark
-      'gpt-4o-mini-2024-07-18',   // Pixel
+      'gpt-4o-mini-2024-07-18',   // Prism
       'deepseek-v3'               // Sage
     ],
     features: [
@@ -38,7 +38,7 @@ export const TIER_CONFIG = {
       'qwen-2.5-72b-instruct',    // Quest
       'llama-3.1-70b-instruct',   // Tina
       'gemini-flash-1.5',         // Spark
-      'gpt-4o-mini-2024-07-18',   // Pixel
+      'gpt-4o-mini-2024-07-18',   // Prism
       'deepseek-v3',              // Sage
       // Pro tier models
       'llama-3.1-405b-instruct',  // Titan
@@ -73,7 +73,7 @@ export const TIER_CONFIG = {
       'qwen-2.5-72b-instruct',    // Quest
       'llama-3.1-70b-instruct',   // Tina
       'gemini-flash-1.5',         // Spark
-      'gpt-4o-mini-2024-07-18',   // Pixel
+      'gpt-4o-mini-2024-07-18',   // Prism
       'deepseek-v3',              // Sage
       'llama-3.1-405b-instruct',  // Titan
       'claude-3-haiku',           // Hikari
@@ -128,7 +128,7 @@ export const MODEL_DEFINITIONS = {
   },
   'gpt-4o-mini-2024-07-18': {
     key: 'gpt-4o-mini-2024-07-18',
-    name: 'Pixel',
+    name: 'Prism',
     provider: 'openai',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
     requiredTier: 0,

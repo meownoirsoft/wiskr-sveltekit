@@ -73,7 +73,7 @@
     <div class="rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal);">
       <!-- Modal Header -->
       <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Format for Posts</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Format for Socials</h3>
         <button
           class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
           on:click={closeModal}

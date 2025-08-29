@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { X } from 'lucide-svelte';
-  import TLDRModal from './TLDRModal.svelte';
-  import TLDRButton from '../TLDRButton.svelte';
+  import SayLessModal from './SayLessModal.svelte';
+  import SayLessButton from '../SayLessButton.svelte';
   import TagSuggest from '../TagSuggest.svelte';
   
   export let showModal = false;
@@ -15,10 +15,10 @@
   
   const dispatch = createEventDispatcher();
   
-  // TL;DR state
-  let showTLDRModal = false;
-  let tldrOriginalText = '';
-  let tldrFieldType = 'doc';
+  // SayLess state
+  let showSayLessModal = false;
+  let saylessOriginalText = '';
+  let saylessFieldType = 'doc';
   
   // Reset form when modal opens/closes or doc changes
   $: if (showModal && doc) {
@@ -51,24 +51,24 @@
     }
   }
   
-  // TL;DR handlers
-  function handleTLDRClick() {
+  // SayLess handlers
+  function handleSayLessClick() {
     if (!editContent.trim()) return;
-    tldrOriginalText = editContent;
-    tldrFieldType = 'doc';
-    showTLDRModal = true;
+    saylessOriginalText = editContent;
+    saylessFieldType = 'doc';
+    showSayLessModal = true;
   }
   
-  function handleTLDRModalClose() {
-    showTLDRModal = false;
-    tldrOriginalText = '';
+  function handleSayLessModalClose() {
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
-  function handleTLDRReplace(event) {
+  function handleSayLessReplace(event) {
     const { newText } = event.detail;
     editContent = newText;
-    showTLDRModal = false;
-    tldrOriginalText = '';
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
   function handleAddTag(event) {
@@ -124,8 +124,8 @@
           <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="edit-content">Content</label>
             {#if editContent.trim()}
-              <TLDRButton
-                on:tldr={handleTLDRClick}
+              <SayLessButton
+                on:sayless={handleSayLessClick}
                 disabled={!editContent.trim()}
                 size="sm"
               />
@@ -180,13 +180,13 @@
   </div>
 {/if}
 
-<!-- TL;DR Modal -->
-{#if showTLDRModal}
-  <TLDRModal
-    bind:visible={showTLDRModal}
-    originalText={tldrOriginalText}
-    fieldType={tldrFieldType}
-    on:close={handleTLDRModalClose}
-    on:replace={handleTLDRReplace}
+<!-- SayLess Modal -->
+{#if showSayLessModal}
+  <SayLessModal
+    bind:visible={showSayLessModal}
+    originalText={saylessOriginalText}
+    fieldType={saylessFieldType}
+    on:close={handleSayLessModalClose}
+    on:replace={handleSayLessReplace}
   />
 {/if}

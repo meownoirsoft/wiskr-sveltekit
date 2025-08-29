@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
   import FactTypesManager from '../FactTypesManager.svelte';
-  import TLDRModal from './TLDRModal.svelte';
-  import TLDRButton from '../TLDRButton.svelte';
+  import SayLessModal from './SayLessModal.svelte';
+  import SayLessButton from '../SayLessButton.svelte';
   import ProjectExport from '../ProjectExport.svelte';
   import ProjectImport from '../ProjectImport.svelte';
 
@@ -19,10 +19,10 @@
   let saveSuccess = false;
   let lastProjectId = null; // Track project changes to avoid overriding user input
   
-  // TL;DR state
-  let showTLDRModal = false;
-  let tldrOriginalText = '';
-  let tldrFieldType = 'project-description';
+  // SayLess state
+  let showSayLessModal = false;
+  let saylessOriginalText = '';
+  let saylessFieldType = 'project-description';
   
   // Initialize form values when project changes (but not when user is editing)
   $: if (project && project.id !== lastProjectId) {
@@ -137,24 +137,24 @@
     }
   }
   
-  // TL;DR handlers
-  function handleTLDRClick() {
+  // SayLess handlers
+  function handleSayLessClick() {
     if (!projectDescription.trim()) return;
-    tldrOriginalText = projectDescription;
-    tldrFieldType = 'project-description';
-    showTLDRModal = true;
+    saylessOriginalText = projectDescription;
+    saylessFieldType = 'project-description';
+    showSayLessModal = true;
   }
   
-  function handleTLDRModalClose() {
-    showTLDRModal = false;
-    tldrOriginalText = '';
+  function handleSayLessModalClose() {
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
-  function handleTLDRReplace(event) {
+  function handleSayLessReplace(event) {
     const { newText } = event.detail;
     projectDescription = newText;
-    showTLDRModal = false;
-    tldrOriginalText = '';
+    showSayLessModal = false;
+    saylessOriginalText = '';
   }
   
   // Import/Export modal state
@@ -365,8 +365,8 @@
                   </label>
                   
                   {#if projectDescription.trim()}
-                    <TLDRButton
-                      on:tldr={handleTLDRClick}
+                    <SayLessButton
+                      on:sayless={handleSayLessClick}
                       disabled={!projectDescription.trim()}
                       size="sm"
                     />
@@ -421,14 +421,14 @@
   </div>
 {/if}
 
-<!-- TL;DR Modal -->
-{#if showTLDRModal}
-  <TLDRModal
-    bind:visible={showTLDRModal}
-    originalText={tldrOriginalText}
-    fieldType={tldrFieldType}
-    on:close={handleTLDRModalClose}
-    on:replace={handleTLDRReplace}
+<!-- SayLess Modal -->
+{#if showSayLessModal}
+  <SayLessModal
+    bind:visible={showSayLessModal}
+    originalText={saylessOriginalText}
+    fieldType={saylessFieldType}
+    on:close={handleSayLessModalClose}
+    on:replace={handleSayLessReplace}
   />
 {/if}
 

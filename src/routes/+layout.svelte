@@ -10,7 +10,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   import NewProjectModal from '$lib/components/modals/NewProjectModal.svelte';
   import ProjectExport from '$lib/components/ProjectExport.svelte';
 import AppSettingsModal from '$lib/components/modals/AppSettingsModal.svelte';
-import TLDRModal from '$lib/components/modals/TLDRModal.svelte';
+import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
