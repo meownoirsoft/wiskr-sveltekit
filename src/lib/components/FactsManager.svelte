@@ -14,6 +14,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let factValue = '';
   export let factTags = '';
   export let projectId = null;
+  export let user = null; // User object with tier info
   
   let projectFactTypes = [];
   let loadingFactTypes = false;
@@ -350,6 +351,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   fact={editingFact}
   {projectFactTypes}
   {projectId}
+  {user}
   on:save={handleModalSave}
   on:close={handleModalClose}
 />
@@ -359,6 +361,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   bind:showModal={showAddModal}
   {projectFactTypes}
   {projectId}
+  {user}
   bind:factType
   bind:factKey
   bind:factValue

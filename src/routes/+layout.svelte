@@ -86,6 +86,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         root.style.setProperty('--text-primary', '#ffffff');
         root.style.setProperty('--bg-modal', '#1b1b1e');
         root.style.setProperty('--bg-sessions-panel', '#222226');
+        root.style.setProperty('--color-disabled-bg', '#374151');
+        root.style.setProperty('--color-disabled-text', '#9CA3AF');
         root.style.backgroundColor = '#1a1a1a';
       } else {
         root.classList.remove('dark');
@@ -100,6 +102,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         root.style.setProperty('--text-primary', '#1f2937');
         root.style.setProperty('--bg-modal', '#ffffff');
         root.style.setProperty('--bg-sessions-panel', '#ffffff');
+        root.style.setProperty('--color-disabled-bg', '#D1D5DB');
+        root.style.setProperty('--color-disabled-text', '#6B7280');
         root.style.backgroundColor = '#ffffff';
       }
       
@@ -589,17 +593,17 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <!-- Left panel toggle (Context/Facts) -->
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
               aria-label="Toggle Facts & Docs"
               title="Facts & Docs"
             >
               {#if showLeftPanel}
                 <!-- Panel is open - chevrons pointing left (hide panel) -->
-                <ChevronsLeft size="20" />
+                <ChevronsLeft size="28" />
               {:else}
                 <!-- Panel is closed - chevrons pointing right (show panel) -->
-                <ChevronsRight size="20" />
+                <ChevronsRight size="28" />
               {/if}
               <span class="text-xs mt-1">Facts</span>
             </button>
@@ -669,17 +673,39 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             />
             
             <!-- New Project Button -->
-            <button
-              class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
-              style="background-color: var(--color-accent); color: var(--color-accent-text);"
-              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-              on:click={() => { showNewProjectModal = true; }}
-              title="Create New Project"
-            >
-              <Plus size="16" />
-              <span>New</span>
-            </button>
+            {#await import('$lib/components/FeatureGate.svelte') then { default: FeatureGate }}
+              {@const effectiveTier = data?.effectiveTier || 0}
+              {@const isAtProjectLimit = effectiveTier === 0 && projects.length >= 3}
+              {#if isAtProjectLimit}
+                <FeatureGate 
+                  user={data?.user}
+                  requiredTier={1}
+                  let:hasAccess
+                >
+                  <button
+                    class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all font-medium shadow-sm cursor-not-allowed"
+                    style="background-color: var(--color-disabled-bg, #D1D5DB); color: var(--color-disabled-text, #6B7280); opacity: 0.75;"
+                    disabled
+                    title="Upgrade to Pro for unlimited projects (Free: 3/3 projects used)"
+                  >
+                    <Plus size="16" />
+                    <span>New</span>
+                  </button>
+                </FeatureGate>
+              {:else}
+                <button
+                  class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
+                  style="background-color: var(--color-accent); color: var(--color-accent-text);"
+                  on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+                  on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+                  on:click={() => { showNewProjectModal = true; }}
+                  title="Create New Project"
+                >
+                  <Plus size="16" />
+                  <span>New</span>
+                </button>
+              {/if}
+            {/await}
             
             {#if currentProject?.id}
               <ContextQualityIndicator 
@@ -767,17 +793,17 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <!-- Right panel toggle (Add-Ins) -->
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
               aria-label="Toggle Questions & Ideas"
               title="Questions & Ideas"
             >
               {#if !showRightPanel}
                 <!-- Chevrons pointing left (show panel) -->
-                <ChevronsLeft size="20" />
+                <ChevronsLeft size="28" />
               {:else}
                 <!-- Chevrons pointing right (hide panel) -->
-                <ChevronsRight size="20" />
+                <ChevronsRight size="28" />
               {/if}
               <span class="text-xs mt-1">Ideas</span>
             </button>
@@ -788,6 +814,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         <div class="hidden xl:flex items-center gap-6">
           {#if data?.user}
              <!-- App/Account Settings -->
+            {#if $page.url.pathname === '/projects'}
             <button 
               type="button"
               class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
@@ -797,6 +824,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               <Settings size="16" />
               <span>Settings</span>
             </button>
+            {/if}
             
             <!-- Logout -->
             <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
@@ -831,19 +859,41 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         <div class="px-4 pb-3 border-b border-gray-200 dark:border-gray-600">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</h3>
-            <button
-              class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded transition-colors"
-              style="background-color: var(--color-accent);"
-              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-              on:click={() => {
-                showNewProjectModal = true;
-                showProjectMenu = false;
-              }}
-            >
-              <Plus size="14" />
-              New
-            </button>
+            {#await import('$lib/components/FeatureGate.svelte') then { default: FeatureGate }}
+              {@const effectiveTier = data?.effectiveTier || 0}
+              {@const isAtProjectLimit = effectiveTier === 0 && projects.length >= 3}
+              {#if isAtProjectLimit}
+                <FeatureGate 
+                  user={data?.user}
+                  requiredTier={1}
+                  let:hasAccess
+                >
+                  <button
+                    class="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors cursor-not-allowed"
+                    style="background-color: var(--color-disabled-bg, #D1D5DB); color: var(--color-disabled-text, #6B7280); opacity: 0.75;"
+                    disabled
+                    title="Upgrade to Pro for unlimited projects (Free: 3/3 projects used)"
+                  >
+                    <Plus size="14" />
+                    New
+                  </button>
+                </FeatureGate>
+              {:else}
+                <button
+                  class="flex items-center gap-1 text-xs text-white px-2 py-1 rounded transition-colors"
+                  style="background-color: var(--color-accent);"
+                  on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+                  on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+                  on:click={() => {
+                    showNewProjectModal = true;
+                    showProjectMenu = false;
+                  }}
+                >
+                  <Plus size="14" />
+                  New
+                </button>
+              {/if}
+            {/await}
           </div>
         </div>
         

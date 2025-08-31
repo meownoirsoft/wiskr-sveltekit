@@ -33,9 +33,13 @@ const config = {
 	vitePlugin: {
 		// Disable inspector to prevent hydration errors
 		inspector: false,
-		// Skip some expensive checks in dev
+		// Enhanced HMR with partial acceptance for better performance
 		hot: isDev ? {
-			partialAccept: true
+			partialAccept: true,
+			// Accept CSS changes without full reload
+			acceptCSS: true,
+			// Better error handling
+			overlay: true
 		} : true
 	}
 };

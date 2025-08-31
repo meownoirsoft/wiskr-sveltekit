@@ -57,8 +57,30 @@ export const handle = async ({ event, resolve }) => {
   // Add tier information to locals for server-side access
   if (user) {
     const metadata = user.user_metadata || {};
-    event.locals.userTier = metadata.tier ?? 0;
-    event.locals.trialEndsAt = metadata.trial_ends_at || null;
+    
+    // First try to get tier from database (profiles table) - this is the source of truth
+    try {
+      const { data: profile, error } = await event.locals.supabase
+        .from('profiles')
+        .select('tier, trial_ends_at')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!error && profile) {
+        // Use database tier as source of truth
+        event.locals.userTier = profile.tier ?? 0;
+        event.locals.trialEndsAt = profile.trial_ends_at || null;
+      } else {
+        // Fallback to metadata if no database record
+        event.locals.userTier = metadata.tier ?? 0;
+        event.locals.trialEndsAt = metadata.trial_ends_at || null;
+      }
+    } catch (dbError) {
+      console.error('Error loading user profile from database:', dbError);
+      // Fallback to metadata
+      event.locals.userTier = metadata.tier ?? 0;
+      event.locals.trialEndsAt = metadata.trial_ends_at || null;
+    }
     
     // Calculate effective tier (handles trial expiration)
     const now = new Date();

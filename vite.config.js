@@ -25,19 +25,29 @@ export default defineConfig({
 	},
 	
 	server: {
+		// Fixed port to always use 5173
+		port: 5173,
 		// Enable filesystem caching
 		fs: {
 			cachedChecks: true
 		},
-		allowedHosts: ['.localhost', '.localdomain', '::1', '127.0.0.1'],
-		// Faster HMR updates
+		allowedHosts: ['.localhost', '.localdomain', '::1', '127.0.0.1', '.ngrok-free.app'],
+		// Enhanced HMR for better development experience
 		hmr: {
-			overlay: process.env.NODE_ENV === 'development'
+			overlay: process.env.NODE_ENV === 'development',
+			// Faster HMR updates
+			timeout: 30000,
+			// Better error handling
+			clientPort: 5173
 		},
 		// Skip some file watching for better performance
 		watch: {
 			// Ignore large directories
-			ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
+			ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**'],
+			// Faster file watching
+			usePolling: false,
+			// Optimize for HMR
+			interval: 100
 		}
 	},
 	

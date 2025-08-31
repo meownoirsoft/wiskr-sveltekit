@@ -17,21 +17,28 @@
     gfm: true,
   });
 
-  // Platform definitions with Lucide icons
+  // Platform definitions with Lucide icons and type
   const platforms = [
-    { id: 'tiktok', name: 'TikTok', icon: 'Music' },
-    { id: 'instagram', name: 'Instagram', icon: 'Camera' },
-    { id: 'youtube', name: 'YouTube', icon: 'Video' },
-    { id: 'etsy', name: 'Etsy', icon: 'ShoppingBag' },
-    { id: 'twitter', name: 'X/Twitter', icon: 'MessageCircle' },
-    { id: 'linkedin', name: 'LinkedIn', icon: 'Briefcase' },
-    { id: 'teepublic', name: 'TeePublic', icon: 'Shirt' },
-    { id: 'pinterest', name: 'Pinterest', icon: 'MapPin' },
-    { id: 'facebook', name: 'Facebook', icon: 'Users' },
-    { id: 'reddit', name: 'Reddit', icon: 'MessageSquare' },
-    { id: 'plaintext', name: 'Plain Text', icon: 'FileText' },
-    { id: 'markdown', name: 'Markdown', icon: 'Hash' },
+    { id: 'tiktok', name: 'TikTok', icon: 'Music', type: 'Social' },
+    { id: 'instagram', name: 'Instagram', icon: 'Camera', type: 'Social' },
+    { id: 'youtube', name: 'YouTube', icon: 'Video', type: 'Social' },
+    { id: 'facebook', name: 'Facebook', icon: 'Users', type: 'Social' },
+    { id: 'twitter', name: 'Twitter', icon: 'MessageCircle', type: 'Social' },
+    { id: 'reddit', name: 'Reddit', icon: 'MessageSquare', type: 'Social' },
+    { id: 'linkedin', name: 'LinkedIn', icon: 'Briefcase', type: 'Professional' },
+    { id: 'pinterest', name: 'Pinterest', icon: 'MapPin', type: 'Discovery' },
+    { id: 'etsy', name: 'Etsy', icon: 'ShoppingBag', type: 'E-commerce' },
+    { id: 'teepublic', name: 'TeePublic', icon: 'Shirt', type: 'E-commerce' },
+    { id: 'plaintext', name: 'Plain Text', icon: 'FileText', type: 'Text' },
+    { id: 'markdown', name: 'Markdown', icon: 'Hash', type: 'Text' },
   ];
+
+  // Group platforms by type
+  const platformTypes = Array.from(new Set(platforms.map(p => p.type)));
+  const platformsByType = platformTypes.map(type => ({
+    type,
+    items: platforms.filter(p => p.type === type)
+  }));
 
   // Icon component mapping
   const iconComponents = {
@@ -96,19 +103,26 @@
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">You can edit this text before formatting it for different platforms.</p>
         </div>
         
-        <!-- Platform Grid -->
+        <!-- Platform Grid Organized by Type -->
         <div class="mb-6">
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Choose Platform:</h4>
-          <div class="flex flex-wrap gap-2">
-            {#each platforms as platform}
-              <button
-                class="flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors cursor-pointer {selectedPlatform === platform.id ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700' : 'border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-700'}"
-                on:click={() => formatForPlatform(platform.id)}
-                disabled={isFormatting}
-              >
-                <svelte:component this={iconComponents[platform.icon]} size={16} class="text-gray-600 dark:text-gray-400" />
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{platform.name}</span>
-              </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {#each platformsByType as group}
+              <div>
+                <h5 class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">{group.type}</h5>
+                <div class="flex flex-wrap gap-2">
+                  {#each group.items as platform}
+                    <button
+                      class="flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors cursor-pointer {selectedPlatform === platform.id ? 'bg-blue-50 dark:bg-blue-800/30 border-blue-200 dark:border-blue-700' : 'border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-800/30 hover:border-blue-200 dark:hover:border-blue-700'}"
+                      on:click={() => formatForPlatform(platform.id)}
+                      disabled={isFormatting}
+                    >
+                      <svelte:component this={iconComponents[platform.icon]} size={16} class="text-gray-600 dark:text-gray-400" />
+                      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{platform.name}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
             {/each}
           </div>
         </div>

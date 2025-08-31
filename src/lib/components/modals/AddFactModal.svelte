@@ -3,6 +3,7 @@
   import { X } from 'lucide-svelte';
   import SayLessModal from './SayLessModal.svelte';
   import SayLessButton from '../SayLessButton.svelte';
+  import FeatureGate from '../FeatureGate.svelte';
   import TagSuggest from '../TagSuggest.svelte';
   
   export let showModal = false;
@@ -12,6 +13,7 @@
   export let factValue = '';
   export let factTags = '';
   export let projectId = null;
+  export let user = null; // User object with tier info
   
   const dispatch = createEventDispatcher();
   
@@ -187,11 +189,13 @@
           <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="fact-value">Content</label>
             {#if factValue.trim()}
-              <SayLessButton
-                on:sayless={handleSayLessClick}
-                disabled={!factValue.trim()}
-                size="sm"
-              />
+              <FeatureGate {user} feature="say-less" requiredTier={1} let:hasAccess>
+                <SayLessButton
+                  on:sayless={handleSayLessClick}
+                  disabled={!factValue.trim() || !hasAccess}
+                  size="sm"
+                />
+              </FeatureGate>
             {/if}
           </div>
           <textarea 
@@ -217,6 +221,7 @@
             title={factKey}
             type={factType}
             {projectId}
+            {user}
             existingTags={existingTagsArray}
             on:add-tag={handleAddTag}
           />

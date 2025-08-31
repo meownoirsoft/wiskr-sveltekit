@@ -1,11 +1,27 @@
 <!-- ProBadge.svelte - Shows tier requirement badges -->
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { TIER_NAMES } from '$lib/config/tiers.js';
+  
+  const dispatch = createEventDispatcher();
   
   export let tier = 1; // Default to Pro
   export let size = 'sm'; // 'xs', 'sm', 'md' 
   export let variant = 'solid'; // 'solid', 'outline', 'minimal'
   export let className = ''; // Additional CSS classes
+  export let clickable = true; // Whether the badge is clickable for upgrades
+  
+  function handleClick(event) {
+    if (!clickable) return;
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    dispatch('upgrade-click', {
+      tier,
+      tierName: TIER_NAMES[tier]
+    });
+  }
   
   $: tierName = TIER_NAMES[tier] || 'Pro';
   $: sizeClasses = {
@@ -56,7 +72,13 @@
 
 <span 
   class="inline-flex items-center rounded-full font-medium leading-none tracking-wide uppercase transition-colors {sizeClasses[size]} {variantClasses[variant]} {className}"
-  title="{tierName} feature"
+  class:cursor-pointer={clickable}
+  class:hover:opacity-80={clickable}
+  title="{clickable ? `Click to upgrade to ${tierName}` : `${tierName} feature`}"
+  on:click={handleClick}
+  role={clickable ? 'button' : undefined}
+  tabindex={clickable ? 0 : undefined}
+  data-testid="pro-badge"
 >
   {tierName}
 </span>

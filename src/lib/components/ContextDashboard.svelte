@@ -274,7 +274,7 @@
     </div>
 
     <!-- Quality Insights -->
-    <div class="mt-6 bg-blue-50 dark:bg-blue-900 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+    <div class="mt-6 bg-blue-50 dark:bg-blue-800/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
       <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">📊 Strategic Insights</h3>
       <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
         {#if !analysis.summary.hasProjectDescription}

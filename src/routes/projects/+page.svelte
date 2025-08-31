@@ -152,7 +152,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   // Mr Wiskr modal state
   let showMrWiskrModal = false;
   let mrWiskrLoading = false;
-  let mrWiskrModalRef;
   
   // Component references
   let sidebarComponent;
@@ -194,7 +193,51 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   // Store the handler reference so it can be properly cleaned up
   let projectsRefreshHandler;
   let usageToggleHandler;
+  
+  // Upgrade success message state
+  let upgradeMessage = '';
+  let upgradeMessageType = 'success';
 
+  // Check for upgrade success messages from URL parameters
+  function checkUpgradeMessages() {
+    if (browser && typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const upgraded = urlParams.get('upgraded');
+        const tier = urlParams.get('tier');
+        const canceled = urlParams.get('upgrade_canceled');
+        
+        if (upgraded === 'true' && tier) {
+          const tierName = tier === '1' ? 'Pro' : tier === '2' ? 'Studio' : 'Premium';
+          upgradeMessage = `🎉 Welcome to ${tierName}! Your subscription is now active.`;
+          upgradeMessageType = 'success';
+          
+          // Clear the URL parameters
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.delete('upgraded');
+          newUrl.searchParams.delete('tier');
+          newUrl.searchParams.delete('session_id');
+          window.history.replaceState({}, '', newUrl);
+        } else if (canceled === 'true') {
+          upgradeMessage = 'Upgrade was canceled. You can try again anytime.';
+          upgradeMessageType = 'info';
+          
+          // Clear the URL parameters
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.delete('upgrade_canceled');
+          window.history.replaceState({}, '', newUrl);
+        }
+      } catch (error) {
+        console.warn('Error checking upgrade messages:', error);
+      }
+    }
+  }
+  
+  // Check for upgrade messages on mount (browser-only)
+  $: if (browser) {
+    checkUpgradeMessages();
+  }
+  
   // Responsive screen detection
   function checkScreenSize() {
     if (browser) {
@@ -321,6 +364,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Setup responsive detection (browser-only)
     if (browser) {
       checkScreenSize();
+      
+      // Check for upgrade success messages
+      checkUpgradeMessages();
       
       // Force initial panel state after checkScreenSize runs
       if (isDesktop) {
@@ -1018,6 +1064,7 @@ async function handleGenerateIdeas() {
       console.error('Error reading ideas from localStorage:', error);
     }
     
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const res = await fetch('/api/generate-ideas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1027,7 +1074,8 @@ async function handleGenerateIdeas() {
         docs: docs.slice(0, 5),    // Send first 5 docs for context
         recentMessages: messages.slice(-5), // Send last 5 messages for context
         likedIdeasCount: likedIdeasCount, // Send count of already liked ideas
-        dismissedIdeas: dismissedIdeas // Send dismissed ideas to avoid regenerating
+        dismissedIdeas: dismissedIdeas, // Send dismissed ideas to avoid regenerating
+        tz: tz // Send user's timezone for proper rate limiting
       })
     });
     
@@ -1303,15 +1351,11 @@ function handleTextAddToDocs(event) {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
       
-      // Set response in the modal
-      if (mrWiskrModalRef) {
-        mrWiskrModalRef.setResponse(fullResponse);
-      }
+              // Set response in the modal
+        // TODO: Implement Mr Wiskr response handling
     } catch (error) {
       console.error('Error asking Mr Wiskr:', error);
-      if (mrWiskrModalRef) {
-        mrWiskrModalRef.setResponse("*ears droop* Oops! Something went wrong with my whisker-net connection. Please try asking again! 🙀");
-      }
+              // TODO: Handle Mr Wiskr error response
     } finally {
       mrWiskrLoading = false;
     }
@@ -1417,7 +1461,7 @@ function handleTextAddToDocs(event) {
 <div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-<div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-[30%]' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
+<div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? (rightPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1442,6 +1486,7 @@ function handleTextAddToDocs(event) {
         {loadingFacts}
         {search}
         {isDesktop}
+        user={data?.user}
         bind:showAddFactForm
         bind:factType
         bind:factKey
@@ -1474,7 +1519,28 @@ function handleTextAddToDocs(event) {
 
 
   <!-- MAIN AREA: Chat (Center) -->
-  <div class="flex-1 flex flex-col relative">
+  <div class="{isDesktop ? (leftPanelCollapsed && !rightPanelCollapsed ? 'w-[50%]' : !leftPanelCollapsed && rightPanelCollapsed ? 'w-[70%]' : 'flex-1') : 'flex-1'} flex flex-col relative">
+    <!-- Upgrade Success Message -->
+                {#if upgradeMessage}
+              <div class="w-full p-4 mb-4 rounded-lg border transition-all duration-300 {upgradeMessageType === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200' : 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200'}" data-testid="upgrade-success">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            {upgradeMessageType === 'success' ? '🎉' : 'ℹ️'}
+            <span class="font-medium">{upgradeMessage}</span>
+          </div>
+          <button 
+            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            on:click={() => upgradeMessage = ''}
+            aria-label="Dismiss message"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    {/if}
+    
     <!-- Chat Container -->
     <div class="w-full h-full flex flex-col relative">
 
@@ -1494,6 +1560,7 @@ function handleTextAddToDocs(event) {
       {sessions}
       {currentSession}
       isMobile={!isDesktop}
+      user={data?.user}
       data-tutorial="chat-area"
       on:send={send}
       on:switch-branch={handleSwitchToBranch}
@@ -1513,16 +1580,16 @@ function handleTextAddToDocs(event) {
       <!-- Left panel toggle button (always visible, icon changes based on state) -->
       <div class="absolute left-0 top-0 z-50">
         <button
-          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleLeftPanelCollapse}
           title={leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
         >
           {#if leftPanelCollapsed}
             <!-- Double chevrons pointing right (expand) -->
-            <ChevronsRight size="24" />
+            <ChevronsRight size="32" />
           {:else}
             <!-- Double chevrons pointing left (collapse) -->
-            <ChevronsLeft size="24" />
+            <ChevronsLeft size="32" />
           {/if}
         </button>
       </div>
@@ -1530,16 +1597,16 @@ function handleTextAddToDocs(event) {
       <!-- Right panel toggle button (always visible, icon changes based on state) -->
       <div class="absolute right-0 top-0 z-50">
         <button
-          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleRightPanelCollapse}
           title={rightPanelCollapsed ? "Expand Questions & Ideas" : "Collapse Questions & Ideas"}
         >
           {#if rightPanelCollapsed}
             <!-- Double chevrons pointing left (expand) -->
-            <ChevronsLeft size="24" />
+            <ChevronsLeft size="32" />
           {:else}
             <!-- Double chevrons pointing right (collapse) -->
-            <ChevronsRight size="24" />
+            <ChevronsRight size="32" />
           {/if}
         </button>
       </div>
@@ -1598,7 +1665,7 @@ function handleTextAddToDocs(event) {
   </div>
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-<div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? 'w-[30%]' : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
+<div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showRightPanel && !isDesktop}
       <!-- Mobile panel header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
@@ -1629,7 +1696,6 @@ function handleTextAddToDocs(event) {
       />
     {/if}
   </div>
-</div>
 
 <!-- Mobile Hamburger Menu (positioned after columns for proper z-order) -->
 {#if showMobileMenu && !isDesktop}
@@ -1755,20 +1821,29 @@ function handleTextAddToDocs(event) {
         
         <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
           <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">Today</div>
-          <div class="text-gray-600 dark:text-gray-400">{usage.today.in.toLocaleString()} in / {usage.today.out.toLocaleString()} out</div>
-          <div class="font-medium text-gray-700 dark:text-gray-300">${usage.today.cost.toFixed(4)}</div>
+          <div class="text-gray-600 dark:text-gray-400">
+            <span class="font-medium">{usage.today.in.toLocaleString()}</span> tokens in / 
+            <span class="font-medium">{usage.today.out.toLocaleString()}</span> tokens out
+          </div>
+          <!-- <div class="font-medium text-gray-700 dark:text-gray-300">${usage.today.cost.toFixed(4)}</div> -->
         </div>
         
         <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
           <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">Last 7 days</div>
-          <div class="text-gray-600 dark:text-gray-400">{usage.week.in.toLocaleString()} in / {usage.week.out.toLocaleString()} out</div>
-          <div class="font-medium text-gray-700 dark:text-gray-300">${usage.week.cost.toFixed(4)}</div>
+          <div class="text-gray-600 dark:text-gray-400">
+            <span class="font-medium">{usage.week.in.toLocaleString()}</span> tokens in / 
+            <span class="font-medium">{usage.week.out.toLocaleString()}</span> tokens out
+          </div>
+          <!-- <div class="font-medium text-gray-700 dark:text-gray-300">${usage.week.cost.toFixed(4)}</div> -->
         </div>
         
         <div class="bg-gray-50 dark:bg-gray-700 rounded p-2">
           <div class="font-medium text-gray-700 dark:text-gray-300 mb-1">This month</div>
-          <div>{usage.month.in.toLocaleString()} in / {usage.month.out.toLocaleString()} out</div>
-          <div class="font-medium">${usage.month.cost.toFixed(4)}</div>
+          <div class="text-gray-600 dark:text-gray-400">
+            <span class="font-medium">{usage.month.in.toLocaleString()}</span> tokens in / 
+            <span class="font-medium">{usage.month.out.toLocaleString()}</span> tokens out
+          </div>
+          <!-- <div class="font-medium">${usage.month.cost.toFixed(4)}</div> -->
         </div>
       </div>
     </div>
@@ -1863,6 +1938,9 @@ function handleTextAddToDocs(event) {
 <ProjectSettingsModal
   {showProjectSettingsModal}
   project={projectSettingsProject}
+  user={data?.user}
+  userTier={data?.userTier}
+  effectiveTier={data?.effectiveTier}
   on:close={handleProjectSettingsModalClose}
 />
 
@@ -1904,7 +1982,6 @@ function handleTextAddToDocs(event) {
   bind:projectSettingsProject
   bind:showMrWiskrModal
   bind:mrWiskrLoading
-  bind:mrWiskrModalRef
   bind:showUsageStats
   bind:showUsagePopover
   bind:usageButtonElement
@@ -1913,6 +1990,8 @@ function handleTextAddToDocs(event) {
   on:project-settings-closed={handleProjectSettingsModalClose}
   on:copy-success={handleCopySuccess}
 />
+
+</div>
 
 <!-- Panel Manager (handles responsive UI state) -->
 <PanelManager 

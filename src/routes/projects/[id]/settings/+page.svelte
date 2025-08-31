@@ -9,6 +9,7 @@
   
   let projectId = $page.params.id;
   let project = data.project;
+  let user = data.user; // User object with tier info
   let activeTab = 'general';
   let projectName = '';
   let projectDescription = '';
@@ -120,7 +121,7 @@
           <p class="text-gray-600">Customize the fact types available in your project. You can rename existing types, add new ones, and change their colors.</p>
         </div>
         
-        <FactTypesManager {projectId} />
+        <FactTypesManager {projectId} {user} />
       </div>
     {:else if activeTab === 'general'}
       <div class="bg-white rounded-lg shadow-sm border p-6">
@@ -143,9 +144,9 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2" for="project-description">
               Project Description
-              <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Most Important</span>
+              <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/70 dark:text-blue-100 rounded-full">Most Important</span>
             </label>
-            <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-md">
               <div class="flex items-start">
                 <div class="flex-shrink-0">
                   <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -153,8 +154,8 @@
                   </svg>
                 </div>
                 <div class="ml-3">
-                  <h3 class="text-sm font-medium text-blue-800">🎯 Critical for AI Performance</h3>
-                  <div class="mt-1 text-sm text-blue-700">
+                  <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">🎯 Critical for AI Performance</h3>
+                  <div class="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     <p>This description is the <strong>most important context</strong> for your AI assistant. It should clearly define:</p>
                     <ul class="mt-2 ml-4 list-disc space-y-1">
                       <li>Your project's main goals and objectives</li>

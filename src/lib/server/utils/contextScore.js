@@ -173,7 +173,7 @@ export async function refreshContextScore(supabase, projectId) {
       console.log('Context score caching not yet available, returning calculated score:', score);
     }
 
-    console.log(`📊 Context score refreshed for project ${projectId}: ${score}/100`);
+    //console.log(`📊 Context score refreshed for project ${projectId}: ${score}/100`);
     return score;
 
   } catch (error) {

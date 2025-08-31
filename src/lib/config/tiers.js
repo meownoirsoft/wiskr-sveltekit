@@ -28,7 +28,9 @@ export const TIER_CONFIG = {
     ],
     exportFormats: ['json'],
     colorSchemes: ['default'],
-    avatarTypes: ['default']
+    avatarTypes: ['default'],
+    relatedIdeasPerDay: 5,
+    allowedAvatars: ['default', 'mermia', 'ben-cipher', 'benji-fox', 'deerie']
   },
   1: { // Pro
     name: 'Pro',
@@ -59,11 +61,15 @@ export const TIER_CONFIG = {
       'advanced-export',
       'custom-avatar',
       'color-schemes',
-      'advanced-models'
+      'advanced-models',
+      'say-less',
+      'custom-fact-types'
     ],
     exportFormats: ['json', 'markdown', 'docx'],
     colorSchemes: ['*'],
-    avatarTypes: ['default', 'upload', 'generated']
+    avatarTypes: ['default', 'upload', 'generated'],
+    relatedIdeasPerDay: 25,
+    allowedAvatars: ['*'] // All avatars allowed
   },
   2: { // Studio
     name: 'Studio',
@@ -90,6 +96,8 @@ export const TIER_CONFIG = {
     exportFormats: ['*'],
     colorSchemes: ['*'],
     avatarTypes: ['*'],
+    relatedIdeasPerDay: 100,
+    allowedAvatars: ['*'],
     additionalFeatures: [
       'account-export',
       'priority-support',
@@ -311,4 +319,37 @@ export function getEffectiveTier(baseTier, trialEndsAt) {
     return 0; // Downgrade expired Pro trial to Free
   }
   return baseTier;
+}
+
+// Related Ideas utility functions
+export function getRelatedIdeasLimit(userTier) {
+  const config = getUserTierConfig(userTier);
+  return config.relatedIdeasPerDay || 5; // Default to 5 if not specified
+}
+
+export function canGenerateIdeas(userTier, usedToday) {
+  const limit = getRelatedIdeasLimit(userTier);
+  return usedToday < limit;
+}
+
+export function getRemainingIdeas(userTier, usedToday) {
+  const limit = getRelatedIdeasLimit(userTier);
+  return Math.max(0, limit - usedToday);
+}
+
+// Avatar utility functions
+export function isAvatarAllowed(userTier, avatarId) {
+  const config = getUserTierConfig(userTier);
+  if (config.allowedAvatars.includes('*')) {
+    return true;
+  }
+  return config.allowedAvatars.includes(avatarId);
+}
+
+export function getAvailableAvatars(userTier, allAvatars) {
+  const config = getUserTierConfig(userTier);
+  if (config.allowedAvatars.includes('*')) {
+    return allAvatars;
+  }
+  return allAvatars.filter(avatar => config.allowedAvatars.includes(avatar.id));
 }

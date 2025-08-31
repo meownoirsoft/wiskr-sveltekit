@@ -424,7 +424,7 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="h-10 w-10 flex-shrink-0">
-                      <div class="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <div class="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center">
                         <span class="text-sm font-medium text-blue-600 dark:text-blue-300">
                           {(user.full_name || user.email).charAt(0).toUpperCase()}
                         </span>

@@ -2,6 +2,7 @@
 <script>
   import { hasFeature, getUpgradeInfo, getUserTier } from '$lib/utils/tiers.js';
   import ProBadge from './ProBadge.svelte';
+  import UpgradeModal from './modals/UpgradeModal.svelte';
   import { createEventDispatcher } from 'svelte';
 
   const dispatch = createEventDispatcher();
@@ -28,6 +29,18 @@
   // Get upgrade information if user doesn't have access
   $: upgradeInfo = !hasAccess && feature ? getUpgradeInfo(user, feature) : null;
   $: requiredTierLevel = upgradeInfo?.requiredTierLevel || requiredTier || 1;
+  
+  // Upgrade modal state
+  let showUpgradeModal = false;
+  
+  function handleProBadgeClick(event) {
+    const { tier } = event.detail;
+    showUpgradeModal = true;
+  }
+  
+  function handleUpgradeModalClose() {
+    showUpgradeModal = false;
+  }
 
   // Handle clicks when feature is locked
   function handleLockedClick(event) {
@@ -54,13 +67,16 @@
 
 <div 
   class="relative inline-flex items-center gap-2 {className}"
-  class:opacity-60={!hasAccess}
+  class:opacity-75={!hasAccess}
   class:cursor-not-allowed={!hasAccess && allowClick}
-  class:pointer-events-none={!hasAccess && !allowClick}
   on:click={handleLockedClick}
   title={showTooltip ? tooltipMessage : null}
+  data-testid="feature-gate"
 >
-  <slot {hasAccess} {userTier} {upgradeInfo} />
+  <!-- Always show the content, but disable click events if no access -->
+  <div class:pointer-events-none={!hasAccess && !allowClick}>
+    <slot {hasAccess} {userTier} {upgradeInfo} />
+  </div>
   
   {#if showBadge && !hasAccess && requiredTierLevel}
     <ProBadge 
@@ -68,6 +84,16 @@
       size={badgeSize} 
       variant={badgeVariant}
       className="flex-shrink-0"
+      on:upgrade-click={handleProBadgeClick}
     />
   {/if}
 </div>
+
+<!-- Upgrade Modal -->
+<UpgradeModal
+  bind:showModal={showUpgradeModal}
+  targetTier={requiredTierLevel}
+  {feature}
+  {user}
+  on:close={handleUpgradeModalClose}
+/>

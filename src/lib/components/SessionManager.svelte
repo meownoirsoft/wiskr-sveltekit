@@ -286,7 +286,7 @@
     <button
       on:click={() => createNewSession('New Session')}
       disabled={isCreatingSession}
-      class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50"
+      class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/50 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/70 disabled:opacity-50"
     >
       <Plus class="w-4 h-4 mr-1" />
       New
@@ -324,7 +324,7 @@
     {#each sessions as session (session.id)}
       <div class="relative rounded-lg border transition-colors {
           currentSession?.id === session.id
-            ? 'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20'
+            ? 'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/50'
             : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
         }">
         

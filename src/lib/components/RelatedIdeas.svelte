@@ -9,15 +9,21 @@ import {
 } from 'lucide-svelte';
 import InfoPopup from './InfoPopup.svelte';
 import LoadingSpinner from './LoadingSpinner.svelte';
+import ProBadge from './ProBadge.svelte';
 import { marked } from 'marked';
 import { browser } from '$app/environment';
 
   export let ideas = [];
   export let isGeneratingIdeas = false;
   export let projectId = null;
+  export const user = null; // User object with tier info
   
   // Local reactive variable for template use
   let isGenerating = false;
+  
+  // Rate limiting state
+  let rateLimit = { used: 0, limit: 5, remaining: 5, canGenerate: true };
+  let isLoadingUsage = false;
   
   // Update local variable when prop changes
   $: isGenerating = isGeneratingIdeas;
@@ -36,6 +42,7 @@ import { browser } from '$app/environment';
     if (browser && projectId) {
       loadIdeaFeedback();
       loadStoredIdeas();
+      loadUsageStatus();
     }
   });
   
@@ -104,7 +111,29 @@ import { browser } from '$app/environment';
     dispatch('insert-text', { text: cleanText });
   }
 
+  // Load current usage status
+  async function loadUsageStatus() {
+    if (!browser) return;
+    
+    try {
+      isLoadingUsage = true;
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await fetch(`/api/ideas-usage?tz=${encodeURIComponent(tz)}`);
+      if (response.ok) {
+        const data = await response.json();
+        rateLimit = data;
+      }
+    } catch (error) {
+      console.error('Failed to load usage status:', error);
+    } finally {
+      isLoadingUsage = false;
+    }
+  }
+
   function generateIdeas() {
+    // Check if user can generate more ideas
+    if (!rateLimit.canGenerate) return;
+    
     // Proper behavior: Keep liked ideas, clear dismissed (so AI can avoid them), recycle neutral
     // Only clear dismissed ideas - this allows them to be used to inform AI to avoid similar ideas
     dismissedIdeas = [];
@@ -195,6 +224,9 @@ import { browser } from '$app/environment';
       // Combine: existing liked ideas + new ideas
       storedIdeas = [...existingLikedIdeas, ...newIdeasFiltered];
       saveStoredIdeas();
+      
+      // Update rate limit after successful generation
+      loadUsageStatus();
     }
   }
   
@@ -430,19 +462,54 @@ import { browser } from '$app/environment';
           buttonTitle="Learn about Related Ideas"
         />
       </div>
-      <button 
-        id="related-ideas-refresh"
-        class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer disabled:opacity-50" 
-        style="background-color: var(--color-accent); transition: background-color 0.2s ease;"
-        on:mouseenter={handleRefreshHover}
-        on:mouseleave={handleRefreshLeave}
-        on:click={generateIdeas}
-        disabled={isGenerating}
-        title="Generate new related ideas"
-      >
-        <RefreshCw size="16" class={isGenerating ? "animate-spin" : ""} />
-        {isGenerating ? "Generating..." : "Refresh"}
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Usage Counter -->
+        {#if !isLoadingUsage}
+          <div class="flex items-center gap-1 text-xs px-2 py-1 rounded" 
+               class:text-gray-600={rateLimit.canGenerate}
+               class:dark:text-gray-400={rateLimit.canGenerate}
+               class:text-red-600={!rateLimit.canGenerate}
+               class:dark:text-red-400={!rateLimit.canGenerate}
+               class:bg-gray-100={rateLimit.canGenerate}
+               class:dark:bg-gray-700={rateLimit.canGenerate}
+               class:bg-red-50={!rateLimit.canGenerate}
+               style={!rateLimit.canGenerate ? "background-color: rgba(127, 29, 29, 0.2);" : ""}>
+            <span class="text-gray-500 dark:text-gray-400 text-xs mr-1">Daily:</span>
+            <span class="font-medium">{rateLimit.used}/{rateLimit.limit}</span>
+          </div>
+        {/if}
+        
+        <!-- Refresh Button or Pro Badge when limit reached -->
+        {#if !rateLimit.canGenerate}
+          <div class="flex items-center gap-1">
+            <button 
+              id="related-ideas-refresh"
+              class="flex items-center gap-1 text-sm px-2 py-1 rounded cursor-not-allowed opacity-50" 
+              style="background-color: var(--color-accent);"
+              disabled={true}
+              title="Daily limit reached - upgrade to Pro for more generations"
+            >
+              <RefreshCw size="16" />
+              Limit Reached
+            </button>
+            <ProBadge tier={1} size="xs" variant="solid" />
+          </div>
+        {:else}
+          <button 
+            id="related-ideas-refresh"
+            class="flex items-center gap-1 text-sm text-white px-2 py-1 rounded cursor-pointer disabled:opacity-50" 
+            style="background-color: var(--color-accent); transition: background-color 0.2s ease;"
+            on:mouseenter={handleRefreshHover}
+            on:mouseleave={handleRefreshLeave}
+            on:click={generateIdeas}
+            disabled={isGenerating}
+            title="Generate new related ideas ({rateLimit.remaining} left today)"
+          >
+            <RefreshCw size="16" class={isGenerating ? "animate-spin" : ""} />
+            {isGenerating ? "Generating..." : "Refresh"}
+          </button>
+        {/if}
+      </div>
     </div>
     <div class="text-xs text-zinc-500 dark:text-zinc-400 mb-2" style="margin-left: 32px;">
       {#if isGenerating}

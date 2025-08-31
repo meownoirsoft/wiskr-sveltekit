@@ -1,5 +1,30 @@
 <script>
-  import { Crown, Check, X, Zap, Shield, Users } from 'lucide-svelte';
+  import { Crown, Check, X, Zap, Shield, Users, CreditCard, Settings } from 'lucide-svelte';
+  import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
+  
+  // Get user data from page data
+  export let data;
+  
+  let loading = false;
+  let error = null;
+  let currentUser = null;
+  
+  // Individual loading states for each plan
+  let loadingStates = {
+    pro: false,
+    studio: false
+  };
+  
+  // Loading state for manage subscription
+  let manageSubscriptionLoading = false;
+  
+  onMount(() => {
+    if (browser && data?.user) {
+      currentUser = data.user;
+    }
+  });
   
   // Plan configurations with pricing and features
   const plans = [
@@ -44,6 +69,7 @@
       borderColor: 'border-blue-200 dark:border-blue-700',
       buttonStyle: 'text-white font-medium shadow-lg',
       popular: true,
+      tier: 1,
       features: [
         { name: 'Up to 50 projects', included: true },
         { name: '500,000 AI tokens/month', included: true },
@@ -71,8 +97,8 @@
       icon: '👑',
       color: 'bg-purple-50 dark:bg-purple-900/20',
       borderColor: 'border-purple-200 dark:border-purple-700',
-      buttonStyle: 'border border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30',
-      comingSoon: true,
+      buttonStyle: 'border border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-900/30',
+      tier: 2,
       features: [
         { name: 'Unlimited projects', included: true },
         { name: '2,000,000 AI tokens/month', included: true },
@@ -124,6 +150,90 @@
       { name: 'Admin dashboard', free: false, pro: false, studio: true }
     ]}
   ];
+
+  // Stripe checkout functions
+  async function handleUpgrade(tier) {
+    if (!currentUser) {
+      // Redirect to login if not authenticated
+      goto('/login');
+      return;
+    }
+
+    if (currentUser.tier >= tier) {
+      error = 'You are already subscribed to this tier or higher.';
+      return;
+    }
+
+    // Set loading state for the specific plan
+    const planId = tier === 1 ? 'pro' : 'studio';
+    loadingStates[planId] = true;
+    error = null;
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tier,
+          successUrl: `${window.location.origin}/projects?upgraded=true&tier=${tier}`,
+          cancelUrl: `${window.location.origin}/projects?upgrade_canceled=true`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        error = data.error;
+      } else if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      error = 'Failed to create checkout session. Please try again.';
+      console.error('Checkout error:', err);
+    } finally {
+      loadingStates[planId] = false;
+    }
+  }
+
+  async function handleManageSubscription() {
+    if (!currentUser) {
+      goto('/login');
+      return;
+    }
+
+    manageSubscriptionLoading = true;
+    error = null;
+
+    try {
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        error = data.error;
+      } else if (data.url) {
+        // Redirect to Stripe customer portal
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      error = 'Failed to open customer portal. Please try again.';
+      console.error('Portal error:', err);
+    } finally {
+      manageSubscriptionLoading = false;
+    }
+  }
+
+  // Get current user's plan
+  $: currentPlan = currentUser ? plans.find(p => p.tier === currentUser.tier) || plans[0] : plans[0];
+  $: isSubscribed = currentUser && currentUser.tier > 0;
 </script>
 
 <svelte:head>
@@ -150,6 +260,63 @@
       </div>
     </div>
   </header>
+
+  <!-- Current Plan Section -->
+  {#if currentUser && isSubscribed}
+    <div class="mb-12 text-center">
+      <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-600">
+        <div class="text-2xl">{currentPlan.icon}</div>
+        <div class="text-left">
+          <h3 class="text-lg font-semibold text-green-800 dark:text-green-200">
+            You're currently on the {currentPlan.name} plan
+          </h3>
+          <p class="text-sm text-green-600 dark:text-green-400">
+            Manage your subscription or upgrade to unlock more features
+          </p>
+        </div>
+        <button
+          on:click={handleManageSubscription}
+          disabled={loading}
+          class="px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800/50 border border-green-300 dark:border-green-600 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/70 transition-colors flex items-center gap-2"
+        >
+          {#if loading}
+            <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+          {/if}
+          <Settings size="16" />
+          Manage Subscription
+        </button>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Error Display -->
+  {#if error}
+    <div class="mb-8 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-300">
+        <X size="16" />
+        {error}
+      </div>
+    </div>
+  {/if}
+
+  <!-- Success/Cancel Messages -->
+  {#if browser && new URLSearchParams(window.location.search).get('success') === 'true'}
+    <div class="mb-8 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-600 text-green-700 dark:text-green-300">
+        <Check size="16" />
+        Payment successful! Your subscription has been activated.
+      </div>
+    </div>
+  {/if}
+
+  {#if browser && new URLSearchParams(window.location.search).get('canceled') === 'true'}
+    <div class="mb-8 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300">
+        <X size="16" />
+        Payment was canceled. No charges were made.
+      </div>
+    </div>
+  {/if}
 
   <!-- Pricing Cards -->
   <div class="mb-20">
@@ -197,30 +364,39 @@
               >
                 Get Started Free
               </a>
-            {:else if plan.id === 'pro'}
-              <a 
-                href="/upgrade"
-                class="w-full px-6 py-3 text-center rounded-lg transition-all block"
-                style="background-color: var(--color-accent); color: var(--color-accent-text);"
-                on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-                on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+            {:else if plan.tier && currentUser?.tier >= plan.tier}
+              <button 
+                class="w-full px-6 py-3 text-center rounded-lg font-medium bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-600 cursor-default"
+                disabled
               >
-                Start Pro Trial
-              </a>
-            {:else if plan.comingSoon}
+                Current Plan
+              </button>
+            {:else if plan.tier}
+              <button 
+                on:click={() => handleUpgrade(plan.tier)}
+                disabled={loadingStates[plan.id]}
+                class="w-full px-6 py-3 text-center rounded-lg transition-all font-medium {plan.id === 'pro' ? 'text-white shadow-lg' : plan.buttonStyle} block"
+                style="background-color: {plan.id === 'pro' ? 'var(--color-accent)' : ''}; color: {plan.id === 'pro' ? 'var(--color-accent-text)' : ''};"
+                on:mouseenter={(e) => plan.id === 'pro' && (e.target.style.backgroundColor = 'var(--color-accent-hover)')}
+                on:mouseleave={(e) => plan.id === 'pro' && (e.target.style.backgroundColor = 'var(--color-accent)')}
+                data-testid="upgrade-button"
+              >
+                {#if loadingStates[plan.id]}
+                  <div class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                {/if}
+                {#if loadingStates[plan.id]}
+                  {plan.id === 'pro' ? 'Starting...' : 'Upgrading...'}
+                {:else}
+                  {plan.id === 'pro' ? 'Start Pro Trial' : `Upgrade to ${plan.name}`}
+                {/if}
+              </button>
+            {:else}
               <button 
                 class="w-full px-6 py-3 text-center rounded-lg font-medium bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                 disabled
               >
                 Coming Soon
               </button>
-            {:else}
-              <a 
-                href="mailto:sales@wiskrapp.com"
-                class="w-full px-6 py-3 text-center rounded-lg transition-all font-medium {plan.buttonStyle} block"
-              >
-                Contact Sales
-              </a>
             {/if}
           </div>
 

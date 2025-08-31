@@ -3,14 +3,44 @@ import { json } from '@sveltejs/kit';
 import { DateTime } from 'luxon';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { DAILY_TOKEN_LIMIT } from '$env/static/private';
+import { getRelatedIdeasLimit, canGenerateIdeas } from '$lib/config/tiers.js';
+import { getUserTier } from '$lib/utils/tiers.js';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
-  const { projectId, facts = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [] } = body;
+  const { projectId, facts = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [], tz = 'UTC' } = body;
 
   const { data: { user } } = await locals.supabase.auth.getUser();
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!projectId) return json({ message: 'Bad request' }, { status: 400 });
+
+  // Get user tier for rate limiting
+  const userTier = getUserTier({
+    tier: locals.userTier || 0,
+    trial_ends_at: locals.trialEndsAt
+  });
+  const ideasLimit = getRelatedIdeasLimit(userTier);
+  
+  // Check daily Related Ideas usage - use user's timezone for proper day boundary
+  const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
+  const { data: todayIdeas } = await locals.supabase
+    .from('usage_logs')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('model', 'related-ideas')
+    .gte('created_at', startOfToday);
+    
+  const ideasUsedToday = todayIdeas?.length || 0;
+  
+  if (!canGenerateIdeas(userTier, ideasUsedToday)) {
+    return json({
+      error: 'ideas_limit_reached',
+      message: `Daily Related Ideas limit reached (${ideasUsedToday}/${ideasLimit}). Upgrade to Pro for more generations per day.`,
+      used: ideasUsedToday,
+      limit: ideasLimit,
+      tier: userTier
+    }, { status: 429 });
+  }
 
   // Get model configuration - use micro model for idea generation (cheapest)
   const { config: modelConf, client: openai } = getModelConfig('micro');
@@ -89,16 +119,15 @@ Focus on practical next steps, interesting questions to explore, related concept
     { role: 'user', content: userPrompt }
   ];
 
-  // Check daily usage limit
+  // Check daily token usage limit - also use user's timezone for consistency
   const limit = Number(DAILY_TOKEN_LIMIT || 0) || 200_000;
-  const tz = 'UTC'; // Default timezone for this endpoint
-  const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
+  const startOfTodayForTokens = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
   const { data: todayRows } = await locals.supabase
     .from('usage_logs')
     .select('tokens_in,tokens_out')
     .eq('user_id', user.id)
     .eq('project_id', projectId)
-    .gte('created_at', startOfToday);
+    .gte('created_at', startOfTodayForTokens);
 
   const used = (todayRows ?? []).reduce((n, r) => n + (r.tokens_in || 0) + (r.tokens_out || 0), 0);
   const estThisIn = Math.round(JSON.stringify(messages).length / 4);
@@ -143,7 +172,20 @@ Focus on practical next steps, interesting questions to explore, related concept
       cost_usd: cost
     };
 
+    // Log the AI model usage
     await locals.supabase.from('usage_logs').insert(usagePayload);
+    
+    // Also log the Related Ideas generation for rate limiting
+    const ideasUsagePayload = {
+      user_id: user.id,
+      project_id: projectId,
+      model: 'related-ideas',
+      tokens_in: 1, // Count as 1 generation
+      tokens_out: 0,
+      cost_usd: 0
+    };
+    
+    await locals.supabase.from('usage_logs').insert(ideasUsagePayload);
 
     return json({
       ideas: ideas,
@@ -151,6 +193,11 @@ Focus on practical next steps, interesting questions to explore, related concept
         tokens_in: inTok,
         tokens_out: outTok,
         cost_usd: cost
+      },
+      rateLimit: {
+        used: ideasUsedToday + 1, // Include this generation
+        limit: ideasLimit,
+        remaining: Math.max(0, ideasLimit - ideasUsedToday - 1)
       }
     });
 

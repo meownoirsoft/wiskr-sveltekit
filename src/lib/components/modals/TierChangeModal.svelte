@@ -110,7 +110,7 @@
           </label>
           <div class="space-y-3">
             {#each tierOptions as option}
-              <label class="relative flex items-start p-3 rounded-lg border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {selectedTier === option.value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-600'}">
+              <label class="relative flex items-start p-3 rounded-lg border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {selectedTier === option.value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/50' : 'border-gray-200 dark:border-gray-600'}">
                 <input
                   type="radio"
                   bind:group={selectedTier}

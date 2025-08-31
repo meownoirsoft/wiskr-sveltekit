@@ -22,7 +22,7 @@
   // Branch state
   export let currentBranchId = 'main';
   export let currentBranch = null;
-  export let branches = [];
+  export const branches = [];
   export let messageBranches = []; // Branches for the specific message being branched
 
   // Questions state

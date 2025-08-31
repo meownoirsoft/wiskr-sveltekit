@@ -69,8 +69,8 @@
               />
             </div>
             <div>
-              <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for Wiskr Performance</h4>
-              <div class="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                              <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">🎯 Critical for Wiskr Performance</h4>
+                              <div class="p-3 bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-md">
                 <div class="flex items-start">
                   <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -95,7 +95,7 @@
             <div class="flex items-center justify-between mb-2">
               <label for="new-project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Project Description
-                <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Most Important</span>
+                <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/70 dark:text-blue-100 rounded-full">Most Important</span>
               </label>
             </div>
             <textarea 

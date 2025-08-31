@@ -154,7 +154,7 @@
             {/if}
           </div>
           
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-md p-3 border border-blue-200 dark:border-blue-800 min-h-[100px] flex items-center justify-center">
+          <div class="bg-blue-50 dark:bg-blue-900/50 rounded-md p-3 border border-blue-200 dark:border-blue-800 min-h-[100px] flex items-center justify-center">
             {#if isProcessing}
               <div class="flex items-center gap-3 text-blue-600 dark:text-blue-400">
                 <Loader2 size="20" class="animate-spin" />

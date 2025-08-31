@@ -12,6 +12,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let docTitle = '';
   export let docContent = '';
   export let docTags = '';
+  export let projectId = null;
+  export let user = null; // User object with tier info
   let openMenuIndex = -1; // Track which doc menu is open
   let showEditModal = false;
   let editingDoc = null;
@@ -202,6 +204,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
 <EditDocModal 
   bind:showModal={showEditModal}
   doc={editingDoc}
+  {projectId}
+  {user}
   on:save={handleModalSave}
   on:close={handleModalClose}
 />
@@ -212,6 +216,8 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   bind:docTitle
   bind:docContent
   bind:docTags
+  {projectId}
+  {user}
   on:save={handleAddModalSave}
   on:close={handleAddModalClose}
 />

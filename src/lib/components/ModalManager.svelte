@@ -33,13 +33,12 @@
   
   // Mr Wiskr modal state
   export let showMrWiskrModal = false;
-  export let mrWiskrLoading = false;
-  export let mrWiskrModalRef = null;
+  export const mrWiskrLoading = false;
 
   // Usage stats modal/popover state
   export let showUsageStats = false;
   export let showUsagePopover = false;
-  export let usageButtonElement = null;
+  export const usageButtonElement = null;
 
   // Platform formatting functions
   export function openFormatModal(messageIndex, text = null) {

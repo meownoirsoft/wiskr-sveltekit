@@ -1,8 +1,10 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import FeatureGate from './FeatureGate.svelte';
   
   export let project = null;
   export let isOpen = false;
+  export let user = null; // User object with tier info
   
   const dispatch = createEventDispatcher();
   
@@ -260,15 +262,29 @@
               <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 Format
               </label>
-              <select
-                bind:value={exportOptions.format}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-[#1b1b1e] dark:text-white sm:text-sm"
+              <FeatureGate
+                featureKey="advanced-export"
+                {user}
+                requiredTier={1}
+                let:hasAccess
               >
-                <option value="json">JSON (Complete data)</option>
-                <option value="markdown-single">Markdown (Single file)</option>
-                <option value="markdown-multi">Markdown (Multiple files in ZIP)</option>
-                <option value="docx">Microsoft Word (DOCX)</option>
-              </select>
+                <select
+                  bind:value={exportOptions.format}
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-[#1b1b1e] dark:text-white sm:text-sm"
+                >
+                  <option value="json">JSON (Complete data)</option>
+                  {#if hasAccess}
+                    <option value="markdown-single">Markdown (Single file) - Pro+</option>
+                    <option value="markdown-multi">Markdown (Multiple files in ZIP) - Pro+</option>
+                    <option value="docx">Microsoft Word (DOCX) - Pro+</option>
+                  {/if}
+                </select>
+                
+                {#if !hasAccess && (exportOptions.format !== 'json')}
+                  <!-- Reset to JSON if user doesn't have access to selected format -->
+                  {exportOptions.format = 'json'}
+                {/if}
+              </FeatureGate>
               
               {#if exportOptions.format.startsWith('markdown')}
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">

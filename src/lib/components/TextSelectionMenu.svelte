@@ -4,7 +4,7 @@
   import { browser } from '$app/environment';
   import { Pin, FileText, HelpCircle, BrushCleaning, MessageCircle } from 'lucide-svelte';
 
-  export let projectId = null;
+  export const projectId = null;
 
   const dispatch = createEventDispatcher();
 

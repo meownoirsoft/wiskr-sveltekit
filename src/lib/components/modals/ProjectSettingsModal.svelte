@@ -1,14 +1,18 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
   import FactTypesManager from '../FactTypesManager.svelte';
   import SayLessModal from './SayLessModal.svelte';
   import SayLessButton from '../SayLessButton.svelte';
+  import FeatureGate from '../FeatureGate.svelte';
   import ProjectExport from '../ProjectExport.svelte';
   import ProjectImport from '../ProjectImport.svelte';
 
   export let showProjectSettingsModal = false;
   export let project = null;
+  export let user = null; // User object with tier info
+  export let userTier = 0; // User tier from server
+  export const effectiveTier = 0; // Effective tier from server
 
   const dispatch = createEventDispatcher();
 
@@ -23,6 +27,8 @@
   let showSayLessModal = false;
   let saylessOriginalText = '';
   let saylessFieldType = 'project-description';
+  
+
   
   // Initialize form values when project changes (but not when user is editing)
   $: if (project && project.id !== lastProjectId) {
@@ -236,7 +242,7 @@
               <p class="text-gray-600 dark:text-gray-400">Customize the fact types available in your project. You can rename existing types, add new ones, and change their colors.</p>
             </div>
             
-            <FactTypesManager projectId={project?.id} />
+            <FactTypesManager projectId={project?.id} {user} />
           </div>
         {:else if activeTab === 'data'}
           <div>
@@ -250,7 +256,7 @@
               <!-- Export Section -->
               <div class="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="flex items-center mb-4">
-                  <div class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                  <div class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-800/30 rounded-lg mr-3">
                     <Download size="20" class="text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
@@ -302,7 +308,7 @@
             </div>
             
             <!-- Data Management Tips -->
-            <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div class="mt-6 p-4 border rounded-lg info-box">
               <div class="flex items-start">
                 <div class="flex-shrink-0">
                   <svg class="h-5 w-5 text-blue-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -335,8 +341,8 @@
                   />
                 </div>
                 <div>
-                  <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">🎯 Critical for Wiskr Performance</h4>
-                  <div class="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                                      <h4 class="text-sm font-medium mb-1 text-blue-600 dark:text-blue-200">🎯 Critical for Wiskr Performance</h4>
+                                      <div class="p-3 border rounded-md transition-colors info-box">
                     <div class="flex items-start">
                       <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -345,12 +351,12 @@
                       </div>
                     
                       <div class="ml-3">
-                        <p class="text-xs text-blue-700 dark:text-blue-300">
-                          The description below is the <strong>most important context</strong> for Wiskrs. It's their <strong>"north star"</strong> for providing targeted assistance. This should clearly define:</p>
-                        <ul class="font-medium text-xs text-blue-700 dark:text-blue-300 my-4 mb-0 list-disc space-y-1">
-                          <li>What you're trying to achieve or build</li>
-                          <li>Your main goals and objectives</li>
-                          <li>The scope and focus areas, and any specifics or constraints</li>
+                        <p class="text-xs text-blue-700 dark:text-gray-200">
+                          The description below is the <strong class="text-blue-700 dark:text-gray-200">most important context</strong> for Wiskrs. It's their <strong class="text-blue-700 dark:text-gray-200">"north star"</strong> for providing targeted assistance. This should clearly define:</p>
+                        <ul class="font-medium text-xs list-disc space-y-1 text-blue-700 dark:text-gray-200">
+                          <li class="text-blue-700 dark:text-gray-200">What you're trying to achieve or build</li>
+                          <li class="text-blue-700 dark:text-gray-200">Your main goals and objectives</li>
+                          <li class="text-blue-700 dark:text-gray-200">The scope and focus areas, and any specifics or constraints</li>
                         </ul>
                       </div>
                     </div>
@@ -361,20 +367,21 @@
                 <div class="flex items-center justify-between mb-2">
                   <label for="project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Project Description
-                    <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Most Important</span>
                   </label>
                   
                   {#if projectDescription.trim()}
-                    <SayLessButton
-                      on:sayless={handleSayLessClick}
-                      disabled={!projectDescription.trim()}
-                      size="sm"
-                    />
+                    <FeatureGate user={{ ...user, tier: userTier, userTier: userTier }} feature="say-less" requiredTier={1} showBadge={false} let:hasAccess>
+                      <SayLessButton
+                        on:sayless={handleSayLessClick}
+                        disabled={!projectDescription.trim() || !hasAccess}
+                        size="sm"
+                      />
+                    </FeatureGate>
                   {/if}
                 </div>
                 <textarea 
                   id="project-description"
-                  rows="10"
+                  rows="8"
                   bind:value={projectDescription}
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
                   placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps the AI provide more targeted assistance."
@@ -436,6 +443,7 @@
 <ProjectExport
   bind:isOpen={showExportModal}
   project={project}
+  {user}
   on:close={closeExportModal}
 />
 
@@ -450,6 +458,52 @@
 />
 
 <style>
+  /* Info box styling with high specificity */
+  .info-box {
+    background-color: #eff6ff !important; /* bg-blue-50 */
+    border-color: #bfdbfe !important; /* border-blue-200 */
+  }
+  
+  /* Dark mode override with maximum specificity */
+  :global(.dark) .info-box {
+    background-color: #1f2937 !important; /* bg-gray-800 */
+    border-color: #374151 !important; /* border-gray-700 */
+    color: #e5e7eb !important; /* text-gray-200 */
+  }
+  
+  /* Dark mode text colors for info box content with maximum specificity */
+  :global(.dark) .info-box p,
+  :global(.dark) .info-box ul,
+  :global(.dark) .info-box li,
+  :global(.dark) .info-box strong {
+    color: #e5e7eb !important; /* text-gray-200 */
+  }
+  
+  /* Override any Tailwind text color classes in dark mode - more specific */
+  :global(.dark) .info-box .text-blue-700,
+  :global(.dark) .info-box .text-blue-600,
+  :global(.dark) .info-box .text-blue-800 {
+    color: #e5e7eb !important; /* text-gray-200 */
+  }
+  
+  /* Force text colors using CSS custom properties */
+  :global(.dark) .info-box {
+    --tw-text-opacity: 1;
+  }
+  
+  :global(.dark) .info-box p,
+  :global(.dark) .info-box ul,
+  :global(.dark) .info-box li,
+  :global(.dark) .info-box strong {
+    color: #e5e7eb !important; /* text-gray-200 */
+    --tw-text-opacity: 1 !important;
+  }
+  
+  /* Additional specificity for dark mode overrides */
+  :global(.dark) .info-box * {
+    color: #e5e7eb !important;
+  }
+  
   /* Ensure modal is above other content */
   :global(body:has(.fixed.inset-0.backdrop-blur-sm)) {
     overflow: hidden;

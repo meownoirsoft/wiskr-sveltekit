@@ -165,7 +165,7 @@
 
 {#if isOpen}
   <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]">
-    <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
+    <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-2xl max-h-[90vh] min-h-[500px] overflow-hidden" style="background-color: var(--bg-modal, white);">
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
         <button 
@@ -389,6 +389,9 @@
                           currentAvatarType={userPreferences.avatar_type}
                           currentAvatarValue={userPreferences.avatar_value}
                           saving={savingPreferences}
+                          user={userData}
+                          userTier={effectiveTier}
+                          trialEndsAt={trialEndsAt}
                           on:change={handleAvatarChange}
                         />
                       </div>

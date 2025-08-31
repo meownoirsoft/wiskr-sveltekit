@@ -4,6 +4,7 @@
   import InfoPopup from './InfoPopup.svelte';
   import ModelDropdown from './ModelDropdown.svelte';
   import SayLessButton from './SayLessButton.svelte';
+  import FeatureGate from './FeatureGate.svelte';
   
   // Props
   export let current = null;
@@ -12,6 +13,7 @@
   export let availableModels = [];
   export let hasLastUserMessage = false;
   export let isMobile = false;
+  export let user = null;
   
   const dispatch = createEventDispatcher();
   
@@ -80,11 +82,13 @@
           <!-- Action buttons -->
           <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {#if input.trim()}
-              <SayLessButton
-                on:sayless={handleSayLessClick}
-                disabled={!current || !input.trim()}
-                size="sm"
-              />
+              <FeatureGate user={user} feature="say-less" let:hasAccess>
+                <SayLessButton
+                  on:sayless={handleSayLessClick}
+                  disabled={!current || !input.trim() || !hasAccess}
+                  size="sm"
+                />
+              </FeatureGate>
             {/if}
             
             <!-- ReAsk Button (always visible when there's a last message) -->

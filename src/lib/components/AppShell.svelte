@@ -175,15 +175,15 @@
     {#if isDesktop}
       <div class="absolute left-0 top-0 z-50">
         <button
-          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleLeftPanelCollapse}
           title={leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
         >
           {#await import('$lib/icons') then { ChevronsRight, ChevronsLeft }}
             {#if leftPanelCollapsed}
-              <ChevronsRight size="24" />
+              <ChevronsRight size="32" />
             {:else}
-              <ChevronsLeft size="24" />
+              <ChevronsLeft size="32" />
             {/if}
           {/await}
         </button>
@@ -191,15 +191,15 @@
       
       <div class="absolute right-0 top-0 z-50">
         <button
-          class="flex items-center p-2 text-xs bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleRightPanelCollapse}
           title={rightPanelCollapsed ? "Expand Questions & Ideas" : "Collapse Questions & Ideas"}
         >
           {#await import('$lib/icons') then { ChevronsRight, ChevronsLeft }}
             {#if rightPanelCollapsed}
-              <ChevronsLeft size="24" />
+              <ChevronsLeft size="32" />
             {:else}
-              <ChevronsRight size="24" />
+              <ChevronsRight size="32" />
             {/if}
           {/await}
         </button>

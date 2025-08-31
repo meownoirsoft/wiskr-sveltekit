@@ -21,10 +21,10 @@
   export let docTitle = '';
   export let docContent = '';
   export let docTags = '';
-  export let search = ''; // Search term from global search
-  
-  // Desktop collapse button props
+  export let search = ''; // Filter content by this search string
   export let isDesktop = false;
+  export let user = null; // User object with tier info
+  // Desktop collapse button props
   export let showCollapseButton = false;
   export let isCollapsed = false;
   export let onToggleCollapse = null;
@@ -488,6 +488,7 @@
             facts={filteredFacts}
             {loadingFacts}
             projectId={current?.id}
+            {user}
             bind:showAddFactForm
             bind:factType
             bind:factKey
@@ -508,6 +509,7 @@
             docs={filteredDocs}
             loadingDocs={loadingFacts}
             projectId={current?.id}
+            {user}
             bind:showAddDocForm
             bind:docTitle
             bind:docContent

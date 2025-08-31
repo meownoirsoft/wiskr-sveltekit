@@ -32,6 +32,7 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   export let sessions = [];
   export let currentSession = null;
   export let isMobile = false;
+  export let user = null; // User object with tier info for feature gating
 
   // Mobile-only UI state
   let showBranchPicker = false;
@@ -995,6 +996,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {availableModels}
     {hasLastUserMessage}
     {isMobile}
+    {user}
     on:submit={send}
     on:reask={reAskLastQuestion}
     on:sayless={handleSayLessClick}

@@ -5,7 +5,7 @@
   export let sessions = [];
   export let currentSession = null;
   export let projectId = null;
-  export let isVisible = false;
+  export const isVisible = false;
   export let isMobile = false;
 
   const dispatch = createEventDispatcher();

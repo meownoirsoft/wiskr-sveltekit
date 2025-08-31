@@ -4,11 +4,13 @@
   import SayLessModal from './SayLessModal.svelte';
   import SayLessButton from '../SayLessButton.svelte';
   import TagSuggest from '../TagSuggest.svelte';
+  import FeatureGate from '../FeatureGate.svelte';
   
   export let showModal = false;
   export let fact = null;
   export let projectFactTypes = [];
   export let projectId = null;
+  export let user = null; // User object with tier info
   
   let editKey = '';
   let editValue = '';
@@ -176,11 +178,18 @@
           <div class="flex items-center justify-between mb-1">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="edit-value">Content</label>
             {#if editValue.trim()}
-              <SayLessButton
-                on:sayless={handleSayLessClick}
-                disabled={!editValue.trim()}
-                size="sm"
-              />
+              <FeatureGate
+                featureKey="say-less"
+                {user}
+                requiredTier={1}
+                let:hasAccess
+              >
+                <SayLessButton
+                  on:sayless={handleSayLessClick}
+                  disabled={!editValue.trim() || !hasAccess}
+                  size="sm"
+                />
+              </FeatureGate>
             {/if}
           </div>
           <textarea 
@@ -206,6 +215,7 @@
             title={editKey}
             type={editType}
             {projectId}
+            {user}
             existingTags={existingTagsArray}
             on:add-tag={handleAddTag}
           />

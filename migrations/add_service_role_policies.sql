@@ -18,3 +18,10 @@ CREATE POLICY "Service role can manage all facts" ON facts
 
 -- Note: The service role already bypasses RLS by default in newer versions of Supabase,
 -- but these policies ensure compatibility and make the permissions explicit
+
+-- Allow service role to manage profiles table for webhook operations
+CREATE POLICY "Service role can manage all profiles" ON profiles
+    FOR ALL
+    TO service_role
+    USING (true)
+    WITH CHECK (true);
