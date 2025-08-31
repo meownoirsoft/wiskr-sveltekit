@@ -48,8 +48,7 @@
       updateContainerHeight();
       // Immediate scroll to bottom if there are messages - this runs first to avoid initial scroll position
       if (messages.length > 0) {
-        // Immediately set scroll position to bottom without waiting
-        containerElement.scrollTop = containerElement.scrollHeight;
+        // Set initial state (don't scroll yet - wait for proper measurements)
         isAtBottom = true;
         shouldScrollToBottom = true;
         
@@ -73,8 +72,34 @@
         };
         
         scrollToBottomWithRetry();
+        
+        // Additional robust scroll after a delay to handle any layout issues
+        setTimeout(() => {
+          if (containerElement && messages.length > 0) {
+            forceScrollToBottomAfterLoad();
+          }
+        }, 200);
       }
     }
+    
+    // Listen for resize events to handle desktop-to-mobile transitions
+    const handleResizeForScroll = () => {
+      if (containerElement && messages.length > 0 && isAtBottom) {
+        // If we're supposed to be at bottom but viewport changed, re-scroll
+        setTimeout(() => {
+          if (containerElement && messages.length > 0) {
+            forceScrollToBottomForResize();
+          }
+        }, 100);
+      }
+    };
+    
+    window.addEventListener('resize', handleResizeForScroll);
+    
+    // Cleanup on destroy
+    return () => {
+      window.removeEventListener('resize', handleResizeForScroll);
+    };
   });
 
   // Handle measurement updates from MessageMeasurer
@@ -231,7 +256,7 @@
   let streamingScrollTimeout = null;
   
   // Force scroll to bottom immediately (for button click) - ensures single click works
-  async function forceScrollToBottomImmediate() {
+  export async function forceScrollToBottomImmediate() {
     if (!containerElement || !messages.length) return;
     
     // Disable virtualization to render all messages
@@ -245,8 +270,8 @@
     // Wait for all messages to render in DOM
     await tick();
     
-    // Multiple attempts to ensure we reach the bottom
-    const maxAttempts = 5;
+    // More aggressive approach for desktop-to-mobile scenarios
+    const maxAttempts = 8; // Increased from 5
     let attempt = 0;
     
     const scrollToBottomWithRetry = async () => {
@@ -254,20 +279,33 @@
       
       attempt++;
       
-      // Force scroll to bottom
+      // Force scroll to bottom with multiple approaches
       const scrollHeight = containerElement.scrollHeight;
       const clientHeight = containerElement.clientHeight;
       const maxScroll = scrollHeight - clientHeight;
       
+      // Try multiple scroll methods for better compatibility
       containerElement.scrollTop = scrollHeight;
+      
+      // Also try smooth scroll as backup
+      if (attempt === 1) {
+        containerElement.scrollTo({
+          top: scrollHeight,
+          behavior: 'auto'
+        });
+      }
       
       // Check if we actually reached the bottom
       await tick();
       const actualScrollTop = containerElement.scrollTop;
       
-      // If we're not at bottom (within 10px tolerance), retry
-      if (Math.abs(actualScrollTop - maxScroll) > 10 && attempt < maxAttempts) {
-        setTimeout(scrollToBottomWithRetry, 50);
+      // More aggressive tolerance for desktop-to-mobile scenarios
+      const tolerance = attempt <= 3 ? 20 : 10; // Higher tolerance for first few attempts
+      
+      if (Math.abs(actualScrollTop - maxScroll) > tolerance && attempt < maxAttempts) {
+        // Exponential backoff for retries
+        const delay = Math.min(50 * Math.pow(1.5, attempt - 1), 200);
+        setTimeout(scrollToBottomWithRetry, delay);
       } else {
         // Successfully at bottom, update state
         isAtBottom = true;
@@ -277,12 +315,68 @@
         // Re-enable virtualization after successful scroll
         setTimeout(() => {
           calculateVisibleRange();
-        }, 100);
+        }, 150); // Increased delay for better stability
       }
     };
     
     // Start the retry process
     await scrollToBottomWithRetry();
+  }
+
+  // Force scroll to bottom for desktop-to-mobile resize scenarios - most aggressive approach
+  export async function forceScrollToBottomForResize() {
+    if (!containerElement || !messages.length) return;
+    
+    // Completely disable virtualization temporarily
+    visibleRange = {
+      startIndex: 0,
+      endIndex: messages.length - 1,
+      offsetTop: 0,
+      visibleCount: messages.length
+    };
+    
+    // Clear any existing heights to force re-measurement
+    if (messageMeasurer) {
+      messageMeasurer.clear();
+    }
+    
+    // Wait for layout to stabilize
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Multiple aggressive scroll attempts
+    const scrollAttempts = [0, 50, 100, 200, 400, 600];
+    
+    for (const delay of scrollAttempts) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      if (containerElement) {
+        // Force scroll with multiple methods
+        containerElement.scrollTop = containerElement.scrollHeight;
+        containerElement.scrollTo({
+          top: containerElement.scrollHeight,
+          behavior: 'auto'
+        });
+        
+        // Verify scroll position
+        await tick();
+        const actualScrollTop = containerElement.scrollTop;
+        const maxScroll = containerElement.scrollHeight - containerElement.clientHeight;
+        
+        if (Math.abs(actualScrollTop - maxScroll) < 15) {
+          // Successfully scrolled to bottom
+          isAtBottom = true;
+          shouldScrollToBottom = true;
+          scrollTop = actualScrollTop;
+          break;
+        }
+      }
+    }
+    
+    // Re-enable virtualization after a longer delay
+    setTimeout(() => {
+      calculateVisibleRange();
+    }, 200);
   }
 
   // Force scroll to bottom for first load - more aggressive approach
@@ -377,6 +471,11 @@
       isAtBottom,
       shouldScrollToBottom
     });
+  }
+  
+  // Emit scroll position changes to parent components
+  $: if (messages.length > 0) {
+    dispatch('scroll-position', { isAtBottom, hasMessages: messages.length > 0 });
   }
 </script>
 

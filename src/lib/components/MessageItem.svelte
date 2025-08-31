@@ -149,11 +149,11 @@
         <!-- Name positioned absolutely -->
         <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(message.model_key)}</div>
       {:else}
-        <div class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
+        <div id="ai-avatar" class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
           <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" fetchpriority="high" />
         </div>
         <!-- Name positioned absolutely -->
-        <div class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</div>
+        <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">Wiskr</div>
       {/if}
     {/if}
     

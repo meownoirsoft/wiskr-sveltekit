@@ -17,6 +17,7 @@
   export let showTooltip = true; // Show upgrade tooltip on hover/click
   export let allowClick = true; // Allow clicking when feature is locked
   export let className = ''; // Additional CSS classes
+  export let isMobile = false; // Whether this is on mobile for badge positioning
 
   // Determine if user has access to the feature
   $: userTier = getUserTier(user);
@@ -66,7 +67,7 @@
 </script>
 
 <div 
-  class="relative inline-flex items-center gap-2 {className}"
+  class="relative {isMobile ? 'flex flex-col items-center gap-1' : 'inline-flex items-center gap-2'} {className}"
   class:opacity-75={!hasAccess}
   class:cursor-not-allowed={!hasAccess && allowClick}
   on:click={handleLockedClick}

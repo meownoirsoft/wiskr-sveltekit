@@ -59,7 +59,7 @@
         ...avatar,
         isLocked: !isAvatarAllowedForUser(avatar.file)
       }));
-      console.log('Filtered avatars:', filteredAvatars);
+      //console.log('Filtered avatars:', filteredAvatars);
     }
   }
 

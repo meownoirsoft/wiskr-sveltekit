@@ -24,12 +24,12 @@
   export let usage = { today:{in:0,out:0,cost:0}, week:{in:0,out:0,cost:0}, month:{in:0,out:0,cost:0}, tz:'UTC' };
 
   // Debug: Log initial projects state
-  $: if (browser && projects) {
-    console.log('🔍 Projects array updated:', {
-      count: projects.length,
-      projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
-    });
-  }
+  // $: if (browser && projects) {
+  //   // console.log('🔍 Projects array updated:', {
+  //   //   count: projects.length,
+  //   //   projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
+  //   // });
+  // }
 
   // Save modelKey to localStorage whenever it changes (but only after initial load)
   $: if (browser && modelKey && modelKeyLoaded) {
@@ -48,12 +48,12 @@
     if (foundByStorage) {
       // Use the cached project if it exists
       selectedId = foundByStorage.id;
-      console.log('✅ Using cached project:', foundByStorage.name);
+      //console.log('✅ Using cached project:', foundByStorage.name);
     } else {
       // If cached project doesn't exist, use first project and clear bad cache
       selectedId = projects[0].id;
       if (lastSelectedId) {
-        console.log('🧽 Clearing invalid cached project ID:', lastSelectedId);
+        //console.log('🧽 Clearing invalid cached project ID:', lastSelectedId);
         localStorage.removeItem('wiskr_last_project_id');
       }
       console.log('✅ Using first available project:', projects[0].name);

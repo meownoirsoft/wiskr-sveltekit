@@ -245,17 +245,15 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const wasDesktop = isDesktop;
       isDesktop = width >= 1280; // Custom breakpoint for mobile mode
       
-      // Initial load - set panel state based on screen size
-      if (wasDesktop !== isDesktop) {
-        if (isDesktop) {
-          // Switch to desktop mode - show both panels
-          showLeftPanel = true;
-          showRightPanel = true;
-        } else {
-          // Switch to mobile mode - hide both panels to show chat
-          showLeftPanel = false;
-          showRightPanel = false;
-        }
+      // Always set panel state based on current screen size
+      if (isDesktop) {
+        // Desktop mode - show both panels
+        showLeftPanel = true;
+        showRightPanel = true;
+      } else {
+        // Mobile mode - hide both panels to show chat
+        showLeftPanel = false;
+        showRightPanel = false;
       }
     }
   }
@@ -293,7 +291,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Server should have preloaded projects (including creating default for new users)
     // Only fetch fresh if server didn't preload properly
     if (!projects || projects.length === 0) {
-      console.log('📋 No projects preloaded, fetching fresh from database...');
+      //console.log('📋 No projects preloaded, fetching fresh from database...');
       const { data: p, error } = await supabase.from('projects').select('*').order('created_at');
       
       if (error) {
@@ -309,8 +307,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       if (projects.length === 0) {
         console.log('⚠️  No projects found even after database fetch - this should not happen for authenticated users');
       }
-    } else {
-      console.log('📊 Using preloaded projects:', projects.length, 'projects');
     }
     
     // Clean up stale localStorage data
@@ -332,7 +328,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const lastProject = lastProjectId ? projects.find(p => p.id === lastProjectId) : null;
       const projectToSelect = lastProject || projects[0];
       
-      console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
+      //console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
       
       // Dispatch event to notify layout about projects and current selection
       window.dispatchEvent(new CustomEvent('layout:update-projects', {
@@ -1542,7 +1538,7 @@ function handleTextAddToDocs(event) {
     {/if}
     
     <!-- Chat Container -->
-    <div class="w-full h-full flex flex-col relative">
+    <div class="w-full h-full flex flex-col relative {!isDesktop ? 'mobile-chat-container' : ''}">
 
     <ChatInterface
       {current}
@@ -1561,6 +1557,8 @@ function handleTextAddToDocs(event) {
       {currentSession}
       isMobile={!isDesktop}
       user={data?.user}
+      userTier={data?.userTier}
+      effectiveTier={data?.effectiveTier}
       data-tutorial="chat-area"
       on:send={send}
       on:switch-branch={handleSwitchToBranch}

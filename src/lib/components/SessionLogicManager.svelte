@@ -24,7 +24,7 @@
   export async function loadSessions() {
     if (!current) return;
     
-    console.log('🔄 loadSessions: Starting for project', current.id);
+    //console.log('🔄 loadSessions: Starting for project', current.id);
     
     try {
       // Clear current session when loading for a new project
@@ -37,13 +37,13 @@
       if (res.ok) {
         const data = await res.json();
         sessions = data.sessions || [];
-        console.log(`🔍 Found ${sessions.length} existing sessions for project ${current.id}`);
+        //console.log(`🔍 Found ${sessions.length} existing sessions for project ${current.id}`);
         
         // Select the active session or the first one if available
         if (sessions.length > 0) {
           const activeSession = sessions.find(s => s.is_active) || sessions[0];
           currentSession = activeSession;
-          console.log('✅ Selected session:', activeSession.session_name);
+          //console.log('✅ Selected session:', activeSession.session_name);
           
           // Load messages and branches for the selected session
           if (currentSession) {
@@ -137,11 +137,11 @@
 
   export async function loadSessionMessages(sessionId) {
     if (!current || !sessionId) {
-      console.warn('💾 loadSessionMessages: Missing requirements', { current: !!current, sessionId });
+      //console.warn('💾 loadSessionMessages: Missing requirements', { current: !!current, sessionId });
       return;
     }
     
-    console.log('💾 loadSessionMessages: Starting', { sessionId, currentBranchId });
+    //console.log('💾 loadSessionMessages: Starting', { sessionId, currentBranchId });
     loadingMessages = true;
     const startTime = Date.now();
     
@@ -163,7 +163,7 @@
       if (error) {
         console.error('❌ Error loading session messages:', error);
       } else {
-        console.log('✅ Loaded session messages:', { count: data?.length || 0, sessionId, branchId: currentBranchId });
+        //console.log('✅ Loaded session messages:', { count: data?.length || 0, sessionId, branchId: currentBranchId });
         messages = data || [];
       }
     } catch (error) {
@@ -176,7 +176,7 @@
   export async function loadSessionBranches(sessionId, skipCurrentBranchUpdate = false) {
     if (!current || !sessionId) return;
     
-    console.log('🌿 loadSessionBranches called:', { sessionId, projectId: current?.id, skipCurrentBranchUpdate });
+    //console.log('🌿 loadSessionBranches called:', { sessionId, projectId: current?.id, skipCurrentBranchUpdate });
     
     try {
       const { data, error } = await supabase
@@ -189,11 +189,11 @@
         console.error('❌ Error loading session branches:', error);
       } else {
         const sessionBranches = data || [];
-        console.log('🌿 Found branches:', sessionBranches.length, sessionBranches.map(b => `${b.branch_name} (${b.branch_id})`));
+        //console.log('🌿 Found branches:', sessionBranches.length, sessionBranches.map(b => `${b.branch_name} (${b.branch_id})`));
         
         // Always update branches array to ensure names are fresh (not just when IDs change)
         branches = sessionBranches;
-        console.log('🌿 Updated branches array, length:', branches.length);
+        //console.log('🌿 Updated branches array, length:', branches.length);
         
         // IMPORTANT: Only update currentBranch if specifically requested (not during reactive calls)
         // This prevents conflicts when switchToBranch() has already set the correct branch state

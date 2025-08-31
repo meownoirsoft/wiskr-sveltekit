@@ -21,6 +21,7 @@
 
   function toggleDropdown() {
     showDropdown = !showDropdown;
+    console.log('Toggle dropdown clicked, showDropdown:', showDropdown);
     if (showDropdown) {
       // Focus search box when dropdown opens
       setTimeout(() => {
@@ -164,7 +165,9 @@
 
     <!-- Desktop Dropdown -->
     {#if showDropdown}
-      <div class="absolute top-full left-0 w-80 mt-1 border rounded-lg shadow-lg z-[50] max-h-[70vh] overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
+      <div class="absolute top-full left-0 w-80 mt-1 border rounded-lg shadow-lg z-[200] max-h-[70vh] overflow-hidden bg-red-500" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
+        <!-- DEBUG: Dropdown is visible -->
+        <div class="p-2 bg-yellow-300 text-black text-xs">DEBUG: Dropdown visible</div>
         <!-- Header with search -->
         <div class="p-3 border-b" style="border-color: var(--border-header-input);">
           <h4 class="font-semibold text-sm mb-2" style="color: var(--text-header);">Projects</h4>

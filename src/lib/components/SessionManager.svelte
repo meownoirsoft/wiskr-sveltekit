@@ -43,7 +43,7 @@
     }
     
     sessions = data || [];
-    console.log('📅 Loaded sessions:', sessions.length);
+    //console.log('📅 Loaded sessions:', sessions.length);
     
     // Auto-select first session if none selected
     if (sessions.length > 0 && !currentSession) {
@@ -57,7 +57,7 @@
   // Select a session
   export async function selectSession(session) {
     currentSession = session;
-    console.log('📅 Selected session:', session.name);
+    //console.log('📅 Selected session:', session.name);
     dispatch('sessionSelected', { session });
   }
 

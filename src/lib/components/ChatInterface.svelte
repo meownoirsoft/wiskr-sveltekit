@@ -33,10 +33,16 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   export let currentSession = null;
   export let isMobile = false;
   export let user = null; // User object with tier info for feature gating
-
+  export let userTier = 0; // User tier from server
+  export let effectiveTier = 0; // Effective tier from server
+  
+    // Scroll position state
+  let isAtBottom = true;
+  let hasMessages = false;
+  
   // Mobile-only UI state
   let showBranchPicker = false;
-
+  
   const dispatch = createEventDispatcher();
   let chatContainer;
   let messageBranchCounts = {}; // Store branch counts per message
@@ -236,8 +242,24 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   
   // Add event listener for branch updates and user preferences updates on mount
   import { onMount as onMountChatInterface } from 'svelte';
-    import AskForm from './AskForm.svelte';
+  import AskForm from './AskForm.svelte';
   onMountChatInterface(() => {
+    // Listen for scroll-to-bottom events from mobile toggle
+    const handleScrollToBottom = () => {
+      if (chatContainer && typeof chatContainer.forceScrollToBottomImmediate === 'function') {
+        // Use more aggressive scroll for desktop-to-mobile scenarios
+        if (window.innerWidth <= 800) {
+          // Desktop resized to mobile dimensions - use aggressive approach
+          chatContainer.forceScrollToBottomForResize();
+        } else {
+          // Regular mobile or desktop - use standard approach
+          chatContainer.forceScrollToBottomImmediate();
+        }
+      }
+    };
+    
+    window.addEventListener('chat:scroll-to-bottom', handleScrollToBottom);
+    
     // Load available models and user preferences on mount
     loadAvailableModels();
     loadUserPreferences();
@@ -246,7 +268,10 @@ import VirtualMessageList from './VirtualMessageList.svelte';
     
     window.addEventListener('branches-updated', handleBranchesUpdated);
     window.addEventListener('user-preferences-updated', handleUserPreferencesUpdated);
+    
+    // Cleanup on destroy
     return () => {
+      window.removeEventListener('chat:scroll-to-bottom', handleScrollToBottom);
       window.removeEventListener('branches-updated', handleBranchesUpdated);
       window.removeEventListener('user-preferences-updated', handleUserPreferencesUpdated);
     };
@@ -986,6 +1011,10 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     on:select-all={selectAllMessage}
     on:open-branch-modal={openBranchModal}
     on:open-mr-wiskr={({ detail }) => openMrWiskrForMessage(detail.index, detail.event)}
+    on:scroll-position={({ detail }) => {
+      isAtBottom = detail.isAtBottom;
+      hasMessages = detail.hasMessages;
+    }}
   />
 
   <!-- Fixed Ask Form at Bottom -->
@@ -997,6 +1026,10 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {hasLastUserMessage}
     {isMobile}
     {user}
+    {userTier}
+    {effectiveTier}
+    {isAtBottom}
+    {hasMessages}
     on:submit={send}
     on:reask={reAskLastQuestion}
     on:sayless={handleSayLessClick}
