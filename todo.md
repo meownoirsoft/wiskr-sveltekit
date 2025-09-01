@@ -1,0 +1,1 @@
+- Run `pnpm install` to install dependencies.

@@ -1349,9 +1349,10 @@ function handleTextAddToDocs(event) {
   
   async function handleSearchNavigateChat(event) {
     const { messageId, branchId, firstMatchIndex } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateChat called with:', messageId, firstMatchIndex);
-    console.log('Main page: branchId from event:', branchId);
+    console.log('🔍 Main page: handleSearchNavigateChat called with:', { messageId, branchId, firstMatchIndex });
+    console.log('🔍 Main page: Full event detail:', JSON.stringify(event.detail, null, 2));
     console.log('Main page: currentBranchId:', currentBranchId);
+    console.log('Main page: currentSession?.id:', currentSession?.id);
     
     // Set the search term for highlighting
     search = event.detail.searchTerm || '';
@@ -1390,8 +1391,10 @@ function handleTextAddToDocs(event) {
   
   function handleSearchNavigateSession(event) {
     const { sessionId, sessionName } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateSession called with:', sessionId, sessionName);
+    console.log('🔍 Main page: handleSearchNavigateSession called with:', { sessionId, sessionName });
+    console.log('🔍 Main page: Full event detail:', JSON.stringify(event.detail, null, 2));
     console.log('Main page: currentSession?.id:', currentSession?.id);
+    console.log('Main page: Available sessions:', sessions.map(s => ({ id: s.id, name: s.session_name })));
     
     // Find the session in our sessions list and switch to it
     const targetSession = sessions.find(s => s.id === sessionId);
@@ -1400,7 +1403,10 @@ function handleTextAddToDocs(event) {
       sessionLogicManager.selectSession(targetSession);
       console.log('Main page: Session switch completed');
     } else {
-      console.log('Main page: Session not found or sessionLogicManager not available');
+      console.error('Main page: Session not found or sessionLogicManager not available');
+      console.error('Main page: Target sessionId:', sessionId);
+      console.error('Main page: Available session IDs:', sessions.map(s => s.id));
+      console.error('Main page: sessionLogicManager available:', !!sessionLogicManager);
     }
   }
   

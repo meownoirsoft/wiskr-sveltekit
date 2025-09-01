@@ -118,6 +118,19 @@
     console.log('🔍 MobileSearch: result session_name:', result.session_name);
     console.log('🔍 MobileSearch: Full result object:', JSON.stringify(result, null, 2));
     
+    // Validate that we have the required IDs for chat results
+    if (result.type === 'chats') {
+      if (!result.sessionId) {
+        console.error('❌ MobileSearch: Chat result missing sessionId:', result);
+      }
+      if (!result.branch_id) {
+        console.error('❌ MobileSearch: Chat result missing branch_id:', result);
+      }
+      if (result.sessionId && result.branch_id) {
+        console.log('✅ MobileSearch: Chat result has both sessionId and branch_id');
+      }
+    }
+    
     // Close all panels first
     if (onCloseAllPanels) onCloseAllPanels();
     
@@ -132,24 +145,31 @@
       
       // Switch to the appropriate session first (if needed)
       if (result.sessionId) {
-        console.log('🔍 MobileSearch: Dispatching session navigation event');
+        console.log('🔍 MobileSearch: Dispatching session navigation event with sessionId:', result.sessionId);
         window.dispatchEvent(new CustomEvent('search:navigate-session', {
           detail: {
             sessionId: result.sessionId,
             sessionName: result.session_name || 'Unknown Session'
           }
         }));
+      } else {
+        console.warn('⚠️ MobileSearch: Skipping session navigation - no sessionId available');
       }
       
       // Then dispatch chat navigation event
-      window.dispatchEvent(new CustomEvent('search:navigate-chat', {
-        detail: {
-          messageId: result.id,
-          branchId: result.branch_id,
-          firstMatchIndex: result.firstMatchIndex || null,
-          searchTerm: searchInput.trim()
-        }
-      }));
+      if (result.branch_id) {
+        console.log('🔍 MobileSearch: Dispatching chat navigation event with branchId:', result.branch_id);
+        window.dispatchEvent(new CustomEvent('search:navigate-chat', {
+          detail: {
+            messageId: result.id,
+            branchId: result.branch_id,
+            firstMatchIndex: result.firstMatchIndex || null,
+            searchTerm: searchInput.trim()
+          }
+        }));
+      } else {
+        console.warn('⚠️ MobileSearch: Skipping chat navigation - no branch_id available');
+      }
       
       // Also dispatch a search filter event to set the search term for highlighting
       window.dispatchEvent(new CustomEvent('search:filter', {

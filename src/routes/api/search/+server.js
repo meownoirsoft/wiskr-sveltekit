@@ -190,14 +190,45 @@ export async function GET({ url, locals }) {
           .sort((a, b) => b.instanceCount - a.instanceCount || b.created_at - a.created_at)
           .slice(0, 10);
         
-        console.log('Search API: Final chat results:', deduplicatedResults.map(r => ({
+        // Validate that all chat results have the required IDs
+        const validResults = deduplicatedResults.filter(result => {
+          if (result.type === 'chats') {
+            const isValid = result.sessionId && result.branch_id;
+            if (!isValid) {
+              console.error('❌ Search API: Invalid chat result missing required IDs:', {
+                id: result.id,
+                sessionId: result.sessionId,
+                branch_id: result.branch_id,
+                type: result.type
+              });
+            }
+            return isValid;
+          }
+          return true; // Non-chat results are always valid
+        });
+        
+        console.log('Search API: Final chat results:', validResults.map(r => ({
           id: r.id,
           sessionId: r.sessionId,
           branch_id: r.branch_id,
           type: r.type
         })));
         
-        results.push(...deduplicatedResults);
+        // Log detailed information about each result for debugging
+        validResults.forEach((result, index) => {
+          console.log(`Search API: Result ${index + 1}:`, {
+            id: result.id,
+            sessionId: result.sessionId,
+            session_name: result.session_name,
+            branch_id: result.branch_id,
+            branch_name: result.branch_name,
+            type: result.type,
+            hasSessionId: !!result.sessionId,
+            hasBranchId: !!result.branch_id
+          });
+        });
+        
+        results.push(...validResults);
       }
     }
     
@@ -360,10 +391,10 @@ export async function POST({ request, locals }) {
     
     // Search chat messages
     if (includeTypes.includes('chats')) {
-      // First, get the basic messages
+      // First, get the basic messages with session_id included
       const { data: messages, error: messagesError } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, content, branch_id, session_id, created_at')
         .eq('project_id', currentProjectId)
         .ilike('content', `%${searchTerm}%`)
         .order('created_at', { ascending: false })
@@ -450,21 +481,21 @@ export async function POST({ request, locals }) {
               snippet = (start > 0 ? '...' : '') + message.content.substring(start, end) + (end < message.content.length ? '...' : '');
             }
             
-            uniqueMessages.set(messageKey, {
-              id: message.id,
-              type: 'chats',
-              title: session?.session_name || 'Chat',
-              name: session?.session_name || 'Chat',
-              snippet: snippet,
-              content: message.content,
-              sessionId: session?.id,
-              session_name: session?.session_name,
-              branch_id: branch?.branch_id,  // Use branch_id (string) not id (UUID)
-              branch_name: branch?.branch_name,
-              messageId: message.id,
-              instanceCount: instanceCount, // Number of times search term appears
-              firstMatchIndex: firstMatchIndex // Position of first match for scrolling
-            });
+                      uniqueMessages.set(messageKey, {
+            id: message.id,
+            type: 'chats',
+            title: session?.session_name || 'Chat',
+            name: session?.session_name || 'Chat',
+            snippet: snippet,
+            content: message.content,
+            sessionId: message.session_id,  // Use session_id directly from message
+            session_name: session?.session_name,
+            branch_id: message.branch_id,  // Use branch_id directly from message
+            branch_name: branch?.branch_name,
+            messageId: message.id,
+            instanceCount: instanceCount, // Number of times search term appears
+            firstMatchIndex: firstMatchIndex // Position of first match for scrolling
+          });
           }
         });
         
@@ -473,14 +504,45 @@ export async function POST({ request, locals }) {
           .sort((a, b) => b.instanceCount - a.instanceCount || b.created_at - a.created_at)
           .slice(0, 10);
         
-        console.log('Search API: Final chat results:', deduplicatedResults.map(r => ({
+        // Validate that all chat results have the required IDs
+        const validResults = deduplicatedResults.filter(result => {
+          if (result.type === 'chats') {
+            const isValid = result.sessionId && result.branch_id;
+            if (!isValid) {
+              console.error('❌ Search API: Invalid chat result missing required IDs:', {
+                id: result.id,
+                sessionId: result.sessionId,
+                branch_id: result.branch_id,
+                type: result.type
+              });
+            }
+            return isValid;
+          }
+          return true; // Non-chat results are always valid
+        });
+        
+        console.log('Search API: Final chat results:', validResults.map(r => ({
           id: r.id,
           sessionId: r.sessionId,
           branch_id: r.branch_id,
           type: r.type
         })));
         
-        results.push(...deduplicatedResults);
+        // Log detailed information about each result for debugging
+        validResults.forEach((result, index) => {
+          console.log(`Search API: Result ${index + 1}:`, {
+            id: result.id,
+            sessionId: result.sessionId,
+            session_name: result.session_name,
+            branch_id: result.branch_id,
+            branch_name: result.branch_name,
+            type: result.type,
+            hasSessionId: !!result.sessionId,
+            hasBranchId: !!result.branch_id
+          });
+        });
+        
+        results.push(...validResults);
       }
     }
     
