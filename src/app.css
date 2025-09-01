@@ -738,3 +738,28 @@ code {
     padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
+
+/* Search Highlighting */
+.search-highlight {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.dark .search-highlight {
+  background-color: #fbbf24;
+  color: #1f2937;
+}
+
+.search-highlight-scroll {
+  animation: search-pulse 0.5s ease-in-out;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3);
+}
+
+@keyframes search-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}

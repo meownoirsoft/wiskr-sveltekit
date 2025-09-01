@@ -34,6 +34,11 @@
   // Reference to FactsManager component
   let factsManagerComponent;
   
+  // Search highlighting state
+  let currentSearchTerm = '';
+  let highlightedFactId = null;
+  let highlightedDocId = null;
+  
   // Tab state - exported so parent can control it
   export let activeTab = 'facts'; // 'summary', 'facts', 'docs', or 'entities'
   
@@ -66,11 +71,25 @@
       console.error('Error checking admin status:', error);
       userIsAdmin = false;
     }
+    
+    // Listen for search highlight events
+    window.addEventListener('search:highlight-result', handleSearchHighlight);
+    
+    return () => {
+      window.removeEventListener('search:highlight-result', handleSearchHighlight);
+    };
   });
   
   // Load project fact types when current project changes
   $: if (current?.id) {
     loadProjectFactTypes();
+  }
+  
+  // Update currentSearchTerm when search prop changes for highlighting
+  $: if (search && search.trim()) {
+    currentSearchTerm = search.trim();
+  } else {
+    currentSearchTerm = '';
   }
   
   async function loadProjectFactTypes() {
@@ -100,6 +119,61 @@
       { type_key: 'term', display_name: 'term', color_class: 'bg-orange-100 text-orange-700', sort_order: 4 },
       { type_key: 'thing', display_name: 'thing', color_class: 'bg-red-100 text-red-700', sort_order: 5 }
     ];
+  }
+  
+  // Search highlighting methods
+  function handleSearchHighlight(event) {
+    const { result, searchTerm } = event.detail;
+    
+    if (result.type === 'facts') {
+      highlightFact(result.id, searchTerm);
+    } else if (result.type === 'docs') {
+      highlightDoc(result.id, searchTerm);
+    }
+  }
+  
+  function highlightFact(factId, searchTerm) {
+    highlightedFactId = factId;
+    currentSearchTerm = searchTerm;
+    
+    // Switch to facts tab if not already there
+    if (activeTab !== 'facts') {
+      activeTab = 'facts';
+    }
+    
+    // Scroll to the fact
+    setTimeout(() => {
+      const factElement = document.querySelector(`[data-fact-id="${factId}"]`);
+      if (factElement) {
+        factElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        factElement.classList.add('search-highlight-scroll');
+        setTimeout(() => {
+          factElement.classList.remove('search-highlight-scroll');
+        }, 3000);
+      }
+    }, 100);
+  }
+  
+  function highlightDoc(docId, searchTerm) {
+    highlightedDocId = docId;
+    currentSearchTerm = searchTerm;
+    
+    // Switch to docs tab if not already there
+    if (activeTab !== 'docs') {
+      activeTab = 'docs';
+    }
+    
+    // Scroll to the doc
+    setTimeout(() => {
+      const docElement = document.querySelector(`[data-doc-id="${docId}"]`);
+      if (docElement) {
+        docElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        docElement.classList.add('search-highlight-scroll');
+        setTimeout(() => {
+          docElement.classList.remove('search-highlight-scroll');
+        }, 3000);
+      }
+    }, 100);
   }
   
   // Helper function to get fact type display name
@@ -494,6 +568,7 @@
             bind:factKey
             bind:factValue
             bind:factTags
+            searchTerm={currentSearchTerm}
             on:add={handleFactAdd}
             on:cancel-add={handleFactCancelAdd}
             on:start-edit={handleFactStartEdit}
@@ -514,6 +589,7 @@
             bind:docTitle
             bind:docContent
             bind:docTags
+            searchTerm={currentSearchTerm}
             on:add={handleDocAdd}
             on:cancel-add={handleDocCancelAdd}
             on:start-edit={handleDocStartEdit}
@@ -529,7 +605,6 @@
             facts={facts}
             on:cards-generated={() => {
               // Optionally reload facts or do other updates when cards are generated
-              console.log('Entity cards generated!');
             }}
           />
         {/if}

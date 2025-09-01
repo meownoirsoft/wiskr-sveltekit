@@ -15,6 +15,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let factTags = '';
   export let projectId = null;
   export let user = null; // User object with tier info
+  export let searchTerm = ''; // Search term for highlighting
   
   let projectFactTypes = [];
   let loadingFactTypes = false;
@@ -105,6 +106,13 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     factValue = '';
     factTags = '';
     dispatch('cancel-add');
+  }
+  
+  // Highlight search terms in text
+  function highlightText(text, term) {
+    if (!term || !text) return text;
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
   }
   
   function handleTagClick(tag) {
@@ -252,7 +260,11 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {/if}
     <div class="facts-grid gap-2">
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
-    <div class="fact-card flex flex-col text-sm border rounded p-2 {getTypeBorderClass(f.type)}" style="background-color: var(--bg-card);">
+    <div 
+      class="fact-card flex flex-col text-sm border rounded p-2 {getTypeBorderClass(f.type)}" 
+      style="background-color: var(--bg-card);"
+      data-fact-id={f.id}
+    >
       <!-- Header: Title and Menu -->
       <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
@@ -260,7 +272,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           {#if f.pinned}
             <Pin size="16" class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{f.key}</div>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{@html highlightText(f.key, searchTerm)}</div>
           <!-- Triple-dot menu - fixed to top right -->
           <div class="relative flex-shrink-0">
             <button 
@@ -312,7 +324,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       
       <!-- Content -->
       <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 content-scrollbar" style="max-height: 140px;">
-        {f.value}
+        {@html highlightText(f.value, searchTerm)}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->

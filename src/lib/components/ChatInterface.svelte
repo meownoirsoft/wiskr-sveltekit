@@ -1,5 +1,5 @@
 <script>
-import { createEventDispatcher, tick } from 'svelte';
+import { createEventDispatcher, tick, onMount } from 'svelte';
 import { marked } from 'marked';
 import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight, Search } from 'lucide-svelte';
 import TextSelectionMenu from './TextSelectionMenu.svelte';
@@ -79,11 +79,207 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   let problemReportMessageContent = '';
   let problemReportAiName = '';
   let isSubmittingProblemReport = false;
+  
+  // Search highlighting state
+  let currentSearchTerm = '';
+  let highlightedMessageId = null;
 
+  // Debug: log when currentSearchTerm changes
+  $: if (currentSearchTerm) {
+    console.log('🔍 ChatInterface: currentSearchTerm changed to:', currentSearchTerm);
+  }
+  
   // Configure marked for better rendering
   marked.setOptions({
     breaks: true,
     gfm: true,
+  });
+  
+  // Search highlighting methods
+  function scrollToMessage(messageId, searchTerm, firstMatchIndex = null) {
+    highlightedMessageId = messageId;
+    currentSearchTerm = searchTerm;
+    
+    // Single, precise scroll to the search term within the message
+    setTimeout(() => {
+      const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        // Scroll directly to the search term position (no intermediate scroll)
+        if (searchTerm && searchTerm.trim()) {
+          scrollToSearchTermInMessage(messageElement, searchTerm, firstMatchIndex);
+        } else {
+          // Fallback: scroll to message if no search term
+          messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Add highlight effect
+        messageElement.classList.add('search-highlight-scroll');
+        setTimeout(() => {
+          messageElement.classList.remove('search-highlight-scroll');
+        }, 3000);
+      } else {
+        console.error('❌ Message element not found for scrolling:', messageId);
+        console.error('❌ Available message elements:', document.querySelectorAll('[data-message-id]'));
+        
+        // Debug: Show the actual message IDs that are available
+        const availableMessageElements = document.querySelectorAll('[data-message-id]');
+        console.log('🔍 Number of message elements with data-message-id:', availableMessageElements.length);
+        
+        if (availableMessageElements.length > 0) {
+          console.log('🔍 Available message IDs:');
+          availableMessageElements.forEach((el, index) => {
+            const messageId = el.getAttribute('data-message-id');
+            console.log(`  ${index + 1}. ${messageId}`);
+          });
+        } else {
+          console.log('🔍 No message elements have data-message-id attribute');
+          // Check if there are any message-like elements at all
+          const allDivs = document.querySelectorAll('div');
+          console.log('🔍 Total div elements:', allDivs.length);
+          
+          // Look for elements that might be messages
+          const possibleMessages = Array.from(allDivs).filter(div => 
+            div.classList.contains('w-full') && 
+            (div.classList.contains('group') || div.classList.contains('ml-auto'))
+          );
+          console.log('🔍 Possible message elements (without data-message-id):', possibleMessages.length);
+        }
+      }
+    }, 100);
+  }
+  
+  // Scroll to the exact position of the search term within a message
+  function scrollToSearchTermInMessage(messageElement, searchTerm, firstMatchIndex = null) {
+    console.log('🔍 scrollToSearchTermInMessage called with:', { searchTerm, firstMatchIndex });
+    
+    if (!messageElement || !searchTerm) {
+      console.log('❌ Missing messageElement or searchTerm');
+      return;
+    }
+    
+    // Find all highlighted search terms within this message
+    const highlights = messageElement.querySelectorAll('.search-highlight');
+    console.log('🔍 Found highlights:', highlights.length);
+    
+    if (highlights.length > 0) {
+      // If we have a firstMatchIndex, use the corresponding highlight
+      // Otherwise, use the first highlight found
+      let targetHighlight = highlights[0];
+      
+      if (firstMatchIndex !== null && firstMatchIndex >= 0) {
+        console.log('🔍 Using firstMatchIndex:', firstMatchIndex);
+        // Find the highlight that corresponds to the firstMatchIndex
+        // This is approximate since we're matching by position
+        const textContent = messageElement.textContent || '';
+        let currentIndex = 0;
+        
+        for (let i = 0; i < highlights.length; i++) {
+          const highlight = highlights[i];
+          const highlightText = highlight.textContent || '';
+          const highlightIndex = textContent.indexOf(highlightText, currentIndex);
+          
+          if (highlightIndex >= 0 && Math.abs(highlightIndex - firstMatchIndex) < 50) {
+            // Found a highlight close to the expected position
+            targetHighlight = highlight;
+            console.log('🔍 Found matching highlight at index:', highlightIndex);
+            break;
+          }
+          currentIndex = highlightIndex + highlightText.length;
+        }
+      }
+      
+      console.log('🔍 Using target highlight:', targetHighlight);
+      
+      // Calculate the position of the highlight relative to the viewport
+      const highlightRect = targetHighlight.getBoundingClientRect();
+      const chatContainer = messageElement.closest('.searchable-chat-area');
+      
+      console.log('🔍 Highlight rect:', highlightRect);
+      console.log('🔍 Chat container:', chatContainer);
+      
+      if (chatContainer && highlightRect) {
+        // Get the container's current scroll position and dimensions
+        const containerRect = chatContainer.getBoundingClientRect();
+        const containerHeight = containerRect.height;
+        const containerScrollTop = chatContainer.scrollTop;
+        
+        console.log('🔍 Container dimensions:', { containerHeight, containerScrollTop });
+        
+              // Calculate the highlight's position relative to the container's current scroll position
+      const highlightTopRelative = highlightRect.top - containerRect.top;
+      const highlightHeight = highlightRect.height;
+      
+      // Calculate how much we need to scroll to center the highlight
+      const scrollOffset = highlightTopRelative - (containerHeight / 2) + (highlightHeight / 2);
+      const targetScrollTop = containerScrollTop + scrollOffset;
+      
+      // Ensure we don't scroll beyond the container bounds
+      const maxScrollTop = chatContainer.scrollHeight - containerHeight;
+      const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+        
+        console.log('🔍 Scroll calculation:', { 
+          highlightTopRelative, 
+          scrollOffset, 
+          targetScrollTop, 
+          maxScrollTop, 
+          finalScrollTop 
+        });
+        
+        // Apply the scroll with smooth behavior
+        chatContainer.scrollTo({
+          top: finalScrollTop,
+          behavior: 'smooth'
+        });
+        
+        console.log('🔍 Scroll applied to:', finalScrollTop);
+      } else {
+        console.log('❌ Missing chatContainer or highlightRect');
+      }
+    } else {
+      console.log('❌ No highlights found in message');
+    }
+  }
+  
+  // Listen for global search changes to update highlighting
+  onMount(() => {
+    // Listen for global search filter events
+    const handleGlobalSearchFilter = (event) => {
+      const { type, query } = event.detail;
+      if (type === 'chats' || type === 'all') {
+        currentSearchTerm = query;
+      }
+    };
+    
+    // Listen for global search clear events
+    const handleGlobalSearchClear = () => {
+      currentSearchTerm = '';
+    };
+    
+    // Listen for search highlight events
+    const handleSearchHighlight = (event) => {
+      const { result, searchTerm } = event.detail;
+      if (result.type === 'chats') {
+        scrollToMessage(result.messageId, searchTerm, result.firstMatchIndex);
+      }
+    };
+    
+    // Listen for chat scroll events from ChatManager
+    const handleChatScrollToMessage = (event) => {
+      const { messageId, searchTerm, firstMatchIndex } = event.detail;
+      scrollToMessage(messageId, searchTerm, firstMatchIndex);
+    };
+    
+    window.addEventListener('search:filter', handleGlobalSearchFilter);
+    window.addEventListener('search:clear-filter', handleGlobalSearchClear);
+    window.addEventListener('search:highlight-result', handleSearchHighlight);
+    window.addEventListener('chat:scroll-to-message', handleChatScrollToMessage);
+    
+    return () => {
+      window.removeEventListener('search:filter', handleGlobalSearchFilter);
+      window.removeEventListener('search:clear-filter', handleGlobalSearchClear);
+      window.removeEventListener('search:highlight-result', handleSearchHighlight);
+      window.removeEventListener('chat:scroll-to-message', handleChatScrollToMessage);
+    };
   });
 
   // Rainbow colors for branches
@@ -960,6 +1156,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {userPreferences}
     {isMobile}
     {showMobileForm}
+    searchTerm={currentSearchTerm}
     bufferSize={8}
     estimatedMessageHeight={120}
     debugMode={false}

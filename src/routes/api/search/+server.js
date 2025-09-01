@@ -1,9 +1,8 @@
 import { json } from '@sveltejs/kit';
 
-/**
- * @type {import('@sveltejs/kit').RequestHandler}
- */
-export async function POST({ request, locals }) {
+export async function GET({ url, locals }) {
+  console.log('🔍 Search API GET called with:', { searchParams: Object.fromEntries(url.searchParams) });
+  
   try {
     // Verify user is authenticated
     const { data: { user } } = await locals.supabase.auth.getUser();
@@ -11,184 +10,523 @@ export async function POST({ request, locals }) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { projectId, query, branchId = 'main' } = await request.json();
+    const { searchParams } = url;
+    const searchTerm = searchParams.get('q');
+    const includeTypes = searchParams.get('types')?.split(',') || ['facts', 'docs', 'chats'];
+    const currentProjectId = searchParams.get('projectId');
     
-    if (!projectId) {
+    if (!searchTerm || !searchTerm.trim()) {
+      return json({ results: [] });
+    }
+    
+    if (!currentProjectId) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
     
-    if (!query || query.length < 3) {
-      return json({ error: 'Search query must be at least 3 characters' }, { status: 400 });
+    const results = [];
+    const { supabase } = locals;
+    
+    // Search facts
+    if (includeTypes.includes('facts')) {
+      const { data: facts, error: factsError } = await supabase
+        .from('facts')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .or(`key.ilike.%${searchTerm}%,value.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!factsError && facts) {
+        facts.forEach(fact => {
+          results.push({
+            id: fact.id,
+            type: 'facts',
+            title: fact.key || 'Untitled Fact',
+            name: fact.key || 'Untitled Fact',
+            snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
+            content: fact.value,
+            factType: fact.type
+          });
+        });
+      }
+    }
+    
+    // Search docs
+    if (includeTypes.includes('docs')) {
+      const { data: docs, error: docsError } = await supabase
+        .from('docs')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!docsError && docs) {
+        docs.forEach(doc => {
+          results.push({
+            id: doc.id,
+            type: 'docs',
+            title: doc.title || 'Untitled Doc',
+            name: doc.title || 'Untitled Doc',
+            snippet: doc.content?.substring(0, 100) + (doc.content?.length > 100 ? '...' : ''),
+            content: doc.content
+          });
+        });
+      }
+    }
+    
+    // Search chat messages
+    if (includeTypes.includes('chats')) {
+      // First, get the basic messages
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .ilike('content', `%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (messagesError) {
+        console.error('Search API: Messages query error:', messagesError);
+      }
+      
+      console.log('Search API: Raw messages query result:', { messages, messagesError });
+      
+      if (!messagesError && messages && messages.length > 0) {
+        // Now get the branch and session info for these messages
+        const messageIds = messages.map(m => m.id);
+        // Get all branch IDs from messages
+        const branchIds = messages.map(m => m.branch_id).filter(id => id);
+        
+        // Get branch info by looking up branch_id (not the UUID primary key)
+        const { data: branches, error: branchesError } = await supabase
+          .from('conversation_branches')
+          .select('id, branch_id, branch_name, session_id')
+          .in('branch_id', branchIds);
+        
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
+        
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
+        
+        // Get session info
+        const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('conversation_sessions')
+          .select('id, session_name')
+          .in('id', sessionIds);
+        
+        if (sessionsError) {
+          console.error('Search API: Sessions query error:', sessionsError);
+        }
+        
+        console.log('Search API: Branches found:', branches?.length || 0);
+        console.log('Search API: Branch details:', branches?.map(b => ({ id: b.id, branch_id: b.branch_id, branch_name: b.branch_name, session_id: b.session_id })));
+        console.log('Search API: Sessions found:', sessions?.length || 0);
+        
+        // Create lookup maps for branches and sessions
+        const branchMap = new Map();
+        const sessionMap = new Map();
+        
+        branches?.forEach(branch => {
+          branchMap.set(branch.branch_id, branch);
+        });
+        
+        sessions?.forEach(session => {
+          sessionMap.set(session.id, session);
+        });
+        
+        // Deduplicate messages by content and combine multiple instances
+        const uniqueMessages = new Map();
+        
+        messages.forEach(message => {
+          const branch = branchMap.get(message.branch_id);
+          console.log('Processing message:', { 
+            messageId: message.id, 
+            messageBranchId: message.branch_id, 
+            foundBranch: branch ? { id: branch.id, branch_id: branch.branch_id } : null 
+          });
+          const session = branch ? sessionMap.get(branch.session_id) : null;
+          const messageKey = `${message.id}-${session?.id}`;
+          
+          if (!uniqueMessages.has(messageKey)) {
+            // Count occurrences of the search term in this message
+            const regex = new RegExp(searchTerm, 'gi');
+            const matches = message.content.match(regex) || [];
+            const instanceCount = matches.length;
+            
+            // Create a snippet that shows the first occurrence
+            let snippet = message.content;
+            const firstMatchIndex = message.content.toLowerCase().indexOf(searchTerm.toLowerCase());
+            if (firstMatchIndex >= 0) {
+              const start = Math.max(0, firstMatchIndex - 50);
+              const end = Math.min(message.content.length, firstMatchIndex + searchTerm.length + 50);
+              snippet = (start > 0 ? '...' : '') + message.content.substring(start, end) + (end < message.content.length ? '...' : '');
+            }
+            
+            uniqueMessages.set(messageKey, {
+              id: message.id,
+              type: 'chats',
+              title: session?.session_name || 'Chat',
+              name: session?.session_name || 'Chat',
+              snippet: snippet,
+              content: message.content,
+              sessionId: session?.id,
+              session_name: session?.session_name,
+              branch_id: branch?.branch_id,  // Use branch_id (string) not id (UUID)
+              branch_name: branch?.branch_name,
+              messageId: message.id,
+              instanceCount: instanceCount, // Number of times search term appears
+              firstMatchIndex: firstMatchIndex // Position of first match for scrolling
+            });
+          }
+        });
+        
+        // Convert to array and limit to 10 results
+        const deduplicatedResults = Array.from(uniqueMessages.values())
+          .sort((a, b) => b.instanceCount - a.instanceCount || b.created_at - a.created_at)
+          .slice(0, 10);
+        
+        console.log('Search API: Final chat results:', deduplicatedResults.map(r => ({
+          id: r.id,
+          sessionId: r.sessionId,
+          branch_id: r.branch_id,
+          type: r.type
+        })));
+        
+        results.push(...deduplicatedResults);
+      }
+    }
+    
+    // Search questions
+    if (includeTypes.includes('questions')) {
+      const { data: questions, error: questionsError } = await supabase
+        .from('project_questions')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .ilike('question', `%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!questionsError && questions) {
+        questions.forEach(question => {
+          results.push({
+            id: question.id,
+            type: 'questions',
+            title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
+            name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
+            snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
+            content: question.question
+          });
+        });
+      }
+    }
+    
+    // Search ideas
+    if (includeTypes.includes('ideas')) {
+      const { data: ideas, error: ideasError } = await supabase
+        .from('ideas')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .ilike('title', `%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!ideasError && ideas) {
+        ideas.forEach(idea => {
+          results.push({
+            id: idea.id,
+            type: 'ideas',
+            title: idea.title || 'Untitled Idea',
+            name: idea.title || 'Untitled Idea',
+            snippet: idea.description?.substring(0, 100) + (idea.description?.length > 100 ? '...' : ''),
+            content: idea.description
+          });
+        });
+      }
+    }
+    
+    // Return results in the structure that GlobalSearch expects
+    const structuredResults = {
+      facts: results.filter(r => r.type === 'facts'),
+      docs: results.filter(r => r.type === 'docs'),
+      chatMessages: results.filter(r => r.type === 'chats'),
+      questions: results.filter(r => r.type === 'questions'),
+      relatedIdeas: results.filter(r => r.type === 'ideas'),
+      sessionGroups: [],
+      totalSessions: 0
+    };
+    
+    console.log('🔍 Search API POST: Returning structured results:', structuredResults);
+    
+    console.log('🔍 Search API POST: About to return results');
+    return json({ results: structuredResults });
+    
+  } catch (error) {
+    console.error('🔍 Search API POST: Error occurred:', error);
+    return json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
+    console.log('🔍 Search API POST: Function completed');
+  }
+}
+
+export async function POST({ request, locals }) {
+  console.log('🔍 Search API POST called - START');
+  
+  try {
+    // Verify user is authenticated
+    const { data: { user } } = await locals.supabase.auth.getUser();
+    if (!user) {
+      console.log('🔍 Search API POST: Unauthorized');
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    console.log('🔍 Search API POST: User authenticated');
+    
+    const { query, projectId, includeTypes = ['facts', 'docs', 'chats', 'questions', 'ideas'] } = await request.json();
+    
+    console.log('🔍 Search API POST parameters:', { query, projectId, includeTypes });
+    
+    if (!query || !query.trim()) {
+      return json({ results: [] });
+    }
+    
+    const searchTerm = query.trim();
+    console.log('🔍 Search API POST searchTerm:', searchTerm);
+    const results = [];
+    
+    // Get the current project ID from the request or use the one from locals
+    const currentProjectId = projectId || locals.currentProject?.id;
+    
+    if (!currentProjectId) {
+      return json({ error: 'Project ID is required' }, { status: 400 });
     }
     
     const { supabase } = locals;
     
-    // Check if user has access to this project
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('id', projectId)
-      .single();
+    console.log('🔍 Search API POST: About to search with projectId:', currentProjectId);
+    
+    // Search facts
+    if (includeTypes.includes('facts')) {
+      const { data: facts, error: factsError } = await supabase
+        .from('facts')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .or(`key.ilike.%${searchTerm}%,value.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
       
-    if (projectError || !project) {
-      return json({ error: 'Project not found or access denied' }, { status: 404 });
+      if (!factsError && facts) {
+        facts.forEach(fact => {
+          results.push({
+            id: fact.id,
+            type: 'facts',
+            title: fact.key || 'Untitled Fact',
+            name: fact.key || 'Untitled Fact',
+            snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
+            content: fact.value,
+            factType: fact.type
+          });
+        });
+      }
     }
     
-    // Search facts (search in key, value, and type)
-    const { data: factsMain, error: factsError1 } = await supabase
-      .from('facts')
-      .select('*')
-      .eq('project_id', projectId)
-      .or(`key.ilike.%${query}%,value.ilike.%${query}%,type.ilike.%${query}%`)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    
-    // Search facts by partial tag matches using custom function
-    const { data: factsFromPartialTags, error: factsError2 } = await supabase
-      .rpc('search_facts_by_tags', { 
-        p_project_id: projectId, 
-        p_query: query 
-      })
-      .limit(20);
-    
-    // Combine and deduplicate facts results
-    const allFacts = [...(factsMain || []), ...(factsFromPartialTags || [])];
-    const uniqueFacts = allFacts.filter((fact, index, self) =>
-      index === self.findIndex(f => f.id === fact.id)
-    );
-    const facts = uniqueFacts.slice(0, 20);
-    
-    // Search docs (search in title and content)
-    const { data: docsMain, error: docsError1 } = await supabase
-      .from('docs')
-      .select('*')
-      .eq('project_id', projectId)
-      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    // Search docs
+    if (includeTypes.includes('docs')) {
+      const { data: docs, error: docsError } = await supabase
+        .from('docs')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
       
-    // Search docs by partial tag matches using custom function
-    const { data: docsFromPartialTags, error: docsError2 } = await supabase
-      .rpc('search_docs_by_tags', { 
-        p_project_id: projectId, 
-        p_query: query 
-      })
-      .limit(20);
+      if (!docsError && docs) {
+        docs.forEach(doc => {
+          results.push({
+            id: doc.id,
+            type: 'docs',
+            title: doc.title || 'Untitled Doc',
+            name: doc.title || 'Untitled Doc',
+            snippet: doc.content?.substring(0, 100) + (doc.content?.length > 100 ? '...' : ''),
+            content: doc.content
+          });
+        });
+      }
+    }
     
-    // Combine and deduplicate docs results
-    const allDocs = [...(docsMain || []), ...(docsFromPartialTags || [])];
-    const uniqueDocs = allDocs.filter((doc, index, self) =>
-      index === self.findIndex(d => d.id === doc.id)
-    );
-    const docs = uniqueDocs.slice(0, 20);
-    
-    // Search chat messages with session information
-    const { data: chatMessages, error: messagesError } = await supabase
-      .from('messages')
-      .select(`
-        *,
-        conversation_sessions!inner(
-          id,
-          session_name,
-          is_active
-        )
-      `)
-      .eq('project_id', projectId)
-      .ilike('content', `%${query}%`)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    
-    // Get branch names and group messages by session
-    const formattedMessages = [];
-    const sessionGroups = new Map(); // Track sessions with results
-    
-    if (chatMessages && chatMessages.length > 0) {
-      // Get unique branch IDs that aren't 'main'
-      const branchIds = [...new Set(chatMessages.map(m => m.branch_id).filter(id => id !== 'main'))];
+    // Search chat messages
+    if (includeTypes.includes('chats')) {
+      // First, get the basic messages
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .ilike('content', `%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
       
-      let branches = [];
-      if (branchIds.length > 0) {
-        const { data: branchData } = await supabase
-          .from('conversation_branches')
-          .select('branch_id, branch_name')
-          .in('branch_id', branchIds);
-        branches = branchData || [];
+      if (messagesError) {
+        console.error('Search API: Messages query error:', messagesError);
       }
       
-      // Format messages with branch names and group by session
-      chatMessages.forEach(message => {
-        const branch = branches.find(b => b.branch_id === message.branch_id);
-        const sessionInfo = message.conversation_sessions;
+      console.log('Search API: Raw messages query result:', { messages, messagesError });
+      
+      if (!messagesError && messages && messages.length > 0) {
+        // Now get the branch and session info for these messages
+        const messageIds = messages.map(m => m.id);
+        // Get all branch IDs from messages
+        const branchIds = messages.map(m => m.branch_id).filter(id => id);
         
-        const formattedMessage = {
-          ...message,
-          branch_name: branch?.branch_name || (message.branch_id === 'main' ? 'Main' : 'Unknown Branch'),
-          session_name: sessionInfo?.session_name || 'Unknown Session',
-          session_id: sessionInfo?.id,
-          is_active_session: sessionInfo?.is_active || false
-        };
+        // Get branch info by looking up branch_id (not the UUID primary key)
+        const { data: branches, error: branchesError } = await supabase
+          .from('conversation_branches')
+          .select('id, branch_id, branch_name, session_id')
+          .in('branch_id', branchIds);
         
-        formattedMessages.push(formattedMessage);
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
         
-        // Track unique sessions with results
-        if (sessionInfo?.id) {
-          if (!sessionGroups.has(sessionInfo.id)) {
-            sessionGroups.set(sessionInfo.id, {
-              session_id: sessionInfo.id,
-              session_name: sessionInfo.session_name,
-              is_active: sessionInfo.is_active,
-              message_count: 0,
-              messages: []
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
+        
+        // Get session info
+        const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('conversation_sessions')
+          .select('id, session_name')
+          .in('id', sessionIds);
+        
+        if (sessionsError) {
+          console.error('Search API: Sessions query error:', sessionsError);
+        }
+        
+        console.log('Search API: Branches found:', branches?.length || 0);
+        console.log('Search API: Branch details:', branches?.map(b => ({ id: b.id, branch_id: b.branch_id, branch_name: b.branch_name, session_id: b.session_id })));
+        console.log('Search API: Sessions found:', sessions?.length || 0);
+        
+        // Create lookup maps for branches and sessions
+        const branchMap = new Map();
+        const sessionMap = new Map();
+        
+        branches?.forEach(branch => {
+          branchMap.set(branch.branch_id, branch);
+        });
+        
+        sessions?.forEach(session => {
+          sessionMap.set(session.id, session);
+        });
+        
+        // Deduplicate messages by content and combine multiple instances
+        const uniqueMessages = new Map();
+        
+        messages.forEach(message => {
+          const branch = branchMap.get(message.branch_id);
+          console.log('Processing message:', { 
+            messageId: message.id, 
+            messageBranchId: message.branch_id, 
+            foundBranch: branch ? { id: branch.id, branch_id: branch.branch_id } : null 
+          });
+          const session = branch ? sessionMap.get(branch.session_id) : null;
+          const messageKey = `${message.id}-${session?.id}`;
+          
+          if (!uniqueMessages.has(messageKey)) {
+            // Count occurrences of the search term in this message
+            const regex = new RegExp(searchTerm, 'gi');
+            const matches = message.content.match(regex) || [];
+            const instanceCount = matches.length;
+            
+            // Create a snippet that shows the first occurrence
+            let snippet = message.content;
+            const firstMatchIndex = message.content.toLowerCase().indexOf(searchTerm.toLowerCase());
+            if (firstMatchIndex >= 0) {
+              const start = Math.max(0, firstMatchIndex - 50);
+              const end = Math.min(message.content.length, firstMatchIndex + searchTerm.length + 50);
+              snippet = (start > 0 ? '...' : '') + message.content.substring(start, end) + (end < message.content.length ? '...' : '');
+            }
+            
+            uniqueMessages.set(messageKey, {
+              id: message.id,
+              type: 'chats',
+              title: session?.session_name || 'Chat',
+              name: session?.session_name || 'Chat',
+              snippet: snippet,
+              content: message.content,
+              sessionId: session?.id,
+              session_name: session?.session_name,
+              branch_id: branch?.branch_id,  // Use branch_id (string) not id (UUID)
+              branch_name: branch?.branch_name,
+              messageId: message.id,
+              instanceCount: instanceCount, // Number of times search term appears
+              firstMatchIndex: firstMatchIndex // Position of first match for scrolling
             });
           }
-          sessionGroups.get(sessionInfo.id).message_count++;
-          sessionGroups.get(sessionInfo.id).messages.push(formattedMessage);
-        }
-      });
+        });
+        
+        // Convert to array and limit to 10 results
+        const deduplicatedResults = Array.from(uniqueMessages.values())
+          .sort((a, b) => b.instanceCount - a.instanceCount || b.created_at - a.created_at)
+          .slice(0, 10);
+        
+        console.log('Search API: Final chat results:', deduplicatedResults.map(r => ({
+          id: r.id,
+          sessionId: r.sessionId,
+          branch_id: r.branch_id,
+          type: r.type
+        })));
+        
+        results.push(...deduplicatedResults);
+      }
     }
     
     // Search questions
-    const { data: questions, error: questionsError } = await supabase
-      .from('project_questions')
-      .select('*')
-      .eq('project_id', projectId)
-      .ilike('question', `%${query}%`)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    
-    // Note: Related ideas are generated on-demand and not stored in the database,
-    // so we don't search for them here
-    
-    if (factsError1 || factsError2 || docsError1 || docsError2 || messagesError || questionsError) {
-      console.error('Search errors:', { factsError1, factsError2, docsError1, docsError2, messagesError, questionsError });
-      return json({ error: 'Error performing search' }, { status: 500 });
+    if (includeTypes.includes('questions')) {
+      const { data: questions, error: questionsError } = await supabase
+        .from('project_questions')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .ilike('question', `%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!questionsError && questions) {
+        questions.forEach(question => {
+          results.push({
+            id: question.id,
+            type: 'questions',
+            title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
+            name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
+            snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
+            content: question.question
+          });
+        });
+      }
     }
     
-    // Debug logging
-    console.log('Search results:', {
-      query,
-      factsCount: facts?.length || 0,
-      docsCount: docs?.length || 0,
-      chatMessagesCount: formattedMessages?.length || 0,
-      questionsCount: questions?.length || 0
+    // For ideas, we'll need to check if there are any stored ideas or generate them
+    // For now, we'll skip ideas as they're typically generated on-demand
+    
+    console.log('🔍 Search API POST: Returning results count by type:', {
+      facts: results.filter(r => r.type === 'facts').length,
+      docs: results.filter(r => r.type === 'docs').length,
+      chats: results.filter(r => r.type === 'chats').length,
+      questions: results.filter(r => r.type === 'questions').length,
+      total: results.length
     });
     
-    // Return the search results with session grouping information
-    return json({
-      results: {
-        facts: facts || [],
-        docs: docs || [],
-        chatMessages: formattedMessages,
-        questions: questions || [],
-        relatedIdeas: [], // Ideas are generated on-demand, not stored
-        
-        // Additional session information for navigation
-        sessionGroups: sessionGroups ? Array.from(sessionGroups.values()) : [],
-        totalSessions: sessionGroups ? sessionGroups.size : 0
-      }
+    return json({ 
+      results: results,
+      query: searchTerm,
+      total: results.length
     });
+    
   } catch (error) {
-    console.error('Search error:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Search API error:', error);
+    return json({ error: 'Search failed' }, { status: 500 });
   }
 }

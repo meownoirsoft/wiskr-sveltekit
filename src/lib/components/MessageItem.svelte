@@ -14,6 +14,7 @@
   export let messageBranchCounts = {};
   export let userPreferences = { display_name: null };
   export let current = null;
+  export let searchTerm = ''; // Search term for highlighting
 
   // Height measurement
   export let onHeightChange = null;
@@ -57,6 +58,13 @@
   function renderMarkdown(content) {
     if (!content || typeof content !== 'string') return '';
     return marked(content);
+  }
+  
+  // Highlight search terms in text
+  function highlightText(text, term) {
+    if (!term || !text) return text;
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
   }
 
   function getBranchColor(branch) {
@@ -124,7 +132,11 @@
   $: messageBranchCount = messageBranchCounts[message.id] || 0;
 </script>
 
-<div class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-16 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3 mt-16`} relative" bind:this={messageElement}>
+<div 
+  class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-16 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3 mt-16`} relative" 
+  bind:this={messageElement}
+  data-message-id={message.id}
+>
   
   <!-- Message Bubble -->
   <div id="message-bubble" class="rounded-lg px-2 sm:px-2 border border-l-4 transition-colors relative {message.role === 'user' ? `ml-3 sm:ml-6 whitespace-pre-wrap ${branchColor.accent} pb-6 sm:pb-6 pt-1 sm:pt-1` : `mr-3 sm:mr-6 assistant-message ${branchColor.accent} pb-5 sm:pb-5 pt-4 sm:pt-4`}"
@@ -159,7 +171,7 @@
     
     {#if message.role === 'assistant'}
       <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
-        {@html renderMarkdown(message.content)}
+        {@html highlightText(renderMarkdown(message.content), searchTerm)}
       </div>
       
       <!-- Select All button for assistant messages (bottom right) -->
@@ -177,7 +189,7 @@
       </button>
     {:else}
       <div class="text-sm sm:text-base -mt-2 leading-normal">
-        {message.content}
+        {@html highlightText(message.content, searchTerm)}
       </div>
     {/if}
   </div>

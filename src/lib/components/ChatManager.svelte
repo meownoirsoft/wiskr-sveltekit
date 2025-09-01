@@ -453,6 +453,16 @@
     if (!branch) return RAINBOW_COLORS[0];
     return RAINBOW_COLORS[branch.color_index % RAINBOW_COLORS.length];
   }
+  
+  // Scroll to a specific message by ID
+  export function scrollToMessage(messageId, searchTerm, firstMatchIndex = null) {
+    // Dispatch an event to the ChatInterface to scroll to the message
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('chat:scroll-to-message', {
+        detail: { messageId, searchTerm, firstMatchIndex }
+      }));
+    }
+  }
 
   // Legacy function - now replaced by loadSessionBranches
   export async function loadBranches() {

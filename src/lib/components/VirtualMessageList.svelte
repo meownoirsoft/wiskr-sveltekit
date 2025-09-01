@@ -15,6 +15,7 @@
   export let userPreferences = { display_name: null };
   export let isMobile = false; // Whether this is on mobile
   export let showMobileForm = false; // Whether mobile form is expanded
+  export let searchTerm = ''; // Search term for highlighting
   
   // Virtual scrolling configuration
   export let bufferSize = 5; // Number of messages to render outside viewport
@@ -525,6 +526,7 @@
         {messageBranchCounts}
         {userPreferences}
         {current}
+        {searchTerm}
         onHeightChange={handleMessageHeightChange}
         on:select-all={(e) => dispatch('select-all', e.detail)}
         on:open-branch-modal={(e) => dispatch('open-branch-modal', e.detail)}

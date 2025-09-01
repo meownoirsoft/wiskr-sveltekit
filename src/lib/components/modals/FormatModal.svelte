@@ -19,16 +19,16 @@
 
   // Platform definitions with Lucide icons and type
   const platforms = [
-    { id: 'tiktok', name: 'TikTok', icon: 'Music', type: 'Social' },
-    { id: 'instagram', name: 'Instagram', icon: 'Camera', type: 'Social' },
-    { id: 'youtube', name: 'YouTube', icon: 'Video', type: 'Social' },
+    { id: 'tiktok', name: 'TikTok', icon: 'Music', type: 'Visual' },
+    { id: 'youtube', name: 'YouTube', icon: 'Video', type: 'Visual' },
+    { id: 'instagram', name: 'Instagram', icon: 'Camera', type: 'Visual' },
+    { id: 'pinterest', name: 'Pinterest', icon: 'MapPin', type: 'Visual' },
     { id: 'facebook', name: 'Facebook', icon: 'Users', type: 'Social' },
     { id: 'twitter', name: 'Twitter', icon: 'MessageCircle', type: 'Social' },
     { id: 'reddit', name: 'Reddit', icon: 'MessageSquare', type: 'Social' },
     { id: 'linkedin', name: 'LinkedIn', icon: 'Briefcase', type: 'Professional' },
-    { id: 'pinterest', name: 'Pinterest', icon: 'MapPin', type: 'Discovery' },
-    { id: 'etsy', name: 'Etsy', icon: 'ShoppingBag', type: 'E-commerce' },
-    { id: 'teepublic', name: 'TeePublic', icon: 'Shirt', type: 'E-commerce' },
+    { id: 'etsy', name: 'Etsy', icon: 'ShoppingBag', type: 'Professional' },
+    { id: 'teepublic', name: 'TeePublic', icon: 'Shirt', type: 'Professional' },
     { id: 'plaintext', name: 'Plain Text', icon: 'FileText', type: 'Text' },
     { id: 'markdown', name: 'Markdown', icon: 'Hash', type: 'Text' },
   ];
@@ -97,7 +97,7 @@
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content to Format:</h4>
           <textarea
             bind:value={selectedText}
-            class="w-full h-32 p-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full h-56 p-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter text to format..."
           ></textarea>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">You can edit this text before formatting it for different platforms.</p>
@@ -105,7 +105,7 @@
         
         <!-- Platform Grid Organized by Type -->
         <div class="mb-6">
-          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Choose Platform:</h4>
+          <!-- <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Choose Platform:</h4> -->
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {#each platformsByType as group}
               <div>
@@ -113,7 +113,7 @@
                 <div class="flex flex-wrap gap-2">
                   {#each group.items as platform}
                     <button
-                      class="flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors cursor-pointer {selectedPlatform === platform.id ? 'bg-blue-50 dark:bg-blue-800/30 border-blue-200 dark:border-blue-700' : 'border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-800/30 hover:border-blue-200 dark:hover:border-blue-700'}"
+                      class="flex flex-none basis-full items-center gap-2 px-3 py-2 border rounded-lg transition-colors cursor-pointer {selectedPlatform === platform.id ? 'bg-blue-50 dark:bg-blue-800/30 border-blue-200 dark:border-blue-700' : 'border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-800/30 hover:border-blue-200 dark:hover:border-blue-700'}"
                       on:click={() => formatForPlatform(platform.id)}
                       disabled={isFormatting}
                     >
@@ -167,14 +167,14 @@
       </div>
       
       <!-- Modal Footer -->
-      <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-2">
+      <!-- <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-2">
         <button
           class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           on:click={closeModal}
         >
           Close
         </button>
-      </div>
+      </div> -->
     </div>
   </div>
 {/if}

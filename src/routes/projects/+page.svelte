@@ -30,6 +30,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   
   // Import Lucide icons
   import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight, BarChart3, Settings, Settings2, LogOut } from 'lucide-svelte';
+  import MobileSearch from '$lib/components/MobileSearch.svelte';
 
   // Import styles
   import '$lib/components/styles.css';
@@ -80,11 +81,127 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   // Always show sidebar (removed builder mode)
 
+  // Mobile Search state
+  let showMobileSearch = false;
+  let searchInput = '';
+
   // Left column state
   let search = '';
 
   function clearSearch() {
     search = '';
+  }
+
+  // Mobile Search functions
+  function toggleMobileSearch() {
+    if (showMobileSearch) {
+      // Second click: close and clear
+      showMobileSearch = false;
+      search = ''; // Clear search filtering when closing search
+    } else {
+      // First click: open
+      showMobileSearch = true;
+    }
+  }
+
+  // Listen for mobile search toggle event
+  onMount(() => {
+    if (browser) {
+      window.addEventListener('mobile:toggle-search', toggleMobileSearch);
+      window.addEventListener('search:clear-filter', () => {
+        search = '';
+      });
+    }
+    
+    return () => {
+      if (browser) {
+        window.removeEventListener('mobile:toggle-search', toggleMobileSearch);
+        window.removeEventListener('search:clear-filter', () => {
+          search = '';
+        });
+      }
+    };
+  });
+
+  function closeAllPanels() {
+    showSessionNavigator = false;
+    showLeftPanel = false;
+    showRightPanel = false;
+    // Clear search filtering when closing panels
+    search = '';
+    // Add other panels as needed
+  }
+
+  function openPanel(panelType) {
+    closeAllPanels();
+    
+    switch (panelType) {
+      case 'facts':
+        showLeftPanel = true;
+        break;
+      case 'questions':
+      case 'ideas':
+        showRightPanel = true;
+        break;
+      case 'chats':
+        showSessionNavigator = true;
+        break;
+      // Add other panel types as needed
+    }
+  }
+
+  function scrollToResult(result) {
+    // Implementation will depend on the result type
+    
+    // Set the search term to filter content in panels
+    const searchTerm = result.searchTerm || searchInput || '';
+    search = searchTerm;
+    
+    // Dispatch event to highlight and scroll to result
+    window.dispatchEvent(new CustomEvent('search:highlight-result', { 
+      detail: { 
+        result,
+        searchTerm: searchTerm
+      } 
+    }));
+    
+    // Handle different result types
+    switch (result.type) {
+      case 'facts':
+        // Scroll to facts panel and highlight the fact
+        if (sidebarComponent) {
+          sidebarComponent.highlightFact(result.id, searchTerm);
+        }
+        break;
+        
+      case 'docs':
+        // Scroll to docs panel and highlight the doc
+        if (sidebarComponent) {
+          sidebarComponent.highlightDoc(result.id, searchTerm);
+        }
+        break;
+        
+      case 'chats':
+        // Scroll to chat message
+        if (chatManager) {
+          chatManager.scrollToMessage(result.messageId, searchTerm);
+        }
+        break;
+        
+      case 'questions':
+        // Scroll to questions panel and highlight the question
+        if (ideasColumnComponent) {
+          ideasColumnComponent.highlightQuestion(result.id, searchTerm);
+        }
+        break;
+        
+      case 'ideas':
+        // Scroll to ideas panel and highlight the idea
+        if (ideasColumnComponent) {
+          ideasColumnComponent.highlightIdea(result.id, searchTerm);
+        }
+        break;
+    }
   }
 
   // Platform formatting state (kept in main page as these are UI modals)
@@ -162,6 +279,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let projectState;
   let modalManager;
   let panelManager;
+  let ideasColumnComponent;
 
   // Ideas Column state
   let relatedIdeas = [];
@@ -1229,22 +1347,60 @@ function handleTextAddToDocs(event) {
     }
   }
   
-  function handleSearchNavigateChat(event) {
-    const { messageId, branchId } = event.detail;
-    // Switch to the appropriate branch if needed
+  async function handleSearchNavigateChat(event) {
+    const { messageId, branchId, firstMatchIndex } = event.detail;
+    console.log('🔍 Main page: handleSearchNavigateChat called with:', messageId, firstMatchIndex);
+    console.log('Main page: branchId from event:', branchId);
+    console.log('Main page: currentBranchId:', currentBranchId);
+    
+    // Set the search term for highlighting
+    search = event.detail.searchTerm || '';
+    
+    // Switch to the appropriate branch if needed and wait for it to complete
     if (branchId && branchId !== currentBranchId) {
-      switchToBranch(branchId);
+      console.log('Main page: Switching to branch:', branchId);
+      await switchToBranch(branchId);
+      console.log('Main page: Branch switch completed');
+    } else {
+      console.log('Main page: No branch switch needed - same branch or no branchId');
     }
-    // Scroll to the message (we could enhance ChatInterface to support this)
-    // For now, just ensure the message is visible by switching branches
+    
+    // Ensure the chat area is visible and scroll to the message
+    // Use a retry mechanism to ensure chatManager is available
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const attemptScroll = () => {
+      if (chatManager) {
+        console.log('Main page: chatManager available, scrolling to message');
+        // Pass the current search term for highlighting
+        const searchTerm = search || '';
+        chatManager.scrollToMessage(messageId, searchTerm, firstMatchIndex);
+      } else if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Main page: chatManager not available, retry ${retryCount}/${maxRetries}`);
+        setTimeout(attemptScroll, 100);
+      } else {
+        console.error('Main page: chatManager still not available after retries');
+      }
+    };
+    
+    setTimeout(attemptScroll, 2000); // Longer delay to ensure session AND branch switches complete
   }
   
   function handleSearchNavigateSession(event) {
     const { sessionId, sessionName } = event.detail;
+    console.log('🔍 Main page: handleSearchNavigateSession called with:', sessionId, sessionName);
+    console.log('Main page: currentSession?.id:', currentSession?.id);
+    
     // Find the session in our sessions list and switch to it
     const targetSession = sessions.find(s => s.id === sessionId);
     if (targetSession && sessionLogicManager) {
+      console.log('Main page: Switching to session:', sessionId);
       sessionLogicManager.selectSession(targetSession);
+      console.log('Main page: Session switch completed');
+    } else {
+      console.log('Main page: Session not found or sessionLogicManager not available');
     }
   }
   
@@ -1627,6 +1783,16 @@ function handleTextAddToDocs(event) {
       </div>
     {/if}
     
+    <!-- MOBILE SEARCH PANEL -->
+    <MobileSearch
+      isVisible={showMobileSearch && !isDesktop}
+      projectId={current?.id}
+      onClosePanel={() => showMobileSearch = false}
+      onCloseAllPanels={closeAllPanels}
+      onOpenPanel={openPanel}
+      onScrollToResult={scrollToResult}
+    />
+
     <!-- SESSION NAVIGATOR (overlays chat below header) -->
     <div 
       bind:this={sessionNavigatorElement}

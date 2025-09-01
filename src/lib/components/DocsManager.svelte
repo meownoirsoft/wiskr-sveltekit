@@ -14,6 +14,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let docTags = '';
   export let projectId = null;
   export let user = null; // User object with tier info
+  export let searchTerm = ''; // Search term for highlighting
   let openMenuIndex = -1; // Track which doc menu is open
   let showEditModal = false;
   let editingDoc = null;
@@ -75,6 +76,13 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   function closeMenu() {
     openMenuIndex = -1;
   }
+  
+  // Highlight search terms in text
+  function highlightText(text, term) {
+    if (!term || !text) return text;
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+  }
 </script>
 
 <div class="flex flex-col h-full">
@@ -115,7 +123,11 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {/if}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
-    <div class="doc-card flex flex-col md:h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" style="background-color: var(--bg-card);">
+    <div 
+      class="doc-card flex flex-col md:h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" 
+      style="background-color: var(--bg-card);"
+      data-doc-id={d.id}
+    >
       <!-- Header: Title and Menu -->
       <div class="flex-shrink-0">
         <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
@@ -123,7 +135,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           {#if d.pinned}
             <Pin size="20" class="text-purple-600 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{d.title}</div>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{@html highlightText(d.title, searchTerm)}</div>
           <!-- Triple-dot menu - fixed to top right -->
           <div class="relative flex-shrink-0">
             <button 
@@ -173,7 +185,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       
       <!-- Content Preview -->
       <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 md:flex-1 md:min-h-0 md:overflow-y-auto content-scrollbar" style="max-height: 140px;">
-        {d.content}
+        {@html highlightText(d.content, searchTerm)}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->

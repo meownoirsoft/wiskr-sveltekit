@@ -209,7 +209,8 @@
       window.dispatchEvent(new CustomEvent('search:navigate-chat', {
         detail: {
           messageId: message.id,
-          branchId: message.branch_id
+          branchId: message.branch_id,
+          searchTerm: searchTerm
         }
       }));
     }
