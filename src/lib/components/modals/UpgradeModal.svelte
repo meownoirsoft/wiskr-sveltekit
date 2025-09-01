@@ -146,7 +146,7 @@
         </div>
 
         <!-- Current tier info -->
-        <div class="mb-6 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div class="mb-6 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
           <p class="text-xs text-gray-600 dark:text-gray-400 text-center">
             Currently on: <span class="font-medium">{currentTierName}</span>
           </p>

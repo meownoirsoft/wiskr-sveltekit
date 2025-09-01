@@ -29,7 +29,7 @@
     </p>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 max-w-6xl mx-auto">
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Shield class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Security Settings</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -37,7 +37,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Database class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">System Configuration</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -45,7 +45,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Bell class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Notifications</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -53,7 +53,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Globe class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Global Defaults</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -61,7 +61,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Lock class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Privacy Controls</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -69,7 +69,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Database class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Backup & Recovery</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -81,7 +81,7 @@
   
   <!-- Current Configuration Info -->
   <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Current Configuration
       </h3>
@@ -105,7 +105,7 @@
       </div>
     </div>
     
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Quick Actions
       </h3>
@@ -133,7 +133,7 @@
   </div>
   
   <!-- Environment Info (helpful for debugging) -->
-  <div class="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+  <div class="mt-6 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Environment Status</h4>
     <p class="text-xs text-gray-500 dark:text-gray-400">
       Admin dashboard is running in {typeof window !== 'undefined' ? 'client' : 'server'} mode. 

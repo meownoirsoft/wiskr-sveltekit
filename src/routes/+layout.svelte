@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
-import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Boxes, Plus } from 'lucide-svelte';
+import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Plus, ClipboardList, MessageSquare, GitBranch } from 'lucide-svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
@@ -24,6 +24,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   let projects = [];
   let currentProject = null;
   let projectSearch = '';
+  
+  // Mobile conversation dropdown state
+  let showConversationDropdown = false;
   
   // Theme state
   let darkMode = false;
@@ -64,6 +67,13 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         if (!localStorage.getItem('wiskr_theme')) {
           darkMode = e.matches;
           applyTheme();
+        }
+      });
+      
+      // Close conversation dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.conversation-dropdown')) {
+          showConversationDropdown = false;
         }
       });
     }
@@ -584,9 +594,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
   <!-- Header -->
   <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
-    <div class="w-full px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
+    <div class="w-full px-2 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
         {#if isProjectsPage}
           <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
@@ -605,7 +615,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 <!-- Panel is closed - chevrons pointing right (show panel) -->
                 <ChevronsRight size="28" />
               {/if}
-              <span class="text-xs mt-1">Facts</span>
+              <!-- <span class="text-xs mt-1">Facts</span> -->
             </button>
             <!-- Project Menu Button -->
             <button
@@ -616,9 +626,26 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               }}
               aria-label="Projects and Tools"
             >
-              <Boxes class="w-6 h-6" />
-              <span class="text-xs mt-1">Projects</span>
+              <ClipboardList class="w-6 h-6" />
+              <!-- <span class="text-xs mt-1">Projects</span> -->
             </button>
+            
+            <!-- Mobile: Combined Conversation button (Chat + Branches) -->
+            <div class="relative">
+              <button
+                type="button"
+                class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+                on:click={() => {
+                  console.log('Conversation button clicked! Dispatching mobile:toggle-sessions event');
+                  window.dispatchEvent(new CustomEvent('mobile:toggle-sessions'));
+                }}
+                aria-label="Conversation"
+                title="Conversation (Chats & Branches)"
+                data-mobile-sessions-button
+              >
+                <MessageSquare class="w-6 h-6" />
+              </button>
+            </div>
           </div>
         {/if}
         
@@ -729,8 +756,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       {#if shouldShowLogo}
         <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 justify-center">
           <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-            <span class="text-xl inline-flex items-center">
-              <img src="/wiskr-logo.png" alt="Wiskr" class="w-28 py-2 mb-0" />
+            <span class="text-lg inline-flex items-center">
+              <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
             </span>
           </a>
         </div>
@@ -738,6 +765,23 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         <!-- Spacer for when logo is not shown -->
         <div class="flex-1"></div>
       {/if}
+      <!-- Mobile: Search icon button (positioned to right of logo for symmetry) -->
+      <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
+        <button
+          type="button"
+          class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+          title="Search"
+          on:click={() => {
+            // TODO: Implement mobile search functionality
+            console.log('Mobile search clicked');
+          }}
+          aria-label="Search"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+      </div>
 
       <!-- Right side: Menus and controls -->
       <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -772,7 +816,22 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             </button>
           </div>
 
-          <!-- Mobile hamburger menu -->
+          <!-- Mobile: Branches button (moved to right side) -->
+          <!-- <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
+            <button
+              type="button"
+              class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              on:click={() => {
+                window.dispatchEvent(new CustomEvent('mobile:toggle-branches'));
+              }}
+              aria-label="Branches"
+              title="Branches"
+            >
+              <GitBranch class="w-6 h-6" />
+            </button>
+          </div> -->
+          
+          <!-- Mobile hamburger menu (positioned between branches and ideas) -->
           <div class="{isDesktop ? 'hidden' : 'block'} relative">
             <button
               type="button"
@@ -805,7 +864,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 <!-- Chevrons pointing right (hide panel) -->
                 <ChevronsRight size="28" />
               {/if}
-              <span class="text-xs mt-1">Ideas</span>
+              <!-- <span class="text-xs mt-1">Ideas</span> -->
             </button>
           </div>
         {/if}

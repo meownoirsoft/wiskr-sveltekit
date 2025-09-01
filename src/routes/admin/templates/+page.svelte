@@ -29,7 +29,7 @@
     </p>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 max-w-4xl mx-auto">
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Plus class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Template Creation</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -37,7 +37,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Copy class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Bulk Deployment</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -45,7 +45,7 @@
         </p>
       </div>
       
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <Edit3 class="h-8 w-8 text-blue-500 mb-3" />
         <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Customization</h4>
         <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -56,7 +56,7 @@
   </div>
   
   <!-- For now, show current available functionality -->
-  <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+  <div class="mt-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
       Current Workaround
     </h3>

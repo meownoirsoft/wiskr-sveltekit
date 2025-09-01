@@ -1,7 +1,7 @@
 <script>
 import { createEventDispatcher, tick } from 'svelte';
 import { marked } from 'marked';
-import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+import { Clipboard, GitBranch, Edit2, Trash2, Check, X, Type, MousePointer2, MessageSquare, Info, RotateCcw, ChevronsLeft, ChevronsRight, Search } from 'lucide-svelte';
 import TextSelectionMenu from './TextSelectionMenu.svelte';
 import InfoPopup from './InfoPopup.svelte';
 import MrWiskrPopup from './MrWiskrPopup.svelte';
@@ -42,6 +42,7 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   
   // Mobile-only UI state
   let showBranchPicker = false;
+  let showMobileForm = false; // Track mobile form state
   
   const dispatch = createEventDispatcher();
   let chatContainer;
@@ -803,57 +804,10 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
   }
 </script>
 
-<main class="flex flex-col h-full overflow-hidden overflow-x-hidden mobile-chat" style="background-color: var(--bg-chat);">
-  <!-- Chat Header -->
-  {#if current}
-    <div class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
-      {#if isMobile}
-        <!-- Mobile: Compact controls moved from header -->
-        <div class="flex items-center justify-between w-full">
-          <button
-            type="button"
-            class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-            data-mobile-sessions-button
-            on:click={toggleSessionNavigator}
-            aria-label="Chats"
-          >
-            <MessageSquare class="w-6 h-6" />
-            <span class="text-xs">Chats</span>
-          </button>
-          
-          <!-- Mobile Global Search -->
-          {#if current?.id}
-            <div class="flex flex-col items-center p-2">
-              <GlobalSearch 
-                projectId={current?.id}
-                isMobile={true}
-                on:activate-tab={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-                }}
-                on:filter={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-                }}
-                on:navigate-chat={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-                }}
-                on:clear={(e) => {
-                  window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-                }}
-              />
-            </div>
-          {/if}
-          
-          <button
-            type="button"
-            class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-            on:click={() => { showBranchPicker = true; }}
-            aria-label="Branches"
-          >
-            <GitBranch class="w-6 h-6" />
-            <span class="text-xs">Branches</span>
-          </button>
-        </div>
-      {:else}
+<main class="flex flex-col h-full overflow-x-hidden mobile-chat" style="background-color: var(--bg-chat);">
+  <!-- Chat Header (Desktop Only) -->
+  {#if current && !isMobile}
+    <div id="chat-header-desktop" class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
       <!-- Two Column Layout with padding for collapse buttons -->
       <div class="grid grid-cols-2 gap-4" style="padding-left: 3rem; padding-right: 3rem;">
         <!-- Sessions Column -->
@@ -990,10 +944,9 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
           <div></div>
         {/if}
       </div>
-      {/if}
     </div>
   {/if}
-  
+
   <!-- Chat Messages (Virtual Scrolling) -->
   <VirtualMessageList
     bind:this={chatContainer}
@@ -1005,6 +958,8 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {currentBranchId}
     {messageBranchCounts}
     {userPreferences}
+    {isMobile}
+    {showMobileForm}
     bufferSize={8}
     estimatedMessageHeight={120}
     debugMode={false}
@@ -1033,6 +988,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     on:submit={send}
     on:reask={reAskLastQuestion}
     on:sayless={handleSayLessClick}
+    on:mobile-form-toggle={({ detail }) => { showMobileForm = detail.showMobileForm; }}
   />
 </main>
 

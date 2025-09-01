@@ -75,7 +75,7 @@
     aria-modal="true"
     aria-labelledby="tier-change-title"
   >
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
         <div>

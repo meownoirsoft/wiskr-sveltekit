@@ -89,7 +89,7 @@
     <!-- OAuth Buttons -->
     <div class="space-y-3">
       <button 
-        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         on:click={handleGoogleSignIn}
         disabled={oauthLoading}
       >
@@ -127,13 +127,13 @@
     <!-- Email/Password Form -->
     <div class="space-y-3">
       <input 
-        class="border p-2 w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-100" 
+        class="border p-2 w-full bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-100" 
         placeholder="email" 
         type="email"
         bind:value={email} 
       />
       <input 
-        class="border p-2 w-full bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-100" 
+        class="border p-2 w-full bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-100" 
         type="password" 
         placeholder="password" 
         bind:value={password} 

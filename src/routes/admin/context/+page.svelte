@@ -82,7 +82,7 @@
   </div>
 
   <!-- Filters and Controls -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- User Filter -->
       <div>
@@ -152,7 +152,7 @@
 
   <!-- Test Message Input -->
   {#if selectedProjectId}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
       <div>
         <label for="test-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Test Message (simulates user input for context analysis):
@@ -215,7 +215,7 @@
       {userMessage}
     />
   {:else}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
       <Database class="h-16 w-16 text-gray-400 mx-auto mb-4" />
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
         Select a Project to Begin

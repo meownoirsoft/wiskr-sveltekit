@@ -102,7 +102,7 @@
         class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 border
                {hasAccess 
                  ? 'hover:scale-105 focus:scale-105 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-500 border-gray-300 dark:border-gray-500 cursor-pointer' 
-                 : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'}"
+                 : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'}"
         title={hasAccess ? 'Use Wiskr to suggest relevant tags' : 'Pro feature: AI-powered tag suggestions'}
       >
         <Sparkles size="12" />

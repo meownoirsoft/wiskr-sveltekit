@@ -320,7 +320,7 @@
 
   <!-- Action Result -->
   {#if actionResult}
-    <div class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+    <div class="mb-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
       <div class="flex items-start justify-between">
         <div class="flex items-start">
           {#if actionResult.success}
@@ -349,7 +349,7 @@
   {/if}
 
   <!-- Search and Controls -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
     <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
       <div class="flex-1 min-w-0">
         <div class="flex gap-2">
@@ -379,7 +379,7 @@
   </div>
 
   <!-- Users Table -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
     {#if loading}
       <div class="p-8 text-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -418,7 +418,7 @@
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
             {#each users as user}
               <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -524,7 +524,7 @@
 
       <!-- Pagination -->
       {#if totalPages > 1}
-        <div class="bg-white dark:bg-gray-800 px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+        <div class="bg-white dark:bg-slate-800 px-6 py-3 border-t border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between">
             <div class="text-sm text-gray-700 dark:text-gray-300">
               Showing {offset + 1} to {Math.min(offset + pageSize, totalUsers)} of {totalUsers} results
@@ -560,7 +560,7 @@
 <!-- Edit User Modal -->
 {#if showEditModal}
   <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[99999]">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-800">
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white">
@@ -623,7 +623,7 @@
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal}
   <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[99999]">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-800">
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white">

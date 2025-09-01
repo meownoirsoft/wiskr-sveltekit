@@ -146,7 +146,7 @@
               {/if}
             </div>
             
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 min-h-[120px]">
+            <div class="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 min-h-[120px]">
               {#if isFormatting}
                 <div class="flex items-center justify-center py-8">
                   <div class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">

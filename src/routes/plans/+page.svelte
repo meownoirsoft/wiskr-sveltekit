@@ -401,7 +401,7 @@
           </div>
 
           <!-- Plan Limits Summary -->
-          <div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+          <div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700">
             <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Plan Includes:</h4>
             <div class="space-y-2 text-xs">
               <div class="flex justify-between">
@@ -448,7 +448,7 @@
     </div>
 
     <div class="overflow-x-auto">
-      <div class="min-w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="min-w-full bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <!-- Table Header -->
         <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
           <div class="grid grid-cols-4 gap-4">

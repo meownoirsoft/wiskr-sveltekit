@@ -65,7 +65,7 @@
       case 2: // Studio
         return 'bg-purple-50 text-purple-700 border-0 dark:bg-purple-900/20 dark:text-purple-300';
       default:
-        return 'bg-gray-50 text-gray-700 border-0 dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-gray-50 text-gray-700 border-0 dark:bg-slate-800 dark:text-gray-300';
     }
   }
 </script>

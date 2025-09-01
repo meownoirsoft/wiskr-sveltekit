@@ -51,7 +51,7 @@
     <div class="flex items-center">
       {#if isDesktop && showCollapseButton && onToggleCollapse}
         <button
-          class="p-1 text-xs bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="p-1 text-xs bg-white dark:bg-slate-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 		  style="margin-left: -3rem; position: absolute;"
 		  aria-label={isCollapsed ? 'Expand Questions & Ideas' : 'Collapse Questions & Ideas'}
 		  on:click={onToggleCollapse}

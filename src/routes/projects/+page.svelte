@@ -17,6 +17,7 @@ import NewProjectModal from '$lib/components/modals/NewProjectModal.svelte';
 import ProjectSettingsModal from '$lib/components/modals/ProjectSettingsModal.svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
 import SessionNavigator from '$lib/components/SessionNavigator.svelte';
+import BranchManager from '$lib/components/BranchManager.svelte';
 import SessionLogicManager from '$lib/components/SessionLogicManager.svelte';
 import ContextManager from '$lib/components/ContextManager.svelte';
 import ChatManager from '$lib/components/ChatManager.svelte';
@@ -175,6 +176,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let showSessionNavigator = false;
   let sessionNavigatorElement;
   
+
+  
   
   // Panel visibility state - responsive defaults
   let showLeftPanel = false;   // Facts/Docs panel
@@ -245,15 +248,17 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const wasDesktop = isDesktop;
       isDesktop = width >= 1280; // Custom breakpoint for mobile mode
       
-      // Always set panel state based on current screen size
-      if (isDesktop) {
-        // Desktop mode - show both panels
-        showLeftPanel = true;
-        showRightPanel = true;
-      } else {
-        // Mobile mode - hide both panels to show chat
-        showLeftPanel = false;
-        showRightPanel = false;
+      // Initial load - set panel state based on screen size
+      if (wasDesktop !== isDesktop) {
+        if (isDesktop) {
+          // Switch to desktop mode - show both panels
+          showLeftPanel = true;
+          showRightPanel = true;
+        } else {
+          // Switch to mobile mode - hide both panels to show chat
+          showLeftPanel = false;
+          showRightPanel = false;
+        }
       }
     }
   }
@@ -291,7 +296,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Server should have preloaded projects (including creating default for new users)
     // Only fetch fresh if server didn't preload properly
     if (!projects || projects.length === 0) {
-      //console.log('📋 No projects preloaded, fetching fresh from database...');
+      console.log('📋 No projects preloaded, fetching fresh from database...');
       const { data: p, error } = await supabase.from('projects').select('*').order('created_at');
       
       if (error) {
@@ -307,6 +312,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       if (projects.length === 0) {
         console.log('⚠️  No projects found even after database fetch - this should not happen for authenticated users');
       }
+    } else {
+      console.log('📊 Using preloaded projects:', projects.length, 'projects');
     }
     
     // Clean up stale localStorage data
@@ -328,7 +335,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const lastProject = lastProjectId ? projects.find(p => p.id === lastProjectId) : null;
       const projectToSelect = lastProject || projects[0];
       
-      //console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
+      console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
       
       // Dispatch event to notify layout about projects and current selection
       window.dispatchEvent(new CustomEvent('layout:update-projects', {
@@ -418,6 +425,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       // Listen for mobile toggle events
       window.addEventListener('mobile:toggle-context', handleMobileToggleContext);
       window.addEventListener('mobile:toggle-addins', handleMobileToggleAddins);
+      window.addEventListener('mobile:toggle-sessions', handleMobileToggleSessions);
       
       // Listen for mobile menu toggle from header hamburger button
       window.addEventListener('mobile:toggle-menu', () => {
@@ -458,6 +466,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.removeEventListener('mobile:show-addins', handleMobileShowAddins);
       window.removeEventListener('mobile:toggle-context', handleMobileToggleContext);
       window.removeEventListener('mobile:toggle-addins', handleMobileToggleAddins);
+      window.removeEventListener('mobile:toggle-sessions', handleMobileToggleSessions);
       window.removeEventListener('mobile:toggle-menu', () => {
         showMobileMenu = !showMobileMenu;
       });
@@ -1292,6 +1301,8 @@ function handleTextAddToDocs(event) {
     showSessionNavigator = !showSessionNavigator;
   }
 
+
+
   // Click outside handler for sessions panel
   function handleClickOutside(event) {
     if (showSessionNavigator && sessionNavigatorElement && !sessionNavigatorElement.contains(event.target)) {
@@ -1302,6 +1313,8 @@ function handleTextAddToDocs(event) {
         showSessionNavigator = false;
       }
     }
+    
+
   }
   
   // Mr Wiskr modal event handlers
@@ -1450,6 +1463,11 @@ function handleTextAddToDocs(event) {
       showRightPanel = true;
     }
   }
+  
+  function handleMobileToggleSessions() {
+    console.log('handleMobileToggleSessions called - toggling session navigator');
+    showSessionNavigator = !showSessionNavigator;
+  }
 
 </script>
 
@@ -1538,7 +1556,7 @@ function handleTextAddToDocs(event) {
     {/if}
     
     <!-- Chat Container -->
-    <div class="w-full h-full flex flex-col relative {!isDesktop ? 'mobile-chat-container' : ''}">
+    <div class="w-full h-full flex flex-col relative">
 
     <ChatInterface
       {current}
@@ -1557,8 +1575,6 @@ function handleTextAddToDocs(event) {
       {currentSession}
       isMobile={!isDesktop}
       user={data?.user}
-      userTier={data?.userTier}
-      effectiveTier={data?.effectiveTier}
       data-tutorial="chat-area"
       on:send={send}
       on:switch-branch={handleSwitchToBranch}
@@ -1571,6 +1587,7 @@ function handleTextAddToDocs(event) {
       on:add-to-questions={handleTextAddToQuestions}
       on:format-text={handleFormatText}
       on:toggle-session-navigator={handleToggleSessionNavigator}
+
     />
     
     <!-- Fixed position collapse/expand buttons with changing icons -->
@@ -1619,7 +1636,7 @@ function handleTextAddToDocs(event) {
       {#if showSessionNavigator && !isDesktop}
         <!-- Mobile session navigator header -->
         <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
-          <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Chats</h2>
+          <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Chats & Branches</h2>
           <button 
             class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             on:click={() => showSessionNavigator = false}
@@ -1638,10 +1655,15 @@ function handleTextAddToDocs(event) {
             projectId={current?.id}
             isVisible={showSessionNavigator}
             isMobile={!isDesktop}
+            {branches}
+            {currentBranchId}
+            {currentBranch}
+            onClosePanel={() => showSessionNavigator = false}
             on:select-session={handleSessionSelect}
             on:session-created={handleSessionCreated}
             on:session-updated={handleSessionUpdated}
             on:session-deleted={handleSessionDeleted}
+            on:branch-changed={handleSwitchToBranch}
           />
         </div>
       {:else if showSessionNavigator}
@@ -1652,15 +1674,22 @@ function handleTextAddToDocs(event) {
           projectId={current?.id}
           isVisible={showSessionNavigator}
           isMobile={false}
+          {branches}
+          {currentBranchId}
+          {currentBranch}
+          onClosePanel={() => showSessionNavigator = false}
           on:select-session={handleSessionSelect}
           on:session-created={handleSessionCreated}
           on:session-updated={handleSessionUpdated}
           on:session-deleted={handleSessionDeleted}
+          on:branch-changed={handleSwitchToBranch}
         />
       {/if}
     </div>
     </div>
   </div>
+
+
 
   <!-- RIGHT PANEL: Questions/Ideas -->
 <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">

@@ -79,7 +79,7 @@
 
   <!-- Stats Overview -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <Users class="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -93,7 +93,7 @@
       </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <Database class="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -107,7 +107,7 @@
       </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <Activity class="h-8 w-8 text-purple-600 dark:text-purple-400" />
@@ -132,7 +132,7 @@
       {#each quickActions as action}
         <a
           href={action.href}
-          class="block bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 {getColorClasses(action.color)} p-6 transition-all hover:shadow-md"
+          class="block bg-white dark:bg-slate-800 rounded-lg shadow-sm border-2 {getColorClasses(action.color)} p-6 transition-all hover:shadow-md"
         >
           <div class="flex items-start">
             <div class="flex-shrink-0">
@@ -153,7 +153,7 @@
   </div>
 
   <!-- System Status -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
       System Status
     </h2>

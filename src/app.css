@@ -419,6 +419,47 @@ code {
   background: var(--scrollbar-thumb-hover);
 }
 
+/* Minimal approach: Just ensure dropdown works */
+.mobile-ask-form .relative,
+.flex-shrink-0 .relative {
+  z-index: 1000 !important;
+}
+
+/* Force dropdown to appear above everything with maximum z-index */
+.mobile-ask-form .relative > div[style*="z-index: 9999"],
+.flex-shrink-0 .relative > div[style*="z-index: 9999"] {
+  z-index: 999999 !important;
+  position: absolute !important;
+  /* Position above the button */
+  bottom: 100% !important;
+  margin-bottom: 0.5rem !important;
+  /* Ensure proper background and styling */
+  background-color: var(--bg-input) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid var(--border-color, #d1d5db) !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Ensure parent containers don't clip the dropdown */
+.mobile-ask-form,
+.flex-shrink-0 {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+/* Force override blue backgrounds in dark mode for ModelDropdown */
+.mobile-ask-form .relative button[class*="bg-blue-50"],
+.flex-shrink-0 .relative button[class*="bg-blue-50"] {
+  background-color: var(--bg-input) !important;
+}
+
+/* Dark mode override for selected model */
+.dark .mobile-ask-form .relative button[class*="bg-blue-50"],
+.dark .flex-shrink-0 .relative button[class*="bg-blue-50"] {
+  background-color: #374151 !important; /* dark:bg-gray-700 */
+}
+
 /* Mobile-optimized styles */
 @media (max-width: 1279px) {
   /* Override desktop grid card heights on mobile */
@@ -562,6 +603,79 @@ code {
     height: 2.5rem; /* Consistent height for both buttons */
   }
   
+  /* Styles for the inline toggle bar (inside the form) */
+  .mobile-ask-form-toggle-inline {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    /* Ensure no extra spacing */
+    margin: 0 !important;
+    padding: 0.5rem 1rem !important;
+    line-height: 1 !important;
+    /* Force compact layout */
+    min-height: 0 !important;
+    height: auto !important;
+    /* Remove z-index to avoid stacking context issues */
+    position: relative;
+  }
+  
+  .dark .mobile-ask-form-toggle-inline {
+    background: rgba(31, 41, 55, 0.95);
+  }
+  
+  /* Ensure proper button spacing in inline toggle */
+  .mobile-ask-form-toggle-inline > div:first-child {
+    display: flex;
+    align-items: center;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .mobile-ask-form-toggle-inline button {
+    display: flex;
+    align-items: center;
+    height: 2.5rem; /* Consistent height for both buttons */
+    margin: 0 !important;
+  }
+  
+  /* Remove any extra spacing below the toggle bar */
+  .mobile-ask-form-toggle-inline + * {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Ensure the form container has no extra spacing */
+  .mobile-ask-form-toggle-inline ~ .mobile-ask-form {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Ensure ModelDropdown appears above the toggle bar */
+  .mobile-ask-form .relative {
+    z-index: 20 !important;
+  }
+  
+  /* Ensure dropdown menu appears above everything in the form */
+  .mobile-ask-form [style*="z-index: 50"] {
+    z-index: 60 !important;
+  }
+  
+  /* Force ModelDropdown to appear above toggle bar with higher specificity */
+  .mobile-ask-form-toggle-inline ~ .mobile-ask-form .relative {
+    z-index: 100 !important;
+  }
+  
+  /* Force dropdown menu to appear above everything */
+  .mobile-ask-form-toggle-inline ~ .mobile-ask-form [style*="z-index: 50"],
+  .mobile-ask-form-toggle-inline ~ .mobile-ask-form [style*="z-index: 60"] {
+    z-index: 200 !important;
+  }
+  
+  /* Additional specificity for dropdown elements */
+  .mobile-ask-form-toggle-inline ~ .mobile-ask-form div[class*="absolute"] {
+    z-index: 150 !important;
+  }
+  
   .dark .mobile-ask-form-toggle {
     background: rgba(31, 41, 55, 0.95);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
@@ -576,15 +690,20 @@ code {
     z-index: 40;
   }
   
-  /* Add bottom padding to chat container when mobile toggle is fixed */
+  /* Ensure mobile chat container extends to bottom of viewport */
   .mobile-chat-container {
-    padding-bottom: 4rem; /* Space for the fixed toggle bar */
+    /* Remove unnecessary padding since toggle bar is now inline */
+    padding-bottom: 0;
+    /* Ensure it extends to the bottom */
+    min-height: calc(100vh - 4rem); /* Account for header height */
   }
   
-  /* When mobile form is expanded, add more bottom padding */
+  /* When mobile form is expanded, ensure proper spacing */
   .mobile-chat-container .mobile-ask-form:not(.hidden) {
-    margin-bottom: 1rem; /* Additional space when form is visible */
+    margin-bottom: 0; /* Remove extra bottom margin */
   }
+  
+
 }
 
 /* Tablet-specific optimizations */

@@ -13,6 +13,8 @@
   export let currentBranchId = 'main';
   export let messageBranchCounts = {};
   export let userPreferences = { display_name: null };
+  export let isMobile = false; // Whether this is on mobile
+  export let showMobileForm = false; // Whether mobile form is expanded
   
   // Virtual scrolling configuration
   export let bufferSize = 5; // Number of messages to render outside viewport
@@ -537,8 +539,8 @@
   {/if}
 </div>
 
-<!-- Scroll to bottom button (appears when user scrolled up) -->
-{#if messages.length > 0 && !isAtBottom}
+<!-- Scroll to bottom button (appears when user scrolled up, hidden when mobile form is open) -->
+{#if messages.length > 0 && !isAtBottom && !(isMobile && showMobileForm)}
   <div class="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20">
     <button
       class="bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full px-4 py-2 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"

@@ -47,7 +47,7 @@
 <div class="container mx-auto p-8 max-w-4xl">
   <h1 class="text-2xl font-bold mb-6">Context Analysis API Debug</h1>
   
-  <div class="bg-white dark:bg-gray-800 rounded-lg border p-6 mb-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg border p-6 mb-6">
     <h2 class="text-lg font-semibold mb-4">Test Parameters</h2>
     
     <div class="space-y-4">

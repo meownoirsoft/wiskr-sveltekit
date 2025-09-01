@@ -7,30 +7,24 @@ import { supabase } from '$lib/supabase.js';
 export async function GET({ url, locals }) {
   try {
     const user = locals.user;
-    let userTier = 0; // Default to free
-    let trialEndsAt = null;
     
-    // Get user's tier from auth metadata if authenticated
-    if (user) {
-      try {
-        // Get tier information from user metadata
-        const metadata = user.user_metadata || {};
-        userTier = metadata.tier ?? 0;
-        trialEndsAt = metadata.trial_ends_at || null;
-        
-        // For now, we'll use default values until tier management is implemented
-        // This allows the system to work without database changes
-      } catch (error) {
-        console.log('Error reading user metadata, using default tier 0:', error.message);
-        // Keep default userTier = 0
-      }
-    }
+    // Use the same tier source as the rest of the application
+    const userTier = locals.userTier || 0;
+    const trialEndsAt = locals.trialEndsAt || null;
+    const effectiveTier = locals.effectiveTier || 0;
     
-    // Calculate effective tier (handles trial expiration)
-    const effectiveTier = getEffectiveTier(userTier, trialEndsAt);
+    // Debug: Log the tier information
+    console.log('User tier from locals:', userTier, 'Effective tier:', effectiveTier);
+    console.log('locals object keys:', Object.keys(locals));
+    console.log('Full locals.userTier:', locals.userTier);
+    console.log('Full locals.effectiveTier:', locals.effectiveTier);
     
     // Get all models with tier information
+    console.log('Calling getAllModelsWithTierInfo with effectiveTier:', effectiveTier);
     const rawModelsWithTierInfo = getAllModelsWithTierInfo(effectiveTier);
+    
+    // Debug: Log model availability
+    console.log('Raw models with tier info:', rawModelsWithTierInfo.map(m => ({ key: m.key, available: m.available, requiredTier: m.requiredTier })));
     
     // Convert 'available' property to 'isAvailable' for client compatibility
     const modelsWithTierInfo = rawModelsWithTierInfo.map(model => ({
@@ -41,6 +35,10 @@ export async function GET({ url, locals }) {
     // Separate available and unavailable models
     const availableModels = modelsWithTierInfo.filter(model => model.isAvailable);
     const unavailableModels = modelsWithTierInfo.filter(model => !model.isAvailable);
+    
+    // Debug: Log final model lists
+    console.log('Available models:', availableModels.map(m => m.key));
+    console.log('Unavailable models:', unavailableModels.map(m => m.key));
     
     // For backward compatibility, also include the legacy format
     const legacyModels = getAvailableModels();
@@ -57,6 +55,12 @@ export async function GET({ url, locals }) {
         provider: legacyModels[0]?.provider || 'unknown'
       },
       timestamp: new Date().toISOString()
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error('Error fetching models:', error);

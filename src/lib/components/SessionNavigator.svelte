@@ -1,12 +1,16 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Calendar, MessageSquare, Plus, Settings, Trash2, Edit3 } from 'lucide-svelte';
+  import { Calendar, MessageSquare, Plus, Settings, Trash2, Edit3, GitBranch } from 'lucide-svelte';
   
   export let sessions = [];
   export let currentSession = null;
   export let projectId = null;
   export const isVisible = false;
   export let isMobile = false;
+  export let branches = [];
+  export let currentBranchId = 'main';
+  export let currentBranch = null;
+  export let onClosePanel = null; // Function to close the panel
 
   const dispatch = createEventDispatcher();
 
@@ -160,98 +164,53 @@
 </script>
 
 <!-- Session Navigator Sidebar -->
-<div class="h-full border-r border-gray-200 dark:border-gray-700 flex flex-col {isMobile ? 'w-full' : 'w-72'} overflow-hidden shadow-lg" style="background-color: var(--bg-sessions-panel);">
-    <!-- Header (only show on desktop, mobile has its own header) -->
-    {#if !isMobile}
-    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <MessageSquare size="18" />
-          Chats
-        </h3>
-        <button
-          class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-          title="New Chat"
-          on:click={() => showNewSessionForm = true}
-        >
-          <Plus size="18" />
-        </button>
-      </div>
-
-      <!-- New Session Form -->
-      {#if showNewSessionForm}
-        <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <input
-            type="text"
-            class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-2 py-1 mb-2"
-            placeholder="Chat name"
-            bind:value={newSessionName}
-            on:keydown={(e) => onKeydown(e, createSession)}
-            disabled={isCreatingSession}
-          />
-          {#if createError}
-            <div class="text-xs text-red-600 mb-2">{createError}</div>
-          {/if}
-          <div class="flex items-center gap-2">
-            <button
-              class="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
-              on:click={createSession}
-              disabled={isCreatingSession || !newSessionName.trim()}
-            >
-              {isCreatingSession ? 'Creating...' : 'Create'}
-            </button>
-            <button
-              class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
-              on:click={() => {
-                showNewSessionForm = false;
-                newSessionName = '';
-                createError = '';
-              }}
-              disabled={isCreatingSession}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      {/if}
-    </div>
-    {/if}
-
-    <!-- Mobile New Session Button -->
-    {#if isMobile}
+<div class="border-r border-gray-200 dark:border-gray-700 flex flex-col {isMobile ? 'w-full' : 'w-80'} overflow-hidden shadow-lg" style="background-color: var(--bg-sessions-panel); height: calc(100vh - 4rem);">
+  
+  <!-- Split Layout: Chats (Top) and Branches (Bottom) -->
+  <div class="grid grid-rows-2" style="height: calc(100vh - 4rem);">
+    
+    <!-- TOP HALF: Chats Section -->
+    <div class="flex flex-col border-b border-gray-200 dark:border-gray-700">
+      <!-- Header -->
       <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-        <button
-          class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          on:click={() => showNewSessionForm = true}
-        >
-          <Plus size="18" />
-          New Chat
-        </button>
-        
-        <!-- New Session Form (Mobile) -->
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <MessageSquare size="18" />
+            Chats
+          </h3>
+          <button
+            class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+            title="New Chat"
+            on:click={() => showNewSessionForm = true}
+          >
+            <Plus size="18" />
+          </button>
+        </div>
+
+        <!-- New Session Form -->
         {#if showNewSessionForm}
           <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <input
               type="text"
-              class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-3 py-2 mb-3"
-            placeholder="Chat name"
+              class="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md px-2 py-1 mb-2"
+              placeholder="Chat name"
               bind:value={newSessionName}
               on:keydown={(e) => onKeydown(e, createSession)}
               disabled={isCreatingSession}
             />
             {#if createError}
-              <div class="text-xs text-red-600 mb-3">{createError}</div>
+              <div class="text-xs text-red-600 mb-2">{createError}</div>
             {/if}
             <div class="flex items-center gap-2">
               <button
-                class="flex-1 text-sm px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50 font-medium"
+                class="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
                 on:click={createSession}
                 disabled={isCreatingSession || !newSessionName.trim()}
               >
                 {isCreatingSession ? 'Creating...' : 'Create'}
               </button>
               <button
-                class="flex-1 text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600 font-medium"
+                class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
                 on:click={() => {
                   showNewSessionForm = false;
                   newSessionName = '';
@@ -265,89 +224,152 @@
           </div>
         {/if}
       </div>
-    {/if}
 
-    <!-- Sessions List -->
-    <div class="flex-1 overflow-y-auto">
-      {#if sessions.length === 0}
-        <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-          No chats yet. Create your first one!
-        </div>
-      {:else}
-        {#each sessions as session}
-          <div 
-            class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors group session-item"
-            style="background-color: {currentSession?.id === session.id ? 'var(--color-accent-light)' : ''}; border-color: {currentSession?.id === session.id ? 'var(--color-accent-border)' : ''};"
-            role="button"
-            tabindex="0"
-            aria-pressed={currentSession?.id === session.id}
-            on:click={() => selectSession(session)}
-            on:keydown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+      <!-- Sessions List -->
+      <div class="flex-1 overflow-y-auto">
+        {#if sessions.length === 0}
+          <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+            No chats yet. Create your first one!
+          </div>
+        {:else}
+          {#each sessions as session}
+            <div 
+              class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors group session-item"
+              style="background-color: {currentSession?.id === session.id ? 'var(--color-accent-light)' : ''}; border-color: {currentSession?.id === session.id ? 'var(--color-accent-border)' : ''};"
+              role="button"
+              tabindex="0"
+              aria-pressed={currentSession?.id === session.id}
+              on:click={() => {
                 selectSession(session);
-              }
-            }}
-          >
-            <!-- Session Header -->
-            <div class="flex items-start justify-between">
-              <div class="flex-1 min-w-0">
-                {#if editingSessionId === session.id}
-                  <input
-                    type="text"
-                    class="text-sm font-medium w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded px-1 py-0.5"
-                    bind:value={editingSessionName}
-                    on:keydown={(e) => onKeydown(e, saveEdit, session.id)}
-                    on:blur={() => saveEdit(session.id)}
-                  />
-                {:else}
-                  <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                    {session.session_name}
-                  </h4>
-                {/if}
+                if (onClosePanel) onClosePanel();
+              }}
+              on:keydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  selectSession(session);
+                  if (onClosePanel) onClosePanel();
+                }
+              }}
+            >
+              <!-- Session Header -->
+              <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0">
+                  {#if editingSessionId === session.id}
+                    <input
+                      type="text"
+                      class="text-sm font-medium w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded px-1 py-0.5"
+                      bind:value={editingSessionName}
+                      on:keydown={(e) => onKeydown(e, saveEdit, session.id)}
+                      on:blur={() => saveEdit(session.id)}
+                    />
+                  {:else}
+                    <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {session.session_name}
+                    </h4>
+                  {/if}
 
-                <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  <Calendar size="16" />
-                  <span>{formatDate(session.session_date)}</span>
-                  <span>•</span>
-                  <MessageSquare size="16" />
-                  <span>{session.message_count} msg{session.message_count !== 1 ? 's' : ''}</span>
+                  <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Calendar size="16" />
+                    <span>{formatDate(session.session_date)}</span>
+                    <span>•</span>
+                    <MessageSquare size="16" />
+                    <span>{session.message_count} msg{session.message_count !== 1 ? 's' : ''}</span>
+                  </div>
+
+                  {#if session.topic_summary}
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
+                      {session.topic_summary}
+                    </p>
+                  {/if}
                 </div>
 
-                {#if session.topic_summary}
-                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
-                    {session.topic_summary}
-                  </p>
+                <!-- Session Actions -->
+                <div class="flex items-center gap-1 ml-2 session-actions opacity-0 transition-opacity duration-200">
+                  <button
+                    class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400"
+                    title="Edit Chat"
+                    on:click|stopPropagation={() => startEditSession(session)}
+                  >
+                    <Edit3 size="16" />
+                  </button>
+                  <button
+                    class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
+                    title="Delete Chat"
+                    on:click|stopPropagation={() => deleteSession(session)}
+                  >
+                    <Trash2 size="16" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Last Activity -->
+              <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Last activity: {formatTime(session.updated_at)}
+              </div>
+            </div>
+          {/each}
+        {/if}
+      </div>
+    </div>
+
+    <!-- BOTTOM HALF: Branches Section -->
+    <div class="flex flex-col">
+      <!-- Header -->
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <GitBranch size="18" />
+          Branches
+        </h3>
+      </div>
+
+      <!-- Branches List -->
+      <div class="flex-1 overflow-y-auto">
+        {#if !currentSession}
+          <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+            Select a chat to view branches
+          </div>
+        {:else if branches.length === 0}
+          <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+            No branches yet. Create one from any message!
+          </div>
+        {:else}
+          <div class="p-4 space-y-2">
+            {#each branches as branch}
+              <div 
+                class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors branch-item {currentBranchId === branch.branch_id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'}"
+                role="button"
+                tabindex="0"
+                on:click={() => {
+                  dispatch('branch-changed', branch.branch_id);
+                  if (onClosePanel) onClosePanel();
+                }}
+                on:keydown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    dispatch('branch-changed', branch.branch_id);
+                    if (onClosePanel) onClosePanel();
+                  }
+                }}
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-3 h-3 rounded-full" style="background-color: {branch.color || '#6b7280'}"></div>
+                  <div class="flex-1 min-w-0">
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{branch.branch_name}</span>
+                    {#if branch.branch_id === 'main'}
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Main conversation</div>
+                    {/if}
+                  </div>
+                </div>
+                {#if currentBranchId === branch.branch_id}
+                  <div class="w-2 h-2 rounded-full bg-blue-600"></div>
                 {/if}
               </div>
-
-              <!-- Session Actions -->
-              <div class="flex items-center gap-1 ml-2 session-actions opacity-0 transition-opacity duration-200">
-                <button
-                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400"
-                  title="Edit Chat"
-                  on:click|stopPropagation={() => startEditSession(session)}
-                >
-                  <Edit3 size="16" />
-                </button>
-                <button
-                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
-                  title="Delete Chat"
-                  on:click|stopPropagation={() => deleteSession(session)}
-                >
-                  <Trash2 size="16" />
-                </button>
-              </div>
-            </div>
-
-            <!-- Last Activity -->
-            <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              Last activity: {formatTime(session.updated_at)}
-            </div>
+            {/each}
           </div>
-        {/each}
-      {/if}
+        {/if}
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
@@ -360,5 +382,11 @@
   .session-item:hover {
     background-color: var(--color-accent-light) !important;
     border-left: 3px solid var(--color-accent) !important;
+  }
+  
+  /* Branch item hover styling */
+  .branch-item:hover {
+    background-color: var(--color-accent-light) !important;
+    border-color: var(--color-accent-border) !important;
   }
 </style>

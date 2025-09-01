@@ -189,14 +189,14 @@
   onMount(async () => {
     // If the server didn't preload, fetch projects
     if (!projects.length) {
-      console.log('📋 No projects preloaded, fetching from database...');
+      //console.log('📋 No projects preloaded, fetching from database...');
       const { data: p } = await supabase.from('projects').select('*').order('created_at');
       projects = p ?? [];
-      console.log(`📊 Found ${projects.length} existing projects`);
+      //console.log(`📊 Found ${projects.length} existing projects`);
       
       // If still no projects after fetching, create a default first project for new users
       if (projects.length === 0) {
-        console.log('🆕 New user detected, creating first project...');
+        //console.log('🆕 New user detected, creating first project...');
         try {
           const res = await fetch('/api/projects/create', {
             method: 'POST',
@@ -210,9 +210,9 @@
           if (res.ok) {
             const { project } = await res.json();
             projects = [project];
-            console.log('✅ Created first project for new user:', project.name);
+            //console.log('✅ Created first project for new user:', project.name);
           } else {
-            console.error('❌ Failed to create first project:', await res.text());
+            //console.error('❌ Failed to create first project:', await res.text());
           }
         } catch (error) {
           console.error('❌ Error creating first project:', error);

@@ -356,7 +356,7 @@
             Add Custom Fact Type
           </button>
         {:else if hasAccess && showAddForm}
-          <div class="p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
+          <div class="p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800">
             <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Add New Fact Type</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">

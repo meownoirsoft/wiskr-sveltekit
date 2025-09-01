@@ -47,52 +47,15 @@
   
   function toggleMobileForm() {
     showMobileForm = !showMobileForm;
+    // Dispatch event to notify parent components about mobile form state change
+    dispatch('mobile-form-toggle', { showMobileForm });
   }
 </script>
 <!-- Fixed Ask Form at Bottom -->
   <div class="flex-shrink-0" style="background-color: var(--bg-ask-form);">
-    
-    <!-- Mobile Toggle Button (only visible on mobile) -->
-    {#if isMobile}
-      <div class="mobile-ask-form-toggle flex items-center px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-        <!-- Left side: New Messages button (only when form is expanded and not at bottom) -->
-        <div class="flex-1">
-          {#if showMobileForm && hasMessages && !isAtBottom}
-            <button
-              class="flex items-center gap-1 px-3 py-2 text-xs rounded border transition-colors font-medium touch-action-manipulation bg-blue-600 hover:bg-blue-700 text-white border-blue-600" 
-              style="touch-action: manipulation;"
-              on:click={() => window.dispatchEvent(new CustomEvent('chat:scroll-to-bottom'))}
-              title="Scroll to bottom"
-            >
-              <span class="font-medium">↓ New Messages</span>
-            </button>
-          {/if}
-        </div>
-        
-        <!-- Right side: New Prompt toggle button (always visible) -->
-        <div class="flex-shrink-0">
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm"
-            style="background-color: var(--color-accent); color: var(--color-accent-text);"
-            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-            on:click={toggleMobileForm}
-            title={showMobileForm ? "Hide input form" : "Show input form"}
-          >
-            <MessageSquare size="16" />
-            <span class="text-sm font-medium">{showMobileForm ? "Hide Prompt" : "New Prompt"}</span>
-            {#if showMobileForm}
-              <ChevronDown size="16" />
-            {:else}
-              <ChevronUp size="16" />
-            {/if}
-          </button>
-        </div>
-      </div>
-    {/if}
-    
     <!-- Ask Form -->
     <div class="border-t border-gray-200 dark:border-gray-700 {isMobile && !showMobileForm ? 'hidden' : ''} {isMobile ? 'mobile-ask-form' : ''}">
+      
       <!-- Top Row: Friend Selection and ReAsk -->
       <div class="px-2 sm:px-3 pt-2 pb-1">
         <!-- First row: Model selector -->
@@ -164,7 +127,7 @@
       <!-- Box and Send -->
       <form class="px-2 sm:px-3 pb-2 sm:pb-3 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
         <div class="relative {isMobile ? 'flex-1' : 'w-full'}">
-          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
+          <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-slate-50 dark:bg-slate-700 text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
           rows="2" 
           bind:value={input} 
           placeholder={current ? "Ask…" : "Pick a project"} 
@@ -202,4 +165,43 @@
         </button>
       </form>
     </div>
+    
+    <!-- Mobile Toggle Button (only visible on mobile, always visible) -->
+    {#if isMobile}
+      <div class="mobile-ask-form-toggle-inline flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+        <!-- Left side: New Messages button (only when form is expanded and not at bottom) -->
+        <div class="flex-shrink-0">
+          {#if showMobileForm && hasMessages && !isAtBottom}
+            <button
+              class="flex items-center gap-1 px-3 py-2 text-xs rounded border transition-colors font-medium touch-action-manipulation bg-blue-600 hover:bg-blue-700 text-white border-blue-600" 
+              style="touch-action: manipulation;"
+              on:click={() => window.dispatchEvent(new CustomEvent('chat:scroll-to-bottom'))}
+              title="Scroll to bottom"
+            >
+              <span class="font-medium">↓ New Messages</span>
+            </button>
+          {/if}
+        </div>
+        
+        <!-- Right side: New Prompt toggle button (always visible) -->
+        <div class="flex-shrink-0">
+          <button
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm"
+            style="background-color: var(--color-accent); color: var(--color-accent-text);"
+            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+            on:click={toggleMobileForm}
+            title={showMobileForm ? "Hide input form" : "Show input form"}
+          >
+            <MessageSquare size="16" />
+            <span class="text-sm font-medium">{showMobileForm ? "Hide Prompt" : "New Prompt"}</span>
+            {#if showMobileForm}
+              <ChevronDown size="16" />
+            {:else}
+              <ChevronUp size="16" />
+            {/if}
+          </button>
+        </div>
+      </div>
+    {/if}
   </div>

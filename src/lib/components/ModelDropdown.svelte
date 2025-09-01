@@ -104,7 +104,7 @@
 
   <!-- Dropdown Menu -->
   {#if isOpen && availableModels.length > 0}
-    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto" style="background-color: var(--bg-input); z-index: 50 !important;">
+    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 overflow-y-auto" style="background-color: var(--bg-input); z-index: 9999 !important; position: absolute; backdrop-filter: blur(8px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
       {#each sortedModels as model, index}
         {@const aiInfo = getAIInfo(model.key)}
         {@const isUnavailable = model.isAvailable === false}
@@ -118,7 +118,7 @@
         
         <button
           type="button"
-          class="w-full px-3 py-2 text-left text-xs flex items-center gap-2 md:gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-blue-800/30' : ''} {isUnavailable ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'}"
+          class="w-full px-3 py-2 text-left text-xs flex items-center gap-2 md:gap-3 transition-colors {model.key === modelKey ? 'bg-blue-50 dark:bg-gray-700' : ''} {isUnavailable ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'}"
           on:click={() => {
             if (!isUnavailable) {
               selectModel(model);
@@ -149,15 +149,24 @@
 
   <!-- Fallback dropdown when no models loaded -->
   {#if isOpen && availableModels.length === 0}
-    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg px-3 py-2" style="background-color: var(--bg-input); z-index: 50 !important;">
+    <div class="absolute bottom-full left-0 right-0 mb-1 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg px-3 py-2" style="background-color: var(--bg-input); z-index: 9999 !important; position: absolute; backdrop-filter: blur(8px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
       <div class="text-xs text-gray-500 dark:text-gray-400">Loading Wiskrs...</div>
     </div>
   {/if}
 </div>
 
 <style>
-  /* Ensure dropdown appears above other elements but below modals */
+  /* Ensure dropdown container has proper z-index */
   .relative {
-    z-index: 40 !important;
+    z-index: 1000 !important;
+  }
+  
+  /* Force dropdown to appear above everything */
+  .relative > div[style*="z-index: 9999"] {
+    z-index: 9999 !important;
+    position: absolute !important;
+    /* Position above the button */
+    bottom: 100% !important;
+    margin-bottom: 0.25rem !important;
   }
 </style>

@@ -64,9 +64,8 @@
         .from('conversation_branches')
         .insert([{
           session_id: sessionId,
-          name: 'main',
-          color: branchColors[0],
-          is_main: true
+          branch_name: 'Main Conversation',
+          color: branchColors[0]
         }])
         .select()
         .single();
@@ -90,7 +89,7 @@
     currentBranchId = branch.id;
     currentBranch = branch;
     
-    //console.log('🌳 Selected branch:', branch.name);
+    //console.log('🌳 Selected branch:', branch.branch_name);
     dispatch('branchChanged', { branch });
   }
 
@@ -109,9 +108,8 @@
         .from('conversation_branches')
         .insert([{
           session_id: currentSession.id,
-          name: newBranchName.trim(),
-          color: branchColors[colorIndex],
-          is_main: false
+          branch_name: newBranchName.trim(),
+          color: branchColors[colorIndex]
         }])
         .select()
         .single();
@@ -125,7 +123,7 @@
       // Reset form
       newBranchName = '';
       
-      //console.log('✅ Created branch:', data.name);
+      //console.log('✅ Created branch:', data.branch_name);
       
     } catch (error) {
       console.error('Error creating branch:', error);
@@ -136,7 +134,7 @@
   }
 </script>
 
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
   <div class="flex items-center justify-between mb-4">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Branches</h3>
     <button
@@ -191,8 +189,8 @@
             <GitBranch class="w-4 h-4 text-gray-400" />
             <div>
               <h4 class="font-medium text-gray-900 dark:text-white">
-                {branch.name}
-                {#if branch.is_main}
+                {branch.branch_name}
+                {#if branch.branch_id === 'main'}
                   <span class="text-xs text-gray-500 ml-1">(main)</span>
                 {/if}
               </h4>

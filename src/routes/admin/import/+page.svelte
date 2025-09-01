@@ -93,7 +93,7 @@
   </div>
 
   <!-- Import Form -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <div class="space-y-6">
       <!-- File Upload -->
       <div>
@@ -125,7 +125,7 @@
             <div class="space-y-2 text-center">
               <Upload class="mx-auto h-12 w-12 text-gray-400" />
               <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                <label for="file-upload" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                <label for="file-upload" class="relative cursor-pointer bg-white dark:bg-slate-800 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                   <span>Upload a file</span>
                   <input
                     id="file-upload"
@@ -271,7 +271,7 @@
 
   <!-- Results -->
   {#if uploadResult}
-    <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="mt-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-start justify-between">
         <div class="flex items-start">
           {#if uploadResult.success}
