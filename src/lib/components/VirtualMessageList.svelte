@@ -15,10 +15,12 @@
   export let userPreferences = { display_name: null };
   export let isMobile = false; // Whether this is on mobile
   export let showMobileForm = false; // Whether mobile form is expanded
-  export let searchTerm = ''; // Search term for highlighting
-  
-  // Virtual scrolling configuration
-  export let bufferSize = 5; // Number of messages to render outside viewport
+     export let searchTerm = ''; // Search term for highlighting
+   export let isSearchMode = false; // Whether we're in search result mode
+   export let searchResultMessageId = null; // ID of the message to highlight in search mode
+   
+   // Virtual scrolling configuration
+   export let bufferSize = 5; // Number of messages to render outside viewport
   export let estimatedMessageHeight = 120; // Initial height estimate
   export let debugMode = false; // Enable debug logging
 
@@ -33,6 +35,7 @@
   let lastMessageCount = 0;
   let isAtBottom = true;
   let scrollTimeoutId = null;
+  let isManuallyScrolling = false; // Flag to prevent auto-range calculation during manual scrolls
 
   // Message measurement and positioning
   let messageMeasurer;
@@ -180,7 +183,10 @@
       }
     }, 150);
 
-    calculateVisibleRange();
+    // Only calculate visible range if we're not manually scrolling
+    if (!isManuallyScrolling) {
+      calculateVisibleRange();
+    }
   }
 
   // Scroll to bottom (for new messages or initialization)
@@ -431,6 +437,41 @@
     calculateVisibleRange();
   }
 
+     // Show search result message with context
+   export async function showSearchResult(messageId, searchTerm = '') {
+     if (!messages.length) {
+       console.log('❌ VirtualMessageList: Cannot show search result - no messages');
+       return;
+     }
+     
+     console.log('🔍 VirtualMessageList: showSearchResult called with:', { messageId, searchTerm });
+     
+     // Find the message index
+     const messageIndex = messages.findIndex(m => m.id === messageId);
+     if (messageIndex === -1) {
+       console.log('❌ VirtualMessageList: Message not found:', messageId);
+       return;
+     }
+     
+     console.log('🔍 VirtualMessageList: Found message at index:', messageIndex);
+     
+     // Set search mode to show only this message with context
+     isSearchMode = true;
+     searchResultMessageId = messageId;
+     
+           // Wait for DOM update
+      await tick();
+      
+      console.log('✅ VirtualMessageList: Search result displayed successfully');
+   }
+   
+   // Exit search mode and return to normal virtual scrolling
+   export function exitSearchMode() {
+     isSearchMode = false;
+     searchResultMessageId = null;
+     console.log('✅ VirtualMessageList: Exited search mode, returning to normal scrolling');
+   }
+
   // Recalculate on resize
   function handleResize() {
     updateContainerHeight();
@@ -441,18 +482,72 @@
     dispatch(event.type, event.detail);
   }
 
-  // Calculate spacer heights for proper scrolling
-  $: topSpacerHeight = visibleRange.offsetTop;
-  $: bottomSpacerHeight = Math.max(0, totalHeight - visibleRange.offsetTop - getVisibleMessagesHeight());
-  $: visibleMessages = messages.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
-
-  function getVisibleMessagesHeight() {
-    let height = 0;
-    for (let i = visibleRange.startIndex; i <= visibleRange.endIndex && i < messages.length; i++) {
-      height += messageMeasurer ? messageMeasurer.getHeight(messages[i].id) : estimatedMessageHeight;
+     // Calculate spacer heights for proper scrolling
+   $: topSpacerHeight = visibleRange.offsetTop;
+   $: bottomSpacerHeight = Math.max(0, totalHeight - visibleRange.offsetTop - getVisibleMessagesHeight());
+   
+       // In search mode, only show the result message with context
+    $: visibleMessages = isSearchMode && searchResultMessageId ? 
+      getSearchResultMessages() : 
+      messages.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
+    
+    // Debug visibleMessages changes
+    $: if (isSearchMode && searchResultMessageId) {
+      console.log('🔍 VirtualMessageList: visibleMessages updated:', {
+        isSearchMode,
+        searchResultMessageId,
+        visibleMessagesLength: visibleMessages.length,
+        visibleMessageIds: visibleMessages.map(m => m.id)
+      });
     }
-    return height;
-  }
+
+     function getVisibleMessagesHeight() {
+     let height = 0;
+     for (let i = visibleRange.startIndex; i <= visibleRange.endIndex && i < messages.length; i++) {
+       height += messageMeasurer ? messageMeasurer.getHeight(messages[i].id) : estimatedMessageHeight;
+     }
+     return height;
+   }
+   
+            // Get search result message with context (user prompt + result message)
+     function getSearchResultMessages() {
+       if (!searchResultMessageId || !messages.length) {
+         console.log('🔍 VirtualMessageList: getSearchResultMessages - no messageId or messages:', { searchResultMessageId, messagesLength: messages.length });
+         return [];
+       }
+       
+       const resultIndex = messages.findIndex(m => m.id === searchResultMessageId);
+       if (resultIndex === -1) {
+         console.log('🔍 VirtualMessageList: getSearchResultMessages - message not found:', searchResultMessageId);
+         return [];
+       }
+       
+       // Find the user prompt that preceded this result message
+       let userPromptIndex = -1;
+       for (let i = resultIndex - 1; i >= 0; i--) {
+         if (messages[i].role === 'user') {
+           userPromptIndex = i;
+           break;
+         }
+       }
+       
+       // Build result: user prompt (if found) + target message
+       const result = [];
+       if (userPromptIndex !== -1) {
+         result.push(messages[userPromptIndex]); // Add user prompt
+       }
+       result.push(messages[resultIndex]); // Add target message
+       
+       console.log('🔍 VirtualMessageList: getSearchResultMessages result:', {
+         resultIndex,
+         userPromptIndex,
+         resultLength: result.length,
+         messageIds: result.map(m => m.id),
+         messageRoles: result.map(m => m.role)
+       });
+       
+       return result;
+     }
 
   // Cleanup
   onDestroy(() => {
@@ -504,12 +599,45 @@
       text="Loading conversation history..." 
       center={true} 
     />
-  {:else if messages.length === 0}
-    <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
-      <div class="text-sm">Look at this brand new space ready for action!</div>
-      <div class="text-xs mt-1">What do you want to do next?</div>
-    </div>
-  {:else}
+     {:else if messages.length === 0}
+     <div class="text-center text-zinc-500 dark:text-zinc-400 py-8">
+       <div class="text-sm">Look at this brand new space ready for action!</div>
+       <div class="text-xs mt-1">What do you want to do next?</div>
+     </div>
+       {:else if isSearchMode && searchResultMessageId}
+      <!-- Search result mode - show only the result with context -->
+      <div class="text-center text-blue-600 dark:text-blue-400 py-8 mt-8 border-b border-blue-200 dark:border-blue-800">
+        <div class="text-sm font-medium">🔍 Search Result</div>
+                 <div class="text-xs mt-1">Showing user prompt + result message</div>
+        <button 
+          class="mt-2 px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
+          on:click={exitSearchMode}
+        >
+          ← Back to full chat
+        </button>
+      </div>
+      
+      
+       
+       <!-- Search result messages -->
+       {#each visibleMessages as message, localIndex (message.id)}
+         {@const globalIndex = messages.findIndex(m => m.id === message.id)}
+         <MessageItem
+           {message}
+           index={globalIndex}
+           {currentBranch}
+           {currentBranchId}
+           {messageBranchCounts}
+           {userPreferences}
+           {current}
+           {searchTerm}
+           onHeightChange={handleMessageHeightChange}
+           on:select-all={(e) => dispatch('select-all', e.detail)}
+           on:open-branch-modal={(e) => dispatch('open-branch-modal', e.detail)}
+           on:open-mr-wiskr={(e) => dispatch('open-mr-wiskr', e.detail)}
+         />
+       {/each}
+    {:else}
     <!-- Top spacer for messages above viewport -->
     {#if topSpacerHeight > 0}
       <div style="height: {topSpacerHeight}px;" aria-hidden="true"></div>
@@ -541,8 +669,8 @@
   {/if}
 </div>
 
-<!-- Scroll to bottom button (appears when user scrolled up, hidden when mobile form is open) -->
-{#if messages.length > 0 && !isAtBottom && !(isMobile && showMobileForm)}
+ <!-- Scroll to bottom button (appears when user scrolled up, hidden when mobile form is open or in search mode) -->
+ {#if messages.length > 0 && !isAtBottom && !(isMobile && showMobileForm) && !isSearchMode}
   <div class="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20">
     <button
       class="bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full px-4 py-2 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"

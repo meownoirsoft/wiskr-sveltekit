@@ -1349,10 +1349,9 @@ function handleTextAddToDocs(event) {
   
   async function handleSearchNavigateChat(event) {
     const { messageId, branchId, firstMatchIndex } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateChat called with:', { messageId, branchId, firstMatchIndex });
-    console.log('🔍 Main page: Full event detail:', JSON.stringify(event.detail, null, 2));
+    console.log('🔍 Main page: handleSearchNavigateChat called with:', messageId, firstMatchIndex);
+    console.log('Main page: branchId from event:', branchId);
     console.log('Main page: currentBranchId:', currentBranchId);
-    console.log('Main page: currentSession?.id:', currentSession?.id);
     
     // Set the search term for highlighting
     search = event.detail.searchTerm || '';
@@ -1369,18 +1368,53 @@ function handleTextAddToDocs(event) {
     // Ensure the chat area is visible and scroll to the message
     // Use a retry mechanism to ensure chatManager is available
     let retryCount = 0;
-    const maxRetries = 10;
+    const maxRetries = 25; // Increased retries for message loading
+    const retryDelay = 200; // Slightly longer delay between retries
     
     const attemptScroll = () => {
       if (chatManager) {
-        console.log('Main page: chatManager available, scrolling to message');
+        console.log('Main page: chatManager available, checking message availability...');
+        
+        // Check if messages are loaded and the target message exists
+        const messageExists = messages.some(m => m.id === messageId);
+        console.log('Main page: Messages array length:', messages.length);
+        console.log('Main page: Looking for message ID:', messageId);
+        console.log('Main page: Target message found in array:', messageExists);
+        
+        if (!messageExists) {
+          console.log('Main page: Target message not found in messages array, retrying...');
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(attemptScroll, retryDelay);
+            return;
+          } else {
+            console.error('Main page: Target message never loaded after retries');
+            return;
+          }
+        }
+        
+        // Additional check: wait for the message to be rendered in the DOM
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageElement) {
+          console.log('Main page: Message not yet rendered in DOM, retrying...');
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(attemptScroll, retryDelay);
+            return;
+          } else {
+            console.error('Main page: Message never rendered in DOM after retries');
+            return;
+          }
+        }
+        
+        console.log('Main page: Target message found and rendered, scrolling to message');
         // Pass the current search term for highlighting
         const searchTerm = search || '';
         chatManager.scrollToMessage(messageId, searchTerm, firstMatchIndex);
       } else if (retryCount < maxRetries) {
         retryCount++;
         console.log(`Main page: chatManager not available, retry ${retryCount}/${maxRetries}`);
-        setTimeout(attemptScroll, 100);
+        setTimeout(attemptScroll, retryDelay);
       } else {
         console.error('Main page: chatManager still not available after retries');
       }
@@ -1391,10 +1425,8 @@ function handleTextAddToDocs(event) {
   
   function handleSearchNavigateSession(event) {
     const { sessionId, sessionName } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateSession called with:', { sessionId, sessionName });
-    console.log('🔍 Main page: Full event detail:', JSON.stringify(event.detail, null, 2));
+    console.log('🔍 Main page: handleSearchNavigateSession called with:', sessionId, sessionName);
     console.log('Main page: currentSession?.id:', currentSession?.id);
-    console.log('Main page: Available sessions:', sessions.map(s => ({ id: s.id, name: s.session_name })));
     
     // Find the session in our sessions list and switch to it
     const targetSession = sessions.find(s => s.id === sessionId);
@@ -1403,10 +1435,7 @@ function handleTextAddToDocs(event) {
       sessionLogicManager.selectSession(targetSession);
       console.log('Main page: Session switch completed');
     } else {
-      console.error('Main page: Session not found or sessionLogicManager not available');
-      console.error('Main page: Target sessionId:', sessionId);
-      console.error('Main page: Available session IDs:', sessions.map(s => s.id));
-      console.error('Main page: sessionLogicManager available:', !!sessionLogicManager);
+      console.log('Main page: Session not found or sessionLogicManager not available');
     }
   }
   
