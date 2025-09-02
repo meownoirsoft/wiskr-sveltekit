@@ -196,6 +196,16 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   // Check if we're on the projects page
   $: isProjectsPage = $page.url.pathname === '/projects';
   
+  // Check if we're on a public page
+  $: isPublicPage = $page.url.pathname === '/' ||
+    $page.url.pathname === '/legal' ||
+    $page.url.pathname === '/support' ||
+    $page.url.pathname === '/privacy' ||
+    $page.url.pathname === '/terms' ||
+    $page.url.pathname === '/plans' ||
+    $page.url.pathname === '/login' ||
+    $page.url.pathname === '/signup';
+  
   // Check if we should show the logo (authenticated pages + public pages)
   $: shouldShowLogo = isProjectsPage || 
     $page.url.pathname.startsWith('/admin') ||
@@ -596,8 +606,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 <div class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
 
   <!-- Header -->
-  <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
-    <div class="w-full px-2 md:px-6 flex items-center justify-between gap-2 md:gap-4 relative">
+     <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
+     <div class="w-full {isPublicPage ? 'px-4 md:px-6' : ''} flex items-center justify-between gap-2 md:gap-4 relative">
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
       <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
@@ -652,14 +662,23 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           </div>
         {/if}
         
-        <!-- Desktop: Wiskr brand (show on authenticated pages + login/signup) -->
-        {#if shouldShowLogo}
-          <a href="/projects" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-            <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
-              <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
-            </span>
-          </a>
-        {/if}
+                 <!-- Desktop: Wiskr brand (show on authenticated pages + login/signup) -->
+         {#if shouldShowLogo}
+           <a href="/" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+             <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
+               <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
+             </span>
+           </a>
+         {/if}
+        
+                 <!-- Public pages: Show desktop logo on left, hide duplicate in center -->
+         {#if isPublicPage}
+           <a href="/" class="flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+             <span class="text-lg text-xl inline-flex items-center">
+               <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
+             </span>
+           </a>
+         {/if}
         
         <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
@@ -756,38 +775,43 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       </div>
       
              <!-- Center: Mobile Wiskr logo -->
-       {#if shouldShowLogo}
-         <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 items-center justify-center">
-           <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-             <span class="text-lg inline-flex items-center">
-               <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
-             </span>
-           </a>
-         </div>
+               {#if shouldShowLogo && !isPublicPage}
+          <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 items-center justify-center">
+            <a href="/" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+              <span class="text-lg inline-flex items-center">
+                <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
+              </span>
+            </a>
+          </div>
+               {:else if isPublicPage}
+          <!-- Public pages: Hide duplicate logo in center on mobile -->
+          <div class="flex-1"></div>
        {:else}
          <!-- Spacer for when logo is not shown -->
          <div class="flex-1"></div>
        {/if}
       <!-- Mobile: Search icon button (positioned to right of logo for symmetry) -->
-      <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
-        <button
-          type="button"
-          class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-          title="Search"
-          on:click={() => {
-            window.dispatchEvent(new CustomEvent('mobile:toggle-search'));
-          }}
-          aria-label="Search"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </button>
-      </div>
+      {#if !isPublicPage}
+        <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
+          <button
+            type="button"
+            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+            title="Search"
+            on:click={() => {
+              window.dispatchEvent(new CustomEvent('mobile:toggle-search'));
+            }}
+            aria-label="Search"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </div>
+      {/if}
 
       <!-- Right side: Menus and controls -->
       <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
-        {#if isProjectsPage}
+        {#if isProjectsPage && !isPublicPage}
           <!-- Desktop: Global Search and Usage -->
           <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
             <GlobalSearch 
@@ -871,32 +895,54 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           </div>
         {/if}
 
-        <!-- Desktop navigation (>= 1200px) -->
-        <div class="hidden xl:flex items-center gap-6">
-          {#if data?.user}
-             <!-- App/Account Settings -->
-            {#if $page.url.pathname === '/projects'}
-            <button 
-              type="button"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              title="Settings"
-              on:click={openAppSettings}
-            >
-              <Settings size="16" />
-              <span>Settings</span>
-            </button>
-            {/if}
-            
-            <!-- Logout -->
-            <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
-              <LogOut size="16" />
-              <span>Logout</span>
-            </a>
-          {:else}
-            <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
-            <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
-          {/if}
-        </div>
+                 <!-- Desktop navigation (>= 1200px) -->
+         <div class="hidden xl:flex items-center gap-6">
+           {#if data?.user}
+              <!-- App/Account Settings -->
+             {#if $page.url.pathname === '/projects'}
+             <button 
+               type="button"
+               class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+               title="Settings"
+               on:click={openAppSettings}
+             >
+               <Settings size="16" />
+               <span>Settings</span>
+             </button>
+             {/if}
+             
+             <!-- Back to Projects (show on public pages) -->
+             {#if isPublicPage}
+               <a href="/projects" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
+                 <span>← Back to Projects</span>
+               </a>
+             {/if}
+             
+             <!-- Logout -->
+             <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
+               <LogOut size="16" />
+               <span>Logout</span>
+             </a>
+           {:else}
+             <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
+             <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
+           {/if}
+         </div>
+        
+                 <!-- Public pages: Show authentication links and back to projects on mobile -->
+         {#if isPublicPage}
+           <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-3">
+             {#if data?.user}
+               <a href="/projects" class="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">← Back to Projects</a>
+               <span class="text-gray-400 dark:text-gray-600">|</span>
+               <a href="/logout" class="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Logout</a>
+             {:else}
+               <a href="/login" class="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
+               <span class="text-gray-400 dark:text-gray-600">|</span>
+               <a href="/signup" class="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
+             {/if}
+           </div>
+         {/if}
         
       </div>
     </div>

@@ -326,11 +326,11 @@
           class="relative rounded-2xl p-8 transition-all hover:shadow-xl dark:hover:shadow-gray-800/25 {plan.color} border {plan.borderColor} {plan.comingSoon ? 'opacity-90' : ''}"
           style="background-color: var(--bg-card);"
         >
-          <!-- Coming Soon Badge -->
-          {#if plan.comingSoon}
-            <div class="absolute -top-3 -right-3 z-10">
-              <div class="px-4 py-2 text-xs font-bold text-white rounded-full shadow-lg transform rotate-12 bg-gradient-to-r from-purple-500 to-pink-500">
-                Coming Soon
+          <!-- Coming Soon Banner for Studio Plan -->
+          {#if plan.id === 'studio'}
+            <div class="absolute -top-4 -right-4 z-10">
+              <div class="px-6 py-3 text-sm font-bold text-white rounded-lg shadow-lg transform rotate-12 bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-white dark:border-gray-800">
+                COMING SOON!
               </div>
             </div>
           {/if}
@@ -371,24 +371,31 @@
               >
                 Current Plan
               </button>
-            {:else if plan.tier}
+            {:else if plan.tier === 1}
               <button 
                 on:click={() => handleUpgrade(plan.tier)}
                 disabled={loadingStates[plan.id]}
-                class="w-full px-6 py-3 text-center rounded-lg transition-all font-medium {plan.id === 'pro' ? 'text-white shadow-lg' : plan.buttonStyle} block"
-                style="background-color: {plan.id === 'pro' ? 'var(--color-accent)' : ''}; color: {plan.id === 'pro' ? 'var(--color-accent-text)' : ''};"
-                on:mouseenter={(e) => plan.id === 'pro' && (e.target.style.backgroundColor = 'var(--color-accent-hover)')}
-                on:mouseleave={(e) => plan.id === 'pro' && (e.target.style.backgroundColor = 'var(--color-accent)')}
+                class="w-full px-6 py-3 text-center rounded-lg transition-all font-medium text-white shadow-lg block"
+                style="background-color: var(--color-accent); color: var(--color-accent-text);"
+                on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+                on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
                 data-testid="upgrade-button"
               >
                 {#if loadingStates[plan.id]}
                   <div class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
                 {/if}
                 {#if loadingStates[plan.id]}
-                  {plan.id === 'pro' ? 'Starting...' : 'Upgrading...'}
+                  Starting...
                 {:else}
-                  {plan.id === 'pro' ? 'Start Pro Trial' : `Upgrade to ${plan.name}`}
+                  Start Pro Trial
                 {/if}
+              </button>
+            {:else if plan.tier === 2}
+              <button 
+                class="w-full px-6 py-3 text-center rounded-lg font-medium bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                disabled
+              >
+                Coming Soon
               </button>
             {:else}
               <button 

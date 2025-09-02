@@ -312,7 +312,7 @@ select.select-with-placeholder[value=""]:not(:focus) {
 .dark select.select-with-placeholder[value=""],
 .dark select.select-with-placeholder:not([value]),
 .dark select.select-with-placeholder[value=""]:not(:focus) {
-  color: #6b7280 !important; /* Darker gray for dark mode */
+  color: #6b7280 !important;
 }
 
 /* Ensure selected options show normal color */
@@ -330,7 +330,7 @@ select.showing-placeholder {
 }
 
 .dark select.showing-placeholder {
-  color: #6b7280 !important; /* Darker gray for dark mode */
+  color: #6b7280 !important;
 }
 
 /* Selected options show normal text color */
@@ -570,7 +570,7 @@ code {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    /* Ensure it's always visible on mobile */
+    /* Ensure it's always visible on mobile with proper safe area handling */
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     /* Force visibility on mobile */
@@ -581,6 +581,11 @@ code {
     max-width: 100vw;
     max-height: 100vh;
     overflow: visible;
+    /* Mobile viewport adjustments */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    /* Ensure it stays above mobile browser UI */
+    bottom: env(safe-area-inset-bottom, 0);
   }
   
   /* Force right-side positioning for New Prompt button */
@@ -678,6 +683,39 @@ code {
   
   .dark .mobile-ask-form-toggle {
     background: rgba(31, 41, 55, 0.95);
+  }
+  
+  /* Additional mobile viewport fixes */
+  @supports (padding: max(0px)) {
+    .mobile-ask-form-toggle {
+      /* Use CSS max() for better mobile compatibility */
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+      bottom: max(0px, env(safe-area-inset-bottom));
+    }
+  }
+  
+  /* Fallback for older mobile browsers */
+  @media screen and (max-height: 600px) {
+    .mobile-ask-form-toggle {
+      bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+  }
+  
+  /* Ensure the toggle bar is always visible on mobile */
+  @media (max-width: 768px) {
+    .mobile-ask-form-toggle {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 999 !important;
+    }
+  }
+  
+  /* Dark mode styling for mobile toggle */
+  .dark .mobile-ask-form-toggle {
+    background: rgba(31, 41, 55, 0.95);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
   }
   
@@ -769,6 +807,132 @@ code {
   
   .safe-area-inset-right {
     padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* SIMPLE MOBILE BOTTOM BAR FIX - This will definitely work */
+@media (max-width: 768px) {
+  .mobile-ask-form-toggle {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999999 !important;
+    background: white !important;
+    border-top: 1px solid #e5e7eb !important;
+    padding: 0.5rem 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .dark .mobile-ask-form-toggle {
+    background: #1f2937 !important;
+    border-top-color: #374151 !important;
+  }
+  
+  /* Make the form more discoverable when expanded */
+  .mobile-ask-form:not(.hidden) {
+    /* Add a subtle gradient fade to indicate more content below */
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.02) 100%) !important;
+    /* Add a subtle border to make it more visible */
+    border-top: 1px solid #e5e7eb !important;
+    /* Add some padding to make it more obvious */
+    padding-top: 1rem !important;
+    /* Add a subtle shadow to lift it from the background */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  .dark .mobile-ask-form:not(.hidden) {
+    background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border-top-color: #374151 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Add a visual indicator that there's more content below */
+  .mobile-ask-form-toggle::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+  
+  .dark .mobile-ask-form-toggle::after {
+    background: #6b7280;
+  }
+  
+  /* Add a subtle animation to draw attention */
+  .mobile-ask-form-toggle {
+    animation: slide-up-attention 0.3s ease-out;
+  }
+  
+  @keyframes slide-up-attention {
+    0% {
+      transform: translateY(100%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  /* Add a pulsing indicator when form is expanded to show there's more content */
+  .mobile-ask-form:not(.hidden)::before {
+    content: '↓ Scroll to see form';
+    position: absolute;
+    top: -2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000000;
+    animation: pulse-scroll-hint 2s ease-in-out infinite;
+  }
+  
+  .dark .mobile-ask-form:not(.hidden)::before {
+    background: #60a5fa;
+  }
+  
+  @keyframes pulse-scroll-hint {
+    0%, 100% {
+      opacity: 0.8;
+      transform: translateX(-50%) scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.05);
+    }
+  }
+  
+  /* Make the form container more obvious */
+  .mobile-ask-form:not(.hidden) {
+    /* Add a more prominent background */
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    /* Add a more visible border */
+    border: 2px solid #e5e7eb !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    /* Add more padding to make it more obvious */
+    padding: 1.5rem 1rem 1rem 1rem !important;
+    /* Add a more prominent shadow */
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .dark .mobile-ask-form:not(.hidden) {
+    background: rgba(31, 41, 55, 0.95) !important;
+    border-color: #374151 !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
   }
 }
 
