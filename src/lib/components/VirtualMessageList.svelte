@@ -102,9 +102,13 @@
     
     window.addEventListener('resize', handleResizeForScroll);
     
+    // Listen for search restore events
+    window.addEventListener('search:restore-chat', handleSearchRestore);
+    
     // Cleanup on destroy
     return () => {
       window.removeEventListener('resize', handleResizeForScroll);
+      window.removeEventListener('search:restore-chat', handleSearchRestore);
     };
   });
 
@@ -208,6 +212,25 @@
     if (messageMeasurer) {
       messageMeasurer.setHeight(messageId, height);
     }
+  }
+
+  // Handle search restore events - restore full chat view
+  function handleSearchRestore() {
+    console.log('🔍 VirtualMessageList: Restoring full chat view from search mode');
+    
+    // Exit search mode
+    isSearchMode = false;
+    searchResultMessageId = null;
+    
+    // Restore full message list
+    calculateVisibleRange();
+    
+    // Scroll to bottom to show latest messages
+    tick().then(() => {
+      if (containerElement) {
+        scrollToBottom(true);
+      }
+    });
   }
 
   // Auto-scroll when messages change (new messages or content updates)
@@ -459,10 +482,21 @@
      isSearchMode = true;
      searchResultMessageId = messageId;
      
-           // Wait for DOM update
-      await tick();
-      
-      console.log('✅ VirtualMessageList: Search result displayed successfully');
+     // Wait for DOM update
+     await tick();
+     
+     // Scroll to position the search result at the top of the scroll area
+     if (containerElement) {
+       // In search mode, we want to scroll to the top since we're showing the result message
+       // Scroll to the very top of the container
+       containerElement.scrollTo({
+         top: 0,
+         behavior: 'smooth'
+       });
+       console.log('🔍 VirtualMessageList: Scrolled search result to top of view');
+     }
+     
+     console.log('✅ VirtualMessageList: Search result displayed successfully');
    }
    
    // Exit search mode and return to normal virtual scrolling

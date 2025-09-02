@@ -157,16 +157,26 @@ import VirtualMessageList from './VirtualMessageList.svelte';
       scrollToMessage(messageId, searchTerm, firstMatchIndex);
     };
     
+    // Listen for search restore events
+    const handleSearchRestore = () => {
+      console.log('🔍 ChatInterface: Restoring full chat view from search mode');
+      // Reset search highlighting state
+      currentSearchTerm = '';
+      highlightedMessageId = null;
+    };
+    
     window.addEventListener('search:filter', handleGlobalSearchFilter);
     window.addEventListener('search:clear-filter', handleGlobalSearchClear);
     window.addEventListener('search:highlight-result', handleSearchHighlight);
     window.addEventListener('chat:scroll-to-message', handleChatScrollToMessage);
+    window.addEventListener('search:restore-chat', handleSearchRestore);
     
     return () => {
       window.removeEventListener('search:filter', handleGlobalSearchFilter);
       window.removeEventListener('search:clear-filter', handleGlobalSearchClear);
       window.removeEventListener('search:highlight-result', handleSearchHighlight);
       window.removeEventListener('chat:scroll-to-message', handleChatScrollToMessage);
+      window.removeEventListener('search:restore-chat', handleSearchRestore);
     };
   });
 
@@ -1072,6 +1082,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {effectiveTier}
     {isAtBottom}
     {hasMessages}
+    isSearchMode={!!highlightedMessageId}
     on:submit={send}
     on:reask={reAskLastQuestion}
     on:sayless={handleSayLessClick}

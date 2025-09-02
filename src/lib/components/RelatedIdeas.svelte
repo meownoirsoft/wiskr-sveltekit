@@ -16,6 +16,7 @@ import { browser } from '$app/environment';
   export let ideas = [];
   export let isGeneratingIdeas = false;
   export let projectId = null;
+  export let searchTerm = ''; // Search term for filtering and highlighting
   export const user = null; // User object with tier info
   
   // Local reactive variable for template use
@@ -43,6 +44,7 @@ import { browser } from '$app/environment';
       loadIdeaFeedback();
       loadStoredIdeas();
       loadUsageStatus();
+      loadIdeasFromDatabase();
     }
   });
   
@@ -50,6 +52,7 @@ import { browser } from '$app/environment';
   $: if (browser && projectId) {
     loadIdeaFeedback();
     loadStoredIdeas();
+    loadIdeasFromDatabase();
   }
   
   // Create reactive liked ideas set AFTER localStorage loads
@@ -96,6 +99,127 @@ import { browser } from '$app/environment';
     } catch (error) {
       console.error('Error saving stored ideas:', error);
     }
+  }
+
+  // Load ideas from database
+  async function loadIdeasFromDatabase() {
+    if (!browser || !projectId) return;
+    
+    try {
+      const res = await fetch(`/api/ideas/load?projectId=${projectId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.ideas) {
+          // Convert database ideas to the format expected by the component
+          const dbIdeas = data.ideas.map(idea => ({
+            id: idea.id,
+            text: idea.text || idea.title || idea.description,
+            title: idea.title || idea.text || idea.description,
+            description: idea.description || idea.text || idea.title,
+            created_at: idea.created_at
+          }));
+          
+          // Merge with localStorage ideas (database takes precedence)
+          const mergedIdeas = [...dbIdeas];
+          
+          // Add localStorage ideas that aren't in database
+          storedIdeas.forEach(localIdea => {
+            if (!mergedIdeas.find(dbIdea => dbIdea.text === localIdea.text)) {
+              mergedIdeas.push(localIdea);
+            }
+          });
+          
+          // Update the ideas array with merged results
+          if (mergedIdeas.length > 0) {
+            ideas = mergedIdeas;
+          }
+          
+          console.log(`🔍 RelatedIdeas: Loaded ${dbIdeas.length} ideas from database, ${mergedIdeas.length} total`);
+        }
+      } else {
+        console.error('Failed to load ideas from database:', res.status);
+      }
+    } catch (error) {
+      console.error('Error loading ideas from database:', error);
+    }
+  }
+
+  // Highlight function for search results - exported for parent component access
+  export function highlightIdea(ideaId, searchTerm) {
+    console.log(`🔍 RelatedIdeas: highlightIdea called with ideaId: ${ideaId}, searchTerm: ${searchTerm}`);
+    
+    // Find the idea element and scroll to it
+    const ideaElement = document.querySelector(`[data-idea-id="${ideaId}"]`);
+    console.log(`🔍 RelatedIdeas: Found idea element:`, ideaElement);
+    
+    if (ideaElement) {
+      ideaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Add highlight effect
+      ideaElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+      console.log(`🔍 RelatedIdeas: Added highlight classes to element`);
+      
+      // Highlight search terms within the text content
+      if (searchTerm && searchTerm.trim()) {
+        highlightSearchTerms(ideaElement, searchTerm);
+        console.log(`🔍 RelatedIdeas: Highlighted search terms`);
+      }
+      
+      // Remove highlight after a longer delay
+      setTimeout(() => {
+        ideaElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+        // Remove text highlighting
+        removeSearchTermHighlights(ideaElement);
+        console.log(`🔍 RelatedIdeas: Removed highlight classes`);
+      }, 10000); // Increased to 10 seconds
+    } else {
+      console.error(`🔍 RelatedIdeas: Could not find idea element with data-idea-id="${ideaId}"`);
+      console.log(`🔍 RelatedIdeas: Available idea elements:`, document.querySelectorAll('[data-idea-id]'));
+    }
+  }
+
+  // Function to highlight search terms within text content
+  function highlightSearchTerms(element, searchTerm) {
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+      textNodes.push(node);
+    }
+    
+    textNodes.forEach(textNode => {
+      const text = textNode.textContent;
+      if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
+        const highlightedText = text.replace(
+          new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+          '<mark class="bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white px-1 rounded">$1</mark>'
+        );
+        
+        if (highlightedText !== text) {
+          const span = document.createElement('span');
+          span.innerHTML = highlightedText;
+          textNode.parentNode.replaceChild(span, textNode);
+        }
+      }
+    });
+  }
+
+  // Function to remove search term highlights
+  function removeSearchTermHighlights(element) {
+    const marks = element.querySelectorAll('mark');
+    marks.forEach(mark => {
+      const parent = mark.parentNode;
+      if (parent.nodeType === Node.ELEMENT_NODE && parent.tagName === 'SPAN') {
+        // Replace the span with just the text content
+        parent.parentNode.replaceChild(document.createTextNode(parent.textContent), parent);
+      }
+    });
   }
   
 
@@ -265,7 +389,17 @@ import { browser } from '$app/environment';
     const likedIdeasFromCurrent = filteredCurrentIdeas.filter(idea => likedIdeas.includes(idea.id));
     const neutralIdeasFromCurrent = filteredCurrentIdeas.filter(idea => !likedIdeas.includes(idea.id));
     
-    visibleIdeas = [...likedIdeasFromCurrent, ...additionalLikedIdeas, ...neutralIdeasFromCurrent];
+    let allIdeas = [...likedIdeasFromCurrent, ...additionalLikedIdeas, ...neutralIdeasFromCurrent];
+    
+    // Apply search term filtering if provided
+    if (searchTerm && searchTerm.trim()) {
+      allIdeas = allIdeas.filter(idea => {
+        const ideaText = typeof idea === 'string' ? idea : idea?.text || idea?.title || idea?.description || '';
+        return ideaText.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+    }
+    
+    visibleIdeas = allIdeas;
   }
   
   // Parse idea into number, title and description
@@ -540,7 +674,11 @@ import { browser } from '$app/environment';
         {@const ideaText = typeof idea === 'object' ? idea.text : idea}
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}
         {@const isLikedForDisplay = likedIdeasSet.has(ideaId)}
-        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 group hover:bg-gray-50 dark:hover:bg-gray-700" style="background-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-light)' : 'var(--bg-card)'}; border-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-border)' : ''};">
+        <li 
+          class="relative text-sm border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 group hover:bg-gray-50 dark:hover:bg-gray-700" 
+          style="background-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-light)' : 'var(--bg-card)'}; border-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-border)' : ''};"
+          data-idea-id={ideaId}
+        >
           <!-- Chevron button outside card on the left, always visible -->
           <button 
             id="idea-insert-{ideaId}"

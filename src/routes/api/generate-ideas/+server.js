@@ -187,6 +187,38 @@ Focus on practical next steps, interesting questions to explore, related concept
     
     await locals.supabase.from('usage_logs').insert(ideasUsagePayload);
 
+    // Save generated ideas to the database for searchability
+    try {
+      const ideasToSave = ideas.map(idea => ({
+        title: idea,
+        text: idea,
+        description: idea
+      }));
+
+      const { error: saveError } = await locals.supabase
+        .from('ideas')
+        .insert(
+          ideasToSave.map(idea => ({
+            project_id: projectId,
+            title: idea.title,
+            description: idea.description,
+            text: idea.text,
+            user_id: user.id,
+            created_at: new Date().toISOString()
+          }))
+        );
+
+      if (saveError) {
+        console.error('Failed to save ideas to database:', saveError);
+        // Don't fail the request - ideas were generated successfully
+      } else {
+        console.log(`🔍 Ideas API: Saved ${ideas.length} generated ideas to database`);
+      }
+    } catch (saveError) {
+      console.error('Error saving ideas to database:', saveError);
+      // Don't fail the request - ideas were generated successfully
+    }
+
     return json({
       ideas: ideas,
       usage: {
@@ -196,7 +228,6 @@ Focus on practical next steps, interesting questions to explore, related concept
       },
       rateLimit: {
         used: ideasUsedToday + 1, // Include this generation
-        limit: ideasLimit,
         remaining: Math.max(0, ideasLimit - ideasUsedToday - 1)
       }
     });

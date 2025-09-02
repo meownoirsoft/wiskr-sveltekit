@@ -4,10 +4,40 @@ export async function GET({ url, locals }) {
   console.log('🔍 Search API GET called with:', { searchParams: Object.fromEntries(url.searchParams) });
   
   try {
-    // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    // Simple rate limiting - check if we're making too many requests
+    const clientIP = url.headers?.get('x-forwarded-for') || url.headers?.get('x-real-ip') || 'unknown';
+    const rateLimitKey = `search_rate_limit:${clientIP}`;
+    
+    // For now, we'll use a simple approach - you could implement Redis or database-based rate limiting later
+    const now = Date.now();
+    const lastRequest = locals.searchRateLimit?.[rateLimitKey] || 0;
+    const timeSinceLastRequest = now - lastRequest;
+    
+    if (timeSinceLastRequest < 1000) { // Minimum 1 second between requests
+      console.log('🔍 Search API: Rate limit hit, returning 429');
+      return json({ 
+        error: 'Rate limit exceeded', 
+        message: 'Please wait a moment before searching again' 
+      }, { status: 429 });
+    }
+    
+    // Update rate limit tracking
+    if (!locals.searchRateLimit) locals.searchRateLimit = {};
+    locals.searchRateLimit[rateLimitKey] = now;
+    
+    // Verify user is authenticated using cached session
+    let user = locals.getCachedUser?.() || locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Validate cached user and refresh if needed
+    if (!user.id || !user.email) {
+      console.log('🔄 Cached user invalid, refreshing cache');
+      user = await locals.refreshUserCache?.();
+      if (!user) {
+        return json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
     
     const { searchParams } = url;
@@ -308,11 +338,42 @@ export async function POST({ request, locals }) {
   console.log('🔍 Search API POST called - START');
   
   try {
-    // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    // Simple rate limiting - check if we're making too many requests
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitKey = `search_rate_limit:${clientIP}`;
+    
+    // For now, we'll use a simple approach - you could implement Redis or database-based rate limiting later
+    const now = Date.now();
+    const lastRequest = locals.searchRateLimit?.[rateLimitKey] || 0;
+    const timeSinceLastRequest = now - lastRequest;
+    
+    if (timeSinceLastRequest < 1000) { // Minimum 1 second between requests
+      console.log('🔍 Search API: Rate limit hit, returning 429');
+      return json({ 
+        error: 'Rate limit exceeded', 
+        message: 'Please wait a moment before searching again' 
+      }, { status: 429 });
+    }
+    
+    // Update rate limit tracking
+    if (!locals.searchRateLimit) locals.searchRateLimit = {};
+    locals.searchRateLimit[rateLimitKey] = now;
+    
+    // Verify user is authenticated using cached session
+    let user = locals.getCachedUser?.() || locals.user;
     if (!user) {
       console.log('🔍 Search API POST: Unauthorized');
       return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Validate cached user and refresh if needed
+    if (!user.id || !user.email) {
+      console.log('🔄 Cached user invalid, refreshing cache');
+      user = await locals.refreshUserCache?.();
+      if (!user) {
+        console.log('🔍 Search API POST: Unauthorized after cache refresh');
+        return json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
     
     console.log('🔍 Search API POST: User authenticated');
@@ -570,14 +631,40 @@ export async function POST({ request, locals }) {
       }
     }
     
-    // For ideas, we'll need to check if there are any stored ideas or generate them
-    // For now, we'll skip ideas as they're typically generated on-demand
+    // Search ideas
+    if (includeTypes.includes('ideas')) {
+      const { data: ideas, error: ideasError } = await supabase
+        .from('ideas')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,text.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!ideasError && ideas) {
+        ideas.forEach(idea => {
+          results.push({
+            id: idea.id,
+            type: 'ideas',
+            title: idea.title || idea.text || 'Untitled Idea',
+            name: idea.title || idea.text || 'Untitled Idea',
+            snippet: (idea.description || idea.text)?.substring(0, 100) + ((idea.description || idea.text)?.length > 100 ? '...' : ''),
+            content: idea.description || idea.text
+          });
+        });
+      }
+      
+      if (ideasError) {
+        console.error('Search API: Ideas query error:', ideasError);
+      }
+    }
     
     console.log('🔍 Search API POST: Returning results count by type:', {
       facts: results.filter(r => r.type === 'facts').length,
       docs: results.filter(r => r.type === 'docs').length,
       chats: results.filter(r => r.type === 'chats').length,
       questions: results.filter(r => r.type === 'questions').length,
+      ideas: results.filter(r => r.type === 'ideas').length,
       total: results.length
     });
     

@@ -23,12 +23,18 @@
   
   // Filter questions based on search term
   $: filteredQuestions = search.trim() 
-    ? goodQuestions.filter(q => q.toLowerCase().includes(search.toLowerCase()))
+    ? goodQuestions.filter(q => {
+        const questionText = typeof q === 'string' ? q : q?.question || '';
+        return questionText.toLowerCase().includes(search.toLowerCase());
+      })
     : goodQuestions;
   
   // Filter ideas based on search term
   $: filteredIdeas = search.trim()
-    ? relatedIdeas.filter(idea => idea.toLowerCase().includes(search.toLowerCase()))
+    ? relatedIdeas.filter(idea => {
+        const ideaText = typeof idea === 'string' ? idea : idea?.text || idea?.content || idea?.question || '';
+        return ideaText.toLowerCase().includes(search.toLowerCase());
+      })
     : relatedIdeas;
   
 
@@ -42,6 +48,59 @@
 
   function handleGenerateIdeas() {
     dispatch('generate-ideas');
+  }
+
+  // Highlight functions are now exported above for parent component access
+
+  // Component references for highlighting
+  let goodQuestionsComponent;
+  let relatedIdeasComponent;
+  
+  // Expose highlighting methods for parent component access
+  // This ensures the methods are available when bind:this is used
+  export function highlightQuestion(questionId, searchTerm) {
+    console.log('🔍 IdeasColumn: highlightQuestion called with:', { questionId, searchTerm });
+    console.log('🔍 IdeasColumn: goodQuestions array:', goodQuestions);
+    
+    // Set the search term to filter and highlight
+    search = searchTerm || '';
+    
+    // Find the question to highlight
+    const question = goodQuestions.find(q => {
+      const qId = typeof q === 'string' ? null : q?.id;
+      console.log('🔍 IdeasColumn: Checking question:', { q, qId, questionId, matches: qId === questionId });
+      return qId === questionId;
+    });
+    
+    console.log('🔍 IdeasColumn: Found question:', question);
+    
+    if (question) {
+      // Scroll to the question in the GoodQuestions component
+      if (goodQuestionsComponent) {
+        console.log('🔍 IdeasColumn: Calling goodQuestionsComponent.highlightQuestion');
+        goodQuestionsComponent.highlightQuestion(questionId, searchTerm);
+      } else {
+        console.log('🔍 IdeasColumn: goodQuestionsComponent not available');
+      }
+    } else {
+      console.log('🔍 IdeasColumn: Question not found in goodQuestions array');
+    }
+  }
+
+  export function highlightIdea(ideaId, searchTerm) {
+    console.log('🔍 IdeasColumn: highlightIdea called with:', { ideaId, searchTerm });
+    
+    // Set the search term to filter and highlight
+    search = searchTerm || '';
+    
+    // Directly call the RelatedIdeas component to highlight the idea
+    // The RelatedIdeas component has the actual idea objects with IDs
+    if (relatedIdeasComponent) {
+      console.log('🔍 IdeasColumn: Calling relatedIdeasComponent.highlightIdea');
+      relatedIdeasComponent.highlightIdea(ideaId, searchTerm);
+    } else {
+      console.log('🔍 IdeasColumn: relatedIdeasComponent not available');
+    }
   }
 </script>
 
@@ -74,13 +133,14 @@
   <div class="p-4 h-full flex flex-col min-h-0">
     <!-- Good Questions - Upper half (fixed height) -->
     <div class="flex flex-col overflow-hidden" style="height: 40%;">
-      <GoodQuestions 
-        goodQuestions={filteredQuestions}
-        {loadingQuestions}
-        {projectId}
-        on:update={handleQuestionsUpdate}
-        on:insert-text={handleInsertText}
-      />
+             <GoodQuestions 
+         bind:this={goodQuestionsComponent}
+         goodQuestions={filteredQuestions}
+         {loadingQuestions}
+         {projectId}
+         on:update={handleQuestionsUpdate}
+         on:insert-text={handleInsertText}
+       />
     </div>
 
     <!-- Divider -->
@@ -88,13 +148,26 @@
 
     <!-- Related Ideas - Lower half (takes remaining space) -->
     <div class="flex-1 flex flex-col overflow-hidden min-h-0">
-      <RelatedIdeas 
-        ideas={filteredIdeas}
-        {isGeneratingIdeas}
-        {projectId}
-        on:insert-text={handleInsertText}
-        on:generate-ideas={handleGenerateIdeas}
-      />
+             <RelatedIdeas 
+         bind:this={relatedIdeasComponent}
+         ideas={filteredIdeas}
+         {isGeneratingIdeas}
+         {projectId}
+         searchTerm={search}
+         on:insert-text={handleInsertText}
+         on:generate-ideas={handleGenerateIdeas}
+       />
     </div>
   </div>
 </div>
+
+<style>
+  /* Highlight effect for search results */
+  :global([data-question-id]) {
+    transition: all 0.3s ease;
+  }
+  
+  :global([data-idea-id]) {
+    transition: all 0.3s ease;
+  }
+</style>

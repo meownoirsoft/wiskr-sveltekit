@@ -32,6 +32,9 @@ export const handle = async ({ event, resolve }) => {
       if (data?.session) {
         console.log('OAuth login successful for user:', data.user?.email);
         
+        // Clear any existing cached session to ensure fresh data
+        event.cookies.delete('sb-session', { path: '/' });
+        
         // Set cookie to trigger avatar refresh
         event.cookies.set('wiskr_refresh_avatars', '1', {
           path: '/',
@@ -50,9 +53,93 @@ export const handle = async ({ event, resolve }) => {
     }
   }
 
-  // Get current user
-  const { data: { user } } = await event.locals.supabase.auth.getUser();
-  event.locals.user = user ?? null;
+  // Get current user with caching
+  let user = null;
+  const sessionCookie = event.cookies.get('sb-session');
+  
+  // Check if we have a cached user session
+  if (sessionCookie) {
+    try {
+      const cachedSession = JSON.parse(sessionCookie);
+      const now = Date.now();
+      
+      // Check if cached session is still valid (not expired and recent)
+      if (cachedSession.user && 
+          cachedSession.expiresAt > now && 
+          (now - cachedSession.cachedAt) < (5 * 60 * 1000)) { // 5 minutes cache
+        user = cachedSession.user;
+        console.log('✅ Using cached user session for:', user.email);
+      } else {
+        console.log('🔄 Cached session expired or too old, fetching fresh');
+        event.cookies.delete('sb-session', { path: '/' });
+      }
+      
+      // Also check if the user object has required fields
+      if (user && (!user.id || !user.email)) {
+        console.log('🔄 Cached user object invalid, fetching fresh');
+        event.cookies.delete('sb-session', { path: '/' });
+        user = null;
+      }
+    } catch (error) {
+      console.log('🔄 Error parsing cached session, fetching fresh');
+      event.cookies.delete('sb-session', { path: '/' });
+    }
+  }
+  
+  // If no valid cached session, fetch from Supabase
+  if (!user) {
+    const { data: { user: freshUser } } = await event.locals.supabase.auth.getUser();
+    user = freshUser;
+    
+    // Cache the fresh user session
+    if (user) {
+      const sessionData = {
+        user,
+        cachedAt: Date.now(),
+        expiresAt: Date.now() + (5 * 60 * 1000) // Cache for 5 minutes
+      };
+      event.cookies.set('sb-session', JSON.stringify(sessionData), {
+        path: '/',
+        maxAge: 5 * 60, // 5 minutes
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+      console.log('💾 Cached fresh user session for:', user.email);
+    }
+  }
+  
+  event.locals.user = user;
+  
+  // Add helper function to get cached user (avoids repeated auth calls)
+  event.locals.getCachedUser = () => {
+    return event.locals.user;
+  };
+  
+  // Add function to refresh user cache if needed
+  event.locals.refreshUserCache = async () => {
+    console.log('🔄 Manually refreshing user cache');
+    event.cookies.delete('sb-session', { path: '/' });
+    
+    const { data: { user: freshUser } } = await event.locals.supabase.auth.getUser();
+    if (freshUser) {
+      const sessionData = {
+        user: freshUser,
+        cachedAt: Date.now(),
+        expiresAt: Date.now() + (5 * 60 * 1000) // Cache for 5 minutes
+      };
+      event.cookies.set('sb-session', JSON.stringify(sessionData), {
+        path: '/',
+        maxAge: 5 * 60, // 5 minutes
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+      event.locals.user = freshUser;
+      console.log('💾 Refreshed user cache for:', freshUser.email);
+    }
+    return freshUser;
+  };
   
   // Add tier information to locals for server-side access
   if (user) {

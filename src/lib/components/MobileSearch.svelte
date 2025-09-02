@@ -24,22 +24,33 @@
     setTimeout(() => searchInputElement.focus(), 100);
   }
   
-  // Auto-search as user types (with debouncing)
-  let searchTimeout;
-  $: if (searchInput && searchInput.length >= 2 && !preventAutoSearch) {
-    // Only search if the term has actually changed
-    if (searchInput.trim() !== lastSearchTerm) {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        performSearch();
-        lastSearchTerm = searchInput.trim();
-      }, 300); // Wait 300ms after user stops typing
-    }
-  } else if (searchInput.length < 2) {
-    showResults = false;
-    searchResults = [];
-    lastSearchTerm = '';
-  }
+     // Auto-search as user types (with debouncing)
+   let searchTimeout;
+   $: if (searchInput && searchInput.length >= 2 && !preventAutoSearch) {
+     // Only search if the term has actually changed
+     if (searchInput.trim() !== lastSearchTerm) {
+       clearTimeout(searchTimeout);
+       searchTimeout = setTimeout(() => {
+         performSearch();
+         lastSearchTerm = searchInput.trim();
+       }, 800); // Wait 800ms after user stops typing
+     }
+   } else if (searchInput.length < 2) {
+     // Only clear results if we don't have existing results to restore
+     if (searchResults.length === 0) {
+       showResults = false;
+       lastSearchTerm = '';
+     }
+     // Don't clear searchResults array - keep it for restoration
+   }
+   
+   // Debug search input changes
+   $: {
+     console.log('🔍 MobileSearch: searchInput changed to:', searchInput);
+     console.log('🔍 MobileSearch: searchInput.length:', searchInput?.length);
+     console.log('🔍 MobileSearch: preventAutoSearch:', preventAutoSearch);
+     console.log('🔍 MobileSearch: searchResults.length:', searchResults.length);
+   }
   
   async function performSearch() {
     if (!searchInput.trim() || isSearching) return;
@@ -63,6 +74,18 @@
         const data = await res.json();
         searchResults = data.results || [];
         showResults = true;
+      } else if (res.status === 429) {
+        // Rate limit exceeded
+        console.warn('Search rate limited, please wait a moment');
+        // Don't clear results, just show a message
+        if (searchResults.length === 0) {
+          searchResults = [{ 
+            type: 'error', 
+            title: 'Rate Limited', 
+            content: 'Please wait a moment before searching again' 
+          }];
+        }
+        showResults = true;
       } else {
         console.error('Search failed:', res.status);
         searchResults = [];
@@ -76,16 +99,33 @@
     }
   }
   
-  function handleSearch() {
-    // If the search term is the same as last time, just show the results again
-    if (searchInput.trim() === lastSearchTerm && searchResults.length > 0) {
-      showResults = true;
-      return;
-    }
-    
-    // Otherwise, perform a new search
-    performSearch();
-  }
+     function handleSearch() {
+     console.log('🔍 MobileSearch: handleSearch called');
+     console.log('🔍 MobileSearch: searchInput:', searchInput.trim());
+     console.log('🔍 MobileSearch: lastSearchTerm:', lastSearchTerm);
+     console.log('🔍 MobileSearch: searchResults.length:', searchResults.length);
+     console.log('🔍 MobileSearch: showResults:', showResults);
+     console.log('🔍 MobileSearch: preventAutoSearch:', preventAutoSearch);
+     console.log('🔍 MobileSearch: searchResults array:', searchResults);
+     
+     // PRIORITY 1: If we have results but they're hidden, show them again (GO button behavior)
+     if (searchResults.length > 0 && !showResults) {
+       console.log('🔍 MobileSearch: Results exist but hidden, showing them again');
+       showResults = true;
+       return;
+     }
+     
+     // PRIORITY 2: If the search term is the same as last time, just show the results again
+     if (searchInput.trim() === lastSearchTerm && searchResults.length > 0) {
+       console.log('🔍 MobileSearch: Same search term, showing existing results');
+       showResults = true;
+       return;
+     }
+     
+     console.log('🔍 MobileSearch: Performing new search');
+     // Otherwise, perform a new search
+     performSearch();
+   }
   
   function handleKeydown(event) {
     if (event.key === 'Enter') {
@@ -94,18 +134,32 @@
     }
   }
   
-  function clearSearch() {
+     function clearSearch() {
+     console.log('🔍 MobileSearch: clearSearch called');
+     console.log('🔍 MobileSearch: Before clearing - searchResults.length:', searchResults.length);
+     searchInput = '';
+     searchResults = [];
+     showResults = false;
+     lastSearchTerm = ''; // Clear last search term
+     // Clear search filtering when clearing input
+     window.dispatchEvent(new CustomEvent('search:clear-filter'));
+     console.log('🔍 MobileSearch: After clearing - searchResults.length:', searchResults.length);
+   }
+  
+  function closeSearch() {
+    // Clear search input and results when closing
     searchInput = '';
     searchResults = [];
     showResults = false;
-    lastSearchTerm = ''; // Clear last search term
-    // Clear search filtering when clearing input
-    window.dispatchEvent(new CustomEvent('search:clear-filter'));
-  }
-  
-  function closeSearch() {
+    lastSearchTerm = '';
+    preventAutoSearch = false;
+    
     // Clear search filtering when closing
     window.dispatchEvent(new CustomEvent('search:clear-filter'));
+    
+    // Dispatch event to restore full chat view
+    window.dispatchEvent(new CustomEvent('search:restore-chat'));
+    
     if (onClosePanel) onClosePanel();
   }
   
@@ -199,9 +253,39 @@
     } else {
       // For other result types, scroll to the result with search term for highlighting
       if (onScrollToResult) onScrollToResult({ ...result, searchTerm: searchInput.trim() });
+      
+                     // For questions and ideas, hide results but allow GO button to restore them
+        if (result.type === 'questions' || result.type === 'ideas') {
+          console.log('🔍 MobileSearch: Questions/Ideas result clicked');
+          console.log('🔍 MobileSearch: Before hiding - searchResults.length:', searchResults.length);
+          console.log('🔍 MobileSearch: Before hiding - showResults:', showResults);
+          console.log('🔍 MobileSearch: searchInput:', searchInput.trim());
+          console.log('🔍 MobileSearch: lastSearchTerm:', lastSearchTerm);
+          
+          // Store the current search term before hiding results
+          const currentSearchTerm = searchInput.trim();
+          console.log('🔍 MobileSearch: Storing current search term:', currentSearchTerm);
+          
+          // Hide results list but keep search panel open
+          showResults = false;
+          preventAutoSearch = true; // Prevent auto-search from overriding showResults
+          
+          console.log('🔍 MobileSearch: After hiding - showResults:', showResults);
+          console.log('🔍 MobileSearch: preventAutoSearch set to:', preventAutoSearch);
+          console.log('🔍 MobileSearch: Results hidden, GO button should restore them');
+          console.log('🔍 MobileSearch: Current searchInput after hiding:', searchInput);
+          console.log('🔍 MobileSearch: Current lastSearchTerm after hiding:', lastSearchTerm);
+          
+          // Re-enable auto-search after a short delay
+          setTimeout(() => {
+            console.log('🔍 MobileSearch: Re-enabling auto-search, preventAutoSearch set to false');
+            preventAutoSearch = false;
+          }, 1000);
+          return;
+        }
     }
     
-    // Hide results list but keep search panel open
+    // Hide results list but keep search panel open for other result types
     // User can type to search again or click another result
     showResults = false;
     preventAutoSearch = true; // Prevent auto-search from overriding showResults
@@ -218,7 +302,8 @@
       'docs': 'Docs', 
       'chats': 'Chats',
       'questions': 'Questions',
-      'ideas': 'Related Ideas'
+      'ideas': 'Related Ideas',
+      'error': 'Rate Limited'
     };
     return labels[type] || type;
   }
@@ -256,13 +341,19 @@
         {/if}
       </div>
       
-      <!-- Go Button -->
-      <button
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-        on:click={handleSearch}
-        disabled={isSearching || !searchInput.trim()}
-        title="Search"
-      >
+             <!-- Go Button -->
+       <button
+         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+         on:click={() => {
+           console.log('🔍 MobileSearch: GO button clicked!');
+           console.log('🔍 MobileSearch: Button disabled state:', isSearching || !searchInput.trim());
+           console.log('🔍 MobileSearch: isSearching:', isSearching);
+           console.log('🔍 MobileSearch: searchInput.trim():', searchInput.trim());
+           handleSearch();
+         }}
+         disabled={isSearching || !searchInput.trim()}
+         title="Search"
+       >
         {#if isSearching}
           <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         {:else}
@@ -289,13 +380,17 @@
         <div class="p-4 space-y-3">
           {#each searchResults as result}
             <div 
-              class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              on:click={() => handleResultClick(result)}
+              class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg {result.type === 'error' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'} transition-colors"
+              on:click={() => {
+                if (result.type === 'error') return; // Don't handle clicks for error messages
+                console.log('🔍 MobileSearch: Result div clicked for:', result.type, result.id);
+                handleResultClick(result);
+              }}
             >
               <!-- Result Header -->
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                  {getTypeLabel(result.type)}
+                <span class="text-xs font-medium {result.type === 'error' ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'} uppercase tracking-wide">
+                  {result.type === 'error' ? 'Rate Limited' : getTypeLabel(result.type)}
                   {#if result.type === 'chats' && result.instanceCount > 1}
                     <span class="ml-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
                       {result.instanceCount} matches

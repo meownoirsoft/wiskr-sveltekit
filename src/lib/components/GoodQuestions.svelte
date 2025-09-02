@@ -81,6 +81,87 @@ import { browser } from '$app/environment';
     }
     // Regular Enter now creates new lines in textarea
   }
+
+  // Highlight function for search results - exported for parent component access
+  export function highlightQuestion(questionId, searchTerm) {
+    console.log('🔍 GoodQuestions: highlightQuestion called with:', { questionId, searchTerm });
+    
+    // Find the question element and scroll to it
+    const questionElement = document.querySelector(`[data-question-id="${questionId}"]`);
+    console.log('🔍 GoodQuestions: Looking for element with data-question-id:', questionId);
+    console.log('🔍 GoodQuestions: Found element:', questionElement);
+    
+    if (questionElement) {
+      console.log('🔍 GoodQuestions: Scrolling to question element');
+      questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Add highlight effect
+      questionElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+      console.log('🔍 GoodQuestions: Added highlight classes');
+      
+      // Highlight search terms within the text content
+      if (searchTerm && searchTerm.trim()) {
+        highlightSearchTerms(questionElement, searchTerm);
+      }
+      
+      // Remove highlight after a delay
+      setTimeout(() => {
+        questionElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+        // Remove text highlighting
+        removeSearchTermHighlights(questionElement);
+        console.log('🔍 GoodQuestions: Removed highlight classes and text highlights');
+      }, 3000);
+    } else {
+      console.log('🔍 GoodQuestions: Question element not found in DOM');
+      console.log('🔍 GoodQuestions: Available data-question-id elements:', 
+        Array.from(document.querySelectorAll('[data-question-id]')).map(el => el.getAttribute('data-question-id'))
+      );
+    }
+  }
+
+  // Function to highlight search terms within text content
+  function highlightSearchTerms(element, searchTerm) {
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+      textNodes.push(node);
+    }
+    
+    textNodes.forEach(textNode => {
+      const text = textNode.textContent;
+      if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
+        const highlightedText = text.replace(
+          new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+          '<mark class="bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white px-1 rounded">$1</mark>'
+        );
+        
+        if (highlightedText !== text) {
+          const span = document.createElement('span');
+          span.innerHTML = highlightedText;
+          textNode.parentNode.replaceChild(span, textNode);
+        }
+      }
+    });
+  }
+
+  // Function to remove search term highlights
+  function removeSearchTermHighlights(element) {
+    const marks = element.querySelectorAll('mark');
+    marks.forEach(mark => {
+      const parent = mark.parentNode;
+      if (parent.nodeType === Node.ELEMENT_NODE && parent.tagName === 'SPAN') {
+        // Replace the span with just the text content
+        parent.parentNode.replaceChild(document.createTextNode(parent.textContent), parent);
+      }
+    });
+  }
   
   // Toggle completion status via API
   async function toggleCompleted(index) {
@@ -192,7 +273,11 @@ import { browser } from '$app/environment';
     <div class="h-full overflow-y-auto pr-1">
       <ul class="space-y-1 px-2 md:px-0" style="margin-left: 32px;"> <!-- 32px for chevron space, mobile padding -->
       {#each goodQuestions as question, i}
-        <li class="relative text-sm border border-gray-200 dark:border-gray-600 rounded p-2 md:p-2 group hover:bg-gray-50 dark:hover:bg-gray-600" style="background-color: var(--bg-card);">
+        <li 
+          class="relative text-sm border border-gray-200 dark:border-gray-600 rounded p-2 md:p-2 group hover:bg-gray-50 dark:hover:bg-gray-600" 
+          style="background-color: var(--bg-card);"
+          data-question-id={typeof question === 'string' ? null : question?.id}
+        >
           <!-- Chevron button outside card on the left, always visible -->
           <button 
             class="absolute p-2 flex-shrink-0 cursor-pointer z-10" 

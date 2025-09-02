@@ -18,6 +18,7 @@
   export let effectiveTier = 0; // Effective tier from server
   export let isAtBottom = true; // Whether user is at bottom of chat
   export let hasMessages = false; // Whether there are messages in chat
+  export let isSearchMode = false; // Whether we're in search result mode
   
   const dispatch = createEventDispatcher();
   
@@ -183,25 +184,27 @@
           {/if}
         </div>
         
-        <!-- Right side: New Prompt toggle button (always visible) -->
-        <div class="flex-shrink-0">
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm"
-            style="background-color: var(--color-accent); color: var(--color-accent-text);"
-            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-            on:click={toggleMobileForm}
-            title={showMobileForm ? "Hide input form" : "Show input form"}
-          >
-            <MessageSquare size="16" />
-            <span class="text-sm font-medium">{showMobileForm ? "Hide Prompt" : "New Prompt"}</span>
-            {#if showMobileForm}
-              <ChevronDown size="16" />
-            {:else}
-              <ChevronUp size="16" />
-            {/if}
-          </button>
-        </div>
+        <!-- Right side: New Prompt toggle button (hidden in search mode) -->
+        {#if !isSearchMode}
+          <div class="flex-shrink-0">
+            <button
+              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--color-accent); color: var(--color-accent-text);"
+              on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+              on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+              on:click={toggleMobileForm}
+              title={showMobileForm ? "Hide input form" : "Show input form"}
+            >
+              <MessageSquare size="16" />
+              <span class="text-sm font-medium">{showMobileForm ? "Hide Prompt" : "New Prompt"}</span>
+              {#if showMobileForm}
+                <ChevronDown size="16" />
+              {:else}
+                <ChevronUp size="16" />
+              {/if}
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
   </div>

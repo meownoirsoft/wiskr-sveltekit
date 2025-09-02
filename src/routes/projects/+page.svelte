@@ -189,17 +189,43 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         break;
         
       case 'questions':
-        // Scroll to questions panel and highlight the question
-        if (ideasColumnComponent) {
-          ideasColumnComponent.highlightQuestion(result.id, searchTerm);
+        // Open questions panel and highlight the question
+        showRightPanel = true;
+        // On mobile, close left panel if both are open
+        if (!isDesktop && showLeftPanel) {
+          showLeftPanel = false;
         }
+        // Wait for panel to open, then highlight
+        setTimeout(() => {
+          console.log('🔍 +page.svelte: setTimeout callback - ideasColumnComponent:', ideasColumnComponent);
+          console.log('🔍 +page.svelte: Available methods:', ideasColumnComponent ? Object.getOwnPropertyNames(ideasColumnComponent) : 'No component');
+          if (ideasColumnComponent && typeof ideasColumnComponent.highlightQuestion === 'function') {
+            console.log('🔍 +page.svelte: Calling highlightQuestion');
+            ideasColumnComponent.highlightQuestion(result.id, searchTerm);
+          } else {
+            console.log('🔍 +page.svelte: Component or method not available');
+          }
+        }, 100);
         break;
         
       case 'ideas':
-        // Scroll to ideas panel and highlight the idea
-        if (ideasColumnComponent) {
-          ideasColumnComponent.highlightIdea(result.id, searchTerm);
+        // Open ideas panel and highlight the idea
+        showRightPanel = true;
+        // On mobile, close left panel if both are open
+        if (!isDesktop && showLeftPanel) {
+          showLeftPanel = false;
         }
+        // Wait for panel to open, then highlight
+        setTimeout(() => {
+          console.log('🔍 +page.svelte: setTimeout callback - ideasColumnComponent:', ideasColumnComponent);
+          console.log('🔍 +page.svelte: Available methods:', ideasColumnComponent ? Object.getOwnPropertyNames(ideasColumnComponent) : 'No component');
+          if (ideasColumnComponent && typeof ideasColumnComponent.highlightIdea === 'function') {
+            console.log('🔍 +page.svelte: Calling highlightIdea');
+            ideasColumnComponent.highlightIdea(result.id, searchTerm);
+          } else {
+            console.log('🔍 +page.svelte: Component or method not available');
+          }
+        }, 100);
         break;
     }
   }
@@ -526,6 +552,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.addEventListener('search:navigate-chat', handleSearchNavigateChat);
       window.addEventListener('search:navigate-session', handleSearchNavigateSession);
       window.addEventListener('search:clear', handleSearchClear);
+      window.addEventListener('search:restore-chat', handleSearchRestore);
       
       // Listen for usage toggle from header
       usageToggleHandler = () => {
@@ -575,6 +602,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.removeEventListener('search:navigate-chat', handleSearchNavigateChat);
       window.removeEventListener('search:navigate-session', handleSearchNavigateSession);
       window.removeEventListener('search:clear', handleSearchClear);
+      window.removeEventListener('search:restore-chat', handleSearchRestore);
       
       // Clean up Mr Wiskr event listener
       window.removeEventListener('mrwiskr:open', handleMrWiskrOpen);
@@ -1445,6 +1473,12 @@ function handleTextAddToDocs(event) {
     // Could also clear filters in other components if needed
   }
 
+  function handleSearchRestore() {
+    console.log('🔍 Main page: Restoring full chat view from search mode');
+    // The VirtualMessageList and ChatInterface components will handle the actual restoration
+    // This function is here for any main page specific cleanup if needed in the future
+  }
+
 
   // Session event handlers for SessionNavigator
   function handleSessionSelect(event) {
@@ -1911,6 +1945,7 @@ function handleTextAddToDocs(event) {
     {/if}
     {#if showRightPanel}
       <IdeasColumn
+        bind:this={ideasColumnComponent}
         {goodQuestions}
         {relatedIdeas}
         {isGeneratingIdeas}
