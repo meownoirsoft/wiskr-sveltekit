@@ -10,6 +10,7 @@
   let loading = false;
   let saving = false;
   let showAddForm = false;
+  let showActionMenu = null; // Track which action menu is open
   let newFactType = { type_key: '', display_name: '', color_class: 'bg-blue-100 text-blue-700' };
   
   const colorOptions = [
@@ -176,110 +177,76 @@
   function handleLeave(event) {
     event.target.style.backgroundColor = 'transparent';
   }
+  
+  // Close action menu when clicking outside
+  function handleClickOutside(event) {
+    if (showActionMenu !== null && !event.target.closest('.action-menu')) {
+      showActionMenu = null;
+    }
+  }
 </script>
 
-<div class="space-y-3 min-h-[400px]">
+<div class="space-y-3 min-h-[150px] md:min-h-[350px] w-full max-h-[60vh] overflow-y-auto" on:click={handleClickOutside}>
   {#if loading}
     <div class="text-center py-6">
       <div class="text-gray-500">Loading fact types...</div>
     </div>
   {:else}
-    <!-- Field Labels -->
-    <div class="flex items-center gap-4 px-1 pb-0.5">
-      <div class="cursor-move text-gray-400 dark:text-gray-500 w-5"></div>
-      <div class="w-96">
-        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide" for="fact-type-name">Name</label>
-      </div>
-      <div class="w-32">
-        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide" for="fact-type-color">Color</label>
-      </div>
-      <div class="w-32">
-        <label class="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide ml-0" for="fact-type-preview">Preview</label>
-      </div>
-      <div class="flex-1"></div>
-    </div>
+    
 
-    <!-- Current Fact Types -->
-    <FeatureGate
-      featureKey="custom-fact-types"
-      {user}
-      requiredTier={1}
-      let:hasAccess
-    >
-      <div class="space-y-0.5">
+         <!-- Current Fact Types -->
+     <FeatureGate
+       featureKey="custom-fact-types"
+       {user}
+       requiredTier={1}
+       className="w-full"
+       let:hasAccess
+     >
+      <!-- Desktop: New layout -->
+      <div class="hidden md:block space-y-3">
         {#each factTypes as factType, index}
-          <div class="flex items-center gap-4 px-1 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
-            <!-- Drag Handle -->
-            <div class="cursor-move text-gray-400 dark:text-gray-500 w-5">
-              {#if hasAccess}
-                <GripVertical size="20" />
-              {:else}
-                <div class="w-5 h-5 bg-gray-200 dark:bg-gray-600 rounded"></div>
-              {/if}
-            </div>
-            
-            <!-- Display Name -->
-            <div class="w-96">
-              {#if hasAccess}
-                <input
-                  type="text"
-                  bind:value={factType.display_name}
-                  class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
-                  on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
-                  on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
-                  placeholder="Fact type name"
-                />
-              {:else}
-                <input
-                  type="text"
-                  value={factType.display_name}
-                  disabled
-                  class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
-                  placeholder="Fact type name"
-                />
-              {/if}
-            </div>
-            
-            <!-- Color Selector -->
-            <div class="w-32">
-              {#if hasAccess}
-                <select
-                  bind:value={factType.color_class}
-                  class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
-                  on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
-                  on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
-                >
-                  {#each colorOptions as color}
-                    <option value={color.class}>{color.name}</option>
-                  {/each}
-                </select>
-              {:else}
-                <select
-                  value={factType.color_class}
-                  disabled
-                  class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
-                >
-                  <option value={factType.color_class}>{colorOptions.find(c => c.class === factType.color_class)?.name || 'Color'}</option>
-                </select>
-              {/if}
-            </div>
-            
-            <!-- Preview -->
-            <div class="w-32 flex justify-start">
-              <span class="text-xs px-2 py-1 rounded-full font-medium {factType.color_class}">
-                {factType.display_name}
-              </span>
-            </div>
-            
-            <!-- Actions on the right -->
-            <div class="flex-1 flex items-center justify-end gap-2">
-              {#if hasAccess}
-                <!-- Move buttons -->
-                <div class="flex flex-col gap-0.5 items-center">
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+            <!-- Top row: Name input + Action buttons -->
+            <div class="flex items-center gap-3 mb-3">
+              <!-- Drag Handle -->
+              <div class="cursor-move text-gray-400 dark:text-gray-500">
+                {#if hasAccess}
+                  <GripVertical size="20" />
+                {:else}
+                  <div class="w-5 h-5 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                {/if}
+              </div>
+              
+              <!-- Display Name -->
+              <div class="flex-1">
+                {#if hasAccess}
+                  <input
+                    type="text"
+                    bind:value={factType.display_name}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
+                    on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
+                    on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
+                    placeholder="Fact type name"
+                  />
+                {:else}
+                  <input
+                    type="text"
+                    value={factType.display_name}
+                    disabled
+                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
+                    placeholder="Fact type name"
+                  />
+                {/if}
+              </div>
+              
+              <!-- Action buttons -->
+              <div class="flex items-center gap-2">
+                {#if hasAccess}
+                  <!-- Move buttons -->
                   <button
                     on:click={() => moveUp(index)}
                     disabled={index === 0}
-                    class="p-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                    class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed rounded border border-gray-200 dark:border-gray-600"
                     title="Move up"
                   >
                     ↑
@@ -292,48 +259,207 @@
                   >
                     ↓
                   </button>
-                </div>
-                
-                <!-- Remove Button -->
-                <button
-                  on:click={() => removeFactType(index)}
-                  class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded cursor-pointer"
-                  title="Remove fact type"
-                >
-                  <Trash2 size="16" />
-                </button>
-              {:else}
-                <!-- Disabled buttons -->
-                <div class="flex flex-col gap-0.5 items-center">
+                  
+                  <!-- Remove Button -->
+                  <button
+                    on:click={() => removeFactType(index)}
+                    class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded cursor-pointer border border-red-200 dark:border-red-700"
+                    title="Remove fact type"
+                  >
+                    <Trash2 size="16" />
+                  </button>
+                {:else}
+                  <!-- Disabled buttons -->
                   <button
                     disabled
-                    class="p-0.5 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50"
+                    class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50 rounded border border-gray-200 dark:border-gray-600"
                     title="Move up (Pro feature)"
                   >
                     ↑
                   </button>
                   <button
                     disabled
-                    class="p-0.5 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50"
+                    class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50 rounded border border-gray-200 dark:border-gray-600"
                     title="Move down (Pro feature)"
                   >
                     ↓
                   </button>
-                </div>
-                
-                <!-- Disabled Remove Button -->
-                <button
-                  disabled
-                  class="p-1 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50"
-                  title="Remove fact type (Pro feature)"
-                >
-                  <Trash2 size="16" />
-                </button>
-              {/if}
+                  
+                  <button
+                    disabled
+                    class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50 rounded border border-gray-200 dark:border-gray-600"
+                    title="Remove fact type (Pro feature)"
+                  >
+                    <Trash2 size="16" />
+                  </button>
+                {/if}
+              </div>
+            </div>
+            
+            <!-- Bottom row: Color + Preview -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Color Selector -->
+              <div>
+                {#if hasAccess}
+                  <select
+                    bind:value={factType.color_class}
+                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
+                    on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
+                    on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
+                  >
+                    {#each colorOptions as color}
+                      <option value={color.class}>{color.name}</option>
+                    {/each}
+                  </select>
+                {:else}
+                  <select
+                    value={factType.color_class}
+                    disabled
+                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
+                  >
+                    <option value={factType.color_class}>{colorOptions.find(c => c.class === factType.color_class)?.name || 'Color'}</option>
+                  </select>
+                {/if}
+              </div>
+              
+              <!-- Preview -->
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preview</label>
+                <span class="text-sm px-3 py-2 rounded-full font-medium {factType.color_class}">
+                  {factType.display_name}
+                </span>
+              </div>
             </div>
           </div>
         {/each}
       </div>
+
+                     <!-- Mobile: Same layout as desktop -->
+        <div class="md:hidden space-y-3 w-full">
+          {#each factTypes as factType, index}
+            <div class="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+             <!-- Top row: Name input + Action buttons -->
+             <div class="flex items-center gap-3 mb-3">
+               <!-- Drag Handle -->
+               <div class="cursor-move text-gray-400 dark:text-gray-500">
+                 {#if hasAccess}
+                   <GripVertical size="20" />
+                 {:else}
+                   <div class="w-5 h-5 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                 {/if}
+               </div>
+               
+               <!-- Display Name -->
+               <div class="flex-1">
+                 {#if hasAccess}
+                   <input
+                     type="text"
+                     bind:value={factType.display_name}
+                     class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
+                     on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
+                     on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
+                     placeholder="Fact type name"
+                   />
+                 {:else}
+                   <input
+                     type="text"
+                     value={factType.display_name}
+                     disabled
+                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
+                     placeholder="Fact type name"
+                   />
+                 {/if}
+               </div>
+               
+               <!-- Action Menu (Mobile) -->
+               <div class="relative">
+                 {#if hasAccess}
+                   <button
+                     on:click={(e) => { e.stopPropagation(); showActionMenu = showActionMenu === index ? null : index; }}
+                     class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded border border-gray-200 dark:border-gray-600"
+                     title="Actions"
+                   >
+                     ⋯
+                   </button>
+                   
+                   <!-- Dropdown Menu -->
+                   {#if showActionMenu === index}
+                     <div class="action-menu absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+                       <div class="py-1">
+                         <button
+                           on:click={(e) => { e.stopPropagation(); moveUp(index); showActionMenu = null; }}
+                           disabled={index === 0}
+                           class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                         >
+                           ↑ Move Up
+                         </button>
+                         <button
+                           on:click={(e) => { e.stopPropagation(); moveDown(index); showActionMenu = null; }}
+                           disabled={index === factTypes.length - 1}
+                           class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                         >
+                           ↓ Move Down
+                         </button>
+                         <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                         <button
+                           on:click={(e) => { e.stopPropagation(); removeFactType(index); showActionMenu = null; }}
+                           class="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2"
+                         >
+                           <Trash2 size="14" />
+                           Remove
+                         </button>
+                       </div>
+                     </div>
+                   {/if}
+                 {:else}
+                   <button
+                     disabled
+                     class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50 rounded border border-gray-200 dark:border-gray-600"
+                     title="Actions (Pro feature)"
+                   >
+                     ⋯
+                   </button>
+                 {/if}
+               </div>
+             </div>
+             
+                                         <!-- Bottom row: Color + Preview (side by side, color indented under name) -->
+              <div class="grid grid-cols-2 gap-4">
+               <!-- Color Selector (indented under name) -->
+               <div class="ml-10">
+                 {#if hasAccess}
+                   <select
+                     bind:value={factType.color_class}
+                     class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
+                     on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
+                     on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
+                   >
+                     {#each colorOptions as color}
+                       <option value={color.class}>{color.name}</option>
+                     {/each}
+                   </select>
+                 {:else}
+                   <select
+                     value={factType.color_class}
+                     disabled
+                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
+                   >
+                     <option value={factType.color_class}>{colorOptions.find(c => c.class === factType.color_class)?.name || 'Color'}</option>
+                   </select>
+                 {/if}
+               </div>
+               
+               <!-- Preview -->
+               <div class="flex items-center gap-2">
+                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preview</label>
+                 <span class="text-sm px-3 py-2 rounded-full font-medium {factType.color_class}">
+                   {factType.display_name}
+                 </span>
+               </div>
+              </div>
+           </div>
+         {/each}
+       </div>
     </FeatureGate>
     
     <!-- Add New Fact Type -->
@@ -389,13 +515,12 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-color">Color</label>
                 <select
                   bind:value={newFactType.color_class}
                   class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" 
                   style="--tw-ring-color: var(--color-accent);" 
                   on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
-                  on:blur={() => { this.style.borderColor=''; this.style.boxShadow=''; }}
+                  on:blur={() => { this.style.boxShadow=''; }}
                 >
                   {#each colorOptions as color}
                     <option value={color.class}>{color.name}</option>

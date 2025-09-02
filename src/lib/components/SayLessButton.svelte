@@ -6,6 +6,7 @@
   export let size = 'sm'; // 'sm', 'md', 'lg'
   export const variant = 'outline'; // 'outline', 'filled'
   export let title = 'Make text more concise with SayLess';
+  export let isMobile = false; // Whether to hide icon on mobile
 
   const dispatch = createEventDispatcher();
 
@@ -44,6 +45,8 @@
   {disabled}
   {title}
 >
-  <FileText size={16} />
+  {#if !isMobile}
+    <FileText size={16} />
+  {/if}
   <span>Say Less</span>
 </button>

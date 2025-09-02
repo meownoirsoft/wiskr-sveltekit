@@ -67,9 +67,10 @@
 </script>
 
 <div 
-  class="relative {isMobile ? 'flex flex-col items-center gap-1' : 'inline-flex items-center gap-2'} {className}"
+  class="relative {hasAccess ? '' : (isMobile ? 'flex flex-col items-center gap-1' : 'inline-flex items-center gap-2')} {className}"
   class:opacity-75={!hasAccess}
   class:cursor-not-allowed={!hasAccess && allowClick}
+  class:w-full={className.includes('w-full')}
   on:click={handleLockedClick}
   title={showTooltip ? tooltipMessage : null}
   data-testid="feature-gate"

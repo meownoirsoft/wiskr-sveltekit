@@ -228,10 +228,15 @@
     
     const offsetFromMessage = 30; // Space between message edge and popup
     const margin = 30; // Margin from screen edges
-    
-    // Always try to position on the right side first
-    // Calculate ideal right position based on viewport
     const viewportWidth = window.innerWidth;
+    
+    // On mobile, center the modal horizontally
+    if (viewportWidth < 768) {
+      return (viewportWidth - actualWidth) / 2;
+    }
+    
+    // Desktop: Always try to position on the right side first
+    // Calculate ideal right position based on viewport
     const idealRightX = viewportWidth - actualWidth - margin;
     
     // If we have enough space on the right side, use it
@@ -288,7 +293,8 @@
     style="
       left: {isPositioned ? finalX : finalX}px; 
       top: {isPositioned ? finalY : window.innerHeight}px; 
-      width: 520px; 
+      width: {typeof window !== 'undefined' && window.innerWidth < 768 ? '90vw' : '520px'}; 
+      max-width: 520px;
       border-color: #5D60DD; 
       background-color: var(--bg-modal, white);
       opacity: {isPositioned ? 1 : 0};
@@ -296,28 +302,28 @@
     "
   >
     <div class="relative">
-      <!-- Close X button in top right -->
-      <button
-        class="absolute top-3 right-3 z-20 p-1 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-        style="color: #5D60DD;"
-        on:click={handleDismiss}
-        title="Close"
-      >
-        <X size={20} />
-      </button>
+                                                                                                               <!-- Close X button in top right corner -->
+          <button
+            class="absolute -top-2 right-1 z-20 p-3 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+            style="color: #5D60DD;"
+            on:click={handleDismiss}
+            title="Close"
+          >
+            <X size={24} />
+          </button>
       
-      <!-- Mr Wiskr Image - positioned to pop out of the left side -->
-      <div class="absolute -left-10 top-3 z-10">
-        <img 
-          src="/mr-wiskr.png" 
-          alt="Mr Wiskr" 
-          class="w-20 h-20 rounded-full border-2 shadow-lg bg-white"
-          style="border-color: #5D60DD;"
-        />
-      </div>
-      
-      <!-- Content Area with left margin for the protruding image -->
-      <div class="pl-14 pr-4 pt-4 pb-4">
+                           <!-- Mr Wiskr Image - positioned at the top center -->
+        <div class="flex justify-center mb-4 mt-6">
+          <img 
+            src="/mr-wiskr.png" 
+            alt="Mr Wiskr" 
+            class="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 shadow-lg bg-white"
+            style="border-color: #5D60DD;"
+          />
+        </div>
+       
+       <!-- Content Area without left margin -->
+       <div class="px-4 pb-4">
         {#if isThinking}
           <div class="flex items-center gap-2" style="color: #5D60DD;">
             <div class="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style="border-color: #5D60DD;"></div>
@@ -335,76 +341,7 @@
               {@html renderMarkdown(response)}
             </div>
             
-            <!-- Mr Wiskr Feedback Section -->
-            {#if !feedbackSubmitted && !showFeedbackComment}
-              <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                <div class="text-xs text-gray-600 dark:text-gray-400 mb-2 text-center">Was this helpful?</div>
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    class="flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50"
-                    style="color: #10b981; border-color: #10b981;"
-                    on:click={handleThumbsUp}
-                    disabled={submittingFeedback}
-                    title="Mr Wiskr was helpful"
-                  >
-                    <ThumbsUp size="14" />
-                    <span>Yes</span>
-                  </button>
-                  <button
-                    class="flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
-                    style="color: #ef4444; border-color: #ef4444;"
-                    on:click={handleThumbsDown}
-                    disabled={submittingFeedback}
-                    title="Mr Wiskr could do better"
-                  >
-                    <ThumbsDown size="14" />
-                    <span>No</span>
-                  </button>
-                </div>
-              </div>
-            {:else if showFeedbackComment}
-              <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">What could Mr Wiskr do better?</div>
-                <textarea
-                  bind:value={feedbackComment}
-                  placeholder="Tell us how Mr Wiskr can improve..."
-                  rows="2"
-                  class="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  style="background-color: #1b1b1e; color: var(--text-primary);"
-                ></textarea>
-                <div class="flex items-center justify-end gap-2 mt-2">
-                  <button
-                    class="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
-                    on:click={cancelFeedbackComment}
-                    disabled={submittingFeedback}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    class="px-2 py-1 text-xs text-white rounded transition-colors disabled:opacity-50"
-                    style="background-color: var(--color-accent);"
-                    on:click={submitNegativeFeedback}
-                    disabled={submittingFeedback}
-                  >
-                    {#if submittingFeedback}
-                      <div class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                    {:else}
-                      Submit
-                    {/if}
-                  </button>
-                </div>
-              </div>
-            {:else if feedbackSubmitted}
-              <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                <div class="text-xs text-center" style="color: var(--color-accent);">
-                  {#if feedbackType === 'positive'}
-                    🐱 Thanks! Mr Wiskr purrs with appreciation!
-                  {:else}
-                    🐱 Thanks for the feedback - Mr Wiskr will learn and get better!
-                  {/if}
-                </div>
-              </div>
-            {/if}
+
           </div>
         {:else if showOptions}
           <!-- Help Options Menu -->
@@ -415,57 +352,57 @@
             
             <div class="space-y-2">
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('translate')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Let me break it down for you</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I'll unravel this in plain language that makes sense</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">Break it down</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Plain language explanation</div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('examples')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Can I show you what this looks like?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Need some examples of how this actually works?</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">Show examples</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">See how this works</div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('next-steps')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">So, what's next?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I'll give you practical steps to take</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">What's next?</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Practical steps to take</div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('critique')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Wait, is this actually right?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">I'll hunt down red flags or missing pieces</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">Is this right?</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Find red flags or gaps</div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('alternative')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Let's ask a friend</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Maybe another wiskr could explain this better?</div>
+                <div class="font-medium mb-1" style="color: #5D60DD;">Ask a friend</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Get another perspective</div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('report-problem')}
               >
-                <div class="font-medium mb-1" style="color: #ef4444;">There's a problem</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Bugs, offensive content, or issues that need attention</div>
+                <div class="font-medium mb-1" style="color: #ef4444;">Report problem</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Bugs or issues</div>
               </button>
             </div>
           </div>
@@ -503,14 +440,77 @@
           {/if}
         </div>
         
-        <!-- Dismiss Button -->
-        <button
-          class="cursor-pointer w-full text-sm font-medium rounded-lg py-2 transition-colors hover:text-white dark:hover:text-white border-t border-gray-200 dark:border-gray-600 pt-3 mt-3"
-          style="color: #5D60DD;"
-          on:click={handleDismiss}
-        >
-          Dismiss Mr. Wiskr
-        </button>
+        <!-- Mr Wiskr Feedback Section - moved to bottom and made less prominent -->
+        {#if !feedbackSubmitted && !showFeedbackComment}
+          <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="text-xs text-gray-500 dark:text-gray-500 mb-2 text-center">Was this helpful?</div>
+            <div class="flex items-center justify-center gap-2">
+              <button
+                class="flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                style="color: #6b7280; border-color: #d1d5db;"
+                on:click={handleThumbsUp}
+                disabled={submittingFeedback}
+                title="Mr Wiskr was helpful"
+              >
+                <ThumbsUp size="14" />
+                <span>Yes</span>
+              </button>
+              <button
+                class="flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                style="color: #6b7280; border-color: #d1d5db;"
+                on:click={handleThumbsDown}
+                disabled={submittingFeedback}
+                title="Mr Wiskr could do better"
+              >
+                <ThumbsDown size="14" />
+                <span>No</span>
+              </button>
+            </div>
+          </div>
+        {:else if showFeedbackComment}
+          <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="text-xs text-gray-500 dark:text-gray-500 mb-2">What could Mr Wiskr do better?</div>
+            <textarea
+              bind:value={feedbackComment}
+              placeholder="Tell us how Mr Wiskr can improve..."
+              rows="2"
+              class="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
+              style="background-color: #1b1b1e; color: var(--text-primary);"
+            ></textarea>
+            <div class="flex items-center justify-end gap-2 mt-2">
+              <button
+                class="px-2 py-1 text-xs text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                on:click={cancelFeedbackComment}
+                disabled={submittingFeedback}
+              >
+                Skip
+              </button>
+              <button
+                class="px-2 py-1 text-xs text-white rounded transition-colors disabled:opacity-50"
+                style="background-color: var(--color-accent);"
+                on:click={submitNegativeFeedback}
+                disabled={submittingFeedback}
+              >
+                {#if submittingFeedback}
+                  <div class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                {:else}
+                  Submit
+                {/if}
+              </button>
+            </div>
+          </div>
+        {:else if feedbackSubmitted}
+          <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="text-xs text-center text-gray-500 dark:text-gray-500">
+              {#if feedbackType === 'positive'}
+                🐱 Thanks! Mr Wiskr purrs with appreciation!
+              {:else}
+                🐱 Thanks for the feedback - Mr Wiskr will learn and get better!
+              {/if}
+            </div>
+          </div>
+        {/if}
+
       </div>
     {:else if !isThinking}
       <div class="border-t border-gray-100 dark:border-gray-700 px-4 py-3">

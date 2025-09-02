@@ -14,6 +14,12 @@
     includeQuestions: true,
     format: 'json'
   };
+
+  // On mobile, always include facts and questions to reduce modal height
+  $: if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    exportOptions.includeFacts = true;
+    exportOptions.includeQuestions = true;
+  }
   
   let isLoading = false;
   let exportPreview = null;
@@ -210,17 +216,17 @@
         </button>
       </div>
 
-      <!-- Content -->
-      <div class="p-6 overflow-y-auto">
+             <!-- Content -->
+       <div class="p-4 overflow-y-auto">
         {#if project}
-          <div class="mb-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {project.name}
-            </h3>
-          </div>
+                     <div class="mb-4">
+             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">
+               {project.name}
+             </h3>
+           </div>
 
-          <!-- Export Options -->
-          <div class="space-y-4 mb-6">
+                     <!-- Export Options -->
+           <div class="space-y-3 mb-4">
             <h4 class="font-medium text-gray-900 dark:text-white">Export Options</h4>
             
             <div class="space-y-3">
@@ -235,7 +241,7 @@
                 </span>
               </label>
               
-              <label class="flex items-center">
+              <label class="hidden md:flex items-center">
                 <input
                   type="checkbox"
                   bind:checked={exportOptions.includeFacts}
@@ -246,7 +252,7 @@
                 </span>
               </label>
               
-              <label class="flex items-center">
+              <label class="hidden md:flex items-center">
                 <input
                   type="checkbox"
                   bind:checked={exportOptions.includeQuestions}
@@ -302,60 +308,75 @@
             </div>
           </div>
 
-          <!-- Export Preview -->
-          {#if exportPreview}
-            <div class="bg-gray-50 dark:bg-[#35353d] p-4 rounded-lg mb-6">
-              <h4 class="font-medium text-gray-900 dark:text-white mb-3">Export Preview</h4>
-              
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span class="text-gray-600 dark:text-gray-400">Sessions:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.sessions_count}
-                  </span>
-                </div>
-                
-                <div>
-                  <span class="text-gray-600 dark:text-gray-400">Messages:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.messages_count}
-                  </span>
-                </div>
-                
-                <div>
-                  <span class="text-gray-600 dark:text-gray-400">Facts:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.facts_count}
-                  </span>
-                </div>
-                
-                <div>
-                  <span class="text-gray-600 dark:text-gray-400">Questions:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.questions_count}
-                  </span>
-                </div>
-                
-                <div class="col-span-2">
-                  <span class="text-gray-600 dark:text-gray-400">Estimated size:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.estimated_size}
-                  </span>
-                </div>
-                
-                <div class="col-span-2">
-                  <span class="text-gray-600 dark:text-gray-400">Date range:</span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                    {exportPreview.date_range}
-                  </span>
-                </div>
-              </div>
-            </div>
-          {/if}
+                                <!-- Export Preview -->
+           <div class="bg-gray-50 dark:bg-[#35353d] p-3 rounded-lg mb-4 min-h-[120px]">
+             <h4 class="font-medium text-gray-900 dark:text-white mb-2">Export Preview</h4>
+             
+             {#if isLoading && !exportPreview}
+               <!-- Loading State -->
+               <div class="flex items-center justify-center py-8">
+                 <svg class="animate-spin h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
+                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                 </svg>
+                 <span class="ml-3 text-sm text-gray-600 dark:text-gray-400">Loading preview...</span>
+               </div>
+             {:else if exportPreview}
+               <!-- Preview Content -->
+               <div class="grid grid-cols-2 gap-4 text-sm">
+                 <div>
+                   <span class="text-gray-600 dark:text-gray-400">Sessions:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.sessions_count}
+                   </span>
+                 </div>
+                 
+                 <div>
+                   <span class="text-gray-600 dark:text-gray-400">Messages:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.messages_count}
+                   </span>
+                 </div>
+                 
+                 <div>
+                   <span class="text-gray-600 dark:text-gray-400">Facts:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.facts_count}
+                   </span>
+                 </div>
+                 
+                 <div>
+                   <span class="text-gray-600 dark:text-gray-400">Questions:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.questions_count}
+                   </span>
+                 </div>
+                 
+                 <div class="col-span-2">
+                   <span class="text-gray-600 dark:text-gray-400">Estimated size:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.estimated_size}
+                   </span>
+                 </div>
+                 
+                 <div class="col-span-2">
+                   <span class="text-gray-600 dark:text-gray-400">Date range:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.date_range}
+                   </span>
+                 </div>
+               </div>
+             {:else}
+               <!-- Empty State -->
+               <div class="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+                 <span class="text-sm">Preview will appear here</span>
+               </div>
+             {/if}
+           </div>
 
-          <!-- Error Display -->
-          {#if error}
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                     <!-- Error Display -->
+           {#if error}
+             <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
               <div class="flex">
                 <div class="flex-shrink-0">
                   <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

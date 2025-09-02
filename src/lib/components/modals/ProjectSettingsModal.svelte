@@ -37,12 +37,12 @@
     lastProjectId = project.id;
   }
   
-  const tabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'fact-types', label: 'Fact Types', icon: Settings },
-    { id: 'data', label: 'Import/Export', icon: Database },
-    // Future tabs can be added here
-  ];
+     const tabs = [
+     { id: 'general', label: 'General', icon: Settings },
+     { id: 'fact-types', label: 'Fact\u00A0Types', icon: Settings },
+     { id: 'data', label: 'Import/Export', icon: Database },
+     // Future tabs can be added here
+   ];
 
   function closeModal() {
     showProjectSettingsModal = false;
@@ -56,12 +56,16 @@
     }
   }
 
-  // Close modal when clicking backdrop
-  function handleBackdropClick(event) {
-    if (event.target === event.currentTarget) {
-      closeModal();
-    }
-  }
+     // Close modal when clicking backdrop
+   function handleBackdropClick(event) {
+     if (event.target === event.currentTarget) {
+       closeModal();
+     }
+     // Also close info tooltip when clicking outside
+     if (!event.target.closest('.info-tooltip-container')) {
+       showInfoTooltip = false;
+     }
+   }
 
   async function saveGeneralSettings() {
     if (!project?.id) {
@@ -163,9 +167,12 @@
     saylessOriginalText = '';
   }
   
-  // Import/Export modal state
-  let showExportModal = false;
-  let showImportModal = false;
+     // Import/Export modal state
+   let showExportModal = false;
+   let showImportModal = false;
+   
+   // Info tooltip state
+   let showInfoTooltip = false;
   
   function openExportModal() {
     showExportModal = true;
@@ -179,9 +186,16 @@
     showExportModal = false;
   }
   
-  function closeImportModal() {
-    showImportModal = false;
-  }
+     function closeImportModal() {
+     showImportModal = false;
+   }
+   
+   // Close info tooltip when clicking outside
+   function handleClickOutside(event) {
+     if (!event.target.closest('.info-tooltip-container')) {
+       showInfoTooltip = false;
+     }
+   }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -189,7 +203,7 @@
 {#if showProjectSettingsModal}
   <!-- Modal Backdrop -->
   <div 
-    class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+    class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-2 md:p-4"
     style="background-color: rgba(0, 0, 0, 0.25);"
     on:click={handleBackdropClick}
     on:keydown={handleKeydown}
@@ -199,7 +213,7 @@
     tabindex="0"
   >
     <!-- Modal Content -->
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style="background-color: var(--bg-modal, white);">
+         <div class="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-600 md:border-0" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-4 pb-2 border-b border-gray-200 dark:border-gray-700">
         <div>
@@ -219,38 +233,35 @@
         <nav class="-mb-px flex space-x-8">
           {#each tabs as tab}
             <button
-              class="py-3 px-1 border-b-2 font-medium text-sm transition-colors
+              class="py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center
                      {activeTab === tab.id 
                        ? 'border-b-2' 
                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}"
               style={activeTab === tab.id ? 'border-color: var(--color-accent); color: var(--color-accent);' : ''}
               on:click={() => activeTab = tab.id}
             >
-              <svelte:component this={tab.icon} class="inline w-4 h-4 mr-2" />
+              <svelte:component this={tab.icon} class="w-4 h-4 mr-2" />
               {tab.label}
             </button>
           {/each}
         </nav>
       </div>
 
-      <!-- Modal Body - Scrollable Content -->
-      <div class="flex-1 overflow-y-auto p-6">
-        {#if activeTab === 'fact-types'}
-          <div>
-            <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Fact Types</h3>
-              <p class="text-gray-600 dark:text-gray-400">Customize the fact types available in your project. You can rename existing types, add new ones, and change their colors.</p>
-            </div>
-            
-            <FactTypesManager projectId={project?.id} {user} />
-          </div>
+             <!-- Modal Body - Scrollable Content -->
+       <div class="flex-1 overflow-y-auto min-h-0 {activeTab === 'fact-types' ? 'p-0' : 'p-6'}">
+         {#if activeTab === 'fact-types'}
+           <div class="w-full px-6">
+             <div class="mb-4 md:mb-6">
+               <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Fact Types</h3>
+               <!-- <p class="text-gray-600 dark:text-gray-400">Customize fact types in your project. Rename, add new, and change colors.</p> -->
+             </div>
+             
+             <div class="w-full">
+               <FactTypesManager projectId={project?.id} user={{ ...user, tier: userTier }} />
+             </div>
+           </div>
         {:else if activeTab === 'data'}
           <div>
-            <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Import/Export</h3>
-              <p class="text-gray-600 dark:text-gray-400">Import and export your project data. Create backups or migrate data between projects.</p>
-            </div>
-            
             <!-- Import & Export Actions -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Export Section -->
@@ -306,63 +317,54 @@
                 </button>
               </div>
             </div>
-            
-            <!-- Data Management Tips -->
-            <div class="mt-6 p-4 border rounded-lg info-box">
-              <div class="flex items-start">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-blue-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Export/Import Details</h5>
-                  <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                    <li>• When importing, you can choose to merge with existing data or create a new project</li>
-                    <li>• All relationships between facts, documents, and tags are preserved during export/import</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
         {:else if activeTab === 'general'}
           <div>
             <div class="space-y-6">
-              <!-- Project Name and Info Box Row -->
-              <div class="grid grid-cols-2 gap-6">
-                <div>
-                  <label for="project-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Project Name</label>
-                  <input 
-                    id="project-name"
-                    type="text" 
-                    bind:value={projectName}
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-slate-50 dark:bg-slate-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
-                    placeholder="Enter project name"
-                  />
-                </div>
-                <div>
-                                      <h4 class="text-sm font-medium mb-1 text-blue-600 dark:text-blue-200">🎯 Critical for Wiskr Performance</h4>
-                                      <div class="p-3 border rounded-md transition-colors info-box">
-                    <div class="flex items-start">
-                      <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
-                      </div>
-                    
-                      <div class="ml-3">
-                        <p class="text-xs text-blue-700 dark:text-gray-200">
-                          The description below is the <strong class="text-blue-700 dark:text-gray-200">most important context</strong> for Wiskrs. It's their <strong class="text-blue-700 dark:text-gray-200">"north star"</strong> for providing targeted assistance. This should clearly define:</p>
-                        <ul class="font-medium text-xs list-disc space-y-1 text-blue-700 dark:text-gray-200">
-                          <li class="text-blue-700 dark:text-gray-200">What you're trying to achieve or build</li>
-                          <li class="text-blue-700 dark:text-gray-200">Your main goals and objectives</li>
-                          <li class="text-blue-700 dark:text-gray-200">The scope and focus areas, and any specifics or constraints</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Project Name -->
+              <div>
+                <label for="project-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Project Name</label>
+                <input 
+                  id="project-name"
+                  type="text" 
+                  bind:value={projectName}
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-slate-50 dark:bg-slate-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
+                  placeholder="Enter project name"
+                />
               </div>
+              
+                             <!-- Info Icon with Title -->
+               <div>
+                 <div class="flex items-center gap-2 mb-2">
+                   <h4 class="text-sm font-medium text-blue-600 dark:text-blue-200">🎯 Critical for Wiskr Performance</h4>
+                   <div class="relative group info-tooltip-container">
+                     <button
+                       on:click={() => showInfoTooltip = !showInfoTooltip}
+                       class="h-4 w-4 text-blue-400 cursor-pointer hover:text-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                       aria-label="Show project description help"
+                     >
+                       <svg viewBox="0 0 20 20" fill="currentColor">
+                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                       </svg>
+                     </button>
+                                           <!-- Tooltip - Show on hover (desktop) or click (mobile) -->
+                                             <div class="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-10 md:opacity-0 md:group-hover:opacity-100 {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
+                        <div class="text-center">
+                          <p class="font-medium mb-1">The description below is the <strong>most important context</strong> for Wiskrs.</p>
+                          <p class="text-gray-300">It's their <strong>"north star"</strong> for providing targeted assistance.</p>
+                          <p class="text-gray-300 mt-1">This should clearly define:</p>
+                                                     <ul class="text-left mt-1 space-y-0.5 ml-6">
+                             <li>• What you're trying to achieve or build</li>
+                             <li>• Your main goals and objectives</li>
+                             <li>• The scope and focus areas, and any specifics or constraints</li>
+                           </ul>
+                        </div>
+                                                 <!-- Arrow -->
+                         <div class="absolute bottom-full right-4 w-0 h-0 border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-900"></div>
+                      </div>
+                   </div>
+                 </div>
+               </div>
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label for="project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -381,14 +383,11 @@
                 </div>
                 <textarea 
                   id="project-description"
-                  rows="8"
+                  rows="5"
                   bind:value={projectDescription}
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
                   placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps the AI provide more targeted assistance."
                 ></textarea>
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  💡 <strong>Tip:</strong> A well-written description dramatically improves response quality.
-                </p>
               </div>
               
               <!-- Save Button and Success Message Row -->
@@ -443,7 +442,7 @@
 <ProjectExport
   bind:isOpen={showExportModal}
   project={project}
-  {user}
+  user={{ ...user, tier: userTier }}
   on:close={closeExportModal}
 />
 

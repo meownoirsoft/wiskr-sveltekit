@@ -22,8 +22,8 @@
   
   const dispatch = createEventDispatcher();
   
-  // Mobile form state
-  let showMobileForm = false;
+  // Mobile form state - use prop from parent
+  export let showMobileForm = false;
   
   function send() {
     if (!current || !input.trim()) return;
@@ -47,15 +47,14 @@
   }
   
   function toggleMobileForm() {
+    // Toggle the mobile form state directly since it's bound to parent
     showMobileForm = !showMobileForm;
-    // Dispatch event to notify parent components about mobile form state change
-    dispatch('mobile-form-toggle', { showMobileForm });
   }
 </script>
 <!-- Fixed Ask Form at Bottom -->
   <div class="flex-shrink-0" style="background-color: var(--bg-ask-form);">
-    <!-- Ask Form -->
-    <div class="border-t border-gray-200 dark:border-gray-700 {isMobile && !showMobileForm ? 'hidden' : ''} {isMobile ? 'mobile-ask-form' : ''}">
+         <!-- Ask Form -->
+     <div class="border-t border-gray-200 dark:border-gray-700 {isMobile ? 'mobile-ask-form' : ''}" class:hidden={isMobile && !showMobileForm}>
       
       <!-- Top Row: Friend Selection and ReAsk -->
       <div class="px-2 sm:px-3 pt-2 pb-1">
@@ -101,6 +100,7 @@
                   on:sayless={handleSayLessClick}
                   disabled={!current || !input.trim() || !hasAccess}
                   size="sm"
+                  {isMobile}
                 />
               </FeatureGate>
             {/if}

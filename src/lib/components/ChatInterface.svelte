@@ -610,7 +610,16 @@ import VirtualMessageList from './VirtualMessageList.svelte';
       return;
     }
     
-    // Logic to pick a better friend:
+    // Only suggest models that the user actually has access to (isAvailable === true)
+    const accessibleModels = availableModels.filter(m => m.isAvailable === true && m.key !== modelKey);
+    
+    if (accessibleModels.length === 0) {
+      mrWiskrResponse = "I'd love to suggest one of my other friends to help, but it looks like you don't have access to any other friends right now. You might want to check your subscription or contact support!";
+      mrWiskrThinking = false;
+      return;
+    }
+    
+    // Logic to pick a better friend from accessible models:
     // 1. If using micro/speed, suggest quality or claude
     // 2. If using quality/claude, suggest a different premium friend
     // 3. Prefer friends that are better but not much more expensive
@@ -620,23 +629,23 @@ import VirtualMessageList from './VirtualMessageList.svelte';
     
     if (currentModel.key === 'micro' || currentModel.key === 'speed') {
       // From micro/speed, suggest quality models
-      bestSuggestion = availableModels.find(m => m.key === 'quality') || 
-                      availableModels.find(m => m.key.includes('claude')) ||
-                      availableModels.find(m => m.tier?.toLowerCase().includes('quality'));
+      bestSuggestion = accessibleModels.find(m => m.key === 'quality') || 
+                      accessibleModels.find(m => m.key.includes('claude')) ||
+                      accessibleModels.find(m => m.tier?.toLowerCase().includes('quality'));
     } else if (currentModel.key === 'quality') {
       // From quality, suggest Claude or other premium friends
-      bestSuggestion = availableModels.find(m => m.key.includes('claude')) ||
-                      availableModels.find(m => m.key.includes('llama') && m.tier?.toLowerCase().includes('quality')) ||
-                      availableModels.find(m => m.key !== modelKey && m.tier?.toLowerCase().includes('premium'));
+      bestSuggestion = accessibleModels.find(m => m.key.includes('claude')) ||
+                      accessibleModels.find(m => m.key.includes('llama') && m.tier?.toLowerCase().includes('quality')) ||
+                      accessibleModels.find(m => m.tier?.toLowerCase().includes('premium'));
     } else {
       // From other friends, suggest quality if not already using it
-      bestSuggestion = availableModels.find(m => m.key === 'quality') ||
-                      availableModels.find(m => m.key !== modelKey && (m.tier?.toLowerCase().includes('quality') || m.tier?.toLowerCase().includes('premium')));
+      bestSuggestion = accessibleModels.find(m => m.key === 'quality') ||
+                      accessibleModels.find(m => m.tier?.toLowerCase().includes('quality') || m.tier?.toLowerCase().includes('premium'));
     }
     
-    // Fallback: pick any different friend
+    // Fallback: pick any different accessible friend
     if (!bestSuggestion) {
-      bestSuggestion = availableModels.find(m => m.key !== modelKey);
+      bestSuggestion = accessibleModels[0]; // Pick the first available alternative
     }
     
     if (!bestSuggestion) {
@@ -671,6 +680,11 @@ Should I set that up? I'll switch to your new friend and copy your original ques
     
     // Set the input to the last user question
     input = lastUserQuestion;
+    
+    // On mobile, ensure the form is visible so user can see their question
+    if (isMobile) {
+      showMobileForm = true;
+    }
     
     // Get friendly name using our avatar config
     const modelName = getAIName(suggestedModel.key);
@@ -1083,10 +1097,10 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {isAtBottom}
     {hasMessages}
     isSearchMode={!!highlightedMessageId}
+    bind:showMobileForm
     on:submit={send}
     on:reask={reAskLastQuestion}
     on:sayless={handleSayLessClick}
-    on:mobile-form-toggle={({ detail }) => { showMobileForm = detail.showMobileForm; }}
   />
 </main>
 

@@ -1,4 +1,3 @@
-import { mdsvex } from 'mdsvex';
 import adapter from '@sveltejs/adapter-auto';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -16,8 +15,7 @@ const config = {
 			// Use faster file system operations
 		}
 	},
-	preprocess: [mdsvex()],
-	extensions: ['.svelte', '.svx'],
+	extensions: ['.svelte'],
 	compilerOptions: {
 		// More aggressive optimizations in dev
 		dev: isDev,
