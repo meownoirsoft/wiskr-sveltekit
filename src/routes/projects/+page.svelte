@@ -575,6 +575,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       // Listen for mobile menu toggle from header hamburger button
       window.addEventListener('mobile:toggle-menu', () => {
         showMobileMenu = !showMobileMenu;
+        // Hide panels when mobile menu is opened for maximum content space
+        if (showMobileMenu) {
+          showLeftPanel = false;
+          showRightPanel = false;
+        }
       });
       
     // Listen for project menu toggle from mobile menu button
@@ -582,10 +587,10 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
     });
       
-      // Add click outside listener for sessions panel
-      document.addEventListener('click', handleClickOutside);
-    }
-  });
+        // Add click outside listener for sessions panel
+        document.addEventListener('click', handleClickOutside);
+      }
+    });
 
   // Clean up event listener when component is destroyed
   onDestroy(() => {
@@ -615,6 +620,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.removeEventListener('mobile:toggle-sessions', handleMobileToggleSessions);
       window.removeEventListener('mobile:toggle-menu', () => {
         showMobileMenu = !showMobileMenu;
+        // Hide panels when mobile menu is opened for maximum content space
+        if (showMobileMenu) {
+          showLeftPanel = false;
+          showRightPanel = false;
+        }
       });
       window.removeEventListener('mobile:toggle-projects', () => {
         window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
@@ -1966,9 +1976,16 @@ function handleTextAddToDocs(event) {
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
     class="fixed inset-0 z-[50]" 
-    on:click={() => showMobileMenu = false}
+    on:click={() => {
+      showMobileMenu = false;
+      // Keep panels hidden on mobile for maximum content space
+      if (!isDesktop) {
+        showLeftPanel = false;
+        showRightPanel = false;
+      }
+    }}
   >
-    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 py-2 z-[51]" style="background-color: var(--bg-primary);">
+    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[51]" style="background-color: var(--bg-primary);">
       <!-- Usage Stats -->
       <button 
         type="button"
@@ -2001,12 +2018,12 @@ function handleTextAddToDocs(event) {
       {/if}
       
       {#if data?.user}
-        <!-- Settings -->
+        <!-- Settings Button -->
         <button 
           type="button"
           class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           on:click={() => {
-            window.dispatchEvent(new CustomEvent('layout:open-settings'));
+            window.dispatchEvent(new CustomEvent('layout:open-settings', { detail: { tab: 'account' } }));
             showMobileMenu = false;
             showLeftPanel = false;
             showRightPanel = false;

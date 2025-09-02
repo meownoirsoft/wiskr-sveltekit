@@ -40,6 +40,7 @@
     if (effectiveUserTier === 0) {
       // Free tier - only allow specific avatars
       const avatarId = getAvatarId(filename);
+      console.log('Checking avatar:', filename, '-> avatarId:', avatarId, '-> allowed:', freeAvatars.includes(avatarId));
       return freeAvatars.includes(avatarId);
     }
     
@@ -59,7 +60,8 @@
         ...avatar,
         isLocked: !isAvatarAllowedForUser(avatar.file)
       }));
-      //console.log('Filtered avatars:', filteredAvatars);
+      console.log('Filtered avatars:', filteredAvatars);
+      console.log('Premade avatars:', premadeAvatars);
     }
   }
 
@@ -198,26 +200,26 @@
         {#each filteredAvatars as avatar}
           <div class="flex flex-col items-center gap-1">
             {#if avatar.isLocked}
-              <!-- Locked Avatar -->
-              <div class="relative">
-                <button
-                  class="relative opacity-50 cursor-not-allowed"
-                  title="{avatar.name} (Requires Pro)"
-                  disabled
-                >
-                  <div class="w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 overflow-hidden relative">
-                    <img 
-                      src="/avatars/users/{avatar.file}" 
-                      alt={avatar.name} 
-                      class="w-full h-full object-cover bg-white grayscale brightness-75 contrast-75"
-                    />
-                    <!-- Lock overlay -->
-                    <div class="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-                      <Lock size="14" class="text-white drop-shadow-sm" />
-                    </div>
-                  </div>
-                </button>
-              </div>
+                             <!-- Locked Avatar -->
+               <div class="relative">
+                 <button
+                   class="relative cursor-not-allowed"
+                   title="{avatar.name} (Requires Pro)"
+                   disabled
+                 >
+                   <div class="w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 overflow-hidden relative">
+                     <img 
+                       src="/avatars/users/{avatar.file}" 
+                       alt={avatar.name} 
+                       class="w-full h-full object-cover bg-white"
+                     />
+                                                                                                                                   <!-- Lock indicator in corner -->
+                                                   <div class="absolute top-1 right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center shadow-sm">
+                            <Lock size="12" class="text-white" />
+                          </div>
+                   </div>
+                 </button>
+               </div>
             {:else}
               <!-- Available Avatar -->
               <button
@@ -242,7 +244,7 @@
             {/if}
             <span class="text-xs {avatar.isLocked ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'} text-center">{avatar.name}</span>
             {#if avatar.isLocked}
-              <span class="text-xs text-amber-600 dark:text-amber-400 text-center font-medium">Pro</span>
+              <span class="text-xs text-blue-600 dark:text-blue-400 text-center font-medium">Pro</span>
             {/if}
           </div>
         {/each}

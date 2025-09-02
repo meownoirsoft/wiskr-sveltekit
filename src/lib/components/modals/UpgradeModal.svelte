@@ -190,9 +190,10 @@
     right: 0 !important;
     bottom: 0 !important;
     display: flex !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     justify-content: center !important;
     z-index: 99999 !important;
+    padding-top: 8rem !important;
   }
   
   /* Modal content positioning */

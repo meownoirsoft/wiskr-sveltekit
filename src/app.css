@@ -703,6 +703,39 @@ code {
     margin-bottom: 0; /* Remove extra bottom margin */
   }
   
+  /* Mobile modal positioning improvements */
+  /* Ensure modals appear below header on mobile */
+  .mobile-modal-backdrop {
+    padding-top: 5rem !important; /* 80px - enough to clear header (64px) + safe area */
+  }
+  
+  /* Mobile modal content positioning */
+  .mobile-modal-content {
+    max-height: calc(100vh - 6rem) !important; /* Account for header + padding */
+    overflow-y: auto;
+  }
+  
+  /* Ensure modals don't overlap with mobile status bars */
+  @supports (padding: max(0px)) {
+    .mobile-modal-backdrop {
+      padding-top: max(5rem, calc(4rem + env(safe-area-inset-top))) !important;
+    }
+  }
+  
+  /* Override flexbox behavior for mobile modals */
+  @media (max-width: 768px) {
+    /* Force modals to appear below header by removing flexbox centering */
+    .fixed.inset-0.flex.justify-center {
+      align-items: flex-start !important;
+      padding-top: 5rem !important;
+    }
+    
+    /* Ensure modal content is positioned correctly */
+    .fixed.inset-0.flex.justify-center > div {
+      margin-top: 0 !important;
+      align-self: flex-start !important;
+    }
+  }
 
 }
 

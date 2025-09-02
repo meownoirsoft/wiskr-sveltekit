@@ -316,10 +316,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       showProjectMenu = !showProjectMenu;
     });
     
-    // Listen for layout settings open event
-    window.addEventListener('layout:open-settings', () => {
-      openAppSettings();
-    });
+         // Listen for layout settings open event
+     window.addEventListener('layout:open-settings', (e) => {
+       const tab = e.detail?.tab || 'account';
+       openAppSettings(tab);
+     });
   });
 
   // tiny helper
@@ -338,6 +339,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
   // APP SETTINGS modal state
   let showAppSettings = false;
+  let initialSettingsTab = 'account'; // Track which tab to open
   let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null };
   let savingPreferences = false;
   
@@ -352,8 +354,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   let showAddInsMenu = false;
   
   // Panel state tracking for mobile chevron icons
-  let showLeftPanel = true; // Default state, will be synced with actual panel state
-  let showRightPanel = true; // Default state, will be synced with actual panel state
+  let showLeftPanel = false; // Default state, will be synced with actual panel state
+  let showRightPanel = false; // Default state, will be synced with actual panel state
   
   // Responsive state
   let isDesktop = false;
@@ -468,7 +470,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   }
   
   // Handle opening settings modal
-  function openAppSettings() {
+  function openAppSettings(tab = 'account') {
+    initialSettingsTab = tab;
     showAppSettings = true;
     loadUserPreferences();
   }
@@ -599,21 +602,21 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
         {#if isProjectsPage}
-          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-2">
             <!-- Left panel toggle (Context/Facts) -->
             <button
               type="button"
-              class="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
               aria-label="Toggle Facts & Docs"
               title="Facts & Docs"
             >
               {#if showLeftPanel}
                 <!-- Panel is open - chevrons pointing left (hide panel) -->
-                <ChevronsLeft size="28" />
+                <ChevronsLeft size="24" />
               {:else}
                 <!-- Panel is closed - chevrons pointing right (show panel) -->
-                <ChevronsRight size="28" />
+                <ChevronsRight size="24" />
               {/if}
               <!-- <span class="text-xs mt-1">Facts</span> -->
             </button>
@@ -752,19 +755,19 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         {/if}
       </div>
       
-      <!-- Center: Mobile Wiskr logo -->
-      {#if shouldShowLogo}
-        <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 justify-center">
-          <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-            <span class="text-lg inline-flex items-center">
-              <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
-            </span>
-          </a>
-        </div>
-      {:else}
-        <!-- Spacer for when logo is not shown -->
-        <div class="flex-1"></div>
-      {/if}
+             <!-- Center: Mobile Wiskr logo -->
+       {#if shouldShowLogo}
+         <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 items-center justify-center">
+           <a href="/projects" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+             <span class="text-lg inline-flex items-center">
+               <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
+             </span>
+           </a>
+         </div>
+       {:else}
+         <!-- Spacer for when logo is not shown -->
+         <div class="flex-1"></div>
+       {/if}
       <!-- Mobile: Search icon button (positioned to right of logo for symmetry) -->
       <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
         <button
@@ -776,7 +779,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           }}
           aria-label="Search"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
@@ -847,21 +850,21 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           </div>
           
           <!-- Mobile: Right panel control (Ideas) -->
-          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-1">
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-2">
             <!-- Right panel toggle (Add-Ins) -->
             <button
               type="button"
-              class="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
               aria-label="Toggle Questions & Ideas"
               title="Questions & Ideas"
             >
               {#if !showRightPanel}
                 <!-- Chevrons pointing left (show panel) -->
-                <ChevronsLeft size="28" />
+                <ChevronsLeft size="24" />
               {:else}
                 <!-- Chevrons pointing right (hide panel) -->
-                <ChevronsRight size="28" />
+                <ChevronsRight size="24" />
               {/if}
               <!-- <span class="text-xs mt-1">Ideas</span> -->
             </button>
@@ -1090,6 +1093,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     userTier={data?.userTier || 0}
     effectiveTier={data?.effectiveTier || 0}
     trialEndsAt={data?.trialEndsAt || null}
+    initialTab={initialSettingsTab}
     on:close={handleSettingsClose}
     on:save-preferences={handleSettingsSave}
     on:theme-changed={handleSettingsThemeChange}

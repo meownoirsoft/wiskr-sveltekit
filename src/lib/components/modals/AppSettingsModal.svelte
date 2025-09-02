@@ -1,12 +1,12 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
-  import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift } from 'lucide-svelte';
+     import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift, ChevronDown, X } from 'lucide-svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
   import { getTierDisplayInfo } from '$lib/tiers.js';
   
   const dispatch = createEventDispatcher();
-  
+
   // Props
   export let isOpen = false;
   export let userData = null;
@@ -16,20 +16,33 @@
   export let userTier = 0;
   export let effectiveTier = 0;
   export let trialEndsAt = null;
+  export let initialTab = 'account'; // Allow opening with a specific tab
   
   // Internal state
-  let activeTab = 'account'; // 'account', 'profile', 'preferences', 'appearance', 'about'
+  let activeTab = initialTab; // 'account', 'profile', 'preferences', 'appearance', 'about'
   let wasOpen = false;
+  let showDropdown = false;
+  
+  // Tab configuration
+  const tabs = [
+    { id: 'account', label: 'Account', icon: User },
+    { id: 'profile', label: 'Avatar', icon: Palette },
+    { id: 'appearance', label: 'Theme', icon: Paintbrush },
+    { id: 'about', label: 'About', icon: Info }
+  ];
+  
+  // Get current tab info
+  $: currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   
   // Reset tab only when modal is first opened
   $: if (isOpen && !wasOpen) {
-    activeTab = 'account';
+    activeTab = initialTab;
     wasOpen = true;
   } else if (!isOpen) {
     wasOpen = false;
   }
   
-  // Theme and color utility functions (copied from layout)
+  // Theme and color utility functions
   function hexToRgb(hex) {
     const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
     return result ? {
@@ -43,14 +56,12 @@
     const rgb = hexToRgb(hex);
     if (!rgb) return '#000000';
     
-    // Calculate relative luminance using sRGB
     const { r, g, b } = rgb;
     const [rs, gs, bs] = [r / 255, g / 255, b / 255].map(c => {
       return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     });
     const luminance = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
     
-    // Use white text if background is dark, black if it's light
     return luminance > 0.5 ? '#000000' : '#ffffff';
   }
   
@@ -58,15 +69,12 @@
     if (browser && color) {
       document.documentElement.style.setProperty('--color-accent', color);
       
-      // Calculate hover and light variants
       const rgb = hexToRgb(color);
       if (rgb) {
         const hoverColor = darkMode ? lightenColor(color, 0.2) : darkenColor(color, 0.1);
         document.documentElement.style.setProperty('--color-accent-hover', hoverColor);
         document.documentElement.style.setProperty('--color-accent-light', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${darkMode ? 0.2 : 0.1})`);
         document.documentElement.style.setProperty('--color-accent-border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${darkMode ? 0.4 : 0.3})`);
-        
-        // Set contrasting text color for accent elements
         document.documentElement.style.setProperty('--color-accent-text', getContrastColor(color));
       }
     }
@@ -100,7 +108,6 @@
       
       if (darkMode) {
         root.classList.add('dark');
-        // Force update CSS variables for dark mode
         root.style.setProperty('--bg-primary', '#1a1a1a');
         root.style.setProperty('--bg-panel-left', '#1b1b1e');
         root.style.setProperty('--bg-panel-right', '#1b1b1e');
@@ -114,7 +121,6 @@
         root.style.backgroundColor = '#1a1a1a';
       } else {
         root.classList.remove('dark');
-        // Force update CSS variables for light mode
         root.style.setProperty('--bg-primary', '#ffffff');
         root.style.setProperty('--bg-panel-left', '#EEF1FF');
         root.style.setProperty('--bg-panel-right', '#EEF1FF');
@@ -128,7 +134,6 @@
         root.style.backgroundColor = '#ffffff';
       }
       
-      // Force a repaint to ensure all components update
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('theme-changed', { detail: { darkMode } }));
       }, 0);
@@ -161,73 +166,84 @@
     userPreferences.avatar_value = event.detail.value;
     handleSavePreferences();
   }
+  
+  function handleTabSelect(tabId) {
+    activeTab = tabId;
+    showDropdown = false;
+  }
+  
+  function handleClickOutside(event) {
+    if (!event.target.closest('.settings-dropdown')) {
+      showDropdown = false;
+    }
+  }
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]">
-    <div class="bg-white rounded-xl shadow-xl w-[90vw] max-w-2xl max-h-[90vh] min-h-[500px] overflow-hidden" style="background-color: var(--bg-modal, white);">
-      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:click={handleClickOutside}>
+    <div class="bg-white rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-600 w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
+      <div class="flex items-center justify-between pl-6 pr-4 py-3 border-b border-gray-200 dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
-        <button 
-          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none"
-          on:click={handleClose}
-        >
-          ✕
-        </button>
+                 <button 
+           class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+           on:click={handleClose}
+         >
+           <X size="32" />
+         </button>
       </div>
 
-      <div class="flex">
-        <!-- Tab Navigation -->
-        <div class="w-40 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-800">
-          <nav class="p-4 space-y-2">
+      <div class="flex flex-col">
+        <!-- Mobile-friendly dropdown navigation -->
+        <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+          <div class="relative settings-dropdown">
             <button
-              class="w-full flex items-center gap-3 px-2 py-2 text-sm rounded-lg transition-colors {activeTab === 'account' ? '' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-              style={activeTab === 'account' ? 'background-color: var(--color-accent); color: var(--color-accent-text);' : ''}
-              on:click={() => activeTab = 'account'}
+              class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              on:click={() => showDropdown = !showDropdown}
             >
-              <User size="20" />
-              Account
+              <div class="flex items-center gap-3">
+                <svelte:component this={currentTab.icon} size="20" />
+                <span>{currentTab.label}</span>
+              </div>
+              <ChevronDown size="16" class="transition-transform {showDropdown ? 'rotate-180' : ''}" />
             </button>
             
-            <button
-              class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors {activeTab === 'profile' ? '' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-              style={activeTab === 'profile' ? 'background-color: var(--color-accent); color: var(--color-accent-text);' : ''}
-              on:click={() => activeTab = 'profile'}
-            >
-              <Palette size="20" />
-              Avatar
-            </button>
-            
-            <button
-              class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors {activeTab === 'appearance' ? '' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-              style={activeTab === 'appearance' ? 'background-color: var(--color-accent); color: var(--color-accent-text);' : ''}
-              on:click={() => activeTab = 'appearance'}
-            >
-              <Paintbrush size="20" />
-              Theme
-            </button>
-            
-            <button
-              class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors {activeTab === 'about' ? '' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-              style={activeTab === 'about' ? 'background-color: var(--color-accent); color: var(--color-accent-text);' : ''}
-              on:click={() => activeTab = 'about'}
-            >
-              <Info size="20" />
-              About
-            </button>
-          </nav>
+            {#if showDropdown}
+              <div class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
+                {#each tabs as tab}
+                  <button
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                    on:click={() => handleTabSelect(tab.id)}
+                  >
+                    <svelte:component this={tab.icon} size="20" />
+                    <span>{tab.label}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
         </div>
 
         <!-- Tab Content -->
-        <div class="flex-1 overflow-y-auto max-h-[70vh]">
+        <div class="flex-1 overflow-y-auto max-h-[60vh]">
           <div class="p-6">
             
             <!-- Account Tab -->
             {#if activeTab === 'account'}
               <div class="space-y-6">
                 <div>
-                  <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">User Details</h4>
-                  {#if userData}
+                   <div class="flex items-center justify-between mb-4">
+                     <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">User Details</h4>
+                     <a 
+                       href="/logout" 
+                       class="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors font-medium"
+                       on:click={handleClose}
+                     >
+                       Logout
+                     </a>
+                   </div>
+                   {#if userData}
                     <div class="space-y-4">
                       <div class="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div>
@@ -238,7 +254,6 @@
                           Verified
                         </div>
                       </div>
-                      
                       <!-- Subscription Tier Information -->
                       <div class="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div>
@@ -296,66 +311,47 @@
                           {/if}
                         </div>
                       </div>
-                      
-                      <div>
-                    <div class="space-y-6">
-                      <!-- Preferred Name -->
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="preferred-name">Preferred Name</label>
-                        <input 
-                          type="text" 
-                          maxlength="50" 
-                          placeholder="Your name (e.g., Sym)"
-                          bind:value={userPreferences.display_name}
-                          on:change={handleSavePreferences}
-                          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
-                          style="--tw-ring-color: var(--color-accent);"
-                        />
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This name will appear in your chat messages</p>
-                      </div>
-                      
-                      <!-- Max Related Ideas -->
-                      <div>
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Max Related Ideas</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Number of ideas generated (1-20)</div>
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <input 
-                              type="number" 
-                              min="1" 
-                              max="20" 
-                              bind:value={userPreferences.max_related_ideas}
-                              on:change={handleSavePreferences}
-                              class="w-20 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
-                              style="--tw-ring-color: var(--color-accent);"
-                            />
-                            {#if savingPreferences}
-                              <span class="text-xs" style="color: var(--color-accent);">Saving...</span>
-                            {/if}
-                          </div>
+                      <div class="space-y-6">
+                        <!-- Preferred Name -->
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="preferred-name">Preferred Name</label>
+                          <input 
+                            type="text" 
+                            maxlength="50" 
+                            placeholder="Your name (e.g., Sym)"
+                            bind:value={userPreferences.display_name}
+                            on:change={handleSavePreferences}
+                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
+                            style="--tw-ring-color: var(--color-accent);"
+                          />
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This name will appear in your chat messages</p>
                         </div>
+                                                 <!-- Max Related Ideas - Hidden -->
+                         <!-- <div>
+                           <div class="flex items-center justify-between">
+                             <div>
+                               <div class="text-sm font-medium text-gray-900 dark:text-gray-100">Max Related Ideas</div>
+                               <div class="text-xs text-gray-500 dark:text-gray-400">Number of ideas generated (1-20)</div>
+                             </div>
+                             <div class="flex items-center gap-2">
+                               <input 
+                                 type="number" 
+                                 min="1" 
+                                 max="20" 
+                                 bind:value={userPreferences.max_related_ideas}
+                                 on:change={handleSavePreferences}
+                                 class="w-16 h-16 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-pointer" 
+                                 style="--tw-ring-color: var(--color-accent);"
+                               />
+                               {#if savingPreferences}
+                                 <span class="text-xs" style="color: var(--color-accent);">Saving...</span>
+                               {/if}
+                             </div>
+                           </div>
+                         </div> -->
                       </div>
                     </div>
-                </div>
-                <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <h5 class="text-sm font-medium text-gray-900 dark:text-gray-100">Sign Out</h5>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Sign out of your account</p>
-                          </div>
-                          <a 
-                            href="/logout" 
-                            class="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors font-medium"
-                            on:click={handleClose}
-                          >
-                            Logout
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  {:else}
+                   {:else}
                     <div class="text-center py-8">
                       <div class="text-gray-400 dark:text-gray-500 mb-4">
                         <User size="48" class="mx-auto" />
@@ -373,10 +369,9 @@
                         >Sign Up</a>
                       </div>
                     </div>
-                  {/if}
-                </div>
-              </div>
-            
+                   {/if}
+              </div> <!-- Close Account tab main container -->
+            </div>
             <!-- Profile Tab -->
             {:else if activeTab === 'profile'}
               <div class="space-y-6">
@@ -421,8 +416,6 @@
             <!-- Theme & Accent Tab -->
             {:else if activeTab === 'appearance'}
               <div class="space-y-6">
-                <div>
-                  <div class="space-y-6">
                     <div>
                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3" for="theme">Theme</label>
                       <div class="grid grid-cols-2 gap-3">
@@ -468,8 +461,6 @@
                           Aa
                         </div>
                       </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             
@@ -478,44 +469,31 @@
               <div class="space-y-6">
                 <div>
                   <div class="space-y-6">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
-                      <div class="flex items-center gap-4 mb-4">
-                        <img src="/wiskr-logo.png" alt="Wiskr" class="h-12" />
-                        <div>
-                          <h5 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Wiskr</h5>
-                          <p class="text-sm text-gray-500 dark:text-gray-400">AI-powered conversation manager</p>
-                        </div>
-                        <div class="ml-auto">
-                          <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-full">v1.0.0</span>
-                        </div>
-                      </div>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                         <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+                       <div class="flex items-center justify-between">
+                         <img src="/wiskr-logo.png" alt="Wiskr" class="h-12" />
+                         <div class="ml-auto">
+                           <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-full">v1.0.0</span>
+                         </div>
+                       </div>
+                      <!-- <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                         Wiskr helps you manage AI conversations across multiple models, organize context with facts and documents, and generate ideas for your projects.
-                      </p>
+                      </p> -->
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-                        <h6 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Features</h6>
-                        <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                          <li>• Multi-model conversations</li>
-                          <li>• Context management</li>
-                          <li>• Project organization</li>
-                          <li>• Conversation branching</li>
-                          <li>• Content formatting</li>
-                        </ul>
-                      </div>
-                      
-                      <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-                        <h6 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Support</h6>
-                        <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                          <li>• Built with SvelteKit</li>
-                          <li>• Powered by Supabase</li>
-                          <li>• OpenRouter</li>
-                          <li>• Real-time sync</li>
-                          <li>• Mobile responsive</li>
-                        </ul>
-                      </div>
+                    <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                       <h6 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Features</h6>
+                       <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                        <li><b>Context Control</b> – Prevent context pollution and keep conversations focused.</li>
+
+                        <li><b>Multi-Model Conversations</b> – Chat with GPT, Claude, Gemini, and others in the same thread.</li>
+                        
+                        <li><b>Project Workspaces</b> – Organize conversations, notes, and branches under each project.</li>
+                        
+                        <li><b>Conversation Branching</b> – Explore side ideas without disrupting your main flow.</li>
+                        
+                        <li><b>One-Click Export</b> – Format and save outputs as clean docs, posts, or code.</li>
+                       </ul>
                     </div>
                     
                     <!-- Legal Links -->
@@ -559,16 +537,20 @@
       <!-- Footer -->
       <div class="border-t border-gray-200 dark:border-gray-600 p-4 bg-gray-50 dark:bg-slate-800">
         <div class="flex items-center justify-between">
-          {#if savingPreferences}
-            <div class="flex items-center gap-2 text-sm" style="color: var(--color-accent);">
-              <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-              Saving preferences...
-            </div>
-          {:else}
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              Changes are saved automatically
-            </div>
-          {/if}
+                     {#if savingPreferences}
+             <div class="flex items-center gap-2 text-sm" style="color: var(--color-accent);">
+               <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+               Saving preferences...
+             </div>
+           {:else if activeTab == 'about'}
+           <div class="text-xs text-gray-500 dark:text-gray-400">
+            Thank you for using Wiskr!
+          </div>
+           {:else}
+             <div class="text-xs text-gray-500 dark:text-gray-400">
+               Changes are saved automatically
+             </div>
+           {/if}
           
           <button 
             class="px-4 py-2 text-white text-sm rounded-lg transition-colors font-medium" 

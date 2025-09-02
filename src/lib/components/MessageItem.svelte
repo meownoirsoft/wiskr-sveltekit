@@ -176,7 +176,7 @@
       
       <!-- Select All button for assistant messages (bottom right) -->
       <button
-        class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation" 
+        class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-1 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation h-8 sm:h-6" 
         style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
@@ -223,7 +223,7 @@
       {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main'}
         <div class="z-10">
           <button id="branch-button-{index}"
-            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-8 sm:h-8 touch-action-manipulation"
+            class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-10 sm:h-8 touch-action-manipulation"
             style="background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-text); touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-hover)'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = 'var(--color-accent)'; }}
@@ -244,7 +244,7 @@
       {#if message.role === 'assistant' && message.content.trim()}
         <div class="z-10">
           <button
-            class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-8 sm:h-8 touch-action-manipulation overflow-hidden"
+            class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-10 sm:h-8 touch-action-manipulation overflow-hidden"
             style="background-color: #5D60DD; border-color: #5D60DD; touch-action: manipulation;"
             on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}

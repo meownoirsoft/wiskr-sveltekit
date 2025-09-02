@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { RotateCcw, X, ChevronsRight, MessageSquare, ChevronUp, ChevronDown } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
   import ModelDropdown from './ModelDropdown.svelte';
@@ -24,6 +24,37 @@
   
   // Mobile form state - use prop from parent
   export let showMobileForm = false;
+  
+  // Add delay mechanism for New Messages button to prevent flashing
+  let showNewMessagesButton = false;
+  let newMessagesButtonTimeout = null;
+  
+  // Watch isAtBottom changes and add delay for showing the button
+  $: if (isAtBottom !== undefined) {
+    if (isAtBottom) {
+      // Immediately hide button when at bottom
+      showNewMessagesButton = false;
+      if (newMessagesButtonTimeout) {
+        clearTimeout(newMessagesButtonTimeout);
+        newMessagesButtonTimeout = null;
+      }
+    } else {
+      // Add 1 second delay before showing button when not at bottom
+      if (newMessagesButtonTimeout) {
+        clearTimeout(newMessagesButtonTimeout);
+      }
+      newMessagesButtonTimeout = setTimeout(() => {
+        showNewMessagesButton = true;
+      }, 1000);
+    }
+  }
+  
+  // Cleanup timeout on component destroy
+  onDestroy(() => {
+    if (newMessagesButtonTimeout) {
+      clearTimeout(newMessagesButtonTimeout);
+    }
+  });
   
   function send() {
     if (!current || !input.trim()) return;
@@ -108,7 +139,7 @@
             <!-- ReAsk Button (always visible when there's a last message) -->
             {#if hasLastUserMessage}
               <button
-                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" 
+                class="flex items-center gap-0.5 sm:gap-1 text-xs {isMobile ? 'px-1.5 py-1.5' : 'px-2 sm:px-3 py-1.5'} rounded border transition-colors font-medium touch-action-manipulation bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 h-10 sm:h-8" 
                 style="touch-action: manipulation;"
                 on:click={reAskLastQuestion}
                 disabled={!current}
@@ -172,9 +203,9 @@
       <div class="mobile-ask-form-toggle-inline flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-700">
         <!-- Left side: New Messages button (only when form is expanded and not at bottom) -->
         <div class="flex-shrink-0">
-          {#if showMobileForm && hasMessages && !isAtBottom}
+          {#if showMobileForm && hasMessages && !isAtBottom && showNewMessagesButton}
             <button
-              class="flex items-center gap-1 px-3 py-2 text-xs rounded border transition-colors font-medium touch-action-manipulation bg-blue-600 hover:bg-blue-700 text-white border-blue-600" 
+              class="flex items-center gap-1 px-3 py-2 text-xs rounded border transition-colors font-medium touch-action-manipulation bg-blue-600 hover:bg-blue-700 text-white border-blue-600 h-10" 
               style="touch-action: manipulation;"
               on:click={() => window.dispatchEvent(new CustomEvent('chat:scroll-to-bottom'))}
               title="Scroll to bottom"
@@ -188,7 +219,7 @@
         {#if !isSearchMode}
           <div class="flex-shrink-0">
             <button
-              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm h-10"
               style="background-color: var(--color-accent); color: var(--color-accent-text);"
               on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
               on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}

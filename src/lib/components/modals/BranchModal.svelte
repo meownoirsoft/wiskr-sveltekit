@@ -20,6 +20,10 @@
     gfm: true,
   });
 
+  // Safety check for branchModalMessageIndex
+  $: safeMessageIndex = typeof branchModalMessageIndex === 'number' ? branchModalMessageIndex : -1;
+  $: console.log('BranchModal - branchModalMessageIndex:', branchModalMessageIndex, 'type:', typeof branchModalMessageIndex, 'safe:', safeMessageIndex);
+
   function renderMarkdown(content) {
     if (!content || typeof content !== 'string') return '';
     return marked(content);
@@ -102,8 +106,7 @@
           <!-- No existing branches, show creation form -->
           <div class="mb-4">
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Create a new conversation branch starting from message #{branchModalMessageIndex + 1}. 
-              This lets you explore alternative conversation paths!
+              This lets you explore alternative paths!
             </p>
           </div>
         {/if}
@@ -126,36 +129,38 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="branch-name-box">
             Branch Name
           </label>
-          <div class="flex gap-2">
+          <div class="flex flex-col gap-2">
             <input
               id="branch-name-box"
               type="text"
-              class="flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 {createError ? 'border-red-300 dark:border-red-600' : ''}"
-              placeholder="e.g., Alternative approach, Creative version..."
+              class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 {createError ? 'border-red-300 dark:border-red-600' : ''}"
+              placeholder="e.g., Alternative approach"
               bind:value={newBranchName}
               maxlength="100"
             />
-            <button
-              class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              on:click={closeModal}
-              disabled={isCreatingBranch}
-            >
-              Cancel
-            </button>
-            <button
-              class="px-3 py-2 text-sm txt-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1" 
-              style="background-color: var(--color-accent); color: var(--color-accent-text);"
-              on:click={createBranch}
-              disabled={isCreatingBranch || !newBranchName.trim()}
-            >
-              {#if isCreatingBranch}
-                <div class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                Creating...
-              {:else}
-                <GitBranch size="14" />
-                Create
-              {/if}
-            </button>
+            <div class="flex gap-2">
+              <button
+                class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                on:click={closeModal}
+                disabled={isCreatingBranch}
+              >
+                Cancel
+              </button>
+              <button
+                class="flex-1 px-3 py-2 text-sm txt-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1" 
+                style="background-color: var(--color-accent); color: var(--color-accent-text);"
+                on:click={createBranch}
+                disabled={isCreatingBranch || !newBranchName.trim()}
+              >
+                {#if isCreatingBranch}
+                  <div class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                  Creating...
+                {:else}
+                  <GitBranch size="14" />
+                  Create
+                {/if}
+              </button>
+            </div>
           </div>
           
           {#if createError}
