@@ -5,10 +5,10 @@ import path from 'path';
 /** @type {import('./$types').RequestHandler} */
 export async function GET() {
   try {
-    // Get all PNG files from the avatars directory
+    // Get all PNG files from the avatars directory, excluding cosmic-bg.png
     const avatarsDir = path.join(process.cwd(), 'static', 'avatars', 'users');
     const files = fs.readdirSync(avatarsDir)
-      .filter(file => file.endsWith('.png'))
+      .filter(file => file.endsWith('.png') && file !== 'cosmic-bg.png')
       .map(file => ({
         file,
         name: fileToDisplayName(file)

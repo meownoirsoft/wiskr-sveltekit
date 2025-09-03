@@ -197,13 +197,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         }
         // Wait for panel to open, then highlight
         setTimeout(() => {
-          console.log('🔍 +page.svelte: setTimeout callback - ideasColumnComponent:', ideasColumnComponent);
-          console.log('🔍 +page.svelte: Available methods:', ideasColumnComponent ? Object.getOwnPropertyNames(ideasColumnComponent) : 'No component');
           if (ideasColumnComponent && typeof ideasColumnComponent.highlightQuestion === 'function') {
-            console.log('🔍 +page.svelte: Calling highlightQuestion');
             ideasColumnComponent.highlightQuestion(result.id, searchTerm);
-          } else {
-            console.log('🔍 +page.svelte: Component or method not available');
           }
         }, 100);
         break;
@@ -217,13 +212,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         }
         // Wait for panel to open, then highlight
         setTimeout(() => {
-          console.log('🔍 +page.svelte: setTimeout callback - ideasColumnComponent:', ideasColumnComponent);
-          console.log('🔍 +page.svelte: Available methods:', ideasColumnComponent ? Object.getOwnPropertyNames(ideasColumnComponent) : 'No component');
           if (ideasColumnComponent && typeof ideasColumnComponent.highlightIdea === 'function') {
-            console.log('🔍 +page.svelte: Calling highlightIdea');
             ideasColumnComponent.highlightIdea(result.id, searchTerm);
-          } else {
-            console.log('🔍 +page.svelte: Component or method not available');
           }
         }, 100);
         break;
@@ -456,9 +446,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       if (projects.length === 0) {
         console.log('⚠️  No projects found even after database fetch - this should not happen for authenticated users');
       }
-    } else {
-      console.log('📊 Using preloaded projects:', projects.length, 'projects');
-    }
+    } 
     
     // Clean up stale localStorage data
     clearStaleProjectData();
@@ -479,7 +467,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       const lastProject = lastProjectId ? projects.find(p => p.id === lastProjectId) : null;
       const projectToSelect = lastProject || projects[0];
       
-      console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
+      //console.log('🎯 Notifying layout of projects and current selection:', projectToSelect?.name);
       
       // Dispatch event to notify layout about projects and current selection
       window.dispatchEvent(new CustomEvent('layout:update-projects', {
@@ -517,11 +505,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       
       // Force initial panel state after checkScreenSize runs
       if (isDesktop) {
-        console.log('Desktop detected on mount - showing panels');
+    
         showLeftPanel = true;
         showRightPanel = true;
       } else {
-        console.log('Mobile detected on mount - hiding panels');
+    
         showLeftPanel = false;
         showRightPanel = false;
       }

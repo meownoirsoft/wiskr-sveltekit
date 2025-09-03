@@ -8,15 +8,15 @@
 export const AI_AVATARS = {
   // Server key aliases
   'speed': {
-    name: 'Hikari',
-    avatar: 'hikari.png',
+    name: 'Ember',
+    avatar: 'ember.png',
     description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
     bestFor: 'Quick questions & simple tasks',
     company: 'anthropic'
   },
   'quality': {
     name: 'Verse',
-    avatar: 'sonny.png',
+    avatar: 'verse.png',
     description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
     bestFor: 'Most conversations & analysis',
     company: 'anthropic'
@@ -30,35 +30,35 @@ export const AI_AVATARS = {
   },
   'micro': {
     name: 'Spark',
-    avatar: 'nova-flash.png',
+    avatar: 'spark.png',
     description: 'Lightning-fast wiskr from the search experts at Google',
     bestFor: 'Lightning-fast micro tasks',
     company: 'google'
   },
   'gpt-oss': {
     name: 'Prism',
-    avatar: 'moe.png',
+    avatar: 'prism.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
     bestFor: 'Cost-effective quick help',
     company: 'openai'
   },
   'gpt4-turbo': {
     name: 'Dash',
-    avatar: 'turbo-tess.png',
+    avatar: 'dash.png',
     description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
     bestFor: 'Fast complex problem solving',
     company: 'openai'
   },
   'claude-opus': {
     name: 'Opal',
-    avatar: 'prof-opal.png',
+    avatar: 'opal.png',
     description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
     bestFor: 'Deep research & writing',
     company: 'anthropic'
   },
   'gemini-pro': {
     name: 'Gem',
-    avatar: 'gemma.png',
+    avatar: 'gem.png',
     description: 'Professional wiskr from the brilliant team at Google AI Research',
     bestFor: 'Structured analysis & data',
     company: 'google'
@@ -72,7 +72,7 @@ export const AI_AVATARS = {
   },
   'llama-405b': {
     name: 'Titan',
-    avatar: 'big-timmy.png',
+    avatar: 'titan.png',
     description: 'Powerful large-scale wiskr from the open-source advocates at Meta',
     bestFor: 'Heavyweight reasoning tasks',
     company: 'meta'
@@ -86,29 +86,29 @@ export const AI_AVATARS = {
   },
   'qwen-72b': {
     name: 'Quest',
-    avatar: 'dr-qwen.png',
+    avatar: 'quest.png',
     description: 'Knowledgeable wiskr from the research innovators at Alibaba',
     bestFor: 'Research & knowledge tasks',
     company: 'alibaba'
   },
   'deepseek-v3': {
     name: 'Sage',
-    avatar: 'marina.png',
+    avatar: 'sage.png',
     description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
     bestFor: 'Math(s) logic & code',
     company: 'deepseek'
   },
   // Full model names (for backward compatibility)
   'claude-3-haiku': {
-    name: 'Hikari',
-    avatar: 'hikari.png',
+    name: 'Ember',
+    avatar: 'ember.png',
     description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
     bestFor: 'Quick questions & simple tasks',
     company: 'anthropic'
   },
   'claude-3-5-sonnet': {
     name: 'Verse',
-    avatar: 'sonny.png',
+    avatar: 'verse.png',
     description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
     bestFor: 'Most conversations & analysis',
     company: 'anthropic'
@@ -122,35 +122,35 @@ export const AI_AVATARS = {
   },
   'gemini-flash-1.5': {
     name: 'Spark',
-    avatar: 'nova-flash.png',
+    avatar: 'spark.png',
     description: 'Lightning-fast wiskr from the search experts at Google',
     bestFor: 'Lightning-fast micro tasks',
     company: 'google'
   },
   'gpt-4o-mini-2024-07-18': {
     name: 'Prism',
-    avatar: 'moe.png',
+    avatar: 'prism.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
     bestFor: 'Cost-effective quick help',
     company: 'openai'
   },
   'gpt-4-turbo': {
     name: 'Dash',
-    avatar: 'turbo-tess.png',
+    avatar: 'dash.png',
     description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
     bestFor: 'Fast complex problem solving',
     company: 'openai'
   },
   'claude-3-opus': {
     name: 'Opal',
-    avatar: 'prof-opal.png',
+    avatar: 'opal.png',
     description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
     bestFor: 'Deep research & writing',
     company: 'anthropic'
   },
   'gemini-pro-1.5': {
     name: 'Gem',
-    avatar: 'gemma.png',
+    avatar: 'gem.png',
     description: 'Professional wiskr from the brilliant team at Google AI Research',
     bestFor: 'Structured analysis & data',
     company: 'google'
@@ -164,7 +164,7 @@ export const AI_AVATARS = {
   },
   'llama-3.1-405b-instruct': {
     name: 'Titan',
-    avatar: 'big-timmy.png',
+    avatar: 'titan.png',
     description: 'Powerful large-scale wiskr from the open-source advocates at Meta',
     bestFor: 'Heavy reasoning tasks',
     company: 'meta'
@@ -178,14 +178,14 @@ export const AI_AVATARS = {
   },
   'qwen-2.5-72b-instruct': {
     name: 'Quest',
-    avatar: 'dr-qwen.png',
+    avatar: 'quest.png',
     description: 'Knowledgeable wiskr from the research innovators at Alibaba',
     bestFor: 'Research & knowledge tasks',
     company: 'alibaba'
   },
   'deepseek-v3': {
     name: 'Sage',
-    avatar: 'marina.png',
+    avatar: 'sage.png',
     description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
     bestFor: 'Math(s) logic & code',
     company: 'deepseek'
@@ -231,9 +231,10 @@ export function getAIInfo(modelKey) {
   }
   
   if (aiInfo) {
+    const cacheBuster = '?v=2'; // Increment this when avatars are updated
     return {
       ...aiInfo,
-      avatarPath: `/avatars/${aiInfo.avatar}`,
+      avatarPath: `/avatars/${aiInfo.avatar}${cacheBuster}`,
       modelKey: modelKey
     };
   }
@@ -242,7 +243,7 @@ export function getAIInfo(modelKey) {
   return {
     name: 'Wiskr',
     avatar: 'default-ai.png',
-    avatarPath: '/avatars/default-ai.png',
+    avatarPath: '/avatars/default-ai.png?v=2',
     description: 'Default Wiskr',
     bestFor: 'General tasks',
     modelKey: modelKey
@@ -264,6 +265,7 @@ export function getAIName(modelKey) {
  * @returns {string} The avatar image path
  */
 export function getAIAvatar(modelKey) {
+  // getAIInfo already includes cache-busting, so just return the path directly
   return getAIInfo(modelKey).avatarPath;
 }
 
@@ -306,9 +308,10 @@ export function getAINameWithTeam(modelKey) {
  * @returns {Array} Array of AI model objects with keys and info
  */
 export function getAllAIModels() {
+  const cacheBuster = '?v=2'; // Increment this when avatars are updated
   return Object.entries(AI_AVATARS).map(([key, info]) => ({
     key,
     ...info,
-    avatarPath: `/avatars/${info.avatar}`
+    avatarPath: `/avatars/${info.avatar}${cacheBuster}`
   }));
 }

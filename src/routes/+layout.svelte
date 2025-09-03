@@ -80,7 +80,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   });
   
   function applyTheme() {
-    if (browser) {
+    if (browser && document.documentElement) {
       const root = document.documentElement;
       
       if (darkMode) {
@@ -125,7 +125,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   }
   
   function applyAccentColor(color) {
-    if (browser && color) {
+    if (browser && color && document.documentElement) {
       document.documentElement.style.setProperty('--color-accent', color);
       
       // Calculate hover and light variants
@@ -433,7 +433,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   // Track page leave events
   beforeNavigate(({ from, to, cancel }) => {
     if (browser && from) {
-      console.log('Leaving page:', from.url.pathname);
+  
       
       // Track the page leave event
       trackEvent(ANALYTICS_EVENTS.PAGE_LEAVE, {
@@ -607,7 +607,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
   <!-- Header -->
      <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
-     <div class="w-full {isPublicPage ? 'px-4 md:px-6' : ''} flex items-center justify-between gap-2 md:gap-4 relative">
+     <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center justify-between gap-2 md:gap-4 relative">
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
       <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
@@ -649,7 +649,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 type="button"
                 class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
                 on:click={() => {
-                  console.log('Conversation button clicked! Dispatching mobile:toggle-sessions event');
+          
                   window.dispatchEvent(new CustomEvent('mobile:toggle-sessions'));
                 }}
                 aria-label="Conversation"

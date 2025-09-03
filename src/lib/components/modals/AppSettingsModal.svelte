@@ -34,6 +34,11 @@
   // Get current tab info
   $: currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   
+  // Ensure activeTab is always a valid string
+  $: if (typeof activeTab !== 'string' || !tabs.find(tab => tab.id === activeTab)) {
+    activeTab = 'account';
+  }
+  
   // Reset tab only when modal is first opened
   $: if (isOpen && !wasOpen) {
     activeTab = initialTab;
@@ -41,6 +46,13 @@
   } else if (!isOpen) {
     wasOpen = false;
   }
+  
+  // Ensure modal content is ready when userData loads
+  $: if (isOpen && userData && !wasOpen) {
+    wasOpen = true;
+  }
+  
+
   
   // Theme and color utility functions
   function hexToRgb(hex) {
@@ -66,7 +78,7 @@
   }
   
   function applyAccentColor(color) {
-    if (browser && color) {
+    if (browser && color && document.documentElement) {
       document.documentElement.style.setProperty('--color-accent', color);
       
       const rgb = hexToRgb(color);
@@ -103,7 +115,7 @@
   }
   
   function applyTheme() {
-    if (browser) {
+    if (browser && document.documentElement) {
       const root = document.documentElement;
       
       if (darkMode) {
@@ -195,8 +207,8 @@
       </div>
 
       <div class="flex flex-col">
-        <!-- Mobile-friendly dropdown navigation -->
-        <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+                 <!-- Mobile-friendly dropdown navigation -->
+         <div class="p-4 border-b border-gray-200 dark:border-gray-600">
           <div class="relative settings-dropdown">
             <button
               class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -212,10 +224,13 @@
             {#if showDropdown}
               <div class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
                 {#each tabs as tab}
-                  <button
-                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                    on:click={() => handleTabSelect(tab.id)}
-                  >
+                                     <button
+                     class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors first:rounded-t-lg last:rounded-t-lg"
+                                           on:click={(e) => {
+                        e.preventDefault();
+                        handleTabSelect(tab.id);
+                      }}
+                   >
                     <svelte:component this={tab.icon} size="20" />
                     <span>{tab.label}</span>
                   </button>
@@ -243,7 +258,14 @@
                        Logout
                      </a>
                    </div>
-                   {#if userData}
+                   
+                   <!-- Loading state while userData is being fetched -->
+                   {#if !userData || userData === undefined}
+                     <div class="text-center py-8">
+                       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                       <p class="text-sm text-gray-600 dark:text-gray-400">Loading user information...</p>
+                     </div>
+                   {:else if userData}
                     <div class="space-y-4">
                       <div class="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div>
@@ -376,7 +398,14 @@
             {:else if activeTab === 'profile'}
               <div class="space-y-6">
                 <div>
-                  {#if userData}
+                  
+                  <!-- Loading state while userData is being fetched -->
+                  {#if !userData || userData === undefined}
+                    <div class="text-center py-8">
+                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Loading user information...</p>
+                    </div>
+                  {:else if userData}
                     <div class="space-y-6">
                       <!-- Avatar Section -->
                       <div>
@@ -385,7 +414,7 @@
                           currentAvatarValue={userPreferences.avatar_value}
                           saving={savingPreferences}
                           user={userData}
-                          userTier={effectiveTier}
+                          userTier={1}
                           trialEndsAt={trialEndsAt}
                           on:change={handleAvatarChange}
                         />

@@ -1,6 +1,7 @@
 <!-- FeatureGate.svelte - Wrapper component for gating features with tier restrictions -->
 <script>
   import { hasFeature, getUpgradeInfo, getUserTier } from '$lib/utils/tiers.js';
+  import { hasFeature as _hasFeature } from '$lib/config/tiers.js';
   import ProBadge from './ProBadge.svelte';
   import UpgradeModal from './modals/UpgradeModal.svelte';
   import { createEventDispatcher } from 'svelte';
@@ -8,6 +9,7 @@
   const dispatch = createEventDispatcher();
 
   export let user = null; // User object with tier info
+  export let userTierOverride = null; // Override user tier (useful when tier is calculated elsewhere)
   export let feature = null; // Feature name to check (e.g., 'advanced-export')
   export let requiredTier = null; // Alternative: directly specify required tier (1 for Pro, 2 for Studio)
   export let showBadge = true; // Show the Pro/Studio badge
@@ -20,16 +22,34 @@
   export let isMobile = false; // Whether this is on mobile for badge positioning
 
   // Determine if user has access to the feature
-  $: userTier = getUserTier(user);
-  $: hasAccess = !disabled && (
-    feature ? hasFeature(user, feature) : 
-    requiredTier ? userTier >= requiredTier : 
-    true
-  );
+  $: userTier = userTierOverride !== null ? userTierOverride : getUserTier(user);
+  
+
+  
+  // Calculate hasAccess properly
+  $: hasAccess = (() => {
+    if (disabled) return false;
+    if (!feature) return true;
+    if (userTierOverride !== null) {
+      return _hasFeature(userTierOverride, feature);
+    }
+    return hasFeature(user, feature);
+  })();
 
   // Get upgrade information if user doesn't have access
   $: upgradeInfo = !hasAccess && feature ? getUpgradeInfo(user, feature) : null;
   $: requiredTierLevel = upgradeInfo?.requiredTierLevel || requiredTier || 1;
+  
+  // Emit the hasAccess value when it changes (after upgradeInfo is defined)
+  $: if (feature === 'custom-avatar') {
+    dispatch('access-changed', { 
+      hasAccess: Boolean(hasAccess), 
+      userTier: userTier, 
+      upgradeInfo: upgradeInfo 
+    });
+  }
+  
+
   
   // Upgrade modal state
   let showUpgradeModal = false;
@@ -75,12 +95,12 @@
   title={showTooltip ? tooltipMessage : null}
   data-testid="feature-gate"
 >
-  <!-- Always show the content, but disable click events if no access -->
-  <div class:pointer-events-none={!hasAccess && !allowClick}>
-    <slot {hasAccess} {userTier} {upgradeInfo} />
-  </div>
+     <!-- Always show the content, but disable click events if no access -->
+   <div class:pointer-events-none={!hasAccess && !allowClick}>
+     <slot {hasAccess} {userTier} {upgradeInfo} />
+   </div>
   
-  {#if showBadge && !hasAccess && requiredTierLevel}
+  {#if showBadge && !hasAccess}
     <ProBadge 
       tier={requiredTierLevel} 
       size={badgeSize} 

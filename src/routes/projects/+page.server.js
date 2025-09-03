@@ -25,7 +25,7 @@ export const load = async ({ locals }) => {
 
   // If user has no projects, create a default "My First Project" on the server side
   if (finalProjects.length === 0) {
-    console.log('🆕 New user detected on server, creating default project for:', user.email);
+    //console.log('🆕 New user detected on server, creating default project for:', user.email);
     
     try {
       // First, ensure user has a persona (required for project creation)

@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { Upload, User, Check, Lock } from 'lucide-svelte';
-  import { avatars, loadAvatars, needsRefresh } from '$lib/stores/avatars';
+  import { avatars, loadAvatars, needsRefresh, clearAvatarCache } from '$lib/stores/avatars';
   import FeatureGate from '$lib/components/FeatureGate.svelte';
   import { isAvatarAllowed } from '$lib/config/tiers.js';
   import { getUserTier } from '$lib/utils/tiers.js';
@@ -19,6 +19,7 @@
   let selectedValue = currentAvatarValue;
   let fileInput;
   let uploading = false;
+  let hasAccessFromFeatureGate = false; // Store the hasAccess value from FeatureGate
 
   let premadeAvatars = [];
   let filteredAvatars = [];
@@ -69,12 +70,14 @@
     selectedType = currentAvatarType;
     selectedValue = currentAvatarValue;
 
-    // Load avatars if needed
-    if (needsRefresh()) {
-      await loadAvatars(true);
-    } else {
-      await loadAvatars();
-    }
+    // Clear cache and force refresh to get updated avatar list without cosmic-bg.png
+    clearAvatarCache();
+    await loadAvatars(true);
+    
+    // Debug: Log user tier information
+    console.log('AvatarSelector - user:', user);
+    console.log('AvatarSelector - userTier:', userTier);
+    console.log('AvatarSelector - trialEndsAt:', trialEndsAt);
   });
 
   function selectDefault() {
@@ -155,11 +158,13 @@
           <User size="24" class="text-gray-400 dark:text-gray-500" />
         </div>
       {:else}
-        <img 
-          src={previewUrl} 
-          alt="Avatar preview" 
-          class="w-full h-full object-cover bg-white"
-        />
+                                   <div class="w-full h-full flex items-center justify-center" style="background-image: url('/avatars/users/cosmic-bg.png'); background-size: cover; background-position: center;">
+           <img 
+             src={previewUrl} 
+             alt="Avatar preview" 
+             class="w-4/5 h-4/5 object-contain"
+           />
+         </div>
       {/if}
     </div>
     <div>
@@ -207,12 +212,12 @@
                    title="{avatar.name} (Requires Pro)"
                    disabled
                  >
-                   <div class="w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 overflow-hidden relative">
-                     <img 
-                       src="/avatars/users/{avatar.file}" 
-                       alt={avatar.name} 
-                       class="w-full h-full object-cover bg-white"
-                     />
+                                                                                                                                                                                                                                                                                                                               <div class="w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 overflow-hidden relative flex items-center justify-center" style="background-image: url('/avatars/users/cosmic-bg.png'); background-size: cover; background-position: center;">
+                        <img 
+                          src="/avatars/users/{avatar.file}" 
+                          alt={avatar.name} 
+                          class="w-4/5 h-4/5 object-contain"
+                        />
                                                                                                                                    <!-- Lock indicator in corner -->
                                                    <div class="absolute top-1 right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center shadow-sm">
                             <Lock size="12" class="text-white" />
@@ -227,13 +232,13 @@
                 on:click={() => selectPremade(avatar.file)}
                 title={avatar.name}
               >
-                <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" 
-                     style="border-color: var(--color-accent);">
-                  <img 
-                    src="/avatars/users/{avatar.file}" 
-                    alt={avatar.name} 
-                    class="w-full h-full object-cover bg-white"
-                  />
+                                                                                                                                       <div class="w-12 h-12 rounded-lg border-2 overflow-hidden flex items-center justify-center" 
+                        style="border-color: var(--color-accent); background-image: url('/avatars/users/cosmic-bg.png'); background-size: cover; background-position: center;">
+                    <img 
+                      src="/avatars/users/{avatar.file}" 
+                      alt={avatar.name} 
+                      class="w-4/5 h-4/5 object-contain"
+                    />
                 </div>
                 {#if selectedType === 'premade' && selectedValue === avatar.file}
                   <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style="background-color: var(--color-accent);">
@@ -254,22 +259,27 @@
     <!-- Custom Upload -->
     <div>
       <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload your own</div>
-      <FeatureGate 
-        {user} 
-        feature="custom-avatar"
-        showBadge={true}
-        badgeSize="sm"
-        className="w-full"
-      >
-        <div class="flex items-center gap-3" slot="default" let:hasAccess>
+                     <FeatureGate 
+          {user} 
+          userTierOverride={userTier}
+          feature="custom-avatar"
+          showBadge={true}
+          badgeSize="sm"
+          className="w-full"
+          on:access-changed={({ detail }) => {
+            console.log('FeatureGate access-changed event:', detail);
+            hasAccessFromFeatureGate = detail.hasAccess;
+          }}
+        >
+         <div class="flex items-center gap-3" slot="default">
           {#if selectedType === 'custom' && selectedValue}
             <div class="relative">
-              <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" style="border-color: var(--color-accent);">
-                <img 
-                  src={selectedValue} 
-                  alt="Custom avatar" 
-                  class="w-full h-full object-cover bg-white"
-                />
+                                                                                                                                                                                                                                               <div class="w-12 h-12 rounded-lg border-2 overflow-hidden flex items-center justify-center" style="border-color: var(--color-accent); background-image: url('/avatars/users/cosmic-bg.png'); background-size: cover; background-position: center;">
+                                    <img 
+                      src={selectedValue} 
+                      alt="Custom avatar" 
+                      class="w-4/5 h-4/5 object-contain"
+                    />
               </div>
               <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style="background-color: var(--color-accent);">
                 <Check size="12" class="text-white" />
@@ -285,35 +295,24 @@
             class="hidden"
           />
           
-          <button
-            class="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
-            class:text-gray-700={hasAccess}
-            class:dark:text-gray-300={hasAccess}
-            class:text-gray-400={!hasAccess}
-            class:dark:text-gray-500={!hasAccess}
-            class:cursor-not-allowed={!hasAccess}
-            style="background-color: var(--bg-button-secondary);"
-            on:mouseenter={(e) => {
-              if (hasAccess) {
-                e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)';
-              }
-            }}
-            on:mouseleave={(e) => {
-              if (hasAccess) {
-                e.target.style.backgroundColor = 'var(--bg-button-secondary)';
-              }
-            }}
-            on:click={() => {
-              if (hasAccess) {
-                fileInput?.click();
-              }
-            }}
-            disabled={uploading || !hasAccess}
-            title={hasAccess ? '' : 'Requires Pro subscription to upload custom avatars'}
-          >
-            <Upload size="16" class={hasAccess ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'} />
-            {uploading ? 'Uploading...' : (hasAccess ? 'Choose File' : 'Choose File (Pro)')}
-          </button>
+                     <button
+             class="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
+             class:text-gray-700={hasAccessFromFeatureGate}
+             class:dark:text-gray-300={hasAccessFromFeatureGate}
+             class:text-gray-400={!hasAccessFromFeatureGate}
+             class:dark:text-gray-500={!hasAccessFromFeatureGate}
+             class:cursor-not-allowed={!hasAccessFromFeatureGate}
+             on:click={() => {
+               if (hasAccessFromFeatureGate) {
+                 fileInput?.click();
+               }
+             }}
+             disabled={uploading || !hasAccessFromFeatureGate}
+             title={hasAccessFromFeatureGate ? '' : 'Requires Pro subscription to upload custom avatars'}
+           >
+             <Upload size="16" class={hasAccessFromFeatureGate ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'} />
+             {uploading ? 'Uploading...' : (hasAccessFromFeatureGate ? 'Choose File' : 'Choose File (Pro)')}
+           </button>
           
           <div class="text-xs text-gray-500 dark:text-gray-400">
             Max 2MB, PNG/JPG

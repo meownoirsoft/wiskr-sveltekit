@@ -144,7 +144,7 @@
     
     <!-- Avatar positioned absolutely over message bubble -->
     {#if message.role === 'user'}
-      <div id="user-avatar" class="absolute -top-6 sm:-top-12 right-2 sm:right-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: var(--color-accent);">
+      <div id="user-avatar" class="absolute -top-6 sm:-top-12 right-2 sm:right-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: var(--color-accent); background-image: url('/avatars/users/cosmic-bg.png'); background-size: cover; background-position: center;">
         {#if userPreferences.avatar_type === 'default'}
           <User size="24" class="sm:size-9 text-gray-500 dark:text-gray-400" />
         {:else}

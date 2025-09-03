@@ -134,7 +134,7 @@ import { browser } from '$app/environment';
             ideas = mergedIdeas;
           }
           
-          console.log(`🔍 RelatedIdeas: Loaded ${dbIdeas.length} ideas from database, ${mergedIdeas.length} total`);
+      
         }
       } else {
         console.error('Failed to load ideas from database:', res.status);
@@ -146,23 +146,18 @@ import { browser } from '$app/environment';
 
   // Highlight function for search results - exported for parent component access
   export function highlightIdea(ideaId, searchTerm) {
-    console.log(`🔍 RelatedIdeas: highlightIdea called with ideaId: ${ideaId}, searchTerm: ${searchTerm}`);
-    
     // Find the idea element and scroll to it
     const ideaElement = document.querySelector(`[data-idea-id="${ideaId}"]`);
-    console.log(`🔍 RelatedIdeas: Found idea element:`, ideaElement);
     
     if (ideaElement) {
       ideaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Add highlight effect
       ideaElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
-      console.log(`🔍 RelatedIdeas: Added highlight classes to element`);
       
       // Highlight search terms within the text content
       if (searchTerm && searchTerm.trim()) {
         highlightSearchTerms(ideaElement, searchTerm);
-        console.log(`🔍 RelatedIdeas: Highlighted search terms`);
       }
       
       // Remove highlight after a longer delay
@@ -170,11 +165,9 @@ import { browser } from '$app/environment';
         ideaElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
         // Remove text highlighting
         removeSearchTermHighlights(ideaElement);
-        console.log(`🔍 RelatedIdeas: Removed highlight classes`);
       }, 10000); // Increased to 10 seconds
     } else {
       console.error(`🔍 RelatedIdeas: Could not find idea element with data-idea-id="${ideaId}"`);
-      console.log(`🔍 RelatedIdeas: Available idea elements:`, document.querySelectorAll('[data-idea-id]'));
     }
   }
 

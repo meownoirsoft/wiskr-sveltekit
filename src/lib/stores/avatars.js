@@ -59,3 +59,12 @@ export function needsRefresh() {
     return true;
   }
 }
+
+// Function to clear avatar cache and force refresh
+export function clearAvatarCache() {
+  if (browser) {
+    localStorage.removeItem('wiskr_avatars');
+  }
+  loaded = false;
+  avatars.set([]);
+}

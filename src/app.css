@@ -832,17 +832,15 @@ code {
     border-top-color: #374151 !important;
   }
   
-  /* Make the form more discoverable when expanded */
-  .mobile-ask-form:not(.hidden) {
-    /* Add a subtle gradient fade to indicate more content below */
-    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.02) 100%) !important;
-    /* Add a subtle border to make it more visible */
-    border-top: 1px solid #e5e7eb !important;
-    /* Add some padding to make it more obvious */
-    padding-top: 1rem !important;
-    /* Add a subtle shadow to lift it from the background */
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
-  }
+     /* Make the form more discoverable when expanded */
+   .mobile-ask-form:not(.hidden) {
+     /* Add a subtle gradient fade to indicate more content below */
+     background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.02) 100%) !important;
+     /* Add a subtle border to make it more visible */
+     border-top: 1px solid #e5e7eb !important;
+     /* Add a subtle shadow to lift it from the background */
+     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
+   }
   
   .dark .mobile-ask-form:not(.hidden) {
     background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.02) 100%) !important;
@@ -882,52 +880,21 @@ code {
     }
   }
   
-  /* Add a pulsing indicator when form is expanded to show there's more content */
-  .mobile-ask-form:not(.hidden)::before {
-    content: '↓ Scroll to see form';
-    position: absolute;
-    top: -2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #3b82f6;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 1000000;
-    animation: pulse-scroll-hint 2s ease-in-out infinite;
-  }
+
   
-  .dark .mobile-ask-form:not(.hidden)::before {
-    background: #60a5fa;
-  }
-  
-  @keyframes pulse-scroll-hint {
-    0%, 100% {
-      opacity: 0.8;
-      transform: translateX(-50%) scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: translateX(-50%) scale(1.05);
-    }
-  }
-  
-  /* Make the form container more obvious */
-  .mobile-ask-form:not(.hidden) {
-    /* Add a more prominent background */
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(10px) !important;
-    /* Add a more visible border */
-    border: 2px solid #e5e7eb !important;
-    border-radius: 1rem 1rem 0 0 !important;
-    /* Add more padding to make it more obvious */
-    padding: 1.5rem 1rem 1rem 1rem !important;
-    /* Add a more prominent shadow */
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1) !important;
-  }
+     /* Make the form container more obvious */
+   .mobile-ask-form:not(.hidden) {
+     /* Add a more prominent background */
+     background: rgba(255, 255, 255, 0.95) !important;
+     backdrop-filter: blur(10px) !important;
+     /* Add a more visible border */
+     border: 2px solid #e5e7eb !important;
+     border-radius: 1rem 1rem 0 0 !important;
+     /* Add more padding to make it more obvious */
+     padding: 0.5rem 1rem 1rem 1rem !important;
+     /* Add a more prominent shadow */
+     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1) !important;
+   }
   
   .dark .mobile-ask-form:not(.hidden) {
     background: rgba(31, 41, 55, 0.95) !important;

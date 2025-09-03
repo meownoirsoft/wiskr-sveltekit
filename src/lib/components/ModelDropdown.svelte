@@ -88,8 +88,8 @@
   >
     <div class="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
       {#if currentAIInfo}
-        <div class="bg-white rounded-lg p-px md:p-px">
-          <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-11 h-11 md:w-12 md:h-12 rounded-md flex-shrink-0" />
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-px md:p-px overflow-hidden">
+          <img src={currentAIInfo.avatarPath} alt="{currentAIInfo.name}" class="w-11 h-11 md:w-12 md:h-12 rounded-md flex-shrink-0 brightness-110 contrast-125 scale-125" />
         </div>
         <div class="flex flex-col min-w-0 flex-1">
           <span class="truncate text-base md:text-sm font-medium">{getAINameWithTeam(currentModel?.key || modelKey)}</span>
@@ -127,8 +127,8 @@
           disabled={isUnavailable}
           tabindex={isUnavailable ? -1 : 0}
         >
-          <div class="bg-white rounded-lg p-px sm:p-px {isUnavailable ? 'grayscale' : ''}">
-            <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-9 h-9 sm:w-12 sm:h-12 rounded-md flex-shrink-0" />
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-px sm:p-px overflow-hidden {isUnavailable ? 'grayscale' : ''}">
+            <img src={aiInfo.avatarPath} alt="{aiInfo.name}" class="w-9 h-9 sm:w-12 sm:h-12 rounded-md flex-shrink-0 brightness-110 contrast-125 scale-125" />
           </div>
           <div class="flex flex-col min-w-0 flex-1 items-start">
             <div class="flex items-center gap-2 w-full">

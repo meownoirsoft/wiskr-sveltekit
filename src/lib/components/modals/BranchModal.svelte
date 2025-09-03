@@ -22,7 +22,7 @@
 
   // Safety check for branchModalMessageIndex
   $: safeMessageIndex = typeof branchModalMessageIndex === 'number' ? branchModalMessageIndex : -1;
-  $: console.log('BranchModal - branchModalMessageIndex:', branchModalMessageIndex, 'type:', typeof branchModalMessageIndex, 'safe:', safeMessageIndex);
+
 
   function renderMarkdown(content) {
     if (!content || typeof content !== 'string') return '';

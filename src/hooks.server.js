@@ -68,20 +68,17 @@ export const handle = async ({ event, resolve }) => {
           cachedSession.expiresAt > now && 
           (now - cachedSession.cachedAt) < (5 * 60 * 1000)) { // 5 minutes cache
         user = cachedSession.user;
-        console.log('✅ Using cached user session for:', user.email);
+
       } else {
-        console.log('🔄 Cached session expired or too old, fetching fresh');
         event.cookies.delete('sb-session', { path: '/' });
       }
       
       // Also check if the user object has required fields
       if (user && (!user.id || !user.email)) {
-        console.log('🔄 Cached user object invalid, fetching fresh');
         event.cookies.delete('sb-session', { path: '/' });
         user = null;
       }
     } catch (error) {
-      console.log('🔄 Error parsing cached session, fetching fresh');
       event.cookies.delete('sb-session', { path: '/' });
     }
   }
@@ -105,7 +102,7 @@ export const handle = async ({ event, resolve }) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
       });
-      console.log('💾 Cached fresh user session for:', user.email);
+
     }
   }
   
@@ -118,7 +115,6 @@ export const handle = async ({ event, resolve }) => {
   
   // Add function to refresh user cache if needed
   event.locals.refreshUserCache = async () => {
-    console.log('🔄 Manually refreshing user cache');
     event.cookies.delete('sb-session', { path: '/' });
     
     const { data: { user: freshUser } } = await event.locals.supabase.auth.getUser();
@@ -136,7 +132,7 @@ export const handle = async ({ event, resolve }) => {
         sameSite: 'lax'
       });
       event.locals.user = freshUser;
-      console.log('💾 Refreshed user cache for:', freshUser.email);
+
     }
     return freshUser;
   };
