@@ -136,6 +136,10 @@ export async function GET({ url, locals }) {
           console.error('Search API: Branches query error:', branchesError);
         }
         
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
+        
         // Get session info
         const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
         const { data: sessions, error: sessionsError } = await supabase
@@ -165,6 +169,7 @@ export async function GET({ url, locals }) {
         
         messages.forEach(message => {
           const branch = branchMap.get(message.branch_id);
+          // Removed dangling object literal that caused syntax error
           const session = branch ? sessionMap.get(branch.session_id) : null;
           const messageKey = `${message.id}-${session?.id}`;
           
@@ -224,9 +229,13 @@ export async function GET({ url, locals }) {
           return true; // Non-chat results are always valid
         });
         
+        //   sessionId: r.sessionId,
+        //   branch_id: r.branch_id,
+        //   type: r.type
+        // })));
+        
         // Log detailed information about each result for debugging
         validResults.forEach((result, index) => {
-          console.log(`✅ Search API: Valid chat result ${index + 1}:`, {
             sessionId: result.sessionId,
             session_name: result.session_name,
             branch_id: result.branch_id,
@@ -341,8 +350,9 @@ export async function GET({ url, locals }) {
     return json({ results: structuredResults });
     
   } catch (error) {
-    console.error('🔍 Search API GET: Error occurred:', error);
+    console.error('🔍 Search API POST: Error occurred:', error);
     return json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
   }
 }
 
@@ -487,6 +497,10 @@ export async function POST({ request, locals }) {
           console.error('Search API: Branches query error:', branchesError);
         }
         
+        if (branchesError) {
+          console.error('Search API: Branches query error:', branchesError);
+        }
+        
         // Get session info
         const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
         const { data: sessions, error: sessionsError } = await supabase
@@ -516,7 +530,6 @@ export async function POST({ request, locals }) {
         
         messages.forEach(message => {
           const branch = branchMap.get(message.branch_id);
-          console.log('Search API: Branch lookup debug:', { 
             messageBranchId: message.branch_id, 
             foundBranch: branch ? { id: branch.id, branch_id: branch.branch_id } : null 
           });
@@ -538,22 +551,22 @@ export async function POST({ request, locals }) {
               snippet = (start > 0 ? '...' : '') + message.content.substring(start, end) + (end < message.content.length ? '...' : '');
             }
             
-            uniqueMessages.set(messageKey, {
-              id: message.id,
-              type: 'chats',
-              title: session?.session_name || 'Chat',
-              name: session?.session_name || 'Chat',
-              snippet: snippet,
-              content: message.content,
-              sessionId: message.session_id,  // Use session_id directly from message
-              session_name: session?.session_name,
-              branch_id: message.branch_id,  // Use branch_id directly from message
-              branch_name: branch?.branch_name,
-              messageId: message.id,
-              instanceCount: instanceCount, // Number of times search term appears
-              firstMatchIndex: firstMatchIndex, // Position of first match for scrolling
-              created_at: message.created_at // Include created_at for sorting
-            });
+                      uniqueMessages.set(messageKey, {
+            id: message.id,
+            type: 'chats',
+            title: session?.session_name || 'Chat',
+            name: session?.session_name || 'Chat',
+            snippet: snippet,
+            content: message.content,
+            sessionId: message.session_id,  // Use session_id directly from message
+            session_name: session?.session_name,
+            branch_id: message.branch_id,  // Use branch_id directly from message
+            branch_name: branch?.branch_name,
+            messageId: message.id,
+            instanceCount: instanceCount, // Number of times search term appears
+            firstMatchIndex: firstMatchIndex, // Position of first match for scrolling
+            created_at: message.created_at // Include created_at for sorting
+          });
           }
         });
         
@@ -579,9 +592,13 @@ export async function POST({ request, locals }) {
           return true; // Non-chat results are always valid
         });
         
+          sessionId: r.sessionId,
+          branch_id: r.branch_id,
+          type: r.type
+        })));
+        
         // Log detailed information about each result for debugging
         validResults.forEach((result, index) => {
-          console.log(`✅ Search API: Valid chat result ${index + 1}:`, {
             sessionId: result.sessionId,
             session_name: result.session_name,
             branch_id: result.branch_id,
@@ -631,9 +648,7 @@ export async function POST({ request, locals }) {
         .order('created_at', { ascending: false })
         .limit(10);
       
-      if (ideasError) {
-        console.error('Search API: Ideas query error:', ideasError);
-      }
+      if (ideasError) console.error('Ideas query error:', ideasError);
       
       if (!ideasError && ideas) {
         ideas.forEach(idea => {
@@ -647,10 +662,12 @@ export async function POST({ request, locals }) {
           });
         });
       }
+      
+      if (ideasError) {
+        console.error('Search API: Ideas query error:', ideasError);
+      }
     }
     
-    console.log('🔍 Search API POST: Result counts:', {
-      facts: results.filter(r => r.type === 'facts').length,
       docs: results.filter(r => r.type === 'docs').length,
       chats: results.filter(r => r.type === 'chats').length,
       questions: results.filter(r => r.type === 'questions').length,

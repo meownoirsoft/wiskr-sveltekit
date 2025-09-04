@@ -1,18 +1,12 @@
 // svelte.config.js
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-netlify';
 
 const isDev = process.env.NODE_ENV === 'development';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   kit: {
-    adapter: adapter({
-      precompress: true, // gzip/brotli for static assets
-      out: 'build'       // Railway will run "node build"
-    }),
-    // If you rely on SSR, do NOT prerender everything.
-    // Remove your previous prerender override unless you truly want a static export.
-    // prerender: { entries: isDev ? [] : ['*'] }
+    adapter: adapter(),
   },
 
   extensions: ['.svelte'],
