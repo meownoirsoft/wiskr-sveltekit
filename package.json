@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
 "engines": { "node": "22" },
-  "packageManager": "pnpm@9",
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "dev": "vite dev",
     "dev:admin": "vite dev --config vite.admin.config.js --port 5174",
