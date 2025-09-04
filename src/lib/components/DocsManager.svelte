@@ -15,6 +15,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   export let projectId = null;
   export let user = null; // User object with tier info
   export let searchTerm = ''; // Search term for highlighting
+  export let factsGridSize = 3; // Number of cards per row
   let openMenuIndex = -1; // Track which doc menu is open
   let showEditModal = false;
   let editingDoc = null;
@@ -121,7 +122,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     {#if loadingDocs}
       <LoadingSpinner overlay={true} backgroundColor="rgba(255, 255, 255, 0.7)" text="Loading docs..." />
     {/if}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div class="grid gap-2" style="grid-template-columns: repeat({factsGridSize}, minmax(0, 1fr));">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
     <div 
       class="doc-card flex flex-col md:h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" 
@@ -206,7 +207,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     </div>
   {/each}
   {#if !docs.length && !loadingDocs}
-    <div class="col-span-1 md:col-span-3 text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No docs.</div>
+    <div class="docs-no-content text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No docs.</div>
   {/if}
     </div>
   </div>
@@ -233,3 +234,10 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   on:save={handleAddModalSave}
   on:close={handleAddModalClose}
 />
+
+<style>
+  /* No content message spans all columns */
+  .docs-no-content {
+    grid-column: 1 / -1;
+  }
+</style>

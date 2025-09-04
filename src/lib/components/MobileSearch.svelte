@@ -144,13 +144,6 @@
   }
   
   function handleResultClick(result) {
-    console.log('🔍 MobileSearch: handleResultClick called with result:', result);
-    console.log('🔍 MobileSearch: result type:', result.type);
-    console.log('🔍 MobileSearch: result id:', result.id);
-    console.log('🔍 MobileSearch: result branch_id:', result.branch_id);
-    console.log('🔍 MobileSearch: result sessionId:', result.sessionId);
-    console.log('🔍 MobileSearch: result session_name:', result.session_name);
-    console.log('🔍 MobileSearch: Full result object:', JSON.stringify(result, null, 2));
     
     // Validate that we have the required IDs for chat results
     if (result.type === 'chats') {

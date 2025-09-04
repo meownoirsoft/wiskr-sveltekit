@@ -126,7 +126,7 @@
           <!-- Action buttons -->
           <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {#if input.trim()}
-              <FeatureGate user={{ ...user, tier: userTier, userTier: userTier }} feature="say-less" {isMobile} let:hasAccess>
+              <FeatureGate user={{ ...user, tier: userTier }} feature="say-less" {isMobile} let:hasAccess>
                 <SayLessButton
                   on:sayless={handleSayLessClick}
                   disabled={!current || !input.trim() || !hasAccess}

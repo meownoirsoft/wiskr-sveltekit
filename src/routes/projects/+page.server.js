@@ -129,12 +129,27 @@ export const load = async ({ locals }) => {
   // Check if user has admin permissions
   const adminCheck = await isAdmin(locals.supabase, user);
 
+  // Load user preferences
+  const { data: userPreferences } = await locals.supabase
+    .from('user_preferences')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
   return { 
     projects: finalProjects,
     user,
     isAdmin: adminCheck.isAdmin,
     userTier: locals.userTier || 0,
     effectiveTier: locals.effectiveTier || 0,
-    trialEndsAt: locals.trialEndsAt || null
+    trialEndsAt: locals.trialEndsAt || null,
+    userPreferences: userPreferences || {
+      max_related_ideas: 8,
+      accent_color: '#155DFC',
+      display_name: null,
+      avatar_type: 'default',
+      avatar_value: null,
+      facts_grid_size: 3
+    }
   };
 };

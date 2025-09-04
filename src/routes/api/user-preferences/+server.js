@@ -27,7 +27,8 @@ export async function GET({ locals }) {
         accent_color: '#155DFC',
         display_name: null,
         avatar_type: 'default',
-        avatar_value: null
+        avatar_value: null,
+        facts_grid_size: 3
       });
     }
 
@@ -36,7 +37,8 @@ export async function GET({ locals }) {
       accent_color: preferences.accent_color || '#155DFC',
       display_name: preferences.display_name || null,
       avatar_type: preferences.avatar_type || 'default',
-      avatar_value: preferences.avatar_value || null
+      avatar_value: preferences.avatar_value || null,
+      facts_grid_size: preferences.facts_grid_size || 3
     });
   } catch (error) {
     console.error('Error in user preferences GET:', error);
@@ -52,7 +54,7 @@ export async function POST({ request, locals }) {
 
   try {
     const body = await request.json();
-    const { max_related_ideas, accent_color, display_name, avatar_type, avatar_value } = body;
+    const { max_related_ideas, accent_color, display_name, avatar_type, avatar_value, facts_grid_size } = body;
 
     // Validate the input
     if (max_related_ideas !== undefined) {
@@ -70,6 +72,12 @@ export async function POST({ request, locals }) {
     if (display_name !== undefined) {
       if (display_name !== null && (typeof display_name !== 'string' || display_name.trim().length > 50)) {
         return json({ error: 'display_name must be a string with 50 characters or less' }, { status: 400 });
+      }
+    }
+    
+    if (facts_grid_size !== undefined) {
+      if (typeof facts_grid_size !== 'number' || facts_grid_size < 1 || facts_grid_size > 4) {
+        return json({ error: 'facts_grid_size must be a number between 1 and 4' }, { status: 400 });
       }
     }
     
@@ -101,6 +109,7 @@ export async function POST({ request, locals }) {
       if (display_name !== undefined) updateData.display_name = display_name?.trim() || null;
       if (avatar_type !== undefined) updateData.avatar_type = avatar_type;
       if (avatar_value !== undefined) updateData.avatar_value = avatar_value;
+      if (facts_grid_size !== undefined) updateData.facts_grid_size = facts_grid_size;
       
       const { data, error } = await locals.supabase
         .from('user_preferences')
@@ -118,6 +127,7 @@ export async function POST({ request, locals }) {
       if (display_name !== undefined) insertData.display_name = display_name?.trim() || null;
       if (avatar_type !== undefined) insertData.avatar_type = avatar_type;
       if (avatar_value !== undefined) insertData.avatar_value = avatar_value;
+      if (facts_grid_size !== undefined) insertData.facts_grid_size = facts_grid_size;
       
       const { data, error } = await locals.supabase
         .from('user_preferences')
@@ -140,7 +150,8 @@ export async function POST({ request, locals }) {
         accent_color: result.data.accent_color,
         display_name: result.data.display_name,
         avatar_type: result.data.avatar_type,
-        avatar_value: result.data.avatar_value
+        avatar_value: result.data.avatar_value,
+        facts_grid_size: result.data.facts_grid_size
       }
     });
   } catch (error) {

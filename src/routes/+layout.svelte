@@ -350,7 +350,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   // APP SETTINGS modal state
   let showAppSettings = false;
   let initialSettingsTab = 'account'; // Track which tab to open
-  let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null };
+  let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null, facts_grid_size: 3 };
   let savingPreferences = false;
   
   // PROJECT EXPORT modal state
@@ -502,7 +502,6 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   
   // Handle opening export modal
   function openProjectExport(project) {
-    console.log('📤 Opening export modal for project:', project?.name, project?.id);
     exportingProject = project;
     showProjectExport = true;
   }
@@ -703,7 +702,6 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               }}
               on:open-settings={(e) => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: e.detail })); }}
               on:export={(e) => {
-                console.log('📤 Export event received in layout (desktop):', e.detail?.name);
                 openProjectExport(e.detail);
               }}
               on:create={() => {
@@ -1023,7 +1021,6 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 showProjectMenu = false;
               }}
               on:export={(e) => {
-                console.log('📤 Export event received in layout:', e.detail?.name);
                 openProjectExport(e.detail);
                 showProjectMenu = false;
               }}

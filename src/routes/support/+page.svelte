@@ -20,7 +20,7 @@
     },
     {
       question: "How do I create my first project?",
-      answer: "Click the 'New' button in the header or go to Projects and select 'Create New Project'. Give your project a name and description, then start adding facts and having conversations with your Wiskrs."
+      answer: "There is a 'Projects' dropdown in the header. Click that and then the 'New' button. Give your project a name and description. Click Save."
     },
     {
       question: "What are conversation branches?",

@@ -8,6 +8,7 @@
   
   const dispatch = createEventDispatcher();
   
+  
   // Search state
   let searchTerm = '';
   let isSearching = false;
@@ -169,18 +170,9 @@
         })
       });
       
-      console.log('🔍 GlobalSearch sending request with projectId:', projectId, 'searchTerm:', searchTerm);
-      
       if (response.ok) {
         const data = await response.json();
         searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
-        console.log('🔍 GlobalSearch results:', {
-          facts: searchResults.facts.length,
-          docs: searchResults.docs.length,
-          chatMessages: searchResults.chatMessages.length,
-          questions: searchResults.questions.length,
-          relatedIdeas: searchResults.relatedIdeas.length
-        });
         
         // Search results populated
         
@@ -193,15 +185,6 @@
         if (showDropdown) {
           calculateDropdownPosition();
         }
-        
-        // Debug logging
-        console.log('🔍 Search dropdown logic:', {
-          dropdownDisabled,
-          hasResults: hasResults(),
-          showDropdown,
-          searchTerm,
-          resultsCount: Object.values(searchResults).reduce((sum, arr) => sum + arr.length, 0)
-        });
         
         // Apply highlighting now that we have search results
         if (highlightedTerm && highlightedTerm === searchTerm) {
@@ -236,9 +219,6 @@
     // Set CSS custom properties for positioning
     document.documentElement.style.setProperty('--search-dropdown-left', `${left}px`);
     document.documentElement.style.setProperty('--search-dropdown-top', `${top}px`);
-    
-    // Debug logging
-    console.log('🔍 Dropdown positioning:', { left, top, rect: rect.toJSON() });
   }
   
      // Portal action to render dropdown at document body
@@ -318,7 +298,6 @@
   function forceRemoveHighlights() {
     if (!browser) return;
     
-    console.log('🔍 Force removing all highlights');
     
     // Remove the body class for duplicate hiding
     document.body.classList.remove('search-highlight-active');
@@ -331,7 +310,6 @@
       const highlights = document.querySelectorAll('.search-highlight');
       if (highlights.length === 0) break;
       
-      console.log(`🔍 Cleanup attempt ${cleanupAttempts + 1}: Found ${highlights.length} highlights`);
       
       const parents = new Set();
       
@@ -386,7 +364,6 @@
     currentHighlightIndex = 0;
     showNavigationControls = false;
     
-    console.log('🔍 Force cleanup complete');
   }
   
   // Handle chat message selection - navigate to message and highlight
@@ -404,18 +381,10 @@
       localStorage.setItem('wiskr-highlight-mode', 'true');
     }
     
-    // Debug logging
-    console.log('🔍 Chat message selection:', {
-      messageId: message.id,
-      sessionId: message.sessionId || message.session_id,
-      branchId: message.branch_id,
-      searchTerm: searchTerm
-    });
     
     // Switch to the appropriate session first (if needed)
     const sessionId = message.sessionId || message.session_id;
     if (sessionId && browser) {
-      console.log('📡 Dispatching session navigation event');
       window.dispatchEvent(new CustomEvent('search:navigate-session', {
         detail: {
           sessionId: sessionId,
@@ -426,7 +395,6 @@
     
     // Navigate to the specific message and branch using search:show-result for search mode
     if (browser) {
-      console.log('📡 Dispatching search show result event');
       window.dispatchEvent(new CustomEvent('search:show-result', {
         detail: {
           messageId: message.id,
@@ -438,7 +406,6 @@
     // Re-enable dropdown after a delay so user can search again
     setTimeout(() => {
       dropdownDisabled = false;
-      console.log('🔍 Dropdown re-enabled for new searches');
     }, 1000);
   }
   
@@ -514,7 +481,6 @@
     
     // Prevent multiple highlighting operations in quick succession
     if (window.wiskrHighlightingInProgress) {
-      console.log('🔍 Highlighting already in progress, skipping');
       return;
     }
     
@@ -767,19 +733,16 @@
       const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
       
       if (regex.test(text)) {
-        console.log('🔍 Highlighting text:', text.substring(0, 50));
         
         // Skip if already inside a highlight span
         const parent = element.parentNode;
         if (parent && parent.classList?.contains('search-highlight')) {
-          console.log('🔍 Skipping - already in highlight span');
           return;
         }
         
         const highlightedText = text.replace(regex, '<span class="search-highlight">$1</span>');
         
         if (highlightedText !== text) {
-          console.log('🔍 Applying highlight to text node');
           const wrapper = document.createElement('div');
           wrapper.innerHTML = highlightedText;
           
@@ -911,7 +874,6 @@
     
     // Don't remove highlights if we're in highlight mode and this isn't an explicit clear
     if (browser && localStorage.getItem('wiskr-highlight-mode') === 'true' && highlightedTerm) {
-      console.log('🔍 In highlight mode, preserving existing highlights');
       return;
     }
     
@@ -1347,7 +1309,6 @@
   function handleInputClick() {
     // Always re-enable dropdown when user clicks box
     dropdownDisabled = false;
-    console.log('🔍 Search input clicked, dropdown re-enabled');
     
     if (searchTerm.length >= 3 && hasResults()) {
       showDropdown = true; // Show dropdown if we have results

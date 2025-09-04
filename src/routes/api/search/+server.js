@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 
 export async function GET({ url, locals }) {
-  console.log('🔍 Search API GET called with:', { searchParams: Object.fromEntries(url.searchParams) });
   
   try {
     // Simple rate limiting - check if we're making too many requests
@@ -14,7 +13,6 @@ export async function GET({ url, locals }) {
     const timeSinceLastRequest = now - lastRequest;
     
     if (timeSinceLastRequest < 1000) { // Minimum 1 second between requests
-      console.log('🔍 Search API: Rate limit hit, returning 429');
       return json({ 
         error: 'Rate limit exceeded', 
         message: 'Please wait a moment before searching again' 
@@ -33,7 +31,6 @@ export async function GET({ url, locals }) {
     
     // Validate cached user and refresh if needed
     if (!user.id || !user.email) {
-      console.log('🔄 Cached user invalid, refreshing cache');
       user = await locals.refreshUserCache?.();
       if (!user) {
         return json({ error: 'Unauthorized' }, { status: 401 });
@@ -122,7 +119,6 @@ export async function GET({ url, locals }) {
         console.error('Search API: Messages query error:', messagesError);
       }
       
-      console.log('Search API: Raw messages query result:', { messages, messagesError });
       
       if (!messagesError && messages && messages.length > 0) {
         // Now get the branch and session info for these messages
@@ -155,9 +151,6 @@ export async function GET({ url, locals }) {
           console.error('Search API: Sessions query error:', sessionsError);
         }
         
-        console.log('Search API: Branches found:', branches?.length || 0);
-        console.log('Search API: Branch details:', branches?.map(b => ({ id: b.id, branch_id: b.branch_id, branch_name: b.branch_name, session_id: b.session_id })));
-        console.log('Search API: Sessions found:', sessions?.length || 0);
         
         // Create lookup maps for branches and sessions
         const branchMap = new Map();
@@ -176,8 +169,6 @@ export async function GET({ url, locals }) {
         
         messages.forEach(message => {
           const branch = branchMap.get(message.branch_id);
-          console.log('Processing message:', { 
-            messageId: message.id, 
             messageBranchId: message.branch_id, 
             foundBranch: branch ? { id: branch.id, branch_id: branch.branch_id } : null 
           });
@@ -240,8 +231,6 @@ export async function GET({ url, locals }) {
           return true; // Non-chat results are always valid
         });
         
-        console.log('Search API: Final chat results:', validResults.map(r => ({
-          id: r.id,
           sessionId: r.sessionId,
           branch_id: r.branch_id,
           type: r.type
@@ -249,8 +238,6 @@ export async function GET({ url, locals }) {
         
         // Log detailed information about each result for debugging
         validResults.forEach((result, index) => {
-          console.log(`Search API: Result ${index + 1}:`, {
-            id: result.id,
             sessionId: result.sessionId,
             session_name: result.session_name,
             branch_id: result.branch_id,
@@ -362,21 +349,16 @@ export async function GET({ url, locals }) {
       totalSessions: sessionGroups.length
     };
     
-    console.log('🔍 Search API GET: Returning structured results:', structuredResults);
-    
-    console.log('🔍 Search API GET: About to return results');
     return json({ results: structuredResults });
     
   } catch (error) {
     console.error('🔍 Search API POST: Error occurred:', error);
     return json({ error: 'Internal server error' }, { status: 500 });
   } finally {
-    console.log('🔍 Search API POST: Function completed');
   }
 }
 
 export async function POST({ request, locals }) {
-  console.log('🔍 Search API POST called - START');
   
   try {
     // Simple rate limiting - check if we're making too many requests
@@ -389,7 +371,6 @@ export async function POST({ request, locals }) {
     const timeSinceLastRequest = now - lastRequest;
     
     if (timeSinceLastRequest < 1000) { // Minimum 1 second between requests
-      console.log('🔍 Search API: Rate limit hit, returning 429');
       return json({ 
         error: 'Rate limit exceeded', 
         message: 'Please wait a moment before searching again' 
@@ -403,32 +384,26 @@ export async function POST({ request, locals }) {
     // Verify user is authenticated using cached session
     let user = locals.getCachedUser?.() || locals.user;
     if (!user) {
-      console.log('🔍 Search API POST: Unauthorized');
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // Validate cached user and refresh if needed
     if (!user.id || !user.email) {
-      console.log('🔄 Cached user invalid, refreshing cache');
       user = await locals.refreshUserCache?.();
       if (!user) {
-        console.log('🔍 Search API POST: Unauthorized after cache refresh');
         return json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
     
-    console.log('🔍 Search API POST: User authenticated');
     
     const { query, projectId, includeTypes = ['facts', 'docs', 'chats', 'questions', 'ideas'] } = await request.json();
     
-    console.log('🔍 Search API POST parameters:', { query, projectId, includeTypes });
     
     if (!query || !query.trim()) {
       return json({ results: [] });
     }
     
     const searchTerm = query.trim();
-    console.log('🔍 Search API POST searchTerm:', searchTerm);
     const results = [];
     
     // Get the current project ID from the request or use the one from locals
@@ -440,7 +415,6 @@ export async function POST({ request, locals }) {
     
     const { supabase } = locals;
     
-    console.log('🔍 Search API POST: About to search with projectId:', currentProjectId);
     
     // Search facts
     if (includeTypes.includes('facts')) {
@@ -508,7 +482,6 @@ export async function POST({ request, locals }) {
         console.error('Search API: Messages query error:', messagesError);
       }
       
-      console.log('Search API: Raw messages query result:', { messages, messagesError });
       
       if (!messagesError && messages && messages.length > 0) {
         // Now get the branch and session info for these messages
@@ -541,9 +514,6 @@ export async function POST({ request, locals }) {
           console.error('Search API: Sessions query error:', sessionsError);
         }
         
-        console.log('Search API: Branches found:', branches?.length || 0);
-        console.log('Search API: Branch details:', branches?.map(b => ({ id: b.id, branch_id: b.branch_id, branch_name: b.branch_name, session_id: b.session_id })));
-        console.log('Search API: Sessions found:', sessions?.length || 0);
         
         // Create lookup maps for branches and sessions
         const branchMap = new Map();
@@ -562,8 +532,6 @@ export async function POST({ request, locals }) {
         
         messages.forEach(message => {
           const branch = branchMap.get(message.branch_id);
-          console.log('Processing message:', { 
-            messageId: message.id, 
             messageBranchId: message.branch_id, 
             foundBranch: branch ? { id: branch.id, branch_id: branch.branch_id } : null 
           });
@@ -626,8 +594,6 @@ export async function POST({ request, locals }) {
           return true; // Non-chat results are always valid
         });
         
-        console.log('Search API: Final chat results:', validResults.map(r => ({
-          id: r.id,
           sessionId: r.sessionId,
           branch_id: r.branch_id,
           type: r.type
@@ -635,8 +601,6 @@ export async function POST({ request, locals }) {
         
         // Log detailed information about each result for debugging
         validResults.forEach((result, index) => {
-          console.log(`Search API: Result ${index + 1}:`, {
-            id: result.id,
             sessionId: result.sessionId,
             session_name: result.session_name,
             branch_id: result.branch_id,
@@ -678,7 +642,6 @@ export async function POST({ request, locals }) {
     
     // Search ideas
     if (includeTypes.includes('ideas')) {
-      console.log('🔍 Searching ideas for:', searchTerm, 'in project:', currentProjectId);
       const { data: ideas, error: ideasError } = await supabase
         .from('ideas')
         .select('*')
@@ -687,7 +650,6 @@ export async function POST({ request, locals }) {
         .order('created_at', { ascending: false })
         .limit(10);
       
-      console.log('🔍 Ideas query result:', { ideasError, ideasCount: ideas?.length || 0 });
       if (ideasError) console.error('Ideas query error:', ideasError);
       
       if (!ideasError && ideas) {
@@ -708,8 +670,6 @@ export async function POST({ request, locals }) {
       }
     }
     
-    console.log('🔍 Search API POST: Returning results count by type:', {
-      facts: results.filter(r => r.type === 'facts').length,
       docs: results.filter(r => r.type === 'docs').length,
       chats: results.filter(r => r.type === 'chats').length,
       questions: results.filter(r => r.type === 'questions').length,
@@ -765,7 +725,6 @@ export async function POST({ request, locals }) {
       totalSessions: sessionGroups.length
     };
     
-    console.log('🔍 Search API POST: Returning structured results:', structuredResults);
     
     return json({ 
       results: structuredResults,

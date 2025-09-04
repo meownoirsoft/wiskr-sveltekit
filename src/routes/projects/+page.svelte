@@ -252,6 +252,22 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let facts = [];
   let docs = [];
   let loadingFacts = false;
+  
+  // User preferences
+  let userPreferences = data?.userPreferences || { facts_grid_size: 3 };
+  
+  // Listen for user preferences updates from Account Settings
+  onMount(() => {
+    const handlePreferencesUpdate = (event) => {
+      userPreferences = event.detail;
+    };
+    
+    window.addEventListener('user-preferences-updated', handlePreferencesUpdate);
+    
+    return () => {
+      window.removeEventListener('user-preferences-updated', handlePreferencesUpdate);
+    };
+  });
 
   // Add Fact form
   let factType = 'character';
@@ -403,7 +419,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     
     const lastProjectId = localStorage.getItem('wiskr_last_project_id');
     if (lastProjectId && !projects.find(p => p.id === lastProjectId)) {
-      console.log('🧽 Clearing stale project data from localStorage');
       localStorage.removeItem('wiskr_last_project_id');
       
       // Also clear any project-specific data that might be stale
@@ -421,7 +436,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
-        console.log('🧽 Removed stale localStorage key:', key);
       });
     }
   }
@@ -430,7 +444,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Server should have preloaded projects (including creating default for new users)
     // Only fetch fresh if server didn't preload properly
     if (!projects || projects.length === 0) {
-      console.log('📋 No projects preloaded, fetching fresh from database...');
       const { data: p, error } = await supabase.from('projects').select('*').order('created_at');
       
       if (error) {
@@ -438,13 +451,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         projects = [];
       } else {
         projects = p ?? [];
-        console.log(`📊 Found ${projects.length} existing projects from database`);
       }
       
       // Note: Default project creation is now handled server-side in +page.server.js
       // This prevents race conditions and duplicate projects
       if (projects.length === 0) {
-        console.log('⚠️  No projects found even after database fetch - this should not happen for authenticated users');
       }
     } 
     
@@ -1384,20 +1395,14 @@ function handleTextAddToDocs(event) {
   
   async function handleSearchNavigateChat(event) {
     const { messageId, branchId, firstMatchIndex } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateChat called with:', messageId, firstMatchIndex);
-    console.log('Main page: branchId from event:', branchId);
-    console.log('Main page: currentBranchId:', currentBranchId);
     
     // Set the search term for highlighting
     search = event.detail.searchTerm || '';
     
     // Switch to the appropriate branch if needed and wait for it to complete
     if (branchId && branchId !== currentBranchId) {
-      console.log('Main page: Switching to branch:', branchId);
       await switchToBranch(branchId);
-      console.log('Main page: Branch switch completed');
     } else {
-      console.log('Main page: No branch switch needed - same branch or no branchId');
     }
     
     // Ensure the chat area is visible and scroll to the message
@@ -1408,16 +1413,11 @@ function handleTextAddToDocs(event) {
     
     const attemptScroll = () => {
       if (chatManager) {
-        console.log('Main page: chatManager available, checking message availability...');
         
         // Check if messages are loaded and the target message exists
         const messageExists = messages.some(m => m.id === messageId);
-        console.log('Main page: Messages array length:', messages.length);
-        console.log('Main page: Looking for message ID:', messageId);
-        console.log('Main page: Target message found in array:', messageExists);
         
         if (!messageExists) {
-          console.log('Main page: Target message not found in messages array, retrying...');
           if (retryCount < maxRetries) {
             retryCount++;
             setTimeout(attemptScroll, retryDelay);
@@ -1431,7 +1431,6 @@ function handleTextAddToDocs(event) {
         // Additional check: wait for the message to be rendered in the DOM
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (!messageElement) {
-          console.log('Main page: Message not yet rendered in DOM, retrying...');
           if (retryCount < maxRetries) {
             retryCount++;
             setTimeout(attemptScroll, retryDelay);
@@ -1442,13 +1441,11 @@ function handleTextAddToDocs(event) {
           }
         }
         
-        console.log('Main page: Target message found and rendered, scrolling to message');
         // Pass the current search term for highlighting
         const searchTerm = search || '';
         chatManager.scrollToMessage(messageId, searchTerm, firstMatchIndex);
       } else if (retryCount < maxRetries) {
         retryCount++;
-        console.log(`Main page: chatManager not available, retry ${retryCount}/${maxRetries}`);
         setTimeout(attemptScroll, retryDelay);
       } else {
         console.error('Main page: chatManager still not available after retries');
@@ -1460,17 +1457,12 @@ function handleTextAddToDocs(event) {
   
   function handleSearchNavigateSession(event) {
     const { sessionId, sessionName } = event.detail;
-    console.log('🔍 Main page: handleSearchNavigateSession called with:', sessionId, sessionName);
-    console.log('Main page: currentSession?.id:', currentSession?.id);
     
     // Find the session in our sessions list and switch to it
     const targetSession = sessions.find(s => s.id === sessionId);
     if (targetSession && sessionLogicManager) {
-      console.log('Main page: Switching to session:', sessionId);
       sessionLogicManager.selectSession(targetSession);
-      console.log('Main page: Session switch completed');
     } else {
-      console.log('Main page: Session not found or sessionLogicManager not available');
     }
   }
   
@@ -1481,14 +1473,12 @@ function handleTextAddToDocs(event) {
   }
 
   function handleSearchRestore() {
-    console.log('🔍 Main page: Restoring full chat view from search mode');
     // The VirtualMessageList and ChatInterface components will handle the actual restoration
     // This function is here for any main page specific cleanup if needed in the future
   }
 
   function handleSearchShowResult(event) {
     const { messageId, searchTerm } = event.detail;
-    console.log('🔍 Main page: search:show-result event received:', { messageId, searchTerm });
     
     // Set the search term for highlighting
     search = searchTerm || '';
@@ -1708,7 +1698,6 @@ function handleTextAddToDocs(event) {
   }
   
   function handleMobileToggleSessions() {
-    console.log('handleMobileToggleSessions called - toggling session navigator');
     showSessionNavigator = !showSessionNavigator;
   }
 
@@ -1744,6 +1733,7 @@ function handleTextAddToDocs(event) {
         {search}
         {isDesktop}
         user={data?.user}
+        userPreferences={userPreferences}
         bind:showAddFactForm
         bind:factType
         bind:factKey
@@ -1818,6 +1808,8 @@ function handleTextAddToDocs(event) {
       {currentSession}
       isMobile={!isDesktop}
       user={data?.user}
+      userTier={data?.userTier}
+      effectiveTier={data?.effectiveTier}
       data-tutorial="chat-area"
       on:send={send}
       on:switch-branch={handleSwitchToBranch}

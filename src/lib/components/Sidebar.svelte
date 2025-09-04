@@ -24,6 +24,7 @@
   export let search = ''; // Filter content by this search string
   export let isDesktop = false;
   export let user = null; // User object with tier info
+  export let userPreferences = { facts_grid_size: 3 }; // User preferences including grid size
   // Desktop collapse button props
   export let showCollapseButton = false;
   export let isCollapsed = false;
@@ -569,6 +570,7 @@
             bind:factValue
             bind:factTags
             searchTerm={currentSearchTerm}
+            factsGridSize={userPreferences.facts_grid_size}
             on:add={handleFactAdd}
             on:cancel-add={handleFactCancelAdd}
             on:start-edit={handleFactStartEdit}
@@ -590,6 +592,7 @@
             bind:docContent
             bind:docTags
             searchTerm={currentSearchTerm}
+            factsGridSize={userPreferences.facts_grid_size}
             on:add={handleDocAdd}
             on:cancel-add={handleDocCancelAdd}
             on:start-edit={handleDocStartEdit}

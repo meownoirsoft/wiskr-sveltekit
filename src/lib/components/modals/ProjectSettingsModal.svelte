@@ -372,7 +372,7 @@
                   </label>
                   
                   {#if projectDescription.trim()}
-                    <FeatureGate user={{ ...user, tier: userTier, userTier: userTier }} feature="say-less" requiredTier={1} showBadge={false} let:hasAccess>
+                    <FeatureGate user={{ ...user, tier: userTier }} feature="say-less" requiredTier={1} showBadge={false} let:hasAccess>
                       <SayLessButton
                         on:sayless={handleSayLessClick}
                         disabled={!projectDescription.trim() || !hasAccess}
