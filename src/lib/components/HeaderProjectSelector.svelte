@@ -239,17 +239,17 @@
     <!-- Desktop: Button that triggers dropdown -->
     <button 
       bind:this={buttonEl}
-      class="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 border-2 rounded-lg min-w-0 max-w-full transition-colors text-sm hover:border-opacity-80 hover:bg-opacity-90 bg-white dark:bg-gray-800"
+      class="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 border-2 rounded-lg min-w-0 max-w-full md:w-64 transition-colors text-sm hover:border-opacity-80 hover:bg-opacity-90 bg-white dark:bg-gray-800"
       style="border-color: var(--border-header-input); color: var(--text-header);"
       on:click={toggleDropdown}
     >
       {#if current}
-        <span class="text-xs md:text-sm">{current.icon ?? '📁'}</span>
-        <span class="font-medium text-xs md:text-sm truncate" style="color: var(--text-header);">{current.name}</span>
+        <span class="text-xs md:text-sm flex-shrink-0">{current.icon ?? '📁'}</span>
+        <span class="font-medium text-xs md:text-sm truncate flex-1 text-left" style="color: var(--text-header);">{current.name}</span>
       {:else}
-        <span class="text-xs md:text-sm" style="color: var(--text-header-secondary);">Select project...</span>
+        <span class="text-xs md:text-sm flex-1 text-left" style="color: var(--text-header-secondary);">Select project...</span>
       {/if}
-      <ChevronDown size="16" style="color: var(--text-header-secondary);" class="flex-shrink-0" />
+      <ChevronDown size="16" style="color: var(--text-header-secondary);" class="flex-shrink-0 ml-auto" />
     </button>
   {/if}
 </div>

@@ -59,7 +59,7 @@
 {#if visible && aiInfo && model}
   <div
     bind:this={tooltipElement}
-    class="fixed z-[45] bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm rounded-lg shadow-xl border border-gray-300 dark:border-gray-700 p-3 pointer-events-none max-w-xs"
+    class="fixed z-[99999] bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm rounded-lg shadow-xl border border-gray-300 dark:border-gray-700 p-3 pointer-events-none max-w-xs"
     style="left: {position.x}px; top: {position.y}px;"
   >
     <!-- AI Name -->
@@ -107,7 +107,7 @@
 
 <style>
   /* Ensure tooltip appears above dropdowns but below modals */
-  .z-\[45\] {
-    z-index: 45;
+  .z-\[99999\] {
+    z-index: 99999;
   }
 </style>

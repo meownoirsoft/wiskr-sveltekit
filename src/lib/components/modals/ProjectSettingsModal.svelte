@@ -348,7 +348,7 @@
                        </svg>
                      </button>
                                            <!-- Tooltip - Show on hover (desktop) or click (mobile) -->
-                                             <div class="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-10 md:opacity-0 md:group-hover:opacity-100 {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
+                                             <div class="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-[99999] md:opacity-0 md:group-hover:opacity-100 {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
                         <div class="text-center">
                           <p class="font-medium mb-1">The description below is the <strong>most important context</strong> for Wiskrs.</p>
                           <p class="text-gray-300">It's their <strong>"north star"</strong> for providing targeted assistance.</p>

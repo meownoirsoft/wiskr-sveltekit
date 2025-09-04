@@ -12,6 +12,32 @@
   let buttonElement;
   let popupElement;
   let arrowElement;
+  let portalContainer;
+  
+  // Portal action to render popup at document body
+  function createPortal(node) {
+    // Create portal container if it doesn't exist
+    if (!portalContainer) {
+      portalContainer = document.createElement('div');
+      portalContainer.id = 'info-popup-portal';
+      portalContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999;';
+      document.body.appendChild(portalContainer);
+    }
+
+    // Move the node to the portal container
+    portalContainer.appendChild(node);
+    
+    // Enable pointer events on the popup itself
+    node.style.pointerEvents = 'auto';
+    
+    return {
+      destroy() {
+        if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      }
+    };
+  }
   
   async function toggle() {
     isOpen = !isOpen;
@@ -185,11 +211,12 @@
 
   <!-- Popup Content -->
   {#if isOpen}
-    <div 
-      bind:this={popupElement}
-      class="info-popup-content fixed z-[99999] w-80 sm:w-96 md:w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white"
-      style="max-height: calc(100vh - 32px); max-width: calc(100vw - 32px); background-color: var(--bg-primary);"
-    >
+    <div use:createPortal>
+      <div 
+        bind:this={popupElement}
+        class="info-popup-content fixed z-[99999] w-80 sm:w-96 md:w-128 rounded-lg shadow-xl border border-gray-300 dark:border-gray-600 bg-white"
+        style="max-height: calc(100vh - 32px); max-width: calc(100vw - 32px); background-color: var(--bg-primary);"
+      >
       <!-- Header with close button -->
       <div class="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 pb-2">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white pr-2">{title}</h3>
@@ -212,6 +239,7 @@
         bind:this={arrowElement}
         class="absolute w-4 h-4 transform rotate-45 border border-gray-300 dark:border-gray-600 bg-white" style="background-color: var(--bg-primary); z-index: -1;"
       ></div>
+      </div>
     </div>
   {/if}
 </div>

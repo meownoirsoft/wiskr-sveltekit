@@ -4,16 +4,17 @@ import { stripe } from '$lib/server/stripe.js';
 export async function POST({ request, locals }) {
   try {
     // Get the current user from the server-side session
-    const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
-    if (authError || !user) {
+    if (!locals.user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = locals.user.id;
 
     // Get user's Stripe customer ID from database
     const { data: profile, error: profileError } = await locals.supabase
       .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', user.id)
+      .eq('user_id', userId)
       .single();
 
     if (profileError || !profile?.stripe_customer_id) {
@@ -23,7 +24,7 @@ export async function POST({ request, locals }) {
     // Create customer portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${request.headers.get('origin')}/plans`,
+      return_url: `${request.headers.get('origin')}/projects`,
     });
 
     return json({ url: session.url });

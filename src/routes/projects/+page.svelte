@@ -1734,6 +1734,9 @@ function handleTextAddToDocs(event) {
         {isDesktop}
         user={data?.user}
         userPreferences={userPreferences}
+        showCollapseButton={isDesktop}
+        isCollapsed={leftPanelCollapsed}
+        onToggleCollapse={toggleLeftPanelCollapse}
         bind:showAddFactForm
         bind:factType
         bind:factKey

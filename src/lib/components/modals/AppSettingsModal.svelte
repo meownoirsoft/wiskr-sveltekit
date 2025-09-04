@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
-     import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift, ChevronDown, X } from 'lucide-svelte';
+     import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift, ChevronDown, X, CreditCard } from 'lucide-svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
   import { getTierDisplayInfo } from '$lib/tiers.js';
   
@@ -22,6 +22,7 @@
   let activeTab = initialTab; // 'account', 'profile', 'preferences', 'appearance', 'about'
   let wasOpen = false;
   let showDropdown = false;
+  let managingSubscription = false;
   
   // Reactive variable for facts grid size (converted to string for select element)
   $: factsGridSizeString = userPreferences.facts_grid_size?.toString() || '3';
@@ -203,6 +204,36 @@
       showDropdown = false;
     }
   }
+  
+  async function handleManageSubscription() {
+    if (!userData) return;
+    
+    managingSubscription = true;
+    
+    try {
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error('Error creating portal session:', data.error);
+        // You could dispatch an error event here if needed
+      } else if (data.url) {
+        // Redirect to Stripe customer portal
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Failed to open customer portal:', err);
+      // You could dispatch an error event here if needed
+    } finally {
+      managingSubscription = false;
+    }
+  }
 </script>
 
 {#if isOpen}
@@ -356,6 +387,19 @@
                                 Upgrade to Pro
                               {/if}
                             </a>
+                          {:else if userTier > 0}
+                            <button
+                              on:click={handleManageSubscription}
+                              disabled={managingSubscription}
+                              class="px-3 py-1 text-xs font-medium rounded-lg transition-colors border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-1"
+                            >
+                              {#if managingSubscription}
+                                <div class="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                              {:else}
+                                <CreditCard size="12" />
+                              {/if}
+                              Cancel Subscription
+                            </button>
                           {/if}
                         </div>
                       </div>

@@ -664,7 +664,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         {/if}
         
                  <!-- Desktop: Wiskr brand (show on authenticated pages + login/signup) -->
-         {#if shouldShowLogo}
+         {#if shouldShowLogo && !isPublicPage}
            <a href="/" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
              <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
                <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
@@ -672,7 +672,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
            </a>
          {/if}
         
-                 <!-- Public pages: Show desktop logo on left, hide duplicate in center -->
+                 <!-- Public pages: Show desktop logo on left -->
          {#if isPublicPage}
            <a href="/" class="flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
              <span class="text-lg text-xl inline-flex items-center">

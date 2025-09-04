@@ -56,7 +56,9 @@
   // Load admin status on mount
   onMount(async () => {
     try {
-      const response = await fetch('/api/auth/admin');
+      const response = await fetch('/api/auth/admin', {
+        credentials: 'include'
+      });
       if (response.ok) {
         const data = await response.json();
         userIsAdmin = data.isAdmin || false;
@@ -97,7 +99,9 @@
     if (!current?.id) return;
     
     try {
-      const response = await fetch(`/api/projects/${current.id}/fact-types`);
+      const response = await fetch(`/api/projects/${current.id}/fact-types`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -395,11 +399,13 @@
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-2">
       <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
-	  <InfoPopup
-        title="Project Context"
-        content="<p><strong>Project Context</strong> is your AI assistant's memory system for each project.</p><p>It consists of three main components:</p><ul><li><strong>Facts</strong> - Key information about people, places, processes, terms, and things in your project. These help the AI understand your domain.</li><li><strong>Docs</strong> - Longer form documents, notes, and references that provide detailed background information.</li><li><strong>Summary</strong> - An AI-generated overview of your project based on facts and docs.</li></ul><p><strong>Pinning</strong> prioritizes important items for AI context. Use <strong>filtering</strong> to focus on specific topics or tags.</p><p>The AI uses pinned items first, then pulls from the broader context as needed for each conversation.</p>"
-        buttonTitle="Learn about Project Context"
-      />
+	  {#if !isCollapsed}
+        <InfoPopup
+          title="Project Context"
+          content="<p><strong>Project Context</strong> is your AI assistant's memory system for each project.</p><p>It consists of three main components:</p><ul><li><strong>Facts</strong> - Key information about people, places, processes, terms, and things in your project. These help the AI understand your domain.</li><li><strong>Docs</strong> - Longer form documents, notes, and references that provide detailed background information.</li><li><strong>Summary</strong> - An AI-generated overview of your project based on facts and docs.</li></ul><p><strong>Pinning</strong> prioritizes important items for AI context. Use <strong>filtering</strong> to focus on specific topics or tags.</p><p>The AI uses pinned items first, then pulls from the broader context as needed for each conversation.</p>"
+          buttonTitle="Learn about Project Context"
+        />
+      {/if}
     </div>
     
     {#if isDesktop && showCollapseButton && onToggleCollapse}

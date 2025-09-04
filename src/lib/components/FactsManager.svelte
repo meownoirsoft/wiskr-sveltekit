@@ -56,7 +56,9 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     
     loadingFactTypes = true;
     try {
-      const response = await fetch(`/api/projects/${projectId}/fact-types`);
+      const response = await fetch(`/api/projects/${projectId}/fact-types`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (response.ok) {

@@ -88,6 +88,7 @@
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'submit-mr-wiskr-feedback',
           projectId,
@@ -288,7 +289,7 @@
 {#if visible}
   <div
     bind:this={popupElement}
-    class="fixed z-50 border-2 rounded-xl shadow-2xl mr-wiskr-popup"
+    class="fixed z-[99999] border-2 rounded-xl shadow-2xl mr-wiskr-popup"
     class:positioned={isPositioned}
     style="
       left: {isPositioned ? finalX : finalX}px; 

@@ -34,7 +34,9 @@
     
     loading = true;
     try {
-      const response = await fetch(`/api/projects/${projectId}/fact-types`);
+      const response = await fetch(`/api/projects/${projectId}/fact-types`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -83,6 +85,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ factTypes: updatedFactTypes })
       });
       
