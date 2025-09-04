@@ -1,0 +1,12 @@
+---
+description: Svelte 5 in legacy mode (no runes)
+globs:
+  - "src/**/*.svelte"
+---
+
+Do NOT use runes or set `<svelte:options runes={true}>`.
+- Props: `export let ...`
+- Reactivity: `$:` labels, not `$state/$derived/$effect/$props`.
+- Events: `on:click`, `on:input` etc. (no `onclick` attributes in legacy files)
+- Binding: `bind:value`, `bind:checked`, etc.
+- Don’t touch `<style>` blocks unless asked.

@@ -1,0 +1,9 @@
+---
+description: Project uses JavaScript only (no TypeScript)
+alwaysApply: true
+---
+
+- Do NOT introduce TypeScript. Use **.js** files only.
+- Do NOT add `tsconfig.json`, `.d.ts` files, or TS-only deps (`@types/*`, `typescript`).
+- If a snippet is in TS, convert it to JS before output.
+- Prefer JSDoc for hints when needed; do not require types.

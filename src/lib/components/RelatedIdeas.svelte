@@ -660,7 +660,7 @@ import { browser } from '$app/environment';
     {/if}
     
     <!-- Scrollable content container -->
-    <div class="h-full overflow-y-auto pr-1 pb-4 md:pb-0">
+    <div class="h-full overflow-y-auto pr-1">
     
     <ul class="space-y-1 px-2 md:px-0" style="margin-left: 32px;"> <!-- 32px for chevron space, mobile padding -->
       {#each visibleIdeas as idea, i (typeof idea === 'object' ? idea.id : idea)}
@@ -668,7 +668,7 @@ import { browser } from '$app/environment';
         {@const ideaId = typeof idea === 'object' ? idea.id : idea}
         {@const isLikedForDisplay = likedIdeasSet.has(ideaId)}
         <li 
-          class="relative text-sm border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 group hover:bg-gray-50 dark:hover:bg-gray-700" 
+          class="relative text-sm border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1 group hover:bg-gray-50 dark:hover:bg-gray-700" 
           style="background-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-light)' : 'var(--bg-card)'}; border-color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent-border)' : ''};"
           data-idea-id={ideaId}
         >
@@ -686,23 +686,23 @@ import { browser } from '$app/environment';
           </button>
           
           <!-- Title row with action buttons -->
-          <div class="flex items-start gap-2 mb-1">
+          <div class="flex items-start gap-1 mb-0.5 sm:mb-1">
             <!-- Center section: icon and title -->
             <div class="flex items-start gap-2 flex-1">
               <div class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5">
                 <svelte:component this={getIconForIdea(ideaText)} size="16" />
               </div>
-              <div class="font-semibold text-gray-800 dark:text-gray-200 leading-snug text-sm">
+              <div class="font-semibold text-gray-800 dark:text-gray-200 leading-tight text-sm line-clamp-2">
                 {parseIdea(ideaText).title}
               </div>
             </div>
             
             <!-- Right section: action buttons -->
-            <div class="flex items-center gap-1 flex-shrink-0">
-              <!-- Always visible like button when liked, otherwise show on hover -->
+            <div class="flex items-start gap-0 flex-shrink-0 -mr-1.5 -mt-1">
+              <!-- Always visible like button -->
               <button 
                 id="idea-like-{ideaId}"
-                class="p-1 cursor-pointer {likedIdeasSet.has(ideaId) ? '' : 'opacity-0 group-hover:opacity-100'}" 
+                class="p-0 cursor-pointer" 
                 style="color: {likedIdeasSet.has(ideaId) ? 'var(--color-accent)' : 'var(--color-accent)'}"
                 on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
                 on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
@@ -711,26 +711,24 @@ import { browser } from '$app/environment';
               >
                 <Heart size="16" class={likedIdeasSet.has(ideaId) ? 'fill-current' : ''} />
               </button>
-              <!-- Hover-only buttons -->
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  id="idea-dismiss-{ideaId}"
-                  class="p-1 cursor-pointer" 
-                  style="color: var(--color-accent)"
-                  on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
-                  on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
-                  on:click={() => dismissIdea(ideaId)}
-                  title="Don't like this idea"
-                >
-                  <HeartCrack size="16" />
-                </button>
-              </div>
+              <!-- Always visible dismiss button -->
+              <button 
+                id="idea-dismiss-{ideaId}"
+                class="p-0 cursor-pointer" 
+                style="color: var(--color-accent)"
+                on:mouseenter={(e) => e.target.style.color = 'var(--color-accent-hover)'}
+                on:mouseleave={(e) => e.target.style.color = 'var(--color-accent)'}
+                on:click={() => dismissIdea(ideaId)}
+                title="Don't like this idea"
+              >
+                <HeartCrack size="16" />
+              </button>
             </div>
           </div>
           
           <!-- Description row (if exists) -->
           {#if parseIdea(ideaText).description}
-            <div class="text-gray-600 dark:text-gray-400 text-sm leading-snug prose prose-sm max-w-none">
+            <div class="text-gray-600 dark:text-gray-400 text-sm leading-snug max-w-none" style="font-size: 13px;">
               {@html renderMarkdown(parseIdea(ideaText).description)}
             </div>
           {/if}
@@ -767,3 +765,13 @@ import { browser } from '$app/environment';
     </div>
   </div>
 </div>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

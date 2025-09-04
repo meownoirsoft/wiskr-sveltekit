@@ -395,8 +395,8 @@
   }
 </script>
 
-<section class="h-full border-r border-gray-200 dark:border-gray-700 p-3 flex flex-col mobile-sidebar">
-  <div class="flex items-center justify-between">
+<section class="h-full border-r border-gray-200 dark:border-gray-700 p-2 sm:p-3 flex flex-col mobile-sidebar">
+  <div class="flex items-center justify-between mb-1 sm:mb-0">
     <div class="flex items-center gap-2">
       <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Context</h2>
 	  {#if !isCollapsed}
@@ -407,22 +407,6 @@
         />
       {/if}
     </div>
-    
-    {#if isDesktop && showCollapseButton && onToggleCollapse}
-      <button
-        class="p-1 text-xs bg-white dark:bg-slate-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-		on:click={onToggleCollapse}
-        title={isCollapsed ? 'Expand Facts & Docs' : 'Collapse Facts & Docs'}
-      >
-        {#if isCollapsed}
-          <!-- Expand - double chevrons pointing right -->
-          <ChevronsRight size="24" />
-        {:else}
-          <!-- Collapse - double chevrons pointing left -->
-          <ChevronsLeft size="24" />
-        {/if}
-      </button>
-    {/if}
   </div>
 
   {#if current}
@@ -509,22 +493,22 @@
       <!-- Tab Headers -->
       <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3">
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
           style="{
             activeTab === 'facts' 
-              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
-              : 'border-color: transparent;'
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
+              : 'border-color: transparent; font-size: 15px;'
           } {activeTab !== 'facts' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'facts'}
         >
           Facts ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
         </button>
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
           style="{
             activeTab === 'docs' 
-              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
-              : 'border-color: transparent;'
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
+              : 'border-color: transparent; font-size: 15px;'
           } {activeTab !== 'docs' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'docs'}
         >
@@ -532,11 +516,11 @@
         </button>
         {#if userIsAdmin}
           <button
-            class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+            class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
             style="{
               activeTab === 'entities' 
-                ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
-                : 'border-color: transparent;'
+                ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
+                : 'border-color: transparent; font-size: 15px;'
             } {activeTab !== 'entities' ? 'color: #6b7280;' : ''}"
             on:click={() => activeTab = 'entities'}
           >
@@ -544,11 +528,11 @@
           </button>
         {/if}
         <button
-          class="px-3 py-2 font-medium text-sm border-b-2 transition-colors"
+          class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
           style="{
             activeTab === 'summary' 
-              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light);` 
-              : 'border-color: transparent;'
+              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
+              : 'border-color: transparent; font-size: 15px;'
           } {activeTab !== 'summary' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'summary'}
         >

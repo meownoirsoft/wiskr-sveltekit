@@ -283,28 +283,31 @@
                   {/if}
                 </div>
 
-                <!-- Session Actions -->
-                <div class="flex items-center gap-1 ml-2 session-actions opacity-0 transition-opacity duration-200">
-                  <button
-                    class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400"
-                    title="Edit Chat"
-                    on:click|stopPropagation={() => startEditSession(session)}
-                  >
-                    <Edit3 size="16" />
-                  </button>
-                  <button
-                    class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
-                    title="Delete Chat"
-                    on:click|stopPropagation={() => deleteSession(session)}
-                  >
-                    <Trash2 size="16" />
-                  </button>
+                <!-- Right side: Last Activity and Session Actions -->
+                <div class="flex flex-col items-end gap-1 ml-2">
+                  <!-- Last Activity -->
+                  <div class="text-xs text-gray-400 dark:text-gray-500">
+                    {formatTime(session.updated_at)}
+                  </div>
+                  
+                  <!-- Session Actions -->
+                  <div class="flex items-center gap-1 session-actions opacity-0 transition-opacity duration-200">
+                    <button
+                      class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400"
+                      title="Edit Chat"
+                      on:click|stopPropagation={() => startEditSession(session)}
+                    >
+                      <Edit3 size="16" />
+                    </button>
+                    <button
+                      class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
+                      title="Delete Chat"
+                      on:click|stopPropagation={() => deleteSession(session)}
+                    >
+                      <Trash2 size="16" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <!-- Last Activity -->
-              <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                Last activity: {formatTime(session.updated_at)}
               </div>
             </div>
           {/each}

@@ -705,7 +705,7 @@
 
  <!-- Scroll to bottom button (appears when user scrolled up, hidden when mobile form is open or in search mode) -->
  {#if messages.length > 0 && !isAtBottom && !(isMobile && showMobileForm) && !isSearchMode}
-  <div class="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20">
+  <div class="absolute bottom-20 sm:bottom-48 left-1/2 transform -translate-x-1/2 z-20">
     <button
       class="bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-full px-4 py-2 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium"
       on:click={() => forceScrollToBottomImmediate()}

@@ -605,7 +605,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 <div class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
 
   <!-- Header -->
-     <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
+     <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center sticky top-0 z-[150] transition-colors" style="background-color: var(--bg-header);">
      <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center gap-2 md:gap-4 relative">
       <div class="flex-1 flex items-center gap-2 md:gap-4">
         <!-- Left section content will go here -->
@@ -613,11 +613,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
         {#if isProjectsPage}
-          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-2">
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
             <!-- Left panel toggle (Context/Facts) -->
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
               aria-label="Toggle Facts & Docs"
               title="Facts & Docs"
@@ -634,7 +634,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <!-- Project Menu Button -->
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => {
                 window.dispatchEvent(new CustomEvent('mobile:toggle-projects'));
               }}
@@ -648,7 +648,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <div class="relative">
               <button
                 type="button"
-                class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+                class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
                 on:click={() => {
           
                   window.dispatchEvent(new CustomEvent('mobile:toggle-sessions'));
@@ -828,11 +828,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           </div>
           
           <!-- Mobile: Right panel control (Ideas) -->
-          <div class="{isDesktop ? 'hidden' : 'flex'} items-center gap-2">
+          <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
             <!-- Right panel toggle (Add-Ins) -->
             <button
               type="button"
-              class="flex flex-col items-center p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
               aria-label="Toggle Questions & Ideas"
               title="Questions & Ideas"
@@ -930,7 +930,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div 
-      class="fixed inset-0 z-[99999]" 
+      class="fixed inset-0" 
+      style="z-index: 9999999;"
       on:click={(e) => {
         // Only close if clicking on the backdrop itself, not on dropdown content
         if (e.target === e.currentTarget) {
@@ -938,7 +939,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         }
       }}
     >
-      <div class="absolute top-16 left-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl w-80 max-w-[90vw] py-4" style="background-color: var(--bg-primary);">
+      <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-4" style="background-color: var(--bg-primary); z-index: 9999999;">
         <!-- Header -->
         <div class="px-4 pb-3 border-b border-gray-200 dark:border-gray-600">
           <div class="flex items-center justify-between">
@@ -1078,6 +1079,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       </div>
     </div>
   {/if}
+
 
   <!-- Page content fills the rest -->
   <main class="flex-1 min-h-0">

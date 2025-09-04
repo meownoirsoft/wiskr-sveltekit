@@ -1,0 +1,11 @@
+---
+description: Tailwind usage & purge safety
+globs:
+  - "tailwind.config.{cjs,js}"
+  - "src/**/*.{svelte,js}"
+---
+
+- Use utility classes; do not inline style unless necessary.
+- Keep `content: ["./src/**/*.{svelte,js}"]` up to date.
+- If generating dynamic class names (e.g., `grid-cols-${n}`), either hardcode valid values or add them to `safelist` in tailwind config.
+- Do not remove classes from critical selectors without being asked.

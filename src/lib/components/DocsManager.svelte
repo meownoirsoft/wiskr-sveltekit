@@ -126,26 +126,27 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
     <div 
       class="doc-card flex flex-col md:h-full text-sm border border-purple-200 dark:border-purple-400 rounded p-2" 
-      style="background-color: var(--bg-card);"
+      style="background-color: var(--bg-card); min-height: 0;"
       data-doc-id={d.id}
     >
       <!-- Header: Title and Menu -->
-      <div class="flex-shrink-0">
-        <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
-        <div class="flex items-start gap-2">
+      <div class="flex-shrink-0 relative">
+        <!-- Top row: Pin icon + Title (title wraps intelligently) -->
+        <div class="flex items-start gap-2 pr-8">
           {#if d.pinned}
             <Pin size="20" class="text-purple-600 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{@html highlightText(d.title, searchTerm)}</div>
-          <!-- Triple-dot menu - fixed to top right -->
-          <div class="relative flex-shrink-0">
-            <button 
-              class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-0" 
-              on:click={() => toggleMenu(i)}
-              title="More actions"
-            >
-              <MoreHorizontal size="18" />
-            </button>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 text-gray-900 dark:text-gray-100">{@html highlightText(d.title, searchTerm)}</div>
+        </div>
+        <!-- Triple-dot menu - positioned with negative margins -->
+        <div class="absolute" style="top: -15px; right: -15px;">
+          <button 
+            class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-0" 
+            on:click={() => toggleMenu(i)}
+            title="More actions"
+          >
+            <MoreHorizontal size="16" />
+          </button>
           
             {#if openMenuIndex === i}
               <!-- Overlay to close menu when clicking outside -->
@@ -180,22 +181,22 @@ import LoadingSpinner from './LoadingSpinner.svelte';
                 </button>
               </div>
             {/if}
-          </div>
         </div>
       </div>
       
       <!-- Content Preview -->
-      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 md:flex-1 md:min-h-0 md:overflow-y-auto content-scrollbar" style="max-height: 140px;">
+      <div class="doc-content text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2 md:flex-1 md:min-h-0 content-scrollbar" style="max-height: 140px !important; min-height: 0; overflow-y: auto !important; overflow-x: hidden;">
         {@html highlightText(d.content, searchTerm)}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->
       <div class="flex-shrink-0 flex flex-wrap gap-1">
-        <span class="text-xs px-2 py-1 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">doc</span>
+        <span class="text-xs px-2 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300" style="padding-top: 3px; padding-bottom: 3px;">doc</span>
         {#if d.tags && d.tags.length > 0}
           {#each d.tags as tag}
             <button
-              class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
+              class="text-xs px-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
+              style="padding-top: 3px; padding-bottom: 3px;"
               on:click={() => handleTagClick(tag)}
               title="Filter by tag: {tag}"
             >

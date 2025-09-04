@@ -43,6 +43,16 @@
     }
     // Don't clear searchResults array - keep it for restoration
   }
+  
+  // Reopen keyboard when user starts typing again (if they want to modify search)
+  $: if (searchInput && searchInput.length > 0 && showResults && searchInputElement) {
+    // Small delay to ensure the input is focused properly
+    setTimeout(() => {
+      if (searchInputElement && document.activeElement !== searchInputElement) {
+        searchInputElement.focus();
+      }
+    }, 100);
+  }
    
    
   
@@ -66,8 +76,42 @@
       
       if (res.ok) {
         const data = await res.json();
-        searchResults = data.results || [];
+        // Convert structured results to flat array for mobile display
+        const structuredResults = data.results || {};
+        const flatResults = [];
+        
+        // Add facts results
+        if (structuredResults.facts) {
+          flatResults.push(...structuredResults.facts);
+        }
+        
+        // Add docs results
+        if (structuredResults.docs) {
+          flatResults.push(...structuredResults.docs);
+        }
+        
+        // Add chat messages results
+        if (structuredResults.chatMessages) {
+          flatResults.push(...structuredResults.chatMessages);
+        }
+        
+        // Add questions results
+        if (structuredResults.questions) {
+          flatResults.push(...structuredResults.questions);
+        }
+        
+        // Add ideas results
+        if (structuredResults.relatedIdeas) {
+          flatResults.push(...structuredResults.relatedIdeas);
+        }
+        
+        searchResults = flatResults;
         showResults = true;
+        
+        // Close mobile keyboard when results are displayed to give more screen space
+        if (searchInputElement) {
+          searchInputElement.blur();
+        }
       } else if (res.status === 429) {
         // Rate limit exceeded
         console.warn('Search rate limited, please wait a moment');
@@ -97,12 +141,20 @@
     // PRIORITY 1: If we have results but they're hidden, show them again (GO button behavior)
     if (searchResults.length > 0 && !showResults) {
       showResults = true;
+      // Close keyboard when showing existing results
+      if (searchInputElement) {
+        searchInputElement.blur();
+      }
       return;
     }
     
     // PRIORITY 2: If the search term is the same as last time, just show the results again
     if (searchInput.trim() === lastSearchTerm && searchResults.length > 0) {
       showResults = true;
+      // Close keyboard when showing existing results
+      if (searchInputElement) {
+        searchInputElement.blur();
+      }
       return;
     }
     

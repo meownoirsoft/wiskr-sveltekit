@@ -9,6 +9,8 @@
   "packageManager": "pnpm@9.12.3",
   "scripts": {
     "dev": "vite dev",
+    "dev:fast": "phase run --env development 'NODE_ENV=development vite dev --force'",
+    "dev:hmr": "phase run --env development 'NODE_ENV=development vite dev --port 5173 --force --host'",
     "dev:admin": "vite dev --config vite.admin.config.js --port 5174",
     "dev:both": "concurrently \"pnpm run dev\" \"pnpm run dev:admin\"",
     "build": "svelte-kit sync && vite build",
@@ -36,6 +38,7 @@
     "concurrently": "^8.2.2",
     "postcss": "^8.5.6",
     "puppeteer": "^24.17.1",
+    "rollup-plugin-visualizer": "^6.0.3",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.1.11",

@@ -334,16 +334,16 @@ import { browser } from '$app/environment';
               </div>
               
               <!-- Right section: edit and delete buttons -->
-              <div class="flex items-start gap-1 opacity-0 md:group-hover:opacity-100 opacity-100 md:opacity-0 transition-opacity">
+              <div class="flex items-start gap-0.5 sm:gap-1 opacity-0 md:group-hover:opacity-100 opacity-100 md:opacity-0 transition-opacity">
                 <button 
-                  class="text-gray-500 hover:text-gray-700 p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
+                  class="text-gray-500 hover:text-gray-700 p-0.5 sm:p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={() => startEdit(i)}
                   title="Edit question"
                 >
                   <Edit size="20" class="md:w-4 md:h-4" />
                 </button>
                 <button 
-                  class="text-red-500 hover:text-red-700 p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
+                  class="text-red-500 hover:text-red-700 p-0.5 sm:p-1 md:p-0.5 cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center" 
                   on:click={() => removeQuestion(i)}
                   title="Remove question"
                 >

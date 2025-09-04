@@ -106,7 +106,7 @@
 
 <div class="flex flex-col h-full border-r border-gray-200 dark:border-gray-700 overflow-hidden mobile-ideas-column">
   <!-- Header -->
-  <div class="p-4">
+  <div class="p-2 sm:p-4">
     <div class="flex items-center">
       {#if isDesktop && showCollapseButton && onToggleCollapse}
         <button
@@ -125,14 +125,12 @@
           {/if}
         </button>
       {/if}
-      
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Prompt Add-Ins</h2>
     </div>
   </div>
   
-  <div class="p-4 h-full flex flex-col min-h-0">
+  <div class="px-2 sm:px-4 pb-1 sm:pb-2 h-full flex flex-col min-h-0">
     <!-- Good Questions - Upper half (fixed height) -->
-    <div class="flex flex-col overflow-hidden" style="height: 40%;">
+    <div class="flex flex-col overflow-hidden pt-1" style="height: 45%;">
              <GoodQuestions 
          bind:this={goodQuestionsComponent}
          goodQuestions={filteredQuestions}
@@ -144,7 +142,7 @@
     </div>
 
     <!-- Divider -->
-    <div class="border-t border-gray-200 dark:border-gray-600 my-2 flex-shrink-0" style="height: 1px;"></div>
+    <div class="border-t border-gray-200 dark:border-gray-600 my-4 flex-shrink-0" style="height: 1px;"></div>
 
     <!-- Related Ideas - Lower half (takes remaining space) -->
     <div class="flex-1 flex flex-col overflow-hidden min-h-0">

@@ -1,0 +1,26 @@
+---
+description: SvelteKit routes, loaders, actions, endpoints (JavaScript only, legacy Svelte)
+globs:
+  - "src/routes/**/+*.{svelte,js}"
+alwaysApply: true
+---
+
+# File roles (JS only)
+- UI: `+page.svelte`, `+layout.svelte`
+- Universal loaders: `+page.js`, `+layout.js`  (export `load`)
+- Server-only loaders: `+page.server.js`, `+layout.server.js`  (export `load`)
+- Form actions: define in `+page.server.js` via `export const actions = { ... }`
+- API endpoints: `+server.js` (export `GET/POST/...` handlers)
+
+# Mode & events
+- **Legacy Svelte (no runes):** use `export let`, `$:` and `on:click` (not `$state/$derived/$effect` or `onclick`)
+- Do not convert files to TypeScript or create `.ts` variants
+
+# Env & secrets
+- Server-only: `$env/static/private` or `$env/dynamic/private`
+- Client-only: `$env/static/public` and **PUBLIC_*** keys
+- Never import server env modules into `.svelte`, `+page.js`, or other client code
+
+# UX guidance
+- Prefer progressive enhancement with form actions; only add fetch/XHR when needed
+- Do not modify `<style>` blocks unless explicitly asked

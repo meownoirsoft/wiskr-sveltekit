@@ -1,0 +1,13 @@
+---
+description: Supabase with SvelteKit (SSR cookies, safe env)
+globs:
+  - "src/**/*"
+---
+
+- Use `@supabase/supabase-js` v2 and `@supabase/ssr` for cookie-based auth on SSR.
+- Client-side: create a Supabase client in `+layout.js`.
+- Server: in `+layout.server.js` or actions/endpoints, access the session via SSR helpers; never expose the service role key to the client.
+- Env:
+  - Client: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY` via `$env/static/public`.
+  - Server: secrets via `$env/static/private` or `$env/dynamic/private`.
+- Prefer actions (`+page.server.js`) for mutations; use endpoints for API-style responses.

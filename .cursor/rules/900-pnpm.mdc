@@ -1,0 +1,7 @@
+---
+description: Use pnpm commands and workspace awareness
+alwaysApply: true
+---
+- Install deps with `pnpm add` / `pnpm add -D`.
+- Run scripts with `pnpm <script>` (not npm/yarn).
+- When proposing new packages, include the exact pnpm command.

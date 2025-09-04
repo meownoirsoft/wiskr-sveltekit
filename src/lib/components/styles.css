@@ -314,6 +314,58 @@
   background: var(--scrollbar-thumb-hover);
 }
 
+/* More visible scrollbar for fact and doc cards */
+.fact-content, .doc-content {
+  /* WebKit browsers (Chrome, Safari, Edge) */
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 #f3f4f6;
+}
+
+.fact-content::-webkit-scrollbar,
+.doc-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fact-content::-webkit-scrollbar-track,
+.doc-content::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.fact-content::-webkit-scrollbar-thumb,
+.doc-content::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+  border: 1px solid #f3f4f6;
+}
+
+.fact-content::-webkit-scrollbar-thumb:hover,
+.doc-content::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Dark mode scrollbar for fact and doc cards */
+.dark .fact-content,
+.dark .doc-content {
+  scrollbar-color: #9ca3af #374151;
+}
+
+.dark .fact-content::-webkit-scrollbar-track,
+.dark .doc-content::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .fact-content::-webkit-scrollbar-thumb,
+.dark .doc-content::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border: 1px solid #374151;
+}
+
+.dark .fact-content::-webkit-scrollbar-thumb:hover,
+.dark .doc-content::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
 /* Improve scrolling on mobile */
 @media (max-width: 1279px) {
   .overflow-auto, .overflow-y-auto {
@@ -514,7 +566,7 @@
 @media (max-width: 768px) {
   /* Ensure proper mobile viewport handling for RelatedIdeas */
   .mobile-ideas-column {
-    max-height: calc(100vh - 8rem); /* Account for header and mobile navigation */
+    max-height: calc(100vh - 6rem); /* Account for header and mobile navigation */
   }
   
   /* Better mobile scrolling for ideas */

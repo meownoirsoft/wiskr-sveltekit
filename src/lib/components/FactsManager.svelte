@@ -265,26 +265,27 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   {#each facts.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as f, i (f.id)}
     <div 
       class="fact-card flex flex-col text-sm border rounded p-2 {getTypeBorderClass(f.type)}" 
-      style="background-color: var(--bg-card);"
+      style="background-color: var(--bg-card); min-height: 0;"
       data-fact-id={f.id}
     >
       <!-- Header: Title and Menu -->
-      <div class="flex-shrink-0">
-        <!-- Top row: Pin icon + Title + Menu (title wraps intelligently) -->
-        <div class="flex items-start gap-2">
+      <div class="flex-shrink-0 relative">
+        <!-- Top row: Pin icon + Title (title wraps intelligently) -->
+        <div class="flex items-start gap-2 pr-8">
           {#if f.pinned}
             <Pin size="16" class="text-gray-900 dark:text-gray-100 flex-shrink-0 mt-0.5" />
           {/if}
-          <div class="font-semibold leading-none break-words min-w-0 flex-1 pr-1 text-gray-900 dark:text-gray-100">{@html highlightText(f.key, searchTerm)}</div>
-          <!-- Triple-dot menu - fixed to top right -->
-          <div class="relative flex-shrink-0">
-            <button 
-              class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-1" 
-              on:click={() => toggleMenu(i)}
-              title="More actions"
-            >
-              <MoreHorizontal size="18" />
-            </button>
+          <div class="font-semibold leading-none break-words min-w-0 flex-1 text-gray-900 dark:text-gray-100">{@html highlightText(f.key, searchTerm)}</div>
+        </div>
+        <!-- Triple-dot menu - positioned with negative margins -->
+        <div class="absolute" style="top: -15px; right: -15px;">
+          <button 
+            class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-0" 
+            on:click={() => toggleMenu(i)}
+            title="More actions"
+          >
+            <MoreHorizontal size="16" />
+          </button>
           
             {#if openMenuIndex === i}
               <!-- Overlay to close menu when clicking outside -->
@@ -321,33 +322,34 @@ import LoadingSpinner from './LoadingSpinner.svelte';
                 </button>
               </div>
             {/if}
-          </div>
         </div>
       </div>
       
       <!-- Content -->
-      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 content-scrollbar" style="max-height: 140px;">
+      <div class="fact-content text-sm text-gray-700 dark:text-gray-300 mb-2 content-scrollbar" style="max-height: 140px !important; min-height: 0; overflow-y: auto !important; overflow-x: hidden;">
         {@html highlightText(f.value, searchTerm)}
       </div>
       
       <!-- Tags row: Type tag and regular tags combined -->
       <div class="flex-shrink-0 flex flex-wrap gap-1">
-        <button 
-          class="text-xs px-1 py-1 rounded font-medium {getTypeTagClass(f.type)} hover:opacity-80 transition-opacity cursor-pointer"
+        <a 
+          class="text-xs px-1 rounded font-medium {getTypeTagClass(f.type)} hover:opacity-80 transition-opacity cursor-pointer inline-block"
+          style="padding-top: 3px !important; padding-bottom: 3px !important; min-height: 0 !important;"
           on:click={() => handleTypeClick(f.type)}
           title="Filter by type: {getTypeDisplayName(f.type)}"
         >
           {getTypeDisplayName(f.type)}
-        </button>
+        </a>
         {#if f.tags && f.tags.length > 0}
           {#each f.tags as tag}
-            <button
-              class="text-xs px-1 py-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
+            <a
+              class="text-xs px-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer inline-block"
+              style="padding-top: 3px !important; padding-bottom: 3px !important; min-height: 0 !important;"
               on:click={() => handleTagClick(tag)}
               title="Filter by tag: {tag}"
             >
               {tag}
-            </button>
+            </a>
           {/each}
         {/if}
       </div>

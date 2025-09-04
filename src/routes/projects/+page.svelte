@@ -1708,21 +1708,6 @@ function handleTextAddToDocs(event) {
   
   <!-- LEFT PANEL: Facts/Docs -->
 <div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? (rightPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
-    {#if showLeftPanel && !isDesktop}
-      <!-- Mobile panel header -->
-      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
-        <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Facts & Docs</h2>
-        <button 
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          on:click={() => showLeftPanel = false}
-          aria-label="Close Facts & Docs panel"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    {/if}
     {#if showLeftPanel}
       <Sidebar
         bind:this={sidebarComponent}
@@ -1882,8 +1867,8 @@ function handleTextAddToDocs(event) {
       data-tutorial="sessions-panel"
     >
       {#if showSessionNavigator && !isDesktop}
-        <!-- Mobile session navigator header -->
-        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
+        <!-- Mobile session navigator header - hidden to save space -->
+        <!-- <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
           <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Chats & Branches</h2>
           <button 
             class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -1894,7 +1879,7 @@ function handleTextAddToDocs(event) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </div>
+        </div> -->
         <!-- Mobile session navigator content -->
         <div class="flex-1 overflow-hidden w-full" style="background-color: var(--bg-sessions-panel);">
           <SessionNavigator 
@@ -1941,21 +1926,6 @@ function handleTextAddToDocs(event) {
 
   <!-- RIGHT PANEL: Questions/Ideas -->
 <div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
-    {#if showRightPanel && !isDesktop}
-      <!-- Mobile panel header -->
-      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" style="background-color: var(--bg-header);">
-        <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Questions & Ideas</h2>
-        <button 
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          on:click={() => showRightPanel = false}
-          aria-label="Close Questions & Ideas panel"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    {/if}
     {#if showRightPanel}
       <IdeasColumn
         bind:this={ideasColumnComponent}
