@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
      import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift, ChevronDown, X, CreditCard } from 'lucide-svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
@@ -23,9 +23,56 @@
   let wasOpen = false;
   let showDropdown = false;
   let managingSubscription = false;
+  let portalContainer;
+  let dropdownPosition = { top: 0, left: 0 };
+  let dropdownButtonEl;
   
   // Reactive variable for facts grid size (converted to string for select element)
   $: factsGridSizeString = userPreferences.facts_grid_size?.toString() || '3';
+  
+  // Portal action to render dropdown at document body
+  function createPortal(node) {
+    // Create portal container if it doesn't exist
+    if (!portalContainer) {
+      portalContainer = document.createElement('div');
+      portalContainer.id = 'settings-dropdown-portal';
+      portalContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000000;';
+      document.body.appendChild(portalContainer);
+    }
+
+    // Move the node to the portal container
+    portalContainer.appendChild(node);
+    
+    // Enable pointer events on the dropdown itself
+    node.style.pointerEvents = 'auto';
+    
+    return {
+      destroy() {
+        if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      }
+    };
+  }
+  
+  // Update dropdown position
+  function updateDropdownPosition() {
+    if (dropdownButtonEl) {
+      const rect = dropdownButtonEl.getBoundingClientRect();
+      dropdownPosition = {
+        top: rect.bottom + 4,
+        left: rect.left
+      };
+    }
+  }
+  
+  // Handle clicks outside dropdown
+  function handleOutsideClick(event) {
+    if (showDropdown && portalContainer && !portalContainer.contains(event.target) && 
+        dropdownButtonEl && !dropdownButtonEl.contains(event.target)) {
+      showDropdown = false;
+    }
+  }
   
   // Tab configuration
   const tabs = [
@@ -234,7 +281,38 @@
       managingSubscription = false;
     }
   }
+  
+  // Add event listeners when dropdown is open
+  $: if (showDropdown && typeof document !== 'undefined') {
+    document.addEventListener('click', handleOutsideClick);
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+  } else if (typeof document !== 'undefined') {
+    document.removeEventListener('click', handleOutsideClick);
+    window.removeEventListener('resize', updateDropdownPosition);
+    window.removeEventListener('scroll', updateDropdownPosition, true);
+  }
+  
+  // Cleanup portal on destroy
+  onDestroy(() => {
+    if (portalContainer && portalContainer.parentNode) {
+      portalContainer.parentNode.removeChild(portalContainer);
+      portalContainer = null;
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('click', handleOutsideClick);
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    }
+  });
 </script>
+
+<style>
+  /* Ensure dropdown appears above everything */
+  :global(.settings-dropdown .absolute) {
+    z-index: 99999999 !important;
+  }
+</style>
 
 {#if isOpen}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -267,8 +345,14 @@
            {:else}
            <div class="relative settings-dropdown">
              <button
+               bind:this={dropdownButtonEl}
                class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-               on:click={() => showDropdown = !showDropdown}
+               on:click={() => {
+                 showDropdown = !showDropdown;
+                 if (showDropdown) {
+                   updateDropdownPosition();
+                 }
+               }}
              >
                <div class="flex items-center gap-3">
                  <svelte:component this={currentTab.icon} size="20" />
@@ -277,22 +361,6 @@
                <ChevronDown size="16" class="transition-transform {showDropdown ? 'rotate-180' : ''}" />
              </button>
             
-            {#if showDropdown}
-              <div class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
-                {#each tabs as tab}
-                                     <button
-                     class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors first:rounded-t-lg last:rounded-t-lg"
-                                           on:click={(e) => {
-                        e.preventDefault();
-                        handleTabSelect(tab.id);
-                      }}
-                   >
-                    <svelte:component this={tab.icon} size="20" />
-                    <span>{tab.label}</span>
-                  </button>
-                {/each}
-              </div>
-            {/if}
           </div>
          {/if}
         </div>
@@ -686,3 +754,25 @@
     </div>
   </div>
 {/if}
+
+<!-- Dropdown outside modal to avoid overflow clipping -->
+{#if showDropdown && isOpen && typeof document !== 'undefined'}
+  <div 
+    class="fixed border rounded-lg shadow-lg"
+    style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#374151' : 'white'}; border-color: var(--border-header-input); top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; z-index: 100000000; width: 256px;"
+  >
+    {#each tabs as tab}
+      <button
+        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors first:rounded-t-lg last:rounded-b-lg"
+        on:click={(e) => {
+          e.preventDefault();
+          handleTabSelect(tab.id);
+        }}
+      >
+        <svelte:component this={tab.icon} size="20" />
+        <span>{tab.label}</span>
+      </button>
+    {/each}
+  </div>
+{/if}
+

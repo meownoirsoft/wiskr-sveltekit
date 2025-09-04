@@ -76,6 +76,24 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           showConversationDropdown = false;
         }
       });
+
+      // DOM Inspector (XRay) - dev only
+      if (!import.meta.env.DEV) return;      // never run in prod
+      if (window.__xrayInit) return;         // avoid HMR dupes
+      window.__xrayInit = true;
+
+      (async () => {
+        // omit extension so .ts or .js both work
+        const mod = await import('$lib/devtools/xray');
+        const init = mod.init || mod.default;   // handle either export
+        if (typeof init !== 'function') {
+          console.error('XRay: export not found. Got:', Object.keys(mod));
+          return;
+        }
+        const api = init({ hotkey: 'Alt+X' });
+        window.__xray = api;
+        if (location.search.includes('xray') || localStorage.xray === '1') api.toggle(true);
+      })();
     }
   });
   
@@ -191,6 +209,14 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   function toggleTheme() {
     darkMode = !darkMode;
     localStorage.setItem('wiskr_theme', darkMode ? 'dark' : 'light');
+  }
+
+  // Function to reload projects data (for dev)
+  function reloadProjects() {
+    if (browser && isProjectsPage) {
+      // Dispatch a custom event that the projects page can listen for
+      window.dispatchEvent(new CustomEvent('reload-projects'));
+    }
   }
   
   // Check if we're on the projects page
@@ -610,14 +636,14 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       <div class="flex-1 flex items-center gap-2 md:gap-4">
         <!-- Left section content will go here -->
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 -ml-4 md:ml-0">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
         {#if isProjectsPage}
           <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
             <!-- Left panel toggle (Context/Facts) -->
             <button
               type="button"
-              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
               aria-label="Toggle Facts & Docs"
               title="Facts & Docs"
@@ -634,7 +660,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <!-- Project Menu Button -->
             <button
               type="button"
-              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => {
                 window.dispatchEvent(new CustomEvent('mobile:toggle-projects'));
               }}
@@ -648,7 +674,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <div class="relative">
               <button
                 type="button"
-                class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+                class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
                 on:click={() => {
           
                   window.dispatchEvent(new CustomEvent('mobile:toggle-sessions'));
@@ -665,11 +691,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         
                  <!-- Desktop: Wiskr brand (show on authenticated pages + login/signup) -->
          {#if shouldShowLogo && !isPublicPage}
-           <a href="/" class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+           <button type="button" on:click={reloadProjects} class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors hover:opacity-80">
              <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
                <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
              </span>
-           </a>
+           </button>
          {/if}
         
                  <!-- Public pages: Show desktop logo on left -->
@@ -745,11 +771,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
              <!-- Center: Mobile Wiskr logo -->
                {#if shouldShowLogo && !isPublicPage}
           <div class="{isDesktop ? 'hidden' : 'flex'} flex-1 items-center justify-center">
-            <a href="/" class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+            <button type="button" on:click={reloadProjects} class="flex-shrink-0 flex items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors hover:opacity-80">
               <span class="text-lg inline-flex items-center">
                 <img src="/wiskr-claw.png" alt="Wiskr" class="w-12 py-2 mb-0" /> 
               </span>
-            </a>
+            </button>
           </div>
                {:else if isPublicPage}
           <!-- Public pages: Hide duplicate logo in center on mobile -->
@@ -760,13 +786,15 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
        {/if}
       <!-- Mobile: Search icon button (positioned to right of logo for symmetry) -->
       {#if !isPublicPage}
-        <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
+        <div class="{isDesktop ? 'hidden' : 'flex'} items-center" style="gap: 0 !important;">
           <button
             type="button"
-            class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+            class="px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+            style="margin-right: -10px; min-height: auto !important; min-width: auto !important;"
             title="Search"
             on:click={() => {
               window.dispatchEvent(new CustomEvent('mobile:toggle-search'));
+              window.dispatchEvent(new CustomEvent('mobile:close-menu'));
             }}
             aria-label="Search"
           >
@@ -780,7 +808,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       </div>
 
       <!-- Right side: Menus and controls -->
-      <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
+      <div class="flex items-center gap-0 md:gap-4 flex-shrink-0 -mr-4 md:mr-0">
         {#if isProjectsPage && !isPublicPage}
           <!-- Desktop: Usage Stats -->
           <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
@@ -815,9 +843,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           <div class="{isDesktop ? 'hidden' : 'block'} relative">
             <button
               type="button"
-              class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              style="min-height: auto !important; min-width: auto !important;"
               on:click={() => {
                 window.dispatchEvent(new CustomEvent('mobile:toggle-menu'));
+                window.dispatchEvent(new CustomEvent('mobile:close-search'));
               }}
               aria-label="Menu"
             >
@@ -832,7 +862,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             <!-- Right panel toggle (Add-Ins) -->
             <button
               type="button"
-              class="flex flex-col items-center px-0.5 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
+              class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
               aria-label="Toggle Questions & Ideas"
               title="Questions & Ideas"
@@ -939,11 +969,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         }
       }}
     >
-      <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-4" style="background-color: var(--bg-primary); z-index: 9999999;">
+                  <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 border rounded-lg shadow-xl py-4" style="background-color: {darkMode ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {darkMode ? '#1e293b' : '#60a5fa'} !important; color: white !important; z-index: 9999999;">
         <!-- Header -->
-        <div class="px-4 pb-3 border-b border-gray-200 dark:border-gray-600">
+        <div class="px-4 pb-3 border-b" style="border-color: {darkMode ? '#1e293b' : '#1d4ed8'} !important;">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</h3>
+            <h3 class="text-sm font-medium" style="color: white !important;">Projects</h3>
             {#await import('$lib/components/FeatureGate.svelte') then { default: FeatureGate }}
               {@const effectiveTier = data?.effectiveTier || 0}
               {@const isAtProjectLimit = effectiveTier === 0 && projects.length >= 3}

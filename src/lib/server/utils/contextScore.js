@@ -26,7 +26,7 @@ function isGenericWelcomeDescription(description) {
  * @param {string} description - The project description
  * @returns {number} Score from 0-30 based on description quality
  */
-function calculateDescriptionQualityScore(description) {
+export function calculateDescriptionQualityScore(description) {
   if (!description || isGenericWelcomeDescription(description)) {
     return 0;
   }

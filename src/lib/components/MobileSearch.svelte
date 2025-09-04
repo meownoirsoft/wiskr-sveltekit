@@ -208,9 +208,6 @@
 
     }
     
-    // Close all panels first
-    if (onCloseAllPanels) onCloseAllPanels();
-    
     // Open the relevant panel based on result type
     if (onOpenPanel) onOpenPanel(result.type);
     
@@ -319,10 +316,10 @@
 
 <!-- Mobile Search Panel -->
 {#if isVisible}
-  <div class="fixed top-16 left-0 right-0 z-[300] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-lg" style="background-color: var(--bg-header);">
+      <div class="fixed top-16 left-0 right-0 z-[300] border-b shadow-lg" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
     
     <!-- Search Controls Row -->
-    <div class="flex items-center gap-3 p-4">
+    <div class="flex items-center gap-2 p-3">
       <!-- Search Input with Clear X -->
       <div class="flex-1 relative">
         <input
@@ -330,12 +327,14 @@
           type="text"
           bind:value={searchInput}
           placeholder="Search project..."
-          class="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style="border-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1d4ed8'} !important; background-color: white !important; color: black !important;"
           on:keydown={handleKeydown}
         />
         {#if searchInput}
           <button
-            class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            class="absolute right-3 top-1/2 transform -translate-y-1/2 p-1"
+            style="color: #1d4ed8 !important;"
             on:click={clearSearch}
             title="Clear search"
           >
@@ -346,7 +345,10 @@
       
       <!-- Go Button -->
       <button
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        class="px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        style="background-color: var(--color-accent);"
+        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
         on:click={() => {
           handleSearch();
         }}
@@ -379,7 +381,18 @@
         <div class="p-4 space-y-3">
           {#each searchResults as result}
             <div 
-              class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg {result.type === 'error' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'} transition-colors"
+              class="p-3 border rounded-lg {result.type === 'error' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : 'cursor-pointer transition-colors'}"
+              style="border-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1d4ed8'} !important; background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#f8fafc'} !important;"
+              on:mouseenter={(e) => {
+                if (result.type !== 'error') {
+                  e.target.style.backgroundColor = typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0';
+                }
+              }}
+              on:mouseleave={(e) => {
+                if (result.type !== 'error') {
+                  e.target.style.backgroundColor = typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#f8fafc';
+                }
+              }}
               on:click={() => {
                 if (result.type === 'error') return; // Don't handle clicks for error messages
                 handleResultClick(result);
@@ -387,7 +400,7 @@
             >
               <!-- Result Header -->
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium {result.type === 'error' ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'} uppercase tracking-wide">
+                <span class="text-xs font-medium {result.type === 'error' ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'} uppercase tracking-wide" style="color: {result.type === 'error' ? '' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#60a5fa' : '#1d4ed8')} !important;">
                   {result.type === 'error' ? 'Rate Limited' : getTypeLabel(result.type)}
                   {#if result.type === 'chats' && result.instanceCount > 1}
                     <span class="ml-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
@@ -395,17 +408,17 @@
                     </span>
                   {/if}
                 </span>
-                <ArrowRight size="16" class="text-gray-400" />
+                <ArrowRight size="16" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'} !important;" />
               </div>
               
               <!-- Result Title -->
-              <div class="font-medium text-gray-900 dark:text-gray-100 text-sm mb-1">
+              <div class="font-medium text-sm mb-1" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937'} !important;">
                 {result.title || result.name || 'Untitled'}
               </div>
               
               <!-- Result Snippet -->
               {#if result.snippet}
-                <div class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                <div class="text-xs line-clamp-2" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#d1d5db' : '#4b5563'} !important;">
                   {result.snippet}
                 </div>
               {/if}
@@ -417,11 +430,6 @@
       <!-- No Results -->
       <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
         No results found for "{searchInput}"
-      </div>
-    {:else if !searchInput}
-      <!-- Search Prompt -->
-      <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-        Type to search your project (minimum 2 characters)
       </div>
     {/if}
   </div>

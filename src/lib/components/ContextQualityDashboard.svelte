@@ -84,16 +84,30 @@
   function getSuggestions(analysis) {
     const suggestions = [];
     
-    if (!analysis?.summary?.hasProjectDescription) {
-      suggestions.push({
-        type: 'critical',
-        icon: FileText,
-        title: 'Add Project Description',
-        description: 'Write a comprehensive description of your project goals, themes, and context.',
-        points: '+30 points',
-        action: 'Add Description',
-        actionType: 'open-settings'
-      });
+    // Check if project description needs improvement (less than 30 points)
+    const descriptionScore = analysis?.summary?.descriptionScore || 0;
+    if (descriptionScore < 30) {
+      if (descriptionScore === 0) {
+        suggestions.push({
+          type: 'critical',
+          icon: FileText,
+          title: 'Add Project Description',
+          description: 'Write a comprehensive description of your project goals, themes, and context.',
+          points: '+30 points',
+          action: 'Add Description',
+          actionType: 'open-settings'
+        });
+      } else {
+        suggestions.push({
+          type: 'important',
+          icon: FileText,
+          title: 'Improve Project Description',
+          description: `Your description scores ${descriptionScore}/30 points. Add more detail about goals, features, users, or technology to reach the maximum score.`,
+          points: `+${30 - descriptionScore} points`,
+          action: 'Improve Description',
+          actionType: 'open-settings'
+        });
+      }
     }
 
     const pinnedFactsCount = analysis?.summary?.pinnedFactsCount || 0;
@@ -109,18 +123,6 @@
       });
     }
 
-    const entityCardsCount = analysis?.summary?.entityCardsCount || 0;
-    if (entityCardsCount < 5) {
-      suggestions.push({
-        type: 'helpful',
-        icon: Users,
-        title: 'Generate Entity Cards',
-        description: `You have ${entityCardsCount} entity cards. These AI-generated summaries help organize information about characters, places, and concepts.`,
-        points: `+${Math.min(2.5 * (8 - entityCardsCount), 20)} points`,
-        action: 'Generate Cards',
-        actionType: 'generate-entities'
-      });
-    }
 
     return suggestions;
   }
@@ -130,8 +132,6 @@
       dispatch('open-settings');
     } else if (suggestion.actionType === 'navigate-facts') {
       dispatch('navigate-facts');
-    } else if (suggestion.actionType === 'generate-entities') {
-      dispatch('generate-entities');
     }
     close();
   }

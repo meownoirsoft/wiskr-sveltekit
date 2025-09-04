@@ -88,11 +88,10 @@
      <div class="border-t border-gray-200 dark:border-gray-700 {isMobile ? 'mobile-ask-form' : ''}" class:hidden={isMobile && !showMobileForm}>
       
       <!-- Top Row: Friend Selection and ReAsk -->
-      <div class="px-2 sm:px-3 pt-2 pb-1">
+      <div class="px-2 sm:px-3 pt-1 pb-0.5">
         <!-- First row: Model selector -->
-        <div class="flex items-center justify-between pb-2">
+        <div class="flex items-center justify-between pb-1">
           <div class="{isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-1 sm:gap-2'} min-w-0">
-            <label for="model-select" class="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">Wiskr:</label>
             <div class="{isMobile ? 'w-full' : 'flex-1'}">
               <ModelDropdown
                 bind:modelKey
@@ -157,7 +156,7 @@
       </div>
       
       <!-- Box and Send -->
-      <form class="px-2 sm:px-3 pb-2 sm:pb-3 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
+      <form class="px-2 sm:px-3 pb-1 sm:pb-1.5 flex gap-2 {isMobile ? 'items-center justify-center' : 'items-center'}" on:submit|preventDefault={send}>
         <div class="relative {isMobile ? 'flex-1' : 'w-full'}">
           <textarea id="ask-box" class="border border-gray-300 dark:border-gray-600 bg-slate-50 dark:bg-slate-700 text-gray-900 dark:text-gray-100 rounded p-2 sm:p-3 pr-8 w-full resize-none text-sm sm:text-base min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)]" 
           rows="2" 

@@ -927,3 +927,38 @@ code {
   70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
   100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
 }
+
+/* Mobile browser UI handling */
+@supports (height: 100dvh) {
+  /* Use dynamic viewport height when available */
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+  
+  .h-screen {
+    height: 100dvh;
+  }
+}
+
+/* Prevent mobile browser toolbars from interfering */
+@media (max-width: 768px) {
+  html, body {
+    /* Prevent zoom on input focus */
+    touch-action: manipulation;
+    /* Use full viewport height */
+    height: 100vh;
+    height: 100dvh;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure app takes full viewport */
+  #svelte {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  /* Prevent address bar from showing/hiding */
+  .fixed {
+    position: fixed !important;
+  }
+}

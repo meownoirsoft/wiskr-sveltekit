@@ -108,6 +108,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   onMount(() => {
     if (browser) {
       window.addEventListener('mobile:toggle-search', toggleMobileSearch);
+      window.addEventListener('mobile:close-search', () => {
+        showMobileSearch = false;
+      });
       window.addEventListener('search:clear-filter', () => {
         search = '';
       });
@@ -116,6 +119,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     return () => {
       if (browser) {
         window.removeEventListener('mobile:toggle-search', toggleMobileSearch);
+        window.removeEventListener('mobile:close-search', () => {
+          showMobileSearch = false;
+        });
         window.removeEventListener('search:clear-filter', () => {
           search = '';
         });
@@ -154,7 +160,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     // Implementation will depend on the result type
     
     // Set the search term to filter content in panels
-    const searchTerm = result.searchTerm || searchInput || '';
+    const searchTerm = result.searchTerm || '';
     search = searchTerm;
     
     // Dispatch event to highlight and scroll to result
@@ -531,6 +537,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       projectsRefreshHandler = (e) => reloadProjects(e.detail?.id);
       window.addEventListener('projects:refresh', projectsRefreshHandler);
       
+      // Listen for logo click to reload projects (for dev)
+      window.addEventListener('reload-projects', () => {
+        reloadProjects();
+      });
+      
       // Listen for project selection from header
       window.addEventListener('project:selected', (e) => {
         if (e.detail?.id) {
@@ -582,6 +593,11 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         }
       });
       
+      // Listen for mobile menu close event
+      window.addEventListener('mobile:close-menu', () => {
+        showMobileMenu = false;
+      });
+      
     // Listen for project menu toggle from mobile menu button
     window.addEventListener('mobile:toggle-projects', () => {
       window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
@@ -598,6 +614,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       if (projectsRefreshHandler) {
         window.removeEventListener('projects:refresh', projectsRefreshHandler);
       }
+      window.removeEventListener('reload-projects', () => {
+        reloadProjects();
+      });
       if (usageToggleHandler) {
         window.removeEventListener('usage:toggle', usageToggleHandler);
       }
@@ -626,6 +645,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
           showLeftPanel = false;
           showRightPanel = false;
         }
+      });
+      window.removeEventListener('mobile:close-menu', () => {
+        showMobileMenu = false;
       });
       window.removeEventListener('mobile:toggle-projects', () => {
         window.dispatchEvent(new CustomEvent('layout:toggle-project-menu'));
@@ -1948,7 +1970,7 @@ function handleTextAddToDocs(event) {
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
-    class="fixed inset-0 z-[50]" 
+    class="fixed inset-0 z-[200]" 
     on:click={() => {
       showMobileMenu = false;
       // Keep panels hidden on mobile for maximum content space
@@ -1958,11 +1980,11 @@ function handleTextAddToDocs(event) {
       }
     }}
   >
-    <div class="absolute top-16 right-6 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[51]" style="background-color: var(--bg-primary);">
+          <div class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
       <!-- Usage Stats -->
       <button 
         type="button"
-        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
+        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors" 
         on:click={() => {
           showUsagePopover = !showUsagePopover;
           showMobileMenu = false;
@@ -1978,7 +2000,7 @@ function handleTextAddToDocs(event) {
       {#if data?.isAdmin}
         <a 
           href="/context-dashboard{current?.id ? `?projectId=${current.id}` : ''}"
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
             showLeftPanel = false;
@@ -1994,7 +2016,7 @@ function handleTextAddToDocs(event) {
         <!-- Settings Button -->
         <button 
           type="button"
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             window.dispatchEvent(new CustomEvent('layout:open-settings', { detail: { tab: 'account' } }));
             showMobileMenu = false;
@@ -2009,7 +2031,7 @@ function handleTextAddToDocs(event) {
         <!-- Logout -->
         <a 
           href="/logout" 
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
             showLeftPanel = false;
@@ -2023,7 +2045,7 @@ function handleTextAddToDocs(event) {
         <!-- Login -->
         <a 
           href="/login" 
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
             showLeftPanel = false;
@@ -2036,7 +2058,7 @@ function handleTextAddToDocs(event) {
         <!-- Sign Up -->
         <a 
           href="/signup" 
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
             showLeftPanel = false;

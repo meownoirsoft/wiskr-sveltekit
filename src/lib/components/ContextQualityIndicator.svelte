@@ -123,13 +123,24 @@
     
     const suggestions = [];
     
-    if (!analysis.summary?.hasProjectDescription) {
-      suggestions.push({
-        icon: FileText,
-        text: 'Add a project description',
-        points: '+30 points',
-        action: () => dispatch('open-settings')
-      });
+    // Check if project description needs improvement (less than 30 points)
+    const descriptionScore = analysis.summary?.descriptionScore || 0;
+    if (descriptionScore < 30) {
+      if (descriptionScore === 0) {
+        suggestions.push({
+          icon: FileText,
+          text: 'Add a project description',
+          points: '+30 points',
+          action: () => dispatch('open-settings')
+        });
+      } else {
+        suggestions.push({
+          icon: FileText,
+          text: 'Improve project description',
+          points: `+${30 - descriptionScore} points`,
+          action: () => dispatch('open-settings')
+        });
+      }
     }
 
     const pinnedFactsCount = analysis.summary?.pinnedFactsCount || 0;
@@ -143,16 +154,6 @@
       });
     }
 
-    const entityCardsCount = analysis.summary?.entityCardsCount || 0;
-    if (entityCardsCount < 5) {
-      const needed = Math.min(5 - entityCardsCount, 8);
-      suggestions.push({
-        icon: Users,
-        text: `Generate ${needed} more entity cards`,
-        points: `+${Math.round(needed * 2.5)} points`,
-        action: () => dispatch('generate-entities')
-      });
-    }
 
     return suggestions.slice(0, 3); // Show max 3 suggestions
   }
@@ -394,15 +395,6 @@
               </div>
             {/if}
             
-            <!-- View Details Link -->
-            <div class="pt-3 mt-3 border-t dark:border-gray-700">
-              <button
-                class="w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                on:click={openQualityDashboard}
-              >
-                View detailed breakdown →
-              </button>
-            </div>
           {/if}
         </div>
       </section>

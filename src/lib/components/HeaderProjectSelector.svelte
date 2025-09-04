@@ -178,18 +178,18 @@
     <div class="space-y-3">
       <!-- Search box -->
       <div class="relative">
-        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
+        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;" />
         <input
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
-          style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
+          style="background-color: white !important; border-color: #1d4ed8 !important; color: black !important;"
           placeholder="Search projects..."
           bind:value={search}
         />
         {#if search}
           <button
             class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
-            style="color: var(--text-header-secondary);"
+            style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
             on:click={() => search = ''}
           >
             <X size="16" />
@@ -198,7 +198,7 @@
       </div>
       
       <!-- Project list -->
-      <div class="border rounded-lg overflow-hidden max-h-48 overflow-y-auto" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
+              <div class="border rounded-lg overflow-hidden max-h-48 overflow-y-auto" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
         {#each filtered as project}
           <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-500 dark:bg-blue-800' : ''} transition-colors border-b last:border-b-0" style="border-color: var(--border-header-input);">
             <button
@@ -206,12 +206,12 @@
               on:click={() => selectProject(project)}
             >
               <span class="text-sm">{project.icon ?? '📁'}</span>
-              <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
+              <span class="font-medium text-sm truncate" style="color: #f8fafc !important;">{project.name}</span>
             </button>
             <div class="flex items-center gap-1 px-2">
               <button
                 class="p-1 transition-colors"
-                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
+                style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
                 title="Project Settings"
                 on:click={(e) => openSettings(project, e)}
               >
@@ -219,7 +219,7 @@
               </button>
               <button
                 class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-                style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
+                style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
                 title="Delete"
                 on:click={(e) => deleteProject(project, e)}
               >
@@ -229,7 +229,7 @@
           </div>
         {/each}
         {#if !filtered.length}
-          <div class="p-3 text-sm text-center" style="color: var(--text-header-secondary);">
+          <div class="p-3 text-sm text-center" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;">
             {search ? 'No projects found' : 'No projects yet'}
           </div>
         {/if}
@@ -258,13 +258,13 @@
 {#if showDropdown && !isMobile && typeof document !== 'undefined'}
   <div 
     use:createPortal
-    class="fixed w-80 border rounded-lg shadow-lg max-h-[70vh] overflow-hidden project-selector-dropdown bg-white dark:bg-gray-800"
-    style="border-color: var(--border-header-input); top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
+    class="fixed w-80 border rounded-lg shadow-lg max-h-[70vh] overflow-hidden project-selector-dropdown"
+    style="background-color: #3b82f6 !important; border: 2px solid #1d4ed8 !important; color: white !important; top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
   >
     <!-- Header with search -->
     <div class="p-3 border-b" style="border-color: var(--border-header-input);">
       <div class="flex items-center justify-between mb-2">
-        <h4 class="font-semibold text-sm" style="color: var(--text-header);">Projects</h4>
+        <h4 class="font-semibold text-sm" style="color: #f8fafc !important;">Projects</h4>
         <button
           class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-all hover:scale-105 active:scale-95 font-medium"
           style="background-color: var(--color-accent); color: var(--color-accent-text);"
@@ -279,18 +279,18 @@
       </div>
       
       <div class="relative">
-        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
+        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;" />
         <input
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
-          style="background-color: var(--bg-header-input); border-color: var(--border-header-input); color: var(--text-header);"
+          style="background-color: white !important; border-color: #1d4ed8 !important; color: black !important;"
           placeholder="Search projects..."
           bind:value={search}
         />
         {#if search}
           <button
             class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
-            style="color: var(--text-header-secondary);"
+            style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
             on:click={() => search = ''}
           >
             <X size="16" />
@@ -302,18 +302,19 @@
     <!-- Project list -->
     <div class="max-h-64 overflow-y-auto">
       {#each filtered as project}
-        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-500 dark:bg-blue-800' : ''} transition-colors">
+        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;">
           <button
             class="flex items-center gap-2 flex-1 p-3 text-left"
+            style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;"
             on:click={() => selectProject(project)}
           >
             <span class="text-sm">{project.icon ?? '📁'}</span>
-            <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? 'white' : 'var(--text-header)'};">{project.name}</span>
+            <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;">{project.name}</span>
           </button>
           <div class="flex items-center gap-1 px-2">
             <button
               class="p-1 transition-colors"
-              style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
+              style="color: {current?.id === project.id ? '#f8fafc' : 'black'} !important;"
               title="Project Settings"
               on:click={(e) => openSettings(project, e)}
             >
@@ -321,7 +322,7 @@
             </button>
             <button
               class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-              style="color: {current?.id === project.id ? 'white' : 'var(--text-header-secondary)'};"
+              style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
               title="Delete"
               on:click={(e) => deleteProject(project, e)}
             >
@@ -364,4 +365,5 @@
   :global(#project-selector-portal) {
     z-index: 999999 !important;
   }
+
 </style>

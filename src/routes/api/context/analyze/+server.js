@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { isAdmin } from '$lib/auth/admin';
-import { calculateContextQualityScore } from '$lib/server/utils/contextScore.js';
+import { calculateContextQualityScore, calculateDescriptionQualityScore } from '$lib/server/utils/contextScore.js';
 
 export const POST = async ({ request, locals }) => {
   try {
@@ -247,6 +247,9 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
     processingTimeMs: Date.now() - startTime
   };
 
+  // Calculate individual component scores
+  const descriptionScore = calculateDescriptionQualityScore(project?.description || '');
+  
   analysis.summary = {
     hasProjectDescription: !!project?.description?.trim(),
     hasPinnedFacts: (pinnedFacts?.length || 0) > 0,
@@ -256,6 +259,7 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
     pinnedFactsCount: pinnedFacts?.length || 0,
     entityCardsCount: entityCards?.length || 0,
     pinnedFactsPercentage: totalFactsCount ? Math.round((pinnedFacts?.length || 0) / totalFactsCount * 100) : 0,
+    descriptionScore: descriptionScore,
     contextQualityScore: calculateContextQualityScore({
       hasProjectDescription: !!project?.description?.trim(),
       projectDescription: project?.description || '',

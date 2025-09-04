@@ -6,6 +6,7 @@
   import { getAIName, getAIAvatar, getAIInfo } from '$lib/config/aiAvatars.js';
   import { getUserAvatarUrl } from '$lib/utils/avatars.js';
   import FeedbackButtons from './FeedbackButtons.svelte';
+  import LoadingSpinner from './LoadingSpinner.svelte';
 
   export let message;
   export let index;
@@ -170,23 +171,31 @@
     {/if}
     
     {#if message.role === 'assistant'}
-      <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
-        {@html highlightText(renderMarkdown(message.content), searchTerm)}
-      </div>
+      {#if message.isLoading}
+        <div class="flex items-center gap-3 py-2">
+          <LoadingSpinner size="sm" text="AI is thinking..." showText={true} center={false} />
+        </div>
+      {:else}
+        <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
+          {@html highlightText(renderMarkdown(message.content), searchTerm)}
+        </div>
+      {/if}
       
-      <!-- Select All button for assistant messages (bottom right) -->
-      <button
-        class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-1 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation h-8 sm:h-6" 
-        style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
-        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
-        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
-        on:click={() => dispatch('select-all', index)}
-        title="Select all and format for socials"
-      >
-        <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
-        <span class="hidden xs:inline">Select All</span>
-        <span class="xs:hidden">Select</span>
-      </button>
+      <!-- Select All button for assistant messages (bottom right) - only show when not loading -->
+      {#if !message.isLoading}
+        <button
+          class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-1 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation h-8 sm:h-6" 
+          style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
+          on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
+          on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
+          on:click={() => dispatch('select-all', index)}
+          title="Select all and format for socials"
+        >
+          <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
+          <span class="hidden xs:inline">Select All</span>
+          <span class="xs:hidden">Select</span>
+        </button>
+      {/if}
     {:else}
       <div class="text-sm sm:text-base -mt-2 leading-normal">
         {@html highlightText(message.content, searchTerm)}
@@ -196,7 +205,7 @@
 
   <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center {message.role === 'user' ? '' : 'mr-3 sm:mr-6'} mt-2 gap-2">
     <!-- Highlight-to-add feature hint (only for assistant messages) -->
-    {#if message.role === 'assistant' && message.content.trim()}
+    {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
       <div class="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
         <Type size="14" class="flex-shrink-0" />
         <span class="hidden sm:inline">Click & drag to capture/format</span>
@@ -205,7 +214,7 @@
     {/if}
     
     <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
-      {#if message.role === 'assistant' && message.content.trim()}
+      {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
         <!-- Feedback Buttons -->  
         {#if current?.id}
           <div class="">
@@ -220,7 +229,7 @@
         {/if}
       {/if}
       
-      {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main'}
+      {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main' && !message.isLoading}
         <div class="z-10">
           <button id="branch-button-{index}"
             class="flex items-center gap-1 text-xs sm:text-sm px-2 py-1 rounded border transition-colors relative h-10 sm:h-8 touch-action-manipulation"
@@ -241,7 +250,7 @@
         </div>
       {/if}
       
-      {#if message.role === 'assistant' && message.content.trim()}
+      {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
         <div class="z-10">
           <button
             class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-10 sm:h-8 touch-action-manipulation overflow-hidden"

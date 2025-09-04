@@ -226,6 +226,7 @@
       factTypeDisplayName.toLowerCase().includes(searchTerm) ||
       (fact.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
     
+    
     if (!matchesSearch) return false;
     
     // Then apply tag filters if any
@@ -241,6 +242,7 @@
       return selectedTags.some(tag => allFilterableItems.includes(tag));
     }
   });
+  
   
   $: filteredDocs = docs.filter(doc => {
     // First apply search term filter

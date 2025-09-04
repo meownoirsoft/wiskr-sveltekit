@@ -127,6 +127,17 @@
       }
     ];
 
+    // Trigger scroll to bottom after adding new messages
+    if (browser) {
+      // Immediate scroll trigger
+      window.dispatchEvent(new CustomEvent('chat:scroll-to-bottom'));
+      
+      // Also trigger after a short delay to ensure DOM updates
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('chat:scroll-to-bottom'));
+      }, 50);
+    }
+
     // Check if offline - queue the request
     if (!getNetworkStatus()) {
       messages = messages.map((m, i, arr) => 
