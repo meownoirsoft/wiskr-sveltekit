@@ -172,7 +172,7 @@
   });
 </script>
 
-<div class="relative" bind:this={dropdownEl} data-tutorial="project-selector">
+<div id="project-selector" class="relative" bind:this={dropdownEl} data-tutorial="project-selector">
   {#if isMobile}
     <!-- Mobile: Direct search and project list -->
     <div class="space-y-3">
@@ -256,10 +256,10 @@
 
 <!-- True portal dropdown using Svelte action -->
 {#if showDropdown && !isMobile && typeof document !== 'undefined'}
-  <div 
+  <div id="project-selector-dropdown"
     use:createPortal
     class="fixed w-80 border rounded-lg shadow-lg max-h-[70vh] overflow-hidden project-selector-dropdown"
-    style="background-color: #3b82f6 !important; border: 2px solid #1d4ed8 !important; color: white !important; top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
+    style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'} !important; color: white !important; top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
   >
     <!-- Header with search -->
     <div class="p-3 border-b" style="border-color: var(--border-header-input);">
@@ -302,7 +302,7 @@
     <!-- Project list -->
     <div class="max-h-64 overflow-y-auto">
       {#each filtered as project}
-        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;">
+        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important; background-color: {current?.id === project.id ? '#1d4ed8' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#e0f2fe')} !important;">
           <button
             class="flex items-center gap-2 flex-1 p-3 text-left"
             style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;"

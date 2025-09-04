@@ -969,7 +969,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         }
       }}
     >
-                  <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 border rounded-lg shadow-xl py-4" style="background-color: {darkMode ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {darkMode ? '#1e293b' : '#60a5fa'} !important; color: white !important; z-index: 9999999;">
+                  <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 border rounded-lg shadow-xl py-4" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'} !important; color: white !important; z-index: 9999999;">
         <!-- Header -->
         <div class="px-4 pb-3 border-b" style="border-color: {darkMode ? '#1e293b' : '#1d4ed8'} !important;">
           <div class="flex items-center justify-between">
