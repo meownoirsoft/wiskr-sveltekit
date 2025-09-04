@@ -1,45 +1,34 @@
-import adapter from '@sveltejs/adapter-auto';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-node';
 
 const isDev = process.env.NODE_ENV === 'development';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	kit: {
-		adapter: adapter(),
-		// Prerender only essential pages in dev for faster startup
-		prerender: {
-			entries: isDev ? [] : ['*']
-		},
-		// Faster builds in dev
-		files: {
-			// Use faster file system operations
-		}
-	},
-	extensions: ['.svelte'],
-	compilerOptions: {
-		// More aggressive optimizations in dev
-		dev: isDev,
-		// Disable sourcemaps for faster compilation (enable when debugging)
-		sourcemap: false,
-		// Faster compilation with reduced CSS generation
-		css: 'injected',
-		// Faster hydration
-		hydratable: true,
-		// Skip some runtime checks in dev for speed
-		accessors: false
-	},
-	vitePlugin: {
-		// Disable inspector to prevent hydration errors
-		inspector: false,
-		// Enhanced HMR with partial acceptance for better performance
-		hot: isDev ? {
-			partialAccept: true,
-			// Accept CSS changes without full reload
-			acceptCSS: true,
-			// Better error handling
-			overlay: true
-		} : true
-	}
+  kit: {
+    adapter: adapter({
+      precompress: true, // gzip/brotli for static assets
+      out: 'build'       // Railway will run "node build"
+    }),
+    // If you rely on SSR, do NOT prerender everything.
+    // Remove your previous prerender override unless you truly want a static export.
+    // prerender: { entries: isDev ? [] : ['*'] }
+  },
+
+  extensions: ['.svelte'],
+
+  compilerOptions: {
+    dev: isDev,
+    hydratable: true,
+    css: 'injected',
+    sourcemap: false,
+    accessors: false,
+    // Svelte 5: HMR is in core — do this and REMOVE vitePlugin.hot
+    hmr: isDev
+  },
+
+  // Remove/avoid vitePlugin.hot; it causes the Svelte 5 warning.
+  // vitePlugin: { inspector: false }
 };
 
 export default config;
