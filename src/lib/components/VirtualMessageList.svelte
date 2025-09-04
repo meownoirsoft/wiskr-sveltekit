@@ -640,7 +640,7 @@
      </div>
        {:else if isSearchMode && searchResultMessageId}
       <!-- Search result mode - show only the result with context -->
-      <div class="text-center text-blue-600 dark:text-blue-400 py-8 mt-8 border-b border-blue-200 dark:border-blue-800">
+      <div class="text-center text-blue-600 dark:text-blue-400 py-4 mt-4 border-b border-blue-200 dark:border-blue-800">
         <div class="text-sm font-medium">🔍 Search Result</div>
                  <div class="text-xs mt-1">Showing user prompt + result message</div>
         <button 

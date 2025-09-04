@@ -263,7 +263,20 @@
   >
     <!-- Header with search -->
     <div class="p-3 border-b" style="border-color: var(--border-header-input);">
-      <h4 class="font-semibold text-sm mb-2" style="color: var(--text-header);">Projects</h4>
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="font-semibold text-sm" style="color: var(--text-header);">Projects</h4>
+        <button
+          class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-all hover:scale-105 active:scale-95 font-medium"
+          style="background-color: var(--color-accent); color: var(--color-accent-text);"
+          on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
+          on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
+          on:click={createNewProject}
+          title="Create New Project"
+        >
+          <Plus size="12" />
+          <span>New</span>
+        </button>
+      </div>
       
       <div class="relative">
         <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: var(--text-header-secondary);" />
@@ -324,20 +337,6 @@
       {/if}
     </div>
 
-    <!-- New Project Button -->
-    <div class="p-3 border-t" style="border-color: var(--border-header-input);">
-      <button
-        class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
-        style="background-color: var(--color-accent); color: var(--color-accent-text);"
-        on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-        on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-        on:click={createNewProject}
-        title="Create New Project"
-      >
-        <Plus size="16" />
-        <span>New Project</span>
-      </button>
-    </div>
   </div>
 {/if}
 

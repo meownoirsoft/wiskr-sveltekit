@@ -165,11 +165,26 @@ import VirtualMessageList from './VirtualMessageList.svelte';
       highlightedMessageId = null;
     };
     
+    // Listen for search show result events (from desktop search)
+    const handleSearchShowResult = (event) => {
+      const { messageId, searchTerm } = event.detail;
+      console.log('🔍 ChatInterface: search:show-result event received:', { messageId, searchTerm });
+      
+      // Use VirtualMessageList's showSearchResult method for search mode (same as mobile search)
+      if (chatContainer && typeof chatContainer.showSearchResult === 'function') {
+        console.log('🔍 ChatInterface: Using VirtualMessageList showSearchResult for desktop search');
+        chatContainer.showSearchResult(messageId, searchTerm);
+      } else {
+        console.error('❌ ChatInterface: chatContainer or showSearchResult method not available for desktop search');
+      }
+    };
+    
     window.addEventListener('search:filter', handleGlobalSearchFilter);
     window.addEventListener('search:clear-filter', handleGlobalSearchClear);
     window.addEventListener('search:highlight-result', handleSearchHighlight);
     window.addEventListener('chat:scroll-to-message', handleChatScrollToMessage);
     window.addEventListener('search:restore-chat', handleSearchRestore);
+    window.addEventListener('search:show-result', handleSearchShowResult);
     
     return () => {
       window.removeEventListener('search:filter', handleGlobalSearchFilter);
@@ -177,6 +192,7 @@ import VirtualMessageList from './VirtualMessageList.svelte';
       window.removeEventListener('search:highlight-result', handleSearchHighlight);
       window.removeEventListener('chat:scroll-to-message', handleChatScrollToMessage);
       window.removeEventListener('search:restore-chat', handleSearchRestore);
+      window.removeEventListener('search:show-result', handleSearchShowResult);
     };
   });
 

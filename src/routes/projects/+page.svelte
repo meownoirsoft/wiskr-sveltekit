@@ -541,6 +541,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.addEventListener('search:navigate-session', handleSearchNavigateSession);
       window.addEventListener('search:clear', handleSearchClear);
       window.addEventListener('search:restore-chat', handleSearchRestore);
+      window.addEventListener('search:show-result', handleSearchShowResult);
       
       // Listen for usage toggle from header
       usageToggleHandler = () => {
@@ -596,6 +597,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.removeEventListener('search:navigate-session', handleSearchNavigateSession);
       window.removeEventListener('search:clear', handleSearchClear);
       window.removeEventListener('search:restore-chat', handleSearchRestore);
+      window.removeEventListener('search:show-result', handleSearchShowResult);
       
       // Clean up Mr Wiskr event listener
       window.removeEventListener('mrwiskr:open', handleMrWiskrOpen);
@@ -1348,7 +1350,14 @@ function handleTextAddToDocs(event) {
     // Set the search term for all components
     search = query;
     
-    if (type === 'facts') {
+    if (type === 'all') {
+      // Handle unified search - default to facts tab
+      activeTab = 'facts';
+      showLeftPanel = true;
+      if (!isDesktop && showRightPanel) {
+        showRightPanel = false;
+      }
+    } else if (type === 'facts') {
       activeTab = 'facts';
       showLeftPanel = true;
       if (!isDesktop && showRightPanel) {
@@ -1475,6 +1484,17 @@ function handleTextAddToDocs(event) {
     console.log('🔍 Main page: Restoring full chat view from search mode');
     // The VirtualMessageList and ChatInterface components will handle the actual restoration
     // This function is here for any main page specific cleanup if needed in the future
+  }
+
+  function handleSearchShowResult(event) {
+    const { messageId, searchTerm } = event.detail;
+    console.log('🔍 Main page: search:show-result event received:', { messageId, searchTerm });
+    
+    // Set the search term for highlighting
+    search = searchTerm || '';
+    
+    // The ChatInterface will handle the actual showSearchResult call
+    // This is just for logging and any main page level handling if needed
   }
 
 
@@ -2069,7 +2089,7 @@ function handleTextAddToDocs(event) {
 {#if showUsagePopover && usage}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 z-40 flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
+  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 z-[1000] flex items-start justify-end pt-20 pr-6" on:click={() => showUsagePopover = false}>
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="bg-white border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 min-w-[300px]" style="background-color: var(--bg-modal, white);" on:click|stopPropagation>

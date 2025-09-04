@@ -71,8 +71,10 @@ export async function GET({ url, locals }) {
           results.push({
             id: fact.id,
             type: 'facts',
+            key: fact.key || 'Untitled Fact',
             title: fact.key || 'Untitled Fact',
             name: fact.key || 'Untitled Fact',
+            value: fact.value,
             snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
             content: fact.value,
             factType: fact.type
@@ -210,7 +212,8 @@ export async function GET({ url, locals }) {
               branch_name: branch?.branch_name,
               messageId: message.id,
               instanceCount: instanceCount, // Number of times search term appears
-              firstMatchIndex: firstMatchIndex // Position of first match for scrolling
+              firstMatchIndex: firstMatchIndex, // Position of first match for scrolling
+              created_at: message.created_at // Include created_at for sorting
             });
           }
         });
@@ -277,6 +280,7 @@ export async function GET({ url, locals }) {
           results.push({
             id: question.id,
             type: 'questions',
+            question: question.question,
             title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
             name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
             snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
@@ -310,20 +314,57 @@ export async function GET({ url, locals }) {
       }
     }
     
+    // Process chat results into session groups for search dropdown
+    const chatResults = results.filter(r => r.type === 'chats');
+    const sessionGroups = [];
+    const sessionMap = new Map();
+    
+    chatResults.forEach(chatResult => {
+      if (!sessionMap.has(chatResult.sessionId)) {
+        sessionMap.set(chatResult.sessionId, {
+          session_id: chatResult.sessionId,
+          session_name: chatResult.session_name || 'Chat',
+          is_active: false, // We'll update this based on current session
+          message_count: 0,
+          messages: []
+        });
+      }
+      
+      const sessionGroup = sessionMap.get(chatResult.sessionId);
+      sessionGroup.message_count++;
+      sessionGroup.messages.push({
+        id: chatResult.id,
+        content: chatResult.content,
+        branch_id: chatResult.branch_id,
+        branch_name: chatResult.branch_name || 'Main',
+        session_id: chatResult.sessionId,
+        session_name: chatResult.session_name
+      });
+    });
+    
+    // Convert map to array and sort sessions
+    sessionGroups.push(...sessionMap.values());
+    sessionGroups.sort((a, b) => {
+      // Sort by active status first, then by name
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return a.session_name.localeCompare(b.session_name);
+    });
+    
     // Return results in the structure that GlobalSearch expects
     const structuredResults = {
       facts: results.filter(r => r.type === 'facts'),
       docs: results.filter(r => r.type === 'docs'),
-      chatMessages: results.filter(r => r.type === 'chats'),
+      chatMessages: chatResults,
       questions: results.filter(r => r.type === 'questions'),
       relatedIdeas: results.filter(r => r.type === 'ideas'),
-      sessionGroups: [],
-      totalSessions: 0
+      sessionGroups: sessionGroups,
+      totalSessions: sessionGroups.length
     };
     
-    console.log('🔍 Search API POST: Returning structured results:', structuredResults);
+    console.log('🔍 Search API GET: Returning structured results:', structuredResults);
     
-    console.log('🔍 Search API POST: About to return results');
+    console.log('🔍 Search API GET: About to return results');
     return json({ results: structuredResults });
     
   } catch (error) {
@@ -416,8 +457,10 @@ export async function POST({ request, locals }) {
           results.push({
             id: fact.id,
             type: 'facts',
+            key: fact.key || 'Untitled Fact',
             title: fact.key || 'Untitled Fact',
             name: fact.key || 'Untitled Fact',
+            value: fact.value,
             snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
             content: fact.value,
             factType: fact.type
@@ -555,7 +598,8 @@ export async function POST({ request, locals }) {
             branch_name: branch?.branch_name,
             messageId: message.id,
             instanceCount: instanceCount, // Number of times search term appears
-            firstMatchIndex: firstMatchIndex // Position of first match for scrolling
+            firstMatchIndex: firstMatchIndex, // Position of first match for scrolling
+            created_at: message.created_at // Include created_at for sorting
           });
           }
         });
@@ -622,6 +666,7 @@ export async function POST({ request, locals }) {
           results.push({
             id: question.id,
             type: 'questions',
+            question: question.question,
             title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
             name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
             snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
@@ -633,6 +678,7 @@ export async function POST({ request, locals }) {
     
     // Search ideas
     if (includeTypes.includes('ideas')) {
+      console.log('🔍 Searching ideas for:', searchTerm, 'in project:', currentProjectId);
       const { data: ideas, error: ideasError } = await supabase
         .from('ideas')
         .select('*')
@@ -640,6 +686,9 @@ export async function POST({ request, locals }) {
         .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,text.ilike.%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(10);
+      
+      console.log('🔍 Ideas query result:', { ideasError, ideasCount: ideas?.length || 0 });
+      if (ideasError) console.error('Ideas query error:', ideasError);
       
       if (!ideasError && ideas) {
         ideas.forEach(idea => {
@@ -668,8 +717,58 @@ export async function POST({ request, locals }) {
       total: results.length
     });
     
+    // Process chat results into session groups for search dropdown
+    const chatResults = results.filter(r => r.type === 'chats');
+    const sessionGroups = [];
+    const sessionMap = new Map();
+    
+    chatResults.forEach(chatResult => {
+      if (!sessionMap.has(chatResult.sessionId)) {
+        sessionMap.set(chatResult.sessionId, {
+          session_id: chatResult.sessionId,
+          session_name: chatResult.session_name || 'Chat',
+          is_active: false, // We'll update this based on current session
+          message_count: 0,
+          messages: []
+        });
+      }
+      
+      const sessionGroup = sessionMap.get(chatResult.sessionId);
+      sessionGroup.message_count++;
+      sessionGroup.messages.push({
+        id: chatResult.id,
+        content: chatResult.content,
+        branch_id: chatResult.branch_id,
+        branch_name: chatResult.branch_name || 'Main',
+        session_id: chatResult.sessionId,
+        session_name: chatResult.session_name
+      });
+    });
+    
+    // Convert map to array and sort sessions
+    sessionGroups.push(...sessionMap.values());
+    sessionGroups.sort((a, b) => {
+      // Sort by active status first, then by name
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return a.session_name.localeCompare(b.session_name);
+    });
+    
+    // Return results in the structure that GlobalSearch expects
+    const structuredResults = {
+      facts: results.filter(r => r.type === 'facts'),
+      docs: results.filter(r => r.type === 'docs'),
+      chatMessages: chatResults,
+      questions: results.filter(r => r.type === 'questions'),
+      relatedIdeas: results.filter(r => r.type === 'ideas'),
+      sessionGroups: sessionGroups,
+      totalSessions: sessionGroups.length
+    };
+    
+    console.log('🔍 Search API POST: Returning structured results:', structuredResults);
+    
     return json({ 
-      results: results,
+      results: structuredResults,
       query: searchTerm,
       total: results.length
     });

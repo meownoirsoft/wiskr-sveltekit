@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { Info, TrendingUp, X, Pin, FileText, Users, ChevronDown } from 'lucide-svelte';
 
   export let score = 0;
@@ -13,9 +13,36 @@
   let analysis = null;
   let loadingAnalysis = false;
   let lastAnalysisScore = null;
+  let buttonElement;
+  let portalContainer;
 
   $: scoreColor = getScoreColor(score);
   $: scoreLabel = getScoreLabel(score);
+
+  // Portal action to render tooltip at document body
+  function createPortal(node) {
+    // Create portal container if it doesn't exist
+    if (!portalContainer) {
+      portalContainer = document.createElement('div');
+      portalContainer.id = 'quality-tooltip-portal';
+      portalContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999999;';
+      document.body.appendChild(portalContainer);
+    }
+
+    // Move the node to the portal container
+    portalContainer.appendChild(node);
+    
+    // Enable pointer events on the tooltip itself
+    node.style.pointerEvents = 'auto';
+    
+    return {
+      destroy() {
+        if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      }
+    };
+  }
   
   // Auto-load analysis for mobile immediately when score is available
   $: if (isMobile && score && projectId && !analysis && !loadingAnalysis) {
@@ -55,6 +82,13 @@
       // Always load fresh analysis when opening tooltip, regardless of cache
       // This ensures suggestions are always up-to-date with the current score
       await loadAnalysis();
+      
+      // Position tooltip below button
+      if (buttonElement) {
+        const rect = buttonElement.getBoundingClientRect();
+        document.documentElement.style.setProperty('--tooltip-top', `${rect.bottom + 8}px`);
+        document.documentElement.style.setProperty('--tooltip-left', `${rect.left}px`);
+      }
     }
     showTooltip = !showTooltip;
   }
@@ -144,6 +178,13 @@
       document.removeEventListener('click', handleClickOutside);
     }
   }
+  
+  // Cleanup portal container on component destroy
+  onDestroy(() => {
+    if (portalContainer && portalContainer.parentNode) {
+      portalContainer.parentNode.removeChild(portalContainer);
+    }
+  });
 </script>
 
 <div class="quality-tooltip-container relative" data-tutorial="context-quality">
@@ -243,6 +284,7 @@
   {:else}
     <!-- Desktop: Original dropdown behavior -->
     <button
+      bind:this={buttonElement}
       class="flex items-center gap-2 px-2 py-1 rounded-lg transition-all hover:bg-opacity-10 dark:hover:bg-gray-600 hover:bg-gray-200"
       title="Project Quality: {scoreLabel} ({score}/100) - Click for suggestions"
       on:click={toggleTooltip}
@@ -302,7 +344,8 @@
     <!-- Desktop Tooltip -->
     {#if showTooltip}
       <section
-        class="absolute top-full left-0 mt-2 w-80 bg-white border dark:border-gray-600 rounded-lg shadow-xl z-[50]" style="background-color: var(--bg-primary);"
+        use:createPortal
+        class="fixed w-80 bg-white border dark:border-gray-600 rounded-lg shadow-xl z-[999999]" style="background-color: var(--bg-primary); top: var(--tooltip-top, 0px); left: var(--tooltip-left, 0px);"
         role="dialog"
         aria-modal="true"
         tabindex="0"

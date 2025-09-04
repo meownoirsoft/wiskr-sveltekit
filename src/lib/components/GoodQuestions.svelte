@@ -96,7 +96,7 @@ import { browser } from '$app/environment';
       questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Add highlight effect
-      questionElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+      questionElement.classList.add('search-highlight-container');
       console.log('🔍 GoodQuestions: Added highlight classes');
       
       // Highlight search terms within the text content
@@ -106,7 +106,7 @@ import { browser } from '$app/environment';
       
       // Remove highlight after a delay
       setTimeout(() => {
-        questionElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+        questionElement.classList.remove('search-highlight-container');
         // Remove text highlighting
         removeSearchTermHighlights(questionElement);
         console.log('🔍 GoodQuestions: Removed highlight classes and text highlights');
@@ -139,7 +139,7 @@ import { browser } from '$app/environment';
       if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
         const highlightedText = text.replace(
           new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-          '<mark class="bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white px-1 rounded">$1</mark>'
+          '<mark class="search-highlight px-1 rounded">$1</mark>'
         );
         
         if (highlightedText !== text) {

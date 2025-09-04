@@ -196,30 +196,41 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:click={handleClickOutside}>
     <div class="bg-white rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-600 w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
-      <div class="flex items-center justify-between pl-6 pr-4 py-3 border-b border-gray-200 dark:border-gray-600">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
-                 <button 
-           class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-           on:click={handleClose}
-         >
-           <X size="32" />
-         </button>
-      </div>
+             <div class="flex items-center justify-between pl-6 pr-4 py-3 border-b border-gray-200 dark:border-gray-600">
+         {#if !userData}
+           <!-- Loading state for header -->
+           <div class="flex items-center gap-3">
+             <div class="w-24 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+           </div>
+         {:else}
+           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h3>
+         {/if}
+                  <button 
+            class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            on:click={handleClose}
+          >
+            <X size="32" />
+          </button>
+       </div>
 
       <div class="flex flex-col">
-                 <!-- Mobile-friendly dropdown navigation -->
+                          <!-- Mobile-friendly dropdown navigation -->
          <div class="p-4 border-b border-gray-200 dark:border-gray-600">
-          <div class="relative settings-dropdown">
-            <button
-              class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-              on:click={() => showDropdown = !showDropdown}
-            >
-              <div class="flex items-center gap-3">
-                <svelte:component this={currentTab.icon} size="20" />
-                <span>{currentTab.label}</span>
-              </div>
-              <ChevronDown size="16" class="transition-transform {showDropdown ? 'rotate-180' : ''}" />
-            </button>
+           {#if !userData}
+             <!-- Loading state for tab navigation -->
+             <div class="w-full h-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+           {:else}
+           <div class="relative settings-dropdown">
+             <button
+               class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+               on:click={() => showDropdown = !showDropdown}
+             >
+               <div class="flex items-center gap-3">
+                 <svelte:component this={currentTab.icon} size="20" />
+                 <span>{currentTab.label}</span>
+               </div>
+               <ChevronDown size="16" class="transition-transform {showDropdown ? 'rotate-180' : ''}" />
+             </button>
             
             {#if showDropdown}
               <div class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50">
@@ -238,6 +249,7 @@
               </div>
             {/if}
           </div>
+         {/if}
         </div>
 
         <!-- Tab Content -->

@@ -25,19 +25,19 @@
   
   // Search highlighting
   let highlightedTerm = '';
-  let currentHighlightIndex = 0;
-  let totalHighlights = 0;
-  let showNavigationControls = false;
   
-  // Session navigation state
-  let currentSessionIndex = 0;
+  // Navigation state (kept for mobile search functionality)
+  let totalHighlights = 0;
+  let currentHighlightIndex = 0;
+  let showNavigationControls = false;
   let sessionsWithResults = [];
-  let currentSessionHighlights = 0;
-  let sessionNavigationMode = false; // Toggle between highlight navigation and session navigation
+  let currentSessionIndex = 0;
+  let sessionNavigationMode = false;
   
   let searchInput;
   let searchContainer;
   let highlightTimeout;
+  let portalContainer;
   
   // Debounced search function
   const debouncedSearch = debounce(performSearch, 300);
@@ -47,17 +47,35 @@
     applyHighlighting();
   }, 1000);
   
+  // Debounced scroll handler to avoid excessive calculations
+  const debouncedScrollHandler = debounce(() => {
+    if (showDropdown && hasResults()) {
+      calculateDropdownPosition();
+    }
+  }, 100);
+  
   // Clear search and reset highlighting
   function clearSearch() {
     searchTerm = '';
+    // Only clear highlighting if user explicitly clears search
     highlightedTerm = '';
     showDropdown = false;
-    showNavigationControls = false;
     
     // Clear any pending highlight timeout
     if (highlightTimeout) {
       clearTimeout(highlightTimeout);
       highlightTimeout = null;
+    }
+    
+    // Clear highlight mode from localStorage
+    if (browser) {
+      localStorage.removeItem('wiskr-search-term');
+      localStorage.removeItem('wiskr-highlight-mode');
+    }
+    
+    // Exit search mode and return to normal chat view
+    if (browser) {
+      window.dispatchEvent(new CustomEvent('search:restore-chat'));
     }
     
     removeHighlights();
@@ -66,18 +84,20 @@
   
   // Handle search input changes
   function handleSearchInput() {
-    // Only filter and highlight if search term is 3+ characters
+    // Re-enable dropdown when user starts typing
     if (searchTerm.length >= 3) {
-      // Dispatch real-time filtering for all content types
-      dispatch('filter', { type: 'facts', query: searchTerm });
-      dispatch('filter', { type: 'docs', query: searchTerm });
-      dispatch('filter', { type: 'questions', query: searchTerm });
-      dispatch('filter', { type: 'ideas', query: searchTerm });
+      dropdownDisabled = false;
+    }
+    
+    // Only filter and highlight if search term is 3+ characters AND we're not just selecting a result
+    if (searchTerm.length >= 3 && !dropdownDisabled) {
+      // Dispatch single filter event for all content types (prevent duplicate highlighting)
+      dispatch('filter', { type: 'all', query: searchTerm });
       
       // Activate the facts tab by default when searching
       dispatch('activate-tab', 'facts');
       
-      // Apply highlighting with delay to let user type
+      // Always update highlighting when user types - treat as new search
       highlightedTerm = searchTerm;
       
       // Clear any existing highlight timeout
@@ -85,31 +105,49 @@
         clearTimeout(highlightTimeout);
       }
       
-      // Set new timeout for highlighting
+      // Set new timeout for highlighting with 1 second delay
       highlightTimeout = setTimeout(() => {
-        applyHighlighting();
+        if (searchTerm.length >= 3 && highlightedTerm === searchTerm) {
+          applyHighlighting();
+        }
       }, 1000);
-    } else {
+    } else if (searchTerm.length < 3) {
       // Clear filters when search is less than 3 characters
       dispatch('clear');
-      removeHighlights();
+      // NEVER remove highlights when user is typing - only when explicitly clearing search
+      // This prevents highlights from disappearing while user is searching
     }
-    
-    // Only search backend if 3+ characters AND dropdown is not disabled
-    if (searchTerm.length >= 3 && !dropdownDisabled) {
-      isSearching = true;
-      debouncedSearch();
-      } else {
-        // Search results cleared
-        
-        searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
-        if (!dropdownDisabled) {
-          showDropdown = false;
-        }
-        if (searchTerm.length < 1) {
-          removeHighlights();
-          resetSessionNavigation();
-        }
+     
+     // Only search backend if 3+ characters AND dropdown is not disabled
+     if (searchTerm.length >= 3 && !dropdownDisabled) {
+       isSearching = true;
+       debouncedSearch();
+     } else {
+       // Search results cleared
+       
+       // Don't clear search results if we're in highlight mode
+       if (!browser || !localStorage.getItem('wiskr-highlight-mode')) {
+         searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+         if (!dropdownDisabled) {
+           showDropdown = false;
+         }
+       }
+       
+       if (searchTerm.length < 1) {
+         // Clear highlights when search is completely empty
+         highlightedTerm = '';
+         if (browser) {
+           localStorage.removeItem('wiskr-search-term');
+           localStorage.removeItem('wiskr-highlight-mode');
+         }
+         forceRemoveHighlights();
+         resetSessionNavigation();
+       }
+     }
+      
+      // Calculate dropdown position if we're showing it
+      if (showDropdown && hasResults()) {
+        calculateDropdownPosition();
       }
   }
   
@@ -126,13 +164,23 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: projectId,
-          query: searchTerm
+          query: searchTerm,
+          includeTypes: ['facts', 'docs', 'chats', 'questions', 'ideas']
         })
       });
+      
+      console.log('🔍 GlobalSearch sending request with projectId:', projectId, 'searchTerm:', searchTerm);
       
       if (response.ok) {
         const data = await response.json();
         searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+        console.log('🔍 GlobalSearch results:', {
+          facts: searchResults.facts.length,
+          docs: searchResults.docs.length,
+          chatMessages: searchResults.chatMessages.length,
+          questions: searchResults.questions.length,
+          relatedIdeas: searchResults.relatedIdeas.length
+        });
         
         // Search results populated
         
@@ -140,6 +188,20 @@
         updateSessionNavigation();
         
         showDropdown = !dropdownDisabled && hasResults();
+        
+        // Calculate dropdown position when showing
+        if (showDropdown) {
+          calculateDropdownPosition();
+        }
+        
+        // Debug logging
+        console.log('🔍 Search dropdown logic:', {
+          dropdownDisabled,
+          hasResults: hasResults(),
+          showDropdown,
+          searchTerm,
+          resultsCount: Object.values(searchResults).reduce((sum, arr) => sum + arr.length, 0)
+        });
         
         // Apply highlighting now that we have search results
         if (highlightedTerm && highlightedTerm === searchTerm) {
@@ -163,7 +225,49 @@
     return Object.values(searchResults).some(results => results.length > 0);
   }
   
-  // Handle clicking on a search result
+  // Calculate dropdown position
+  function calculateDropdownPosition() {
+    if (!browser || !searchContainer) return;
+    
+    const rect = searchContainer.getBoundingClientRect();
+    const left = rect.left;
+    const top = rect.bottom + window.scrollY;
+    
+    // Set CSS custom properties for positioning
+    document.documentElement.style.setProperty('--search-dropdown-left', `${left}px`);
+    document.documentElement.style.setProperty('--search-dropdown-top', `${top}px`);
+    
+    // Debug logging
+    console.log('🔍 Dropdown positioning:', { left, top, rect: rect.toJSON() });
+  }
+  
+     // Portal action to render dropdown at document body
+   function createPortal(node) {
+     // Create portal container if it doesn't exist
+     if (!portalContainer) {
+       portalContainer = document.createElement('div');
+       portalContainer.id = 'search-dropdown-portal';
+       portalContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999999; pointer-events: none;';
+       document.body.appendChild(portalContainer);
+     }
+     
+     // Move the node to the portal container
+     portalContainer.appendChild(node);
+     
+     // Enable pointer events on the dropdown itself
+     node.style.pointerEvents = 'auto';
+     
+     // Return cleanup function
+     return {
+       destroy() {
+         if (node.parentNode) {
+           node.parentNode.removeChild(node);
+         }
+       }
+     };
+   }
+  
+  // Handle clicking on a search result - modeled after MobileSearch
   function selectResult(result, type) {
     if (type === 'chatMessages') {
       // For chat messages, navigate to the message and apply highlighting
@@ -171,18 +275,118 @@
       return;
     }
     
-    // For other result types, populate the search input as before
-    let text = '';
-    if (type === 'facts') text = result.key;
-    else if (type === 'docs') text = result.title;
-    else if (type === 'questions') text = result.question;
-    
-    // Close dropdown immediately and disable it
+    // Close dropdown first
     showDropdown = false;
     dropdownDisabled = true;
     
-    // Update search term (this will trigger reactive statement, but dropdown is disabled)
-    searchTerm = text;
+    // For other result types, scroll to the result without multiple dispatch events
+    let searchText = '';
+    if (type === 'facts') searchText = result.key;
+    else if (type === 'docs') searchText = result.title;
+    else if (type === 'questions') searchText = result.question;
+    else if (type === 'ideas') searchText = result.title || result.text || result.name;
+    
+    // Update search input with the result text
+    searchTerm = searchText;
+    
+    // Set highlighted term for proper highlighting
+    highlightedTerm = searchText;
+    
+    // Activate the appropriate tab and open panel (like MobileSearch does)
+    dispatch('activate-tab', type);
+    
+    // Dispatch single filter event for this specific type only
+    dispatch('filter', { type, query: searchText });
+    
+    // Clear any pending highlight timeout since this is immediate
+    if (highlightTimeout) {
+      clearTimeout(highlightTimeout);
+    }
+    
+    // Apply highlighting immediately for clicked results (no delay needed)
+    setTimeout(() => {
+      applyHighlighting();
+    }, 100);
+    
+    // Re-enable dropdown after a short delay so user can search again
+    setTimeout(() => {
+      dropdownDisabled = false;
+    }, 300);
+  }
+  
+  // Force remove all highlights regardless of highlight mode
+  function forceRemoveHighlights() {
+    if (!browser) return;
+    
+    console.log('🔍 Force removing all highlights');
+    
+    // Remove the body class for duplicate hiding
+    document.body.classList.remove('search-highlight-active');
+    
+    // More aggressive cleanup - find all highlights and completely remove them
+    let cleanupAttempts = 0;
+    const maxAttempts = 3;
+    
+    while (cleanupAttempts < maxAttempts) {
+      const highlights = document.querySelectorAll('.search-highlight');
+      if (highlights.length === 0) break;
+      
+      console.log(`🔍 Cleanup attempt ${cleanupAttempts + 1}: Found ${highlights.length} highlights`);
+      
+      const parents = new Set();
+      
+      highlights.forEach(highlight => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          // Replace the span with its text content
+          const textNode = document.createTextNode(highlight.textContent);
+          try {
+            parent.replaceChild(textNode, highlight);
+            parents.add(parent);
+          } catch (e) {
+            console.warn('Failed to replace highlight node:', e);
+            // Fallback: remove the highlight node entirely
+            try {
+              parent.removeChild(highlight);
+            } catch (e2) {
+              console.warn('Failed to remove highlight node:', e2);
+            }
+          }
+        }
+      });
+      
+      // Normalize all affected parents to merge text nodes
+      parents.forEach(parent => {
+        if (parent && parent.normalize) {
+          try {
+            parent.normalize();
+          } catch (e) {
+            console.warn('Failed to normalize parent:', e);
+          }
+        }
+      });
+      
+      cleanupAttempts++;
+    }
+    
+    // Remove container highlights and processed classes
+    const containerHighlights = document.querySelectorAll('.search-highlight-container');
+    containerHighlights.forEach(container => {
+      container.classList.remove('search-highlight-container', 'current', 'search-highlight-container-processed');
+    });
+    
+    // Also remove processed classes from any elements that might have them
+    const processedElements = document.querySelectorAll('.search-highlight-container-processed');
+    processedElements.forEach(element => {
+      element.classList.remove('search-highlight-container-processed');
+    });
+    
+    // Clear any highlight-related flags
+    totalHighlights = 0;
+    currentHighlightIndex = 0;
+    showNavigationControls = false;
+    
+    console.log('🔍 Force cleanup complete');
   }
   
   // Handle chat message selection - navigate to message and highlight
@@ -194,36 +398,48 @@
     // Preserve the current search term for highlighting
     highlightedTerm = searchTerm;
     
+    // Store the search term in localStorage so it persists across navigation
+    if (browser) {
+      localStorage.setItem('wiskr-search-term', searchTerm);
+      localStorage.setItem('wiskr-highlight-mode', 'true');
+    }
+    
+    // Debug logging
+    console.log('🔍 Chat message selection:', {
+      messageId: message.id,
+      sessionId: message.sessionId || message.session_id,
+      branchId: message.branch_id,
+      searchTerm: searchTerm
+    });
+    
     // Switch to the appropriate session first (if needed)
-    if (message.session_id && browser) {
+    const sessionId = message.sessionId || message.session_id;
+    if (sessionId && browser) {
+      console.log('📡 Dispatching session navigation event');
       window.dispatchEvent(new CustomEvent('search:navigate-session', {
         detail: {
-          sessionId: message.session_id,
+          sessionId: sessionId,
           sessionName: message.session_name
         }
       }));
     }
     
-    // Navigate to the specific message and branch
+    // Navigate to the specific message and branch using search:show-result for search mode
     if (browser) {
-      window.dispatchEvent(new CustomEvent('search:navigate-chat', {
+      console.log('📡 Dispatching search show result event');
+      window.dispatchEvent(new CustomEvent('search:show-result', {
         detail: {
           messageId: message.id,
-          branchId: message.branch_id,
           searchTerm: searchTerm
         }
       }));
     }
     
-    // Apply highlighting after a longer delay to allow navigation to complete
-    // Also ensure we show navigation controls
+    // Re-enable dropdown after a delay so user can search again
     setTimeout(() => {
-      applyHighlighting();
-      // Force show navigation controls if we have highlights
-      if (totalHighlights > 0) {
-        showNavigationControls = true;
-      }
-    }, 800);
+      dropdownDisabled = false;
+      console.log('🔍 Dropdown re-enabled for new searches');
+    }, 1000);
   }
   
   // Handle enter key - filter and highlight
@@ -262,25 +478,24 @@
     highlightedTerm = searchTerm;
     showDropdown = false;
     
-    // Dispatch filtering events based on results
+    // Dispatch filtering events based on results - simplified like MobileSearch
     const hasFactsResults = searchResults.facts.length > 0;
     const hasDocsResults = searchResults.docs.length > 0;
     const hasChatResults = searchResults.chatMessages.length > 0;
     const hasQuestionsResults = searchResults.questions.length > 0;
     
-    // Activate appropriate tab and filter
+    // Activate appropriate tab (priority: facts > docs > questions)
     if (hasFactsResults) {
       dispatch('activate-tab', 'facts');
-      dispatch('filter', { type: 'facts', query: searchTerm });
     } else if (hasDocsResults) {
       dispatch('activate-tab', 'docs');  
-      dispatch('filter', { type: 'docs', query: searchTerm });
+    } else if (hasQuestionsResults) {
+      dispatch('activate-tab', 'questions');
     }
     
-    // Handle questions
-    if (hasQuestionsResults) {
-      dispatch('activate-tab', 'questions');
-      dispatch('filter', { type: 'questions', query: searchTerm });
+    // Single filter event for all types (like the 'all' type we added earlier)
+    if (hasFactsResults || hasDocsResults || hasChatResults || hasQuestionsResults) {
+      dispatch('filter', { type: 'all', query: searchTerm });
     }
     
     // Handle chat results
@@ -293,23 +508,34 @@
     applyHighlighting();
   }
   
-  // Apply container-based highlighting throughout the page including all sessions
-  async function applyHighlighting() {
-    if (!browser || !highlightedTerm) return;
+  // Apply simple highlighting to current content
+  function applyHighlighting() {
+    if (!browser || !highlightedTerm || highlightedTerm.trim() === '') return;
     
-    // Remove existing highlights
-    removeHighlights();
+    // Prevent multiple highlighting operations in quick succession
+    if (window.wiskrHighlightingInProgress) {
+      console.log('🔍 Highlighting already in progress, skipping');
+      return;
+    }
     
-    // First, highlight what's currently visible
-    await highlightCurrentContent();
+    window.wiskrHighlightingInProgress = true;
     
-    // Then, calculate total highlights across all sessions that have search results
-    await calculateCrossSessionHighlights();
+    // Force remove ALL existing highlights first
+    forceRemoveHighlights();
     
-    showNavigationControls = totalHighlights > 0;
-    
-    // Scroll to first highlight in current view
-    scrollToFirstHighlight();
+    // Add a small delay to ensure DOM cleanup is complete
+    setTimeout(() => {
+      // Add class to body to enable CSS hiding of duplicates
+      document.body.classList.add('search-highlight-active');
+      
+      // Highlight what's currently visible
+      highlightCurrentContent();
+      
+      // Clear the flag after highlighting is complete
+      setTimeout(() => {
+        window.wiskrHighlightingInProgress = false;
+      }, 100);
+    }, 50);
   }
   
   // Highlight content currently visible on the page
@@ -350,79 +576,41 @@
       container.classList.add('search-highlight-container');
     });
     
-    // Apply word highlighting to all containers (even nested ones)
-    highlightedContainers.forEach(container => {
-      highlightTextInElement(container, highlightedTerm);
-    });
+      // Apply word highlighting to all containers (even nested ones), but skip if already highlighted
+      highlightedContainers.forEach(container => {
+        // Skip if this container already has highlights or if it's a fact card that's already been processed
+        if (!container.querySelector('.search-highlight') && 
+            !container.classList.contains('search-highlight-container-processed')) {
+          
+          // For fact cards, be more careful about highlighting to prevent duplication
+          const isFactCard = container.classList.contains('border-') || 
+                            container.classList.contains('bg-') || 
+                            container.classList.contains('rounded') ||
+                            container.querySelector('[class*="border-"], [class*="bg-"], [class*="rounded"]');
+          
+          if (isFactCard) {
+            // Mark fact card as processed FIRST to prevent any nested highlighting
+            container.classList.add('search-highlight-container-processed');
+            // Also mark all child fact cards as processed to prevent nested processing
+            const childFactCards = container.querySelectorAll('[class*="border-"], [class*="bg-"], [class*="rounded"]');
+            childFactCards.forEach(childCard => {
+              if (childCard !== container) {
+                childCard.classList.add('search-highlight-container-processed');
+              }
+            });
+          }
+          
+          highlightTextInElement(container, highlightedTerm);
+          
+          // Mark this container as processed to prevent re-highlighting
+          if (!isFactCard) {
+            container.classList.add('search-highlight-container-processed');
+          }
+        }
+      });
   }
   
-  // Calculate total highlights across all sessions with search results
-  async function calculateCrossSessionHighlights() {
-    // Get actual visible highlights first
-    const wordHighlights = document.querySelectorAll('.search-highlight');
-    const visibleHighlightsCount = wordHighlights.length;
-    
-    // Calculate theoretical highlights from search results data
-    let theoreticalHighlights = 0;
-    
-    // Count highlights in facts
-    if (searchResults.facts && searchResults.facts.length > 0) {
-      searchResults.facts.forEach(fact => {
-        const keyMatches = countMatchesInText(fact.key, highlightedTerm);
-        const valueMatches = countMatchesInText(fact.value, highlightedTerm);
-        theoreticalHighlights += keyMatches + valueMatches;
-      });
-    }
-    
-    // Count highlights in docs
-    if (searchResults.docs && searchResults.docs.length > 0) {
-      searchResults.docs.forEach(doc => {
-        const titleMatches = countMatchesInText(doc.title, highlightedTerm);
-        const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
-        theoreticalHighlights += titleMatches + contentMatches;
-      });
-    }
-    
-    // Count highlights in questions
-    if (searchResults.questions && searchResults.questions.length > 0) {
-      searchResults.questions.forEach(question => {
-        const questionMatches = countMatchesInText(question.question, highlightedTerm);
-        theoreticalHighlights += questionMatches;
-      });
-    }
-    
-    // Count highlights in all chat messages across all sessions
-    if (searchResults.chatMessages && searchResults.chatMessages.length > 0) {
-      searchResults.chatMessages.forEach(message => {
-        const messageMatches = countMatchesInText(message.content, highlightedTerm);
-        theoreticalHighlights += messageMatches;
-      });
-    }
-    
-    // Debug logging to help troubleshoot
-    // console.log('🔍 Highlight count comparison:', {
-    //   searchTerm: highlightedTerm,
-    //   visibleHighlightsCount,
-    //   theoreticalHighlights,
-    //   difference: theoreticalHighlights - visibleHighlightsCount,
-    //   willUseVisible: visibleHighlightsCount > 0
-    // });
-    
-    // Use visible highlights count if we have highlights, otherwise fall back to theoretical
-    if (visibleHighlightsCount > 0) {
-      totalHighlights = visibleHighlightsCount;
-      //console.log('✅ Using visible highlights count:', totalHighlights);
-    } else if (theoreticalHighlights > 0) {
-      totalHighlights = theoreticalHighlights;
-      //console.log('✅ Using theoretical highlights count:', totalHighlights);
-    } else {
-      totalHighlights = 0;
-      //console.log('📍 No highlights found');
-    }
-    
-    // Set current index
-    await calculateCurrentHighlightIndex();
-  }
+
   
   // Count how many times a term appears in text
   function countMatchesInText(text, searchTerm) {
@@ -567,9 +755,9 @@
   function highlightTextInElement(element, searchTerm) {
     if (!element || !searchTerm) return;
     
-    // Skip script, style, and already highlighted elements
-    if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE' || 
-        element.classList?.contains('search-highlight')) {
+    // Skip script and style elements only
+    if (element.nodeType === Node.ELEMENT_NODE && 
+        (element.tagName === 'SCRIPT' || element.tagName === 'STYLE')) {
       return;
     }
     
@@ -577,19 +765,36 @@
     if (element.nodeType === Node.TEXT_NODE) {
       const text = element.textContent;
       const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+      
       if (regex.test(text)) {
-        const highlightedText = text.replace(regex, '<span class="search-highlight">$1</span>');
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = highlightedText;
+        console.log('🔍 Highlighting text:', text.substring(0, 50));
         
-        // Replace the text node with highlighted content
-        const fragment = document.createDocumentFragment();
-        while (wrapper.firstChild) {
-          fragment.appendChild(wrapper.firstChild);
+        // Skip if already inside a highlight span
+        const parent = element.parentNode;
+        if (parent && parent.classList?.contains('search-highlight')) {
+          console.log('🔍 Skipping - already in highlight span');
+          return;
         }
-        element.parentNode?.replaceChild(fragment, element);
+        
+        const highlightedText = text.replace(regex, '<span class="search-highlight">$1</span>');
+        
+        if (highlightedText !== text) {
+          console.log('🔍 Applying highlight to text node');
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = highlightedText;
+          
+          // Replace the text node with highlighted content
+          const fragment = document.createDocumentFragment();
+          while (wrapper.firstChild) {
+            fragment.appendChild(wrapper.firstChild);
+          }
+          
+          if (parent) {
+            parent.replaceChild(fragment, element);
+          }
+        }
       }
-    } else {
+    } else if (element.nodeType === Node.ELEMENT_NODE) {
       // Process child elements
       const children = Array.from(element.childNodes);
       children.forEach(child => highlightTextInElement(child, searchTerm));
@@ -643,6 +848,8 @@
         const isContentContainer = (
           // List items
           tagName === 'li' ||
+          // Elements with data-idea-id (specific to Ideas)
+          container.hasAttribute('data-idea-id') ||
           // Elements with border/card-like styling
           classList.some(cls => cls.includes('border') || cls.includes('card') || cls.includes('rounded')) ||
           // Elements with specific padding that suggest content blocks
@@ -699,18 +906,38 @@
   function removeHighlights() {
     if (!browser) return;
     
+    // Remove the body class for duplicate hiding
+    document.body.classList.remove('search-highlight-active');
+    
+    // Don't remove highlights if we're in highlight mode and this isn't an explicit clear
+    if (browser && localStorage.getItem('wiskr-highlight-mode') === 'true' && highlightedTerm) {
+      console.log('🔍 In highlight mode, preserving existing highlights');
+      return;
+    }
+    
     // Remove text highlights
     const highlights = document.querySelectorAll('.search-highlight');
     highlights.forEach(highlight => {
       const parent = highlight.parentNode;
-      parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
-      parent.normalize();
+      if (parent) {
+        // Create a new text node with the original content
+        const textNode = document.createTextNode(highlight.textContent);
+        parent.replaceChild(textNode, highlight);
+        // Normalize to merge adjacent text nodes
+        parent.normalize();
+      }
     });
     
-    // Remove container highlights
+    // Remove container highlights and processed classes
     const containerHighlights = document.querySelectorAll('.search-highlight-container');
     containerHighlights.forEach(container => {
-      container.classList.remove('search-highlight-container', 'current');
+      container.classList.remove('search-highlight-container', 'current', 'search-highlight-container-processed');
+    });
+    
+    // Also remove processed classes from any elements that might have them
+    const processedElements = document.querySelectorAll('.search-highlight-container-processed');
+    processedElements.forEach(element => {
+      element.classList.remove('search-highlight-container-processed');
     });
     
     totalHighlights = 0;
@@ -788,6 +1015,11 @@
         needsSessionSwitch
       });
     }
+    
+    // Re-enable dropdown after a delay so user can search again
+    setTimeout(() => {
+      dropdownDisabled = false;
+    }, 1000);
   }
   
   // Navigate to previous highlight (cross-session aware)
@@ -830,6 +1062,11 @@
       currentHighlightIndex = prevIndex;
       navigateToCurrentHighlight();
     }
+    
+    // Re-enable dropdown after a delay so user can search again
+    setTimeout(() => {
+      dropdownDisabled = false;
+    }, 1000);
   }
   
   // Helper function to check if switching sessions is needed for a given highlight index
@@ -1101,23 +1338,24 @@
         dropdownDisabled = false; // Re-enable dropdown when user focuses box
         if (searchTerm.length >= 3 && hasResults()) {
           showDropdown = true; // Show dropdown if we have results
+          calculateDropdownPosition(); // Ensure proper positioning
         }
       }
     }, 100);
   }
   
   function handleInputClick() {
-    dropdownDisabled = false; // Re-enable dropdown when user clicks box
+    // Always re-enable dropdown when user clicks box
+    dropdownDisabled = false;
+    console.log('🔍 Search input clicked, dropdown re-enabled');
+    
     if (searchTerm.length >= 3 && hasResults()) {
       showDropdown = true; // Show dropdown if we have results
+      calculateDropdownPosition(); // Ensure proper positioning
     }
   }
   
-  // Handle counter click to close dropdown
-  function handleCounterClick() {
-    showDropdown = false;
-    dropdownDisabled = true;
-  }
+
   
   // Handle clicking outside to close dropdown
   function handleClickOutside(event) {
@@ -1125,6 +1363,18 @@
     if (!searchContainer.contains(event.target)) {
       showDropdown = false;
     }
+  }
+  
+  // Handle window resize to reposition dropdown
+  function handleResize() {
+    if (showDropdown && hasResults()) {
+      calculateDropdownPosition();
+    }
+  }
+  
+  // Handle scroll to reposition dropdown
+  function handleScroll() {
+    debouncedScrollHandler();
   }
   
   // Handle escape key and navigation shortcuts
@@ -1157,6 +1407,45 @@
     if (browser) {
       document.addEventListener('click', handleClickOutside);
       document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll);
+      
+      // Restore highlighting if we're in highlight mode
+      const savedSearchTerm = localStorage.getItem('wiskr-search-term');
+      const isHighlightMode = localStorage.getItem('wiskr-highlight-mode') === 'true';
+      
+      if (savedSearchTerm && isHighlightMode) {
+        highlightedTerm = savedSearchTerm;
+        searchTerm = savedSearchTerm;
+        
+        // Apply highlighting after a short delay to let the page load
+        setTimeout(() => {
+          applyHighlighting();
+        }, 500);
+        
+        // Set up a MutationObserver to re-apply highlights when DOM changes
+        const observer = new MutationObserver((mutations) => {
+          if (highlightedTerm && mutations.some(mutation => 
+            mutation.type === 'childList' && 
+            mutation.addedNodes.length > 0 &&
+            !document.querySelector('.search-highlight')
+          )) {
+            // Re-apply highlighting if highlights were lost
+            setTimeout(() => {
+              applyHighlighting();
+            }, 100);
+          }
+        });
+        
+        // Observe changes to the document body
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        
+        // Store observer reference for cleanup
+        window.wiskrHighlightObserver = observer;
+      }
     }
   });
   
@@ -1164,11 +1453,25 @@
     if (browser) {
       document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
       removeHighlights();
       
       // Clear any pending highlight timeout
       if (highlightTimeout) {
         clearTimeout(highlightTimeout);
+      }
+      
+      // Clean up the MutationObserver
+      if (window.wiskrHighlightObserver) {
+        window.wiskrHighlightObserver.disconnect();
+        delete window.wiskrHighlightObserver;
+      }
+      
+      // Clean up the portal container
+      if (portalContainer && portalContainer.parentNode) {
+        portalContainer.parentNode.removeChild(portalContainer);
+        portalContainer = null;
       }
     }
   });
@@ -1252,7 +1555,7 @@
   
   // Enhanced navigation that handles both session and highlight navigation
   function enhancedNext() {
-    // Close dropdown and prevent it from reopening
+    // Close dropdown temporarily
     showDropdown = false;
     dropdownDisabled = true;
     
@@ -1261,10 +1564,15 @@
     } else {
       nextHighlight();
     }
+    
+    // Re-enable dropdown after a delay so user can search again
+    setTimeout(() => {
+      dropdownDisabled = false;
+    }, 1000);
   }
   
   function enhancedPrev() {
-    // Close dropdown and prevent it from reopening
+    // Close dropdown temporarily
     showDropdown = false;
     dropdownDisabled = true;
     
@@ -1273,6 +1581,11 @@
     } else {
       prevHighlight();
     }
+    
+    // Re-enable dropdown after a delay so user can search again
+    setTimeout(() => {
+      dropdownDisabled = false;
+    }, 1000);
   }
   
   // Reactive statement to handle search input changes
@@ -1281,275 +1594,262 @@
   }
 </script>
 
-<div class="relative w-full max-w-md" bind:this={searchContainer} data-tutorial="global-search">
+<div class="relative w-full max-w-xl" bind:this={searchContainer} data-tutorial="global-search">
+
   <!-- Search Box -->
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
       <Search class="h-4 w-4" style="color: var(--text-header-secondary);" />
     </div>
-    <input
-      bind:this={searchInput}
-      bind:value={searchTerm}
-      on:focus={handleInputFocus}
-      on:click={handleInputClick}
-      type="text"
-      class="block w-full pl-10 pr-12 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-      style="background-color: var(--bg-header-input) !important; border-color: var(--border-header-input) !important; color: var(--text-header) !important;"
-      placeholder="Search anything..."
-      autocomplete="off"
-    />
-    
-    <!-- Loading/Clear Button -->
-    <div class="absolute inset-y-0 right-0 flex items-center">
-      {#if isSearching}
-        <div class="mr-3">
-          <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-        </div>
-      {:else if searchTerm}
-        <button
-          on:click={clearSearch}
-          class="mr-3 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-        >
-          <X class="h-4 w-4" />
-        </button>
-      {/if}
-      
-      <!-- Navigation Controls with Highlighted Counter -->
-      {#if showNavigationControls && totalHighlights > 0}
-        <div class="mr-3 flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
-          <button
-            on:click={enhancedPrev}
-            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
-            disabled={totalHighlights === 0 && (!sessionNavigationMode || sessionsWithResults.length === 0)}
-            title={sessionNavigationMode ? 'Previous session with results' : 'Previous highlight'}
-          >
-            <ChevronLeft class="h-3 w-3" />
-          </button>
-          
-          <!-- Counter button with session info when applicable -->
-          {#if sessionNavigationMode && sessionsWithResults.length > 1}
-            <button
-              on:click={toggleNavigationMode}
-              class="px-2 py-1 bg-blue-500 text-white font-mono text-xs rounded font-medium shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
-              title="Toggle to highlight navigation • Click to switch modes"
-            >
-              {currentSessionIndex + 1}/{sessionsWithResults.length} sessions
-            </button>
-          {:else}
-            <button
-              on:click={sessionNavigationMode ? toggleNavigationMode : handleCounterClick}
-              class="px-2 py-1 {sessionNavigationMode ? 'bg-blue-500 hover:bg-blue-600' : 'bg-pink-500 hover:bg-pink-600'} text-white font-mono text-xs rounded font-medium shadow-sm transition-colors cursor-pointer"
-              title={sessionNavigationMode ? 'Toggle to highlight navigation' : 'Close search dropdown'}
-            >
-              {#if sessionNavigationMode && sessionsWithResults.length === 1}
-                1/1 session
-              {:else}
-                {currentHighlightIndex + 1}/{totalHighlights}
-              {/if}
-            </button>
-          {/if}
-          
-          <button
-            on:click={enhancedNext}
-            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-colors rounded"
-            disabled={totalHighlights === 0 && (!sessionNavigationMode || sessionsWithResults.length === 0)}
-            title={sessionNavigationMode ? 'Next session with results' : 'Next highlight'}
-          >
-            <ChevronRight class="h-3 w-3" />
-          </button>
-          
-          <!-- Session mode toggle button (only show when multiple sessions exist) -->
-          {#if sessionsWithResults.length > 1}
-            <div class="ml-1 pl-1 border-l border-gray-300 dark:border-gray-500">
-              <button
-                on:click={toggleNavigationMode}
-                class="p-1 text-xs {sessionNavigationMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded"
-                title={sessionNavigationMode ? 'Switch to highlight navigation' : 'Switch to session navigation'}
-              >
-                {sessionNavigationMode ? 'S' : 'H'}
-              </button>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
-  </div>
+         <input
+       bind:this={searchInput}
+       bind:value={searchTerm}
+       on:focus={handleInputFocus}
+       on:click={handleInputClick}
+       type="text"
+       class="block w-full pl-10 pr-12 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+       style="background-color: var(--bg-header-input) !important; border-color: var(--border-header-input) !important; color: var(--text-header) !important;"
+       placeholder="Search anything..."
+       autocomplete="off"
+     />
+     
+     <!-- Loading/Clear Button -->
+     <div class="absolute inset-y-0 right-0 flex items-center">
+       {#if isSearching}
+         <div class="mr-3">
+           <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+         </div>
+       {:else if searchTerm}
+         <button
+           on:click={clearSearch}
+           class="mr-3 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+         >
+           <X class="h-4 w-4" />
+         </button>
+       {/if}
+     </div>
+   </div>
 
   <!-- Search Results Dropdown -->
   {#if showDropdown && hasResults()}
-    <div class="absolute z-[99999] w-full mt-1 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal);">
-      <!-- Facts Results (Left Column) -->
-      {#if searchResults.facts.length > 0}
-        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Facts</h4>
-          {#each searchResults.facts.slice(0, 5) as fact}
-            <button
-              on:click={() => selectResult(fact, 'facts')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-            >
-              <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{fact.key}</div>
-              <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{fact.value}</div>
-            </button>
-          {/each}
-        </div>
-      {/if}
-      
-      <!-- Docs Results (Left Column) -->
-      {#if searchResults.docs.length > 0}
-        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Documents</h4>
-          {#each searchResults.docs.slice(0, 5) as doc}
-            <button
-              on:click={() => selectResult(doc, 'docs')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-            >
-              <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.title}</div>
-              {#if doc.content}
-                <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{doc.content.substring(0, 80)}...</div>
-              {/if}
-            </button>
-          {/each}
-        </div>
-      {/if}
-      
-      <!-- Chat Messages Results (Middle Column) with Session Grouping -->
-      {#if searchResults.chatMessages.length > 0}
-        <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-          <div class="flex items-center justify-between mb-2">
-            <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chat Messages</h4>
-            {#if searchResults.totalSessions > 1}
-              <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">{searchResults.totalSessions} sessions</span>
-            {/if}
-          </div>
+    {#if browser}
+      <div use:createPortal>
+        <div class="fixed z-[999999] w-full max-w-xl border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal); left: var(--search-dropdown-left, 0px); top: var(--search-dropdown-top, 0px);" on:click|stopPropagation>
+          <!-- Facts Results (Left Column) -->
+          {#if searchResults.facts.length > 0}
+            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Facts</h4>
+              {#each searchResults.facts.slice(0, 5) as fact}
+                <button
+                  on:click={() => selectResult(fact, 'facts')}
+                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
+                >
+                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{fact.key}</div>
+                  <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{fact.value}</div>
+                </button>
+              {/each}
+            </div>
+          {/if}
           
-          {#if searchResults.sessionGroups.length > 0}
-            <!-- Group by sessions when multiple sessions have results -->
-            {#each searchResults.sessionGroups.slice(0, 3) as sessionGroup}
-              <div class="mb-3 last:mb-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="h-2 w-2 rounded-full {sessionGroup.is_active ? 'bg-green-500' : 'bg-gray-400'}"></div>
-                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{sessionGroup.session_name}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">({sessionGroup.message_count} {sessionGroup.message_count === 1 ? 'message' : 'messages'})</span>
-                </div>
-                {#each sessionGroup.messages.slice(0, 2) as message}
+          <!-- Docs Results (Left Column) -->
+          {#if searchResults.docs.length > 0}
+            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Documents</h4>
+              {#each searchResults.docs.slice(0, 5) as doc}
+                <button
+                  on:click={() => selectResult(doc, 'docs')}
+                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
+                >
+                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.title}</div>
+                  {#if doc.content}
+                    <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{doc.content.substring(0, 80)}...</div>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+          {/if}
+          
+          <!-- Chat Messages Results (Middle Column) with Session Grouping -->
+          {#if searchResults.chatMessages.length > 0}
+            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chat Messages</h4>
+                {#if searchResults.totalSessions > 1}
+                  <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">{searchResults.totalSessions} sessions</span>
+                {/if}
+              </div>
+              
+              {#if searchResults.sessionGroups.length > 0}
+                <!-- Group by sessions when multiple sessions have results -->
+                {#each searchResults.sessionGroups as sessionGroup}
+                  <div class="mb-3 last:mb-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="h-2 w-2 rounded-full {sessionGroup.is_active ? 'bg-green-500' : 'bg-gray-400'}"></div>
+                      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{sessionGroup.session_name}</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">
+                        ({sessionGroup.messages.length} {sessionGroup.messages.length === 1 ? 'result' : 'results'}{sessionGroup.message_count > sessionGroup.messages.length ? ` of ${sessionGroup.message_count}` : ''})
+                      </span>
+                    </div>
+                    {#each sessionGroup.messages as message}
+                      <button
+                        on:click={() => selectResult(message, 'chatMessages')}
+                        class="w-full text-left p-2 ml-4 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block border-l-2 border-gray-200 dark:border-gray-600 pl-3"
+                      >
+                        <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 55)}...</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'}</div>
+                      </button>
+                    {/each}
+                  </div>
+                {/each}
+              {:else}
+                <!-- Fallback to regular message list if no session grouping -->
+                {#each searchResults.chatMessages.slice(0, 5) as message}
                   <button
                     on:click={() => selectResult(message, 'chatMessages')}
-                    class="w-full text-left p-2 ml-4 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block border-l-2 border-gray-200 dark:border-gray-600 pl-3"
+                    class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
                   >
-                    <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 55)}...</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'}</div>
+                    <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 60)}...</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'} • {message.session_name || 'Unknown Session'}</div>
                   </button>
                 {/each}
-              </div>
-            {/each}
-          {:else}
-            <!-- Fallback to regular message list if no session grouping -->
-            {#each searchResults.chatMessages.slice(0, 5) as message}
-              <button
-                on:click={() => selectResult(message, 'chatMessages')}
-                class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-              >
-                <div class="text-sm text-gray-900 dark:text-gray-100 truncate">{message.content.substring(0, 60)}...</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">in {message.branch_name || 'Main'} • {message.session_name || 'Unknown Session'}</div>
-              </button>
-            {/each}
+              {/if}
+            </div>
+          {/if}
+          
+          <!-- Questions Results (Right Column) -->
+          {#if searchResults.questions.length > 0}
+            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Questions</h4>
+              {#each searchResults.questions.slice(0, 5) as question}
+                <button
+                  on:click={() => selectResult(question, 'questions')}
+                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
+                >
+                  <div class="text-sm text-gray-900 dark:text-gray-100">{question.question}</div>
+                </button>
+              {/each}
+            </div>
+          {/if}
+          
+          <!-- Related Ideas Results (Right Column) -->
+          {#if searchResults.relatedIdeas.length > 0}
+            <div class="p-3">
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Ideas</h4>
+              {#each searchResults.relatedIdeas.slice(0, 5) as idea}
+                <button
+                  on:click={() => selectResult(idea, 'ideas')}
+                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
+                >
+                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{idea.title || idea.name}</div>
+                  {#if idea.content}
+                    <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{idea.content.substring(0, 80)}...</div>
+                  {/if}
+                </button>
+              {/each}
+            </div>
           {/if}
         </div>
-      {/if}
-      
-      <!-- Questions Results (Right Column) -->
-      {#if searchResults.questions.length > 0}
-        <div class="p-3">
-          <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Questions</h4>
-          {#each searchResults.questions.slice(0, 5) as question}
-            <button
-              on:click={() => selectResult(question, 'questions')}
-              class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-            >
-              <div class="text-sm text-gray-900 dark:text-gray-100">{question.question}</div>
-            </button>
-          {/each}
-        </div>
-      {/if}
-    </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
-<style>
-  /* Search highlighting styles for individual words */
-  :global(.search-highlight) {
-    background-color: #db2777;
-    color: white;
-    padding: 1px 2px;
-    border-radius: 2px;
-  }
-  
-  :global(.search-highlight.current) {
-    background-color: #be185d;
-    box-shadow: 0 0 0 1px #be185d;
-  }
-  
-  /* Container highlighting styles */
-  :global(.search-highlight-container) {
-    background-color: rgba(219, 39, 119, 0.1);
-    border: 1px solid rgba(219, 39, 119, 0.3);
-    border-radius: 4px;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  :global(.search-highlight-container.current) {
-    background-color: rgba(190, 24, 93, 0.15);
-    border-color: rgba(190, 24, 93, 0.5);
-    box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.2);
-  }
-  
-  /* Dark mode container highlighting with increased opacity */
-  :global(.dark .search-highlight-container) {
-    background-color: rgba(219, 39, 119, 0.7);
-    border: 1px solid rgba(219, 39, 119, 0.8);
-  }
-  
-  :global(.dark .search-highlight-container.current) {
-    background-color: rgba(190, 24, 93, 0.7);
-    border-color: rgba(190, 24, 93, 0.8);
-    box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.8);
-  }
-  
-  /* Flashing animation for current highlight containers */
-  :global(.search-highlight-container.flash-highlight) {
-    animation: flash-container 1s ease-in-out;
-  }
-  
-  :global(.search-highlight.flash-highlight) {
-    animation: flash-pink 1s ease-in-out;
-  }
-  
-  @keyframes flash-pink {
-    0% {
-      background-color: #be185d;
-    }
-    50% {
-      background-color: #f472b6;
-      box-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
-    }
-    100% {
-      background-color: #be185d;
-    }
-  }
-  
-  @keyframes flash-container {
-    0% {
-      background-color: rgba(29, 78, 216, 0.15);
-      border-color: rgba(29, 78, 216, 0.5);
-    }
-    50% {
-      background-color: rgba(96, 165, 250, 0.25);
-      border-color: rgba(96, 165, 250, 0.7);
-      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
-    }
-    100% {
-      background-color: rgba(29, 78, 216, 0.15);
-      border-color: rgba(29, 78, 216, 0.5);
-    }
-  }
-</style>
+ <style>
+   /* Search highlighting styles for individual words - pink to match container borders */
+   :global(.search-highlight) {
+     background-color: rgba(219, 39, 119, 0.8);
+     color: white;
+     padding: 1px 2px;
+     border-radius: 2px;
+   }
+   
+   :global(.search-highlight.current) {
+     background-color: rgba(190, 24, 93, 0.9);
+     box-shadow: 0 0 0 1px rgba(190, 24, 93, 0.9);
+   }
+   
+   /* Container highlighting styles - scoped to search component */
+   :global(.search-highlight-container) {
+     background-color: rgba(219, 39, 119, 0.1);
+     border: 1px solid rgba(219, 39, 119, 0.3);
+     border-radius: 4px;
+     transition: all 0.2s ease-in-out;
+   }
+   
+   :global(.search-highlight-container.current) {
+     background-color: rgba(190, 24, 93, 0.15);
+     border-color: rgba(190, 24, 93, 0.5);
+     box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.2);
+   }
+   
+   /* Dark mode container highlighting with increased opacity */
+   :global(.dark .search-highlight-container) {
+     background-color: rgba(219, 39, 119, 0.7);
+     border: 1px solid rgba(219, 39, 119, 0.8);
+   }
+   
+   :global(.dark .search-highlight-container.current) {
+     background-color: rgba(190, 24, 93, 0.7);
+     border-color: rgba(190, 24, 93, 0.8);
+     box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.8);
+   }
+   
+   /* Hide duplicate fact cards when highlighting is active */
+   :global(body:has(.search-highlight) .fact-card:not(.search-highlight-container)) {
+     display: none !important;
+   }
+   
+   /* Alternative approach for browsers that don't support :has() */
+   :global(.search-highlight-active .fact-card:not(.search-highlight-container)) {
+     display: none !important;
+   }
+   
+   /* Flashing animation for current highlight containers */
+   :global(.search-highlight-container.flash-highlight) {
+     animation: flash-container 1s ease-in-out;
+   }
+   
+   :global(.search-highlight.flash-highlight) {
+     animation: flash-pink 1s ease-in-out;
+   }
+   
+   @keyframes flash-pink {
+     0% {
+       background-color: #be185d;
+     }
+     50% {
+       background-color: #f472b6;
+       box-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
+     }
+     100% {
+       background-color: #be185d;
+     }
+   }
+   
+   @keyframes flash-container {
+     0% {
+       background-color: rgba(29, 78, 216, 0.15);
+       border-color: rgba(29, 78, 216, 0.5);
+     }
+     50% {
+       background-color: rgba(96, 165, 250, 0.25);
+       border-color: rgba(96, 165, 250, 0.7);
+       box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+     }
+     100% {
+       background-color: rgba(29, 78, 216, 0.15);
+       border-color: rgba(29, 78, 216, 0.5);
+     }
+   }
+   
+   /* Ensure the portal container has the highest z-index */
+   :global(#search-dropdown-portal) {
+     z-index: 999999 !important;
+   }
+   
+   /* CSS optimization: Only apply styles when search is active */
+   :global(.search-active .search-highlight),
+   :global(.search-active .search-highlight-container) {
+     /* Styles will be applied via JavaScript when search is active */
+   }
+ </style>

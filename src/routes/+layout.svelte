@@ -607,7 +607,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
   <!-- Header -->
      <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center relative z-[150] transition-colors" style="background-color: var(--bg-header);">
-     <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center justify-between gap-2 md:gap-4 relative">
+     <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center gap-2 md:gap-4 relative">
+      <div class="flex-1 flex items-center gap-2 md:gap-4">
+        <!-- Left section content will go here -->
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
       <div class="flex items-center gap-1">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
@@ -682,7 +684,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         
         <!-- Desktop: Project controls (moved from right side) -->
         {#if isProjectsPage}
-          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
+          <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-2">
             <HeaderProjectSelector 
               {projects}
               current={currentProject}
@@ -704,6 +706,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 console.log('📤 Export event received in layout (desktop):', e.detail?.name);
                 openProjectExport(e.detail);
               }}
+              on:create={() => {
+                showNewProjectModal = true;
+              }}
               on:delete={async (e) => {
                 const project = e.detail;
                 if (projects.length <= 1) { alert('Create another project before deleting this one.'); return; }
@@ -720,41 +725,6 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 }
               }}
             />
-            
-            <!-- New Project Button -->
-            {#await import('$lib/components/FeatureGate.svelte') then { default: FeatureGate }}
-              {@const effectiveTier = data?.effectiveTier || 0}
-              {@const isAtProjectLimit = effectiveTier === 0 && projects.length >= 3}
-              {#if isAtProjectLimit}
-                <FeatureGate 
-                  user={data?.user}
-                  requiredTier={1}
-                  let:hasAccess
-                >
-                  <button
-                    class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all font-medium shadow-sm cursor-not-allowed"
-                    style="background-color: var(--color-disabled-bg, #D1D5DB); color: var(--color-disabled-text, #6B7280); opacity: 0.75;"
-                    disabled
-                    title="Upgrade to Pro for unlimited projects (Free: 3/3 projects used)"
-                  >
-                    <Plus size="16" />
-                    <span>New</span>
-                  </button>
-                </FeatureGate>
-              {:else}
-                <button
-                  class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium shadow-sm"
-                  style="background-color: var(--color-accent); color: var(--color-accent-text);"
-                  on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
-                  on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
-                  on:click={() => { showNewProjectModal = true; }}
-                  title="Create New Project"
-                >
-                  <Plus size="16" />
-                  <span>New</span>
-                </button>
-              {/if}
-            {/await}
             
             {#if currentProject?.id}
               <ContextQualityIndicator 
@@ -809,27 +779,13 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         </div>
       {/if}
 
+      </div>
+
       <!-- Right side: Menus and controls -->
       <div class="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {#if isProjectsPage && !isPublicPage}
-          <!-- Desktop: Global Search and Usage -->
+          <!-- Desktop: Usage Stats -->
           <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
-            <GlobalSearch 
-              projectId={currentProject?.id}
-              on:activate-tab={(e) => {
-                window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
-              }}
-              on:filter={(e) => {
-                window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
-              }}
-              on:navigate-chat={(e) => {
-                window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
-              }}
-              on:clear={(e) => {
-                window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
-              }}
-            />
-            
             <!-- Usage Stats Button -->
             <button
               type="button"
@@ -947,6 +903,29 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       </div>
     </div>
   </header>
+
+  <!-- Center: Global Search (Desktop) - Absolutely positioned to center on viewport -->
+  {#if isProjectsPage && !isPublicPage}
+    <div class="{isDesktop ? 'fixed' : 'hidden'} z-[200]" style="left: 50%; transform: translateX(-50%); top: 8px; height: 48px; width: 576px;">
+      <div class="flex items-center justify-center h-full">
+        <GlobalSearch 
+          projectId={currentProject?.id}
+          on:activate-tab={(e) => {
+            window.dispatchEvent(new CustomEvent('search:activate-tab', { detail: e.detail }));
+          }}
+          on:filter={(e) => {
+            window.dispatchEvent(new CustomEvent('search:filter', { detail: e.detail }));
+          }}
+          on:navigate-chat={(e) => {
+            window.dispatchEvent(new CustomEvent('search:navigate-chat', { detail: e.detail }));
+          }}
+          on:clear={(e) => {
+            window.dispatchEvent(new CustomEvent('search:clear', { detail: e.detail }));
+          }}
+        />
+      </div>
+    </div>
+  {/if}
 
   <!-- Project Menu Drawer -->
   {#if showProjectMenu}

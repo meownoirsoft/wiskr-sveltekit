@@ -153,7 +153,7 @@ import { browser } from '$app/environment';
       ideaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Add highlight effect
-      ideaElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+      ideaElement.classList.add('search-highlight-container');
       
       // Highlight search terms within the text content
       if (searchTerm && searchTerm.trim()) {
@@ -162,7 +162,7 @@ import { browser } from '$app/environment';
       
       // Remove highlight after a longer delay
       setTimeout(() => {
-        ideaElement.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700');
+        ideaElement.classList.remove('search-highlight-container');
         // Remove text highlighting
         removeSearchTermHighlights(ideaElement);
       }, 10000); // Increased to 10 seconds
@@ -191,7 +191,7 @@ import { browser } from '$app/environment';
       if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
         const highlightedText = text.replace(
           new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-          '<mark class="bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white px-1 rounded">$1</mark>'
+          '<mark class="search-highlight px-1 rounded">$1</mark>'
         );
         
         if (highlightedText !== text) {
@@ -205,7 +205,7 @@ import { browser } from '$app/environment';
 
   // Function to remove search term highlights
   function removeSearchTermHighlights(element) {
-    const marks = element.querySelectorAll('mark');
+    const marks = element.querySelectorAll('mark.search-highlight');
     marks.forEach(mark => {
       const parent = mark.parentNode;
       if (parent.nodeType === Node.ELEMENT_NODE && parent.tagName === 'SPAN') {

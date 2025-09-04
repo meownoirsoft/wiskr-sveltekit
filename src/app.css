@@ -913,8 +913,8 @@ code {
 }
 
 .dark .search-highlight {
-  background-color: #fbbf24;
-  color: #1f2937;
+  background-color: rgba(219, 39, 119, 0.9);
+  color: white;
 }
 
 .search-highlight-scroll {
