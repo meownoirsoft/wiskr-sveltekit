@@ -231,6 +231,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Facts</h3>
+        <span class="text-xs text-gray-500 dark:text-gray-400">Key project details for Wiskr context</span>
         <InfoPopup 
           title="Facts" 
           content={`Name and description tidbits that mportant info about your project. They can be people, places, processes, terms, or things. 

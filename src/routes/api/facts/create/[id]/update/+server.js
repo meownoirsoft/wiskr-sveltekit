@@ -28,11 +28,21 @@ export const POST = async ({ params, request, locals }) => {
     .single();
   if (curErr) return json({ message: curErr.message }, { status: 404 });
 
-  // Apply updates
+  // Apply updates with validation
   const patch = {};
   if (typeof type   !== 'undefined') patch.type   = type;
-  if (typeof key    !== 'undefined') patch.key    = key?.trim();
-  if (typeof value  !== 'undefined') patch.value  = value?.trim();
+  if (typeof key    !== 'undefined') {
+    if (!key?.trim()) {
+      return json({ message: 'Fact title cannot be empty' }, { status: 400 });
+    }
+    patch.key = key.trim();
+  }
+  if (typeof value  !== 'undefined') {
+    if (!value?.trim()) {
+      return json({ message: 'Fact content cannot be empty' }, { status: 400 });
+    }
+    patch.value = value.trim();
+  }
   if (typeof tags   !== 'undefined') patch.tags   = tags;
   if (typeof pinned !== 'undefined') patch.pinned = !!pinned;
 

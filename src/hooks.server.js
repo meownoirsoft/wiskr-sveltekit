@@ -24,10 +24,20 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
     const next = event.url.searchParams.get('next') ?? '/projects';
     
     try {
+      // Force cookie reading to ensure code_verifier is available
+      const allCookies = event.cookies.getAll();
+      console.log('Available cookies during OAuth callback:', allCookies.map(c => c.name));
+      
       const { data, error } = await event.locals.supabase.auth.exchangeCodeForSession(code);
       
       if (error) {
         console.error('OAuth code exchange error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.status,
+          code: code ? 'present' : 'missing',
+          url: event.url.toString()
+        });
         throw redirect(303, `/login?error=${encodeURIComponent(error.message)}`);
       }
       

@@ -476,11 +476,12 @@
             <!-- Tag Breadcrumbs -->
             <div class="flex flex-wrap gap-1">
               {#each selectedTags as tag, index}
-                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full" style="background-color: var(--color-accent-light); color: var(--color-accent);">
+                <span class="inline-flex items-center gap-1 text-xs" style="background-color: var(--color-accent-light); color: var(--color-accent); padding-top: 0px !important; padding-bottom: 0px !important; padding-left: 10px !important; padding-right: 2px !important; min-height: 0 !important;">
                   {tag}
                   <button
                     on:click={() => removeTagFilter(index)}
-                    class="hover:opacity-80 rounded-full p-0.5 transition-opacity"
+                    class="hover:opacity-80 p-0 m-0 transition-opacity flex items-center justify-center"
+                    style="height: 16px !important; width: 16px !important; min-height: 0 !important;"
                     title="Remove tag"
                   >
                     <X size="12" />

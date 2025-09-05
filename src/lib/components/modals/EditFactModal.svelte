@@ -39,6 +39,18 @@
       return;
     }
     
+    // Validate that a title/key is provided
+    if (!editKey || !editKey.trim()) {
+      alert('Please provide a name/title for this fact.');
+      return;
+    }
+    
+    // Validate that content is provided
+    if (!editValue || !editValue.trim()) {
+      alert('Please provide content for this fact.');
+      return;
+    }
+    
     const tags = editTags ? editTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     dispatch('save', {
       fact,

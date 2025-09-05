@@ -653,7 +653,6 @@ import { browser } from '$app/environment';
     {#if isGenerating}
       <LoadingSpinner 
         overlay={true} 
-        backgroundColor="rgba(27, 27, 30, 0.85)" 
         text="Generating Ideas..." 
         size="lg" 
       />

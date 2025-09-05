@@ -220,34 +220,34 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   }
   
   // Check if we're on the projects page
-  $: isProjectsPage = $page.url.pathname === '/projects';
+  $: isProjectsPage = $page?.url?.pathname === '/projects';
   
   // Check if we're on a public page
-  $: isPublicPage = $page.url.pathname === '/' ||
-    $page.url.pathname === '/legal' ||
-    $page.url.pathname === '/support' ||
-    $page.url.pathname === '/privacy' ||
-    $page.url.pathname === '/terms' ||
-    $page.url.pathname === '/plans' ||
-    $page.url.pathname === '/login' ||
-    $page.url.pathname === '/signup';
+  $: isPublicPage = $page?.url?.pathname === '/' ||
+    $page?.url?.pathname === '/legal' ||
+    $page?.url?.pathname === '/support' ||
+    $page?.url?.pathname === '/privacy' ||
+    $page?.url?.pathname === '/terms' ||
+    $page?.url?.pathname === '/plans' ||
+    $page?.url?.pathname === '/login' ||
+    $page?.url?.pathname === '/signup';
   
   // Check if we should show the logo (authenticated pages + public pages)
   $: shouldShowLogo = isProjectsPage || 
-    $page.url.pathname.startsWith('/admin') ||
-    $page.url.pathname.startsWith('/context-dashboard') ||
-    $page.url.pathname.startsWith('/debug-context') ||
-    $page.url.pathname.startsWith('/shared') ||
-    $page.url.pathname === '/login' ||
-    $page.url.pathname === '/signup' ||
-    $page.url.pathname === '/legal' ||
-    $page.url.pathname === '/support' ||
-    $page.url.pathname === '/privacy' ||
-    $page.url.pathname === '/terms' ||
-    $page.url.pathname === '/plans';
+    $page?.url?.pathname?.startsWith('/admin') ||
+    $page?.url?.pathname?.startsWith('/context-dashboard') ||
+    $page?.url?.pathname?.startsWith('/debug-context') ||
+    $page?.url?.pathname?.startsWith('/shared') ||
+    $page?.url?.pathname === '/login' ||
+    $page?.url?.pathname === '/signup' ||
+    $page?.url?.pathname === '/legal' ||
+    $page?.url?.pathname === '/support' ||
+    $page?.url?.pathname === '/privacy' ||
+    $page?.url?.pathname === '/terms' ||
+    $page?.url?.pathname === '/plans';
   
   // Track page views
-  $: if (browser && $page.url.pathname) {
+  $: if (browser && $page?.url?.pathname) {
     trackPageView($page.url.pathname);
   }
   
@@ -274,7 +274,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     // PWA functionality removed for simplicity
     
     // Initialize tutorial system
-    if (shouldShowTutorial($page.url.pathname)) {
+    if (shouldShowTutorial($page?.url?.pathname)) {
       setTimeout(() => {
         initTutorial();
       }, 2000); // Wait for app to fully load
@@ -652,10 +652,10 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               title="Facts & Docs"
             >
               {#if showLeftPanel}
-                <!-- Panel is open - chevrons pointing left (hide panel) -->
+                <!-- Panel is open - chevrons pointing OUT (left) -->
                 <ChevronsLeft size="24" />
               {:else}
-                <!-- Panel is closed - chevrons pointing right (show panel) -->
+                <!-- Panel is closed - chevrons pointing IN (right) -->
                 <ChevronsRight size="24" />
               {/if}
               <!-- <span class="text-xs mt-1">Facts</span> -->
@@ -885,10 +885,10 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               title="Questions & Ideas"
             >
               {#if !showRightPanel}
-                <!-- Chevrons pointing left (show panel) -->
+                <!-- Panel NOT shown - chevrons pointing IN (left) to show panel -->
                 <ChevronsLeft size="24" />
               {:else}
-                <!-- Chevrons pointing right (hide panel) -->
+                <!-- Panel shown - chevrons pointing OUT (right) to hide panel -->
                 <ChevronsRight size="24" />
               {/if}
               <!-- <span class="text-xs mt-1">Ideas</span> -->
@@ -900,7 +900,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
          <div class="hidden xl:flex items-center gap-6">
            {#if data?.user}
               <!-- App/Account Settings -->
-             {#if $page.url.pathname === '/projects'}
+             {#if $page?.url?.pathname === '/projects'}
              <button 
                type="button"
                class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"

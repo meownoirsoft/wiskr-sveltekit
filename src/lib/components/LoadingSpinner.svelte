@@ -7,7 +7,7 @@
   export let showText = true;
   export let center = true;
   export let overlay = false; // If true, shows as an overlay
-  export let backgroundColor = 'var(--bg-primary)'; // For overlay mode
+  export let backgroundColor = 'rgba(0, 0, 0, 0.05)'; // For overlay mode - very subtle and theme-agnostic
   export let spinnerColor = 'var(--color-accent)';
   export let textColor = 'var(--text-primary)';
   

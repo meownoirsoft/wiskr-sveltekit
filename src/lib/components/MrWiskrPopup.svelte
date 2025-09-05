@@ -4,7 +4,7 @@
   import { browser } from '$app/environment';
   import { marked } from 'marked';
   import { getAIName } from '$lib/config/aiAvatars.js';
-  import { X, ThumbsUp, ThumbsDown } from 'lucide-svelte';
+  import { X, ThumbsUp, ThumbsDown, Lightbulb, BookOpen, ArrowRight, Shield, Users, Bug, CheckCircle, AlertTriangle } from 'lucide-svelte';
 
   export let visible = false;
   export let x = 0;
@@ -315,12 +315,16 @@
       
                            <!-- Mr Wiskr Image - positioned at the top center -->
         <div class="flex justify-center mb-4 mt-6">
-          <img 
-            src="/mr-wiskr.png" 
-            alt="Mr Wiskr" 
-            class="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 shadow-lg bg-white"
-            style="border-color: #5D60DD;"
-          />
+          <div class="relative">
+            <img 
+              src="/mr-wiskr.png" 
+              alt="Mr Wiskr" 
+              class="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 shadow-lg bg-white transition-transform hover:scale-105"
+              style="border-color: #5D60DD;"
+            />
+            <!-- Subtle glow effect -->
+            <div class="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 to-blue-400/20 blur-sm -z-10"></div>
+          </div>
         </div>
        
        <!-- Content Area without left margin -->
@@ -328,7 +332,7 @@
         {#if isThinking}
           <div class="flex items-center gap-2" style="color: #5D60DD;">
             <div class="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style="border-color: #5D60DD;"></div>
-            <span class="text-sm font-medium">Mr Wiskr is thinking...</span>
+            <span class="text-sm font-medium">Albert is thinking... 🤔</span>
           </div>
         {:else if error}
           <div class="text-sm text-red-600 dark:text-red-400">
@@ -337,7 +341,7 @@
           </div>
         {:else if response}
           <div class="text-sm text-gray-800 dark:text-gray-200 space-y-2">
-            <div class="font-medium mb-2" style="color: #5D60DD;">Mr Wiskr says:</div>
+            <div class="font-medium mb-2" style="color: #5D60DD;">Albert says: 😊</div>
             <div class="prose prose-sm max-w-none prose-gray dark:prose-invert">
               {@html renderMarkdown(response)}
             </div>
@@ -346,70 +350,131 @@
           </div>
         {:else if showOptions}
           <!-- Help Options Menu -->
-          <div class="text-sm space-y-3">
+          <div class="text-sm space-y-4">
             <div class="font-medium text-center mb-4" style="color: #5D60DD;">
-              Hey there! How can I help you with this?
+              Hey, Albert here! How can I help you with this? 😊
             </div>
             
+            <!-- Understanding & Learning Section -->
             <div class="space-y-2">
+              <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Let's Learn Together ✨
+              </div>
+              
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('translate')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Break it down</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Plain language explanation</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
+                    <BookOpen size={16} class="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">Break it down</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Let me explain this in simpler terms</div>
+                  </div>
+                </div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('examples')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Show examples</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">See how this works</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/40 transition-colors">
+                    <Lightbulb size={16} class="text-green-600 dark:text-green-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">Show examples</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">I'll show you some real examples</div>
+                  </div>
+                </div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('next-steps')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">What's next?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Practical steps to take</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
+                    <ArrowRight size={16} class="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">What's next?</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Here's what you can do next</div>
+                  </div>
+                </div>
               </button>
+            </div>
+            
+            <!-- Review & Safety Section -->
+            <div class="space-y-2">
+              <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Let's Double-Check 🤔
+              </div>
               
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('critique')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Is this right?</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Find red flags or gaps</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 group-hover:bg-orange-200 dark:group-hover:bg-orange-800/40 transition-colors">
+                    <Shield size={16} class="text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">Review Wiskr response</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Let me check this for any issues</div>
+                  </div>
+                </div>
               </button>
               
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('alternative')}
               >
-                <div class="font-medium mb-1" style="color: #5D60DD;">Ask a friend</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Get another perspective</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/40 transition-colors">
+                    <Users size={16} class="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">Get another perspective</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">I'll ask another Wiskr for their take</div>
+                  </div>
+                </div>
               </button>
+            </div>
+            
+            <!-- Support Section -->
+            <div class="space-y-2">
+              <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Need Help? 🛟
+              </div>
               
               <button
-                class="cursor-pointer w-full text-left p-2 md:p-3 rounded-lg border transition-all hover:shadow-md hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                class="cursor-pointer w-full text-left p-3 rounded-lg border transition-all hover:shadow-md hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 group"
                 style="border-color: #e5e7eb; background-color: var(--bg-modal, white);"
                 on:click={() => handleHelpOption('report-problem')}
               >
-                <div class="font-medium mb-1" style="color: #ef4444;">Report problem</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Bugs or issues</div>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 group-hover:bg-red-200 dark:group-hover:bg-red-800/40 transition-colors">
+                    <Bug size={16} class="text-red-600 dark:text-red-400" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium mb-1 text-gray-900 dark:text-gray-100">Report a problem</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">Something not working right? Let me know</div>
+                  </div>
+                </div>
               </button>
             </div>
           </div>
         {:else}
           <div class="text-sm text-gray-600 dark:text-gray-400">
-            <span class="font-medium">Hey there!</span> Let me help you with this...
+            <span class="font-medium">Hey, Albert here! 😊</span> Let me help you with this...
           </div>
         {/if}
       </div>
@@ -504,9 +569,9 @@
           <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
             <div class="text-xs text-center text-gray-500 dark:text-gray-500">
               {#if feedbackType === 'positive'}
-                🐱 Thanks! Mr Wiskr purrs with appreciation!
+                🐱 Thanks! Albert purrs with appreciation!
               {:else}
-                🐱 Thanks for the feedback - Mr Wiskr will learn and get better!
+                🐱 Thanks for the feedback - Albert will learn and get better!
               {/if}
             </div>
           </div>

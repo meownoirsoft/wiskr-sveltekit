@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { RefreshCw } from 'lucide-svelte';
   import { marked } from 'marked';
+  import InfoPopup from './InfoPopup.svelte';
 
   export let current = null;
 
@@ -17,19 +18,31 @@
 
 {#if current}
   <div class="flex flex-col h-full">
-    <div class="flex justify-end mb-2 flex-shrink-0">
-      <button 
-        id="regenerate-summary"
-        class="flex items-center gap-2 px-3 py-1 text-sm rounded border transition-colors" 
-        style="color: var(--color-accent);"
-        on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.color = 'var(--color-accent-hover)'; }}
-        on:mouseleave={(e) => { e.target.style.backgroundColor = ''; e.target.style.color = 'var(--color-accent)'; }}
-        on:click={regenerateBrief} 
-        title="Regenerate Summary"
-      >
-        <RefreshCw size="16" />
-        <span>Regenerate</span>
-      </button>
+    <!-- Header with title and explanatory text -->
+    <div class="flex-shrink-0 mb-2">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Summary</h3>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Everything Wiskrs know about your project</span>
+          <InfoPopup 
+            title="Summary" 
+            content={`The Summary provides a high-level overview of your project that helps Wiskrs understand the context and purpose. It's automatically generated from your project's facts, docs, and conversations to give Wiskrs a quick understanding of what you're working on.<br /><br />You can regenerate the summary anytime to keep it up-to-date with your latest project changes.`}
+            buttonTitle="Learn about Summary"
+          />
+        </div>
+        <button 
+          id="regenerate-summary"
+          class="flex items-center gap-2 px-3 py-1 text-sm rounded border transition-colors" 
+          style="color: var(--color-accent);"
+          on:mouseenter={(e) => { e.target.style.backgroundColor = 'var(--color-accent-light)'; e.target.style.color = 'var(--color-accent-hover)'; }}
+          on:mouseleave={(e) => { e.target.style.backgroundColor = ''; e.target.style.color = 'var(--color-accent)'; }}
+          on:click={regenerateBrief} 
+          title="Regenerate Summary"
+        >
+          <RefreshCw size="16" />
+          <span>Regenerate</span>
+        </button>
+      </div>
     </div>
     <div class="prose prose-sm max-w-none overflow-y-auto flex-1 min-h-0">
       {@html briefHtml}

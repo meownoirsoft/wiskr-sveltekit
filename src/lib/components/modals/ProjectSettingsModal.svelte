@@ -219,7 +219,7 @@
     tabindex="0"
   >
     <!-- Modal Content -->
-         <div class="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-600 md:border-0" style="background-color: var(--bg-modal, white);">
+         <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-600 md:border-0" style="background-color: var(--bg-modal, white);">
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-4 pb-2 border-b border-gray-200 dark:border-gray-700">
         <div>
@@ -353,8 +353,8 @@
                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                        </svg>
                      </button>
-                                           <!-- Tooltip - Show on hover (desktop) or click (mobile) -->
-                                             <div class="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-[99999] md:opacity-0 md:group-hover:opacity-100 {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
+                                           <!-- Tooltip - Show only when clicked -->
+                                             <div class="absolute top-full left-0 md:right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-[99999] {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
                         <div class="text-center">
                           <p class="font-medium mb-1">The description below is the <strong>most important context</strong> for Wiskrs.</p>
                           <p class="text-gray-300">It's their <strong>"north star"</strong> for providing targeted assistance.</p>
@@ -378,7 +378,7 @@
                   </label>
                   
                   {#if projectDescription.trim()}
-                    <FeatureGate user={{ ...user, tier: userTier }} feature="say-less" requiredTier={1} showBadge={false} let:hasAccess>
+                    <FeatureGate user={{ ...user, tier: userTier }} feature="say-less" requiredTier={1} showBadge={true} let:hasAccess>
                       <SayLessButton
                         on:sayless={handleSayLessClick}
                         disabled={!projectDescription.trim() || !hasAccess}
@@ -389,7 +389,7 @@
                 </div>
                 <textarea 
                   id="project-description"
-                  rows="5"
+                  rows="8"
                   bind:value={projectDescription}
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent" style="--tw-ring-color: var(--color-accent);"
                   placeholder="Describe your project's goals, objectives, and what you're trying to achieve. Be specific about your aims and requirements. This helps the AI provide more targeted assistance."

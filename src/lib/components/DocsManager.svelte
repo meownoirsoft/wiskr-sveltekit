@@ -92,6 +92,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Docs</h3>
+        <span class="text-xs text-gray-500 dark:text-gray-400">In-depth project knowledge for Wiskrs</span>
         <InfoPopup 
           title="Documentation" 
           content={`Docs are longer text documents that provide detailed info about your project. 
@@ -120,7 +121,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   <!-- Scrollable Docs List -->
   <div class="flex-1 overflow-y-auto pr-1 relative">
     {#if loadingDocs}
-      <LoadingSpinner overlay={true} backgroundColor="rgba(255, 255, 255, 0.7)" text="Loading docs..." />
+      <LoadingSpinner overlay={true} text="Loading docs..." />
     {/if}
     <div class="grid gap-2" style="grid-template-columns: repeat({factsGridSize}, minmax(0, 1fr));">
   {#each docs.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) as d, i}
@@ -191,17 +192,17 @@ import LoadingSpinner from './LoadingSpinner.svelte';
       
       <!-- Tags row: Type tag and regular tags combined -->
       <div class="flex-shrink-0 flex flex-wrap gap-1">
-        <span class="text-xs px-2 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300" style="padding-top: 3px; padding-bottom: 3px;">doc</span>
+        <span class="text-xs px-1 rounded font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100" style="padding-top: 3px !important; padding-bottom: 3px !important; min-height: 0 !important;">doc</span>
         {#if d.tags && d.tags.length > 0}
           {#each d.tags as tag}
-            <button
-              class="text-xs px-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer"
-              style="padding-top: 3px; padding-bottom: 3px;"
+            <a
+              class="text-xs px-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors cursor-pointer inline-block"
+              style="padding-top: 3px !important; padding-bottom: 3px !important; min-height: 0 !important;"
               on:click={() => handleTagClick(tag)}
               title="Filter by tag: {tag}"
             >
               {tag}
-            </button>
+            </a>
           {/each}
         {/if}
       </div>

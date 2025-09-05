@@ -25,10 +25,20 @@ export const POST = async ({ params, request, locals }) => {
     .single();
   if (curErr) return json({ message: curErr.message }, { status: 404 });
 
-  // Patch
+  // Patch with validation
   const patch = {};
-  if (typeof title   !== 'undefined') patch.title   = title?.trim();
-  if (typeof content !== 'undefined') patch.content = content ?? '';
+  if (typeof title   !== 'undefined') {
+    if (!title?.trim()) {
+      return json({ message: 'Document title cannot be empty' }, { status: 400 });
+    }
+    patch.title = title.trim();
+  }
+  if (typeof content !== 'undefined') {
+    if (!content?.trim()) {
+      return json({ message: 'Document content cannot be empty' }, { status: 400 });
+    }
+    patch.content = content.trim();
+  }
   if (typeof tags    !== 'undefined') patch.tags    = tags;
   if (typeof pinned  !== 'undefined') patch.pinned  = !!pinned;
 

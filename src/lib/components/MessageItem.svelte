@@ -261,11 +261,11 @@
             on:mouseenter={(e) => { e.target.style.backgroundColor = '#4B4BC7'; e.target.style.borderColor = '#4B4BC7'; }}
             on:mouseleave={(e) => { e.target.style.backgroundColor = '#5D60DD'; e.target.style.borderColor = '#5D60DD'; }}
             on:click={(e) => openMrWiskrForMessage(index, e)}
-            title="Ask Wiskr for help with this response"
+            title="Get help from Albert with this response"
           >
-            <img src="/mr-wiskr-emoji.png" alt="Wiskr" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" fetchpriority="high" />
-            <span class="hidden xs:inline">Wiskr</span>
-            <span class="xs:hidden">Wiskr</span>
+            <img src="/mr-wiskr-emoji.png" alt="Albert" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" fetchpriority="high" />
+            <span class="hidden xs:inline">Help</span>
+            <span class="xs:hidden">Help</span>
           </button>
         </div>
       {/if}

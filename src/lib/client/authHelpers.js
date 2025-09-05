@@ -7,11 +7,17 @@ import { supabase } from '$lib/supabase.js';
  */
 export async function signInWithGoogle(redirectTo = '/projects') {
   try {
+    console.log('Initiating Google OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}${redirectTo}`,
-        scopes: 'openid email profile'
+        scopes: 'openid email profile',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
       }
     });
 
@@ -20,6 +26,7 @@ export async function signInWithGoogle(redirectTo = '/projects') {
       return { data: null, error };
     }
 
+    console.log('Google OAuth initiated successfully');
     return { data, error: null };
   } catch (err) {
     console.error('Unexpected error during Google sign in:', err);
@@ -34,6 +41,8 @@ export async function signInWithGoogle(redirectTo = '/projects') {
  */
 export async function signInWithDiscord(redirectTo = '/projects') {
   try {
+    console.log('Initiating Discord OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
@@ -47,6 +56,7 @@ export async function signInWithDiscord(redirectTo = '/projects') {
       return { data: null, error };
     }
 
+    console.log('Discord OAuth initiated successfully');
     return { data, error: null };
   } catch (err) {
     console.error('Unexpected error during Discord sign in:', err);
