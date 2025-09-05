@@ -16,6 +16,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
   import TutorialOverlay from '$lib/components/TutorialOverlay.svelte';
   import ToastNotification from '$lib/components/ToastNotification.svelte';
+  import * as Sentry from '@sentry/sveltekit';
   import '../app.css';
   import '$lib/components/styles.css';
   
@@ -267,6 +268,38 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     
     // Initialize PostHog analytics
     initAnalytics();
+    
+    // Initialize Sentry session replay
+    Sentry.init({
+      dsn: 'https://bd9dc16a1a74900d1054238747da0b43@o4509965529972736.ingest.us.sentry.io/4509965533249536', // Replace with your actual DSN
+      integrations: [
+        Sentry.replayIntegration({
+          // Session replay configuration
+          maskAllText: false, // Set to true to mask all text
+          blockAllMedia: false, // Set to true to block all media
+          maskAllInputs: true, // Mask sensitive inputs
+          maskTextSelector: '.sensitive-data', // Custom selectors to mask
+        }),
+      ],
+      // Performance Monitoring
+      tracesSampleRate: 1.0,
+      // Session Replay
+      replaysSessionSampleRate: 1.0, // 10% of sessions
+      replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+      
+      // User context
+      beforeSend(event) {
+        // Add user context if available
+        if (data?.user) {
+          event.user = {
+            id: data.user.id,
+            email: data.user.email,
+            tier: data.effectiveTier
+          };
+        }
+        return event;
+      }
+    });
     
     // PWA functionality removed for simplicity
     

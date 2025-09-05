@@ -29,3 +29,6 @@ vite.config.ts.timestamp-*
 /docs
 /migrations
 /.playwright-mcp
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -1,9 +1,11 @@
+import {sequence} from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
 // src/hooks.server.js
 import { createServerClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { redirect } from '@sveltejs/kit';
 
-export const handle = async ({ event, resolve }) => {
+export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(
     PUBLIC_SUPABASE_URL,
     PUBLIC_SUPABASE_ANON_KEY,
@@ -179,4 +181,5 @@ export const handle = async ({ event, resolve }) => {
   }
 
   return resolve(event);
-};
+});
+export const handleError = Sentry.handleErrorWithSentry();

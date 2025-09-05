@@ -7,6 +7,16 @@ const isDev = process.env.NODE_ENV === 'development';
 const config = {
   kit: {
     adapter: adapter(),
+
+    experimental: {
+      tracing: {
+        server: true
+      },
+
+      instrumentation: {
+        server: true
+      }
+    }
   },
 
   extensions: ['.svelte'],
