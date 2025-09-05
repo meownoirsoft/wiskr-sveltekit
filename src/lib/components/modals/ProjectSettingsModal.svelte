@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
+  import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
   import FactTypesManager from '../FactTypesManager.svelte';
   import SayLessModal from './SayLessModal.svelte';
   import SayLessButton from '../SayLessButton.svelte';
@@ -15,6 +16,11 @@
   export const effectiveTier = 0; // Effective tier from server
 
   const dispatch = createEventDispatcher();
+  
+  // Modal click handler for proper backdrop clicks
+  const modalClickHandler = createModalClickHandler(() => {
+    closeModal();
+  });
 
   let activeTab = 'general';
   let projectName = '';
@@ -205,7 +211,7 @@
   <div 
     class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-2 md:p-4"
     style="background-color: rgba(0, 0, 0, 0.25);"
-    on:click={handleBackdropClick}
+    on:mousedown={modalClickHandler.handleMouseDown} on:click={modalClickHandler.handleClick}
     on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"

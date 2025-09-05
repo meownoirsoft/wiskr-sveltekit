@@ -1,9 +1,15 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { X, Crown, Gift, User, Calendar } from 'lucide-svelte';
+  import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
   import { TIER_NAMES } from '$lib/config/tiers.js';
 
   const dispatch = createEventDispatcher();
+  
+  // Modal click handler for proper backdrop clicks
+  const modalClickHandler = createModalClickHandler(() => {
+    handleClose();
+  });
 
   export let show = false;
   export let user = null;
@@ -70,7 +76,7 @@
   <div 
     class="fixed inset-0 z-50 flex items-center justify-center p-4"
     style="backdrop-filter: blur(8px); background-color: rgba(0, 0, 0, 0.5);"
-    on:click={handleBackdropClick}
+    on:mousedown={modalClickHandler.handleMouseDown} on:click={modalClickHandler.handleClick}
     role="dialog"
     aria-modal="true"
     aria-labelledby="tier-change-title"

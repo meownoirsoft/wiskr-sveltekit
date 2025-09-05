@@ -2,6 +2,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { X } from 'lucide-svelte';
+  import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
   
   export let visible = false;
   export let rating = null; // 1 for thumbs up, -1 for thumbs down
@@ -10,6 +11,11 @@
   export let aiName = 'Wiskr'; // The wiskr's name for context
   
   const dispatch = createEventDispatcher();
+  
+  // Modal click handler for proper backdrop clicks
+  const modalClickHandler = createModalClickHandler(() => {
+    handleCancel();
+  });
   
   let comment = '';
   let modalElement;
@@ -73,7 +79,7 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
     class="fixed inset-0 z-[99999] flex items-start justify-center p-4 pt-32 sm:pt-40 backdrop-blur-sm bg-black/20 dark:bg-black/40"
-    on:click={handleBackdropClick}
+    on:mousedown={modalClickHandler.handleMouseDown} on:click={modalClickHandler.handleClick}
     on:keydown={handleKeydown}
   >
     <div 

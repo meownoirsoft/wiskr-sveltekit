@@ -204,7 +204,15 @@ export function processStreamingResponse(chunk, modelKey, state = {}) {
  * @returns {string} Processed content with friendly names
  */
 export function postProcessStreamedResponse(fullContent, modelKey) {
-  return processAIResponse(fullContent, modelKey);
+  if (!fullContent || typeof fullContent !== 'string') {
+    return fullContent;
+  }
+
+  // Remove [DONE] markers that might have been included in the content
+  let cleanedContent = fullContent.replace(/\[DONE\]/g, '').trim();
+  
+  // Process the cleaned content
+  return processAIResponse(cleanedContent, modelKey);
 }
 
 /**

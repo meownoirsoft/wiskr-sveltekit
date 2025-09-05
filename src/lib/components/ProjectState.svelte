@@ -25,10 +25,10 @@
 
   // Debug: Log initial projects state
   // $: if (browser && projects) {
-  //   // console.log('🔍 Projects array updated:', {
-  //   //   count: projects.length,
-  //   //   projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
-  //   // });
+  //   console.log('🔍 Projects array updated:', {
+  //     count: projects.length,
+  //     projects: projects.map(p => ({ id: p.id, name: p.name, source: 'reactive' }))
+  //   });
   // }
 
   // Save modelKey to localStorage whenever it changes (but only after initial load)

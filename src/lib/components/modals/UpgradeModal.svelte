@@ -4,6 +4,7 @@
   import { X, Check, Zap, Crown, Star } from 'lucide-svelte';
   import { TIER_NAMES } from '$lib/config/tiers.js';
   import { getUserTier, getUserTierName } from '$lib/utils/tiers.js';
+  import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
 
   const dispatch = createEventDispatcher();
 
@@ -18,6 +19,11 @@
   $: currentTier = getUserTier(user);
   $: currentTierName = getUserTierName(user);
   $: targetTierName = TIER_NAMES[targetTier] || 'Pro';
+  
+  // Modal click handler for proper backdrop clicks
+  const modalClickHandler = createModalClickHandler(() => {
+    closeModal();
+  });
 
   function closeModal() {
     showModal = false;
@@ -77,7 +83,7 @@
   <div 
     class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
     style="background-color: rgba(0, 0, 0, 0.5);"
-    on:click={handleBackdropClick}
+    on:mousedown={modalClickHandler.handleMouseDown} on:click={modalClickHandler.handleClick}
     on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"

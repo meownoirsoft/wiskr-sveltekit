@@ -6,6 +6,7 @@
   import { getTierDisplayInfo } from '$lib/tiers.js';
   import { getBuildInfo } from '$lib/config/build.js';
   import UpgradeModal from '$lib/components/modals/UpgradeModal.svelte';
+  import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
   
   const dispatch = createEventDispatcher();
 
@@ -32,6 +33,11 @@
   
   // Build info
   const buildInfo = getBuildInfo();
+  
+  // Modal click handler for proper backdrop clicks
+  const modalClickHandler = createModalClickHandler(() => {
+    handleClose();
+  });
   
   // Reactive variable for facts grid size (converted to string for select element)
   $: factsGridSizeString = userPreferences.facts_grid_size?.toString() || '3';
@@ -331,7 +337,7 @@
 {#if isOpen}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div id="app-settings-modal" class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:click={handleClickOutside}>
+  <div id="app-settings-modal" class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:mousedown={modalClickHandler.handleMouseDown} on:click={modalClickHandler.handleClick}>
     <div class="bg-white rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-600 w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
              <div class="flex items-center justify-between pl-6 pr-4 py-3 border-b border-gray-200 dark:border-gray-600">
          {#if !userData}

@@ -17,6 +17,9 @@
   export let current = null;
   export let searchTerm = ''; // Search term for highlighting
 
+  // Clean message content to remove any [DONE] markers that might have been stored
+  $: cleanedContent = message?.content?.replace(/\[DONE\]/g, '').trim() || '';
+
   // Height measurement
   export let onHeightChange = null;
   let messageElement;
@@ -177,7 +180,7 @@
         </div>
       {:else}
         <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
-          {@html highlightText(renderMarkdown(message.content), searchTerm)}
+          {@html highlightText(renderMarkdown(cleanedContent), searchTerm)}
         </div>
       {/if}
       
@@ -198,14 +201,14 @@
       {/if}
     {:else}
       <div class="text-sm sm:text-base -mt-2 leading-normal">
-        {@html highlightText(message.content, searchTerm)}
+        {@html highlightText(cleanedContent, searchTerm)}
       </div>
     {/if}
   </div>
 
   <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center {message.role === 'user' ? '' : 'mr-3 sm:mr-6'} mt-2 gap-2">
     <!-- Highlight-to-add feature hint (only for assistant messages) -->
-    {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
+    {#if message.role === 'assistant' && cleanedContent.trim() && !message.isLoading}
       <div class="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
         <Type size="14" class="flex-shrink-0" />
         <span class="hidden sm:inline">Click & drag to capture/format</span>
@@ -214,14 +217,14 @@
     {/if}
     
     <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
-      {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
+      {#if message.role === 'assistant' && cleanedContent.trim() && !message.isLoading}
         <!-- Feedback Buttons -->  
         {#if current?.id}
           <div class="">
             <FeedbackButtons
               messageId={message.id}
               projectId={current.id}
-              messageContent={message.content}
+              messageContent={cleanedContent}
               aiName={message.model_key ? getAIName(message.model_key) : 'Wiskr'}
               size="sm"
             />
@@ -250,7 +253,7 @@
         </div>
       {/if}
       
-      {#if message.role === 'assistant' && message.content.trim() && !message.isLoading}
+      {#if message.role === 'assistant' && cleanedContent.trim() && !message.isLoading}
         <div class="z-10">
           <button
             class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-10 sm:h-8 touch-action-manipulation overflow-hidden"
