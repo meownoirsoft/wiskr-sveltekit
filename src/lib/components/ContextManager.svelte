@@ -245,12 +245,18 @@
 
   // DOCS MANAGEMENT FUNCTIONS
 
-  export async function addDoc() {
+  export async function addDoc(data = null) {
     if (!current) return;
-    if (!docTitle?.trim()) return;
+    
+    // Use passed data or fall back to bound variables
+    const title = data?.title || docTitle;
+    const content = data?.content || docContent;
+    const tagsString = data?.tags ? data.tags.join(',') : docTags;
+    
+    if (!title?.trim()) return;
 
     // Parse tags
-    const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     // Check if offline - queue the request
     if (!getNetworkStatus()) {
@@ -260,14 +266,14 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             project_id: current.id,
-            title: docTitle.trim(),
-            content: docContent || '',
+            title: title.trim(),
+            content: content || '',
             tags: tags,
             pinned: false
           })
         });
         await loadContext();
-      }, { type: 'create_doc', docTitle: docTitle.trim() });
+      }, { type: 'create_doc', docTitle: title.trim() });
       
       if (browser && window.showNetworkToast) {
         window.showNetworkToast.offline('Document will be saved when you come back online.');
@@ -287,8 +293,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: current.id,
-          title: docTitle.trim(),
-          content: docContent || '',
+          title: title.trim(),
+          content: content || '',
           tags: tags,
           pinned: false
         })

@@ -316,7 +316,7 @@
 
 <!-- Mobile Search Panel -->
 {#if isVisible}
-      <div class="fixed top-16 left-0 right-0 z-[300] border-b shadow-lg" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
+      <div id="mobile-search-panel" class="fixed top-16 left-0 right-0 z-[300] border-b shadow-lg" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
     
     <!-- Search Controls Row -->
     <div class="flex items-center gap-2 p-3">

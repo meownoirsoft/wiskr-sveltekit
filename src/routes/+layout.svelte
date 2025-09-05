@@ -628,10 +628,10 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 </script>
 
 <!-- App shell: full height -->
-<div class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
+<div id="app-container" class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
 
   <!-- Header -->
-     <header class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center sticky top-0 z-[150] transition-colors" style="background-color: var(--bg-header);">
+     <header id="main-header" class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center sticky top-0 z-[150] transition-colors" style="background-color: var(--bg-header);">
      <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center gap-2 md:gap-4 relative">
       <div class="flex-1 flex items-center gap-2 md:gap-4">
         <!-- Left section content will go here -->
@@ -810,8 +810,22 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       <!-- Right side: Menus and controls -->
       <div class="flex items-center gap-0 md:gap-4 flex-shrink-0 -mr-4 md:mr-0">
         {#if isProjectsPage && !isPublicPage}
-          <!-- Desktop: Usage Stats -->
+          <!-- Desktop: Account Tier Badge and Usage Stats -->
           <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
+            <!-- Account Tier Badge -->
+            <div class="flex flex-col items-center text-xs text-gray-600 dark:text-gray-400">
+              <span class="font-medium">Account:</span>
+              <span class="font-semibold {
+                data?.effectiveTier >= 2 ? 'text-orange-500 dark:text-orange-400' : 
+                data?.effectiveTier >= 1 ? 'text-purple-600 dark:text-purple-400' : 
+                'text-blue-600 dark:text-blue-400'
+              }">
+                {data?.effectiveTier >= 2 ? 'Studio' : 
+                 data?.effectiveTier >= 1 ? 'Pro' : 
+                 'Free'}
+              </span>
+            </div>
+            
             <!-- Usage Stats Button -->
             <button
               type="button"
@@ -969,7 +983,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         }
       }}
     >
-                  <div class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 border rounded-lg shadow-xl py-4" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'} !important; color: white !important; z-index: 9999999;">
+                  <div id="mobile-project-menu" class="absolute top-16 left-4 right-4 sm:left-6 sm:right-auto sm:w-80 border rounded-lg shadow-xl py-4" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'} !important; color: white !important; z-index: 9999999;">
         <!-- Header -->
         <div class="px-4 pb-3 border-b" style="border-color: {darkMode ? '#1e293b' : '#1d4ed8'} !important;">
           <div class="flex items-center justify-between">
@@ -1112,20 +1126,22 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
 
   <!-- Page content fills the rest -->
-  <main class="flex-1 min-h-0">
+  <main id="main-content" class="flex-1 min-h-0">
     <slot />
   </main>
 
 
   <!-- NEW PROJECT MODAL -->
-  <NewProjectModal
-    {showNewProjectModal}
-    {newProjectName}
-    {creatingProject}
-    {createProjectErr}
-    on:close={handleNewProjectModalClose}
-    on:create={handleCreateProject}
-  />
+  <div id="new-project-modal-container">
+    <NewProjectModal
+      {showNewProjectModal}
+      {newProjectName}
+      {creatingProject}
+      {createProjectErr}
+      on:close={handleNewProjectModalClose}
+      on:create={handleCreateProject}
+    />
+  </div>
 
   <!-- PROJECT EXPORT MODAL -->
   <ProjectExport 
@@ -1138,12 +1154,13 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   />
 
   <!-- APP SETTINGS MODAL -->
-  <AppSettingsModal
-    isOpen={showAppSettings}
-    userData={data?.user}
-    bind:userPreferences
-    {savingPreferences}
-    {darkMode}
+  <div id="app-settings-modal-container">
+    <AppSettingsModal
+      isOpen={showAppSettings}
+      userData={data?.user}
+      bind:userPreferences
+      {savingPreferences}
+      {darkMode}
     userTier={data?.userTier || 0}
     effectiveTier={data?.effectiveTier || 0}
     trialEndsAt={data?.trialEndsAt || null}
@@ -1152,6 +1169,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     on:save-preferences={handleSettingsSave}
     on:theme-changed={handleSettingsThemeChange}
   />
+  </div>
   
   <!-- PWA functionality removed -->
   

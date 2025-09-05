@@ -218,9 +218,9 @@
                           alt={avatar.name} 
                           class="w-4/5 h-4/5 object-contain"
                         />
-                                                                                                                                   <!-- Lock indicator in corner -->
-                                                   <div class="absolute top-1 right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center shadow-sm">
-                            <Lock size="12" class="text-white" />
+                          <!-- Pro label on bottom edge -->
+                          <div class="absolute bottom-0 left-0 right-0 bg-blue-600 dark:bg-blue-500 text-white text-xs font-medium text-center py-0.5 rounded-b-lg">
+                            Pro
                           </div>
                    </div>
                  </button>
@@ -248,9 +248,6 @@
               </button>
             {/if}
             <span class="text-xs {avatar.isLocked ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'} text-center">{avatar.name}</span>
-            {#if avatar.isLocked}
-              <span class="text-xs text-blue-600 dark:text-blue-400 text-center font-medium">Pro</span>
-            {/if}
           </div>
         {/each}
       </div>

@@ -4,6 +4,7 @@ export function init(opts = {}) {
   const hotkey = (opts.hotkey || 'Control+Shift+X').toUpperCase();
   let enabled = false, lockedEl = null, lastX = 0, lastY = 0;
   let showStack = false;
+  let showBox = false; 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
   const box = document.createElement('div');
@@ -15,7 +16,19 @@ export function init(opts = {}) {
     'color:#fff;background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.14)',
     'border-radius:10px;padding:10px 12px;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)'
   ].join(';');
-  overlay.append(box, panel);
+  // --- Box-model overlay layers ---
+  function createRect(bg, z = 1) {
+    const d = document.createElement('div');
+    d.style.cssText = `position:fixed;pointer-events:none;display:none;background:${bg};
+      border:1px solid rgba(255,255,255,.18);box-sizing:border-box;z-index:${z}`;
+    return d;
+  }
+  const marginRects  = ['mt','mr','mb','ml'].map(() => createRect('rgba(255,165,0,.20)', 1)); // orange-ish
+  const paddingRects = ['pt','pr','pb','pl'].map(() => createRect('rgba(16,185,129,.20)', 1)); // teal-ish
+  // keep your main outline + panel above these
+  box.style.zIndex   = '2';
+  panel.style.zIndex = '3';
+  overlay.append(...marginRects, ...paddingRects, box, panel);
 
   function matchHotkey(e, hotkeyStr) {
     const combo = `${e.ctrlKey?'Control+':''}${e.shiftKey?'Shift+':''}${e.altKey?'Alt+':''}${e.key.length===1?e.key.toUpperCase():e.key}`;
@@ -212,6 +225,15 @@ export function init(opts = {}) {
     return out.toUpperCase();
   }
 
+  function placeRect(el, left, top, width, height) {
+    if (width <= 0 || height <= 0) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.width = width + 'px';
+    el.style.height = height + 'px';
+  }
+
 
   function render(el, x, y) {
     const cs = getComputedStyle(el);
@@ -252,6 +274,16 @@ export function init(opts = {}) {
     const selfSC = createsStackingContext(el, cs) ? stackingContextReasons(el, cs) : 'no';
     const nearestSCLabel = sc.el === el ? 'self' : nicename(sc.el);
     const nearestSCWhy = stackingContextReasons(sc.el, sc.cs);
+
+    // --- Box model numbers ---
+    const num = v => (v === 'auto' ? 0 : parseFloat(v) || 0);
+    const marT = num(cs.marginTop),   marR = num(cs.marginRight),  marB = num(cs.marginBottom), marL = num(cs.marginLeft);
+    const padT = num(cs.paddingTop),  padR = num(cs.paddingRight), padB = num(cs.paddingBottom), padL = num(cs.paddingLeft);
+    const borT = num(cs.borderTopWidth), borR = num(cs.borderRightWidth), borB = num(cs.borderBottomWidth), borL = num(cs.borderLeftWidth);
+
+    // Optional: box-sizing can explain “why width looks wrong”
+    const boxSizing = cs.boxSizing;
+
         
     const transform = cs.transform !== 'none'
       ? (cs.transform.length > 64 ? cs.transform.slice(0,64) + '…' : cs.transform)
@@ -272,6 +304,9 @@ export function init(opts = {}) {
         <b>overflow</b> ${cs.overflowX}/${cs.overflowY}
         <div><b>ancstr</b> ${posAncInfo}</div>
       </div>
+      <div><b>margin</b> ${Math.round(marT)} ${Math.round(marR)} ${Math.round(marB)} ${Math.round(marL)}</div>
+      <div><b>border</b> ${Math.round(borT)} ${Math.round(borR)} ${Math.round(borB)} ${Math.round(borL)}</div>
+      <div><b>padding</b> ${Math.round(padT)} ${Math.round(padR)} ${Math.round(padB)} ${Math.round(padL)}</div>
       <div><b>transform</b> ${transform}</div>
       <div><b>font</b> ${cs.fontSize} (sz)/${cs.lineHeight}(lh)l ${ratio} ${cs.fontFamily.split(',')[0]}</div>
       <div>
@@ -286,24 +321,57 @@ export function init(opts = {}) {
       </div>
       ${peek}
       <div style="opacity:.6;margin-top:6px">
-        [XRay] ${hotkey} toggle • L lock • C copy selector • H hex • Shift+H bg-hex • Z stack
+        [XRay] ${hotkey} toggle • L lock • C copy selector • H hex • Shift+H bg-hex • Z stack • B box-model
       </div>
     `;
 
+  
     // highlight box
     box.style.left = r.left + 'px';
     box.style.top = r.top + 'px';
     box.style.width = r.width + 'px';
     box.style.height = r.height + 'px';
 
+    // --- Box-model overlay drawing ---
+    if (showBox) {
+      // Margin (outside border-box). Only draw when positive; negative margins are shown numerically but skipped visually.
+      if (marT > 0) placeRect(marginRects[0], r.left - marL, r.top - marT, r.width + marL + marR, marT);
+      else marginRects[0].style.display = 'none';
+      if (marR > 0) placeRect(marginRects[1], r.right, r.top - Math.max(marT,0), marR, r.height + Math.max(marT,0) + Math.max(marB,0));
+      else marginRects[1].style.display = 'none';
+      if (marB > 0) placeRect(marginRects[2], r.left - marL, r.bottom, r.width + marL + marR, marB);
+      else marginRects[2].style.display = 'none';
+      if (marL > 0) placeRect(marginRects[3], r.left - marL, r.top - Math.max(marT,0), marL, r.height + Math.max(marT,0) + Math.max(marB,0));
+      else marginRects[3].style.display = 'none';
+
+      // Padding (inside border-box)
+      const innerLeft  = r.left + borL;
+      const innerTop   = r.top + borT;
+      const innerRight = r.right - borR;
+      const innerBot   = r.bottom - borB;
+      const innerW = Math.max(0, innerRight - innerLeft);
+      const innerH = Math.max(0, innerBot - innerTop);
+
+      if (padT > 0) placeRect(paddingRects[0], innerLeft, innerTop, innerW, padT);
+      else paddingRects[0].style.display = 'none';
+      if (padR > 0) placeRect(paddingRects[1], innerRight - padR, innerTop + padT, padR, Math.max(0, innerH - padT - padB));
+      else paddingRects[1].style.display = 'none';
+      if (padB > 0) placeRect(paddingRects[2], innerLeft, innerBot - padB, innerW, padB);
+      else paddingRects[2].style.display = 'none';
+      if (padL > 0) placeRect(paddingRects[3], innerLeft, innerTop + padT, padL, Math.max(0, innerH - padT - padB));
+      else paddingRects[3].style.display = 'none';
+    } else {
+      for (const d of [...marginRects, ...paddingRects]) d.style.display = 'none';
+    }
+
     // place panel near cursor with viewport clamping
     const pad = 12;
     const w = Math.min(480, window.innerWidth * 0.48);
     panel.style.maxWidth = w + 'px';
-    const pr = panel.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
     let left = x + 14, top = y + 14;
-    if (left + pr.width + pad > window.innerWidth) left = x - pr.width - 14;
-    if (top + pr.height + pad > window.innerHeight) top = y - pr.height - 14;
+    if (left + panelRect.width + pad > window.innerWidth) left = x - panelRect.width - 14;
+    if (top + panelRect.height + pad > window.innerHeight) top = y - panelRect.height - 14;
     panel.style.left = Math.max(pad, left) + 'px';
     panel.style.top = Math.max(pad, top) + 'px';
   }
@@ -333,38 +401,44 @@ export function init(opts = {}) {
     }
   }
 
-  function keydown(e) {
-    if (matchHotkey(e, hotkey) && !e.repeat) { // <-- ignore auto-repeat
-      toggle();
-      e.preventDefault();
-      return;
-    }
-    if (!enabled) return;
-    if (e.key === 'l' || e.key === 'L') lockedEl = lockedEl ? null : document.elementFromPoint(lastX, lastY);
-    if (e.key === 'c' || e.key === 'C') {
-      const el = lockedEl ?? document.elementFromPoint(lastX, lastY) ?? document.body;
-      const sel = el ? cssPath(el) : '';
-      navigator.clipboard?.writeText(sel).catch(()=>{});
-      
-    }
+function keydown(e) {
+  if (matchHotkey(e, hotkey) && !e.repeat) { // ignore auto-repeat
+    toggle();
+    e.preventDefault();
+    return;
+  }
+  if (!enabled) return;
 
-    if ((e.key === 'h' || e.key === 'H')) {
+  if (e.key === 'l' || e.key === 'L') {
+    lockedEl = lockedEl ? null : document.elementFromPoint(lastX, lastY);
+    e.preventDefault();
+    return;
+  }
+
+  if (e.key === 'c' || e.key === 'C') {
+    const el = lockedEl ?? document.elementFromPoint(lastX, lastY) ?? document.body;
+    const sel = el ? cssPath(el) : '';
+    navigator.clipboard?.writeText(sel).catch(()=>{});
+    e.preventDefault();
+    return;
+  }
+
+  // H = copy text color hex, Shift+H = copy background hex
+  if (e.key === 'h' || e.key === 'H') {
     const el = lockedEl ?? document.elementFromPoint(lastX, lastY) ?? document.body;
     const cs = getComputedStyle(el);
     const picked = e.shiftKey ? cs.backgroundColor : cs.color;
-
-    // requires parseCSSColor + rgbaToHex helpers from earlier
     const parsed = parseCSSColor(picked);
     const hex = parsed ? rgbaToHex(parsed) : '';
-
     if (hex) {
       navigator.clipboard?.writeText(hex).catch(()=>{});
-      // subtle visual “copied” feedback
       try {
         panel.animate(
-          [{ outline: '2px solid rgba(255,255,255,0)' },
-           { outline: '2px solid rgba(255,255,255,.8)' },
-           { outline: '2px solid rgba(255,255,255,0)' }],
+          [
+            { outline: '2px solid rgba(255,255,255,0)' },
+            { outline: '2px solid rgba(255,255,255,.8)' },
+            { outline: '2px solid rgba(255,255,255,0)' }
+          ],
           { duration: 300, easing: 'ease-in-out' }
         );
       } catch {}
@@ -373,7 +447,17 @@ export function init(opts = {}) {
     e.preventDefault();
     return;
   }
+
+  // B = toggle box-model overlay
+  if (e.key === 'b' || e.key === 'B') {
+    showBox = !showBox;
+    const el = lockedEl ?? document.elementFromPoint(lastX, lastY) ?? document.body;
+    render(el, lastX, lastY);
+    e.preventDefault();
+    return;
+  }
 }
+
   window.addEventListener('keydown', (e) => {
     if (!enabled) return;
     if (e.key === 'z' || e.key === 'Z') showStack = !showStack;

@@ -317,7 +317,7 @@
 {#if isOpen}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:click={handleClickOutside}>
+  <div id="app-settings-modal" class="fixed inset-0 backdrop-blur-sm /50 dark:/70 flex items-center justify-center z-[99999]" on:click={handleClickOutside}>
     <div class="bg-white rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-600 w-[90vw] max-w-2xl max-h-[90vh] overflow-hidden" style="background-color: var(--bg-modal, white);">
              <div class="flex items-center justify-between pl-6 pr-4 py-3 border-b border-gray-200 dark:border-gray-600">
          {#if !userData}
@@ -573,7 +573,7 @@
                           currentAvatarValue={userPreferences.avatar_value}
                           saving={savingPreferences}
                           user={userData}
-                          userTier={1}
+                          userTier={effectiveTier}
                           trialEndsAt={trialEndsAt}
                           on:change={handleAvatarChange}
                         />
@@ -758,6 +758,7 @@
 <!-- Dropdown outside modal to avoid overflow clipping -->
 {#if showDropdown && isOpen && typeof document !== 'undefined'}
   <div 
+    id="settings-dropdown"
     class="fixed border rounded-lg shadow-lg"
     style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#374151' : 'white'}; border-color: var(--border-header-input); top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; z-index: 100000000; width: 256px;"
   >

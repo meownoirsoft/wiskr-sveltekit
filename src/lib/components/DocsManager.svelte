@@ -139,7 +139,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
           <div class="font-semibold leading-none break-words min-w-0 flex-1 text-gray-900 dark:text-gray-100">{@html highlightText(d.title, searchTerm)}</div>
         </div>
         <!-- Triple-dot menu - positioned with negative margins -->
-        <div class="absolute" style="top: -15px; right: -15px;">
+        <div class="absolute" style="top: 0px; right: 0px;">
           <button 
             class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 cursor-pointer p-0" 
             on:click={() => toggleMenu(i)}
@@ -154,7 +154,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
               <!-- Dropdown menu -->
               <div class="dropdown-menu absolute right-0 top-full mt-1 bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-md shadow-lg z-10 min-w-[120px]">
                 <button 
-                  class="w-full px-3 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center gap-2" 
+                  class="w-full px-4 py-3 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center gap-2" 
                   on:click={() => { toggleDocPin(d); closeMenu(); }}
                 >
                   {#if d.pinned}
@@ -166,14 +166,14 @@ import LoadingSpinner from './LoadingSpinner.svelte';
                   {/if}
                 </button>
                 <button 
-                  class="w-full px-3 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center gap-2" 
+                  class="w-full px-4 py-3 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center gap-2" 
                   on:click={() => { startEditDoc(d, i); closeMenu(); }}
                 >
                   <Pencil size="16" />
                   Edit
                 </button>
                 <button 
-                  class="w-full px-3 py-2 text-sm text-left hover:bg-red-50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 flex items-center gap-2" 
+                  class="w-full px-4 py-3 text-sm text-left hover:bg-red-50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 flex items-center gap-2" 
                   on:click={() => { deleteDoc(d, i); closeMenu(); }}
                 >
                   <Trash size="16" />
@@ -232,7 +232,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   bind:docTags
   {projectId}
   {user}
-  on:save={handleAddModalSave}
+  on:add={handleAddModalSave}
   on:close={handleAddModalClose}
 />
 

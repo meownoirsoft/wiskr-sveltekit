@@ -1,6 +1,6 @@
 <!-- src/lib/components/FeedbackButtons.svelte -->
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { ThumbsUp, ThumbsDown, Check, X } from 'lucide-svelte';
   import FeedbackModal from './modals/FeedbackModal.svelte';
   
@@ -24,11 +24,76 @@
   // Check if messageId is a temporary message (not persisted to database)
   $: isTemporaryMessage = messageId && (typeof messageId === 'string' && messageId.startsWith('temp_'));
   
+  // Global feedback cache and batch loading
+  let globalFeedbackCache = new Map();
+  let batchLoadTimeout;
+  
+  // Cleanup timeout on destroy
+  onDestroy(() => {
+    if (batchLoadTimeout) {
+      clearTimeout(batchLoadTimeout);
+    }
+  });
+  
   // Load existing feedback on mount and when messageId changes (but not for temporary messages)
   $: if (messageId && projectId && !isTemporaryMessage) {
-    loadExistingFeedback();
+    // Check cache first
+    if (globalFeedbackCache.has(messageId)) {
+      currentFeedback = globalFeedbackCache.get(messageId);
+    } else {
+      // Clear any existing timeout
+      if (batchLoadTimeout) {
+        clearTimeout(batchLoadTimeout);
+      }
+      
+      // Debounce the batch API call by 500ms
+      batchLoadTimeout = setTimeout(() => {
+        loadBatchFeedback();
+      }, 500);
+    }
   }
   
+  // Batch load feedback for all visible messages
+  async function loadBatchFeedback() {
+    if (!projectId) return;
+    
+    // Collect all message IDs from the current page
+    const messageElements = document.querySelectorAll('[data-message-id]');
+    const messageIds = Array.from(messageElements)
+      .map(el => el.getAttribute('data-message-id'))
+      .filter(id => id && !id.startsWith('temp_'));
+    
+    if (messageIds.length === 0) return;
+    
+    try {
+      const response = await fetch(`/api/feedback/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          messageIds
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Cache all feedback
+        data.feedback.forEach(feedback => {
+          if (feedback.messageId) {
+            globalFeedbackCache.set(feedback.messageId, feedback);
+          }
+        });
+        
+        // Update current feedback if it's in the batch
+        if (messageId && globalFeedbackCache.has(messageId)) {
+          currentFeedback = globalFeedbackCache.get(messageId);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading batch feedback:', error);
+    }
+  }
+
   async function loadExistingFeedback() {
     if (!messageId || isLoading || isTemporaryMessage) return;
     
@@ -38,6 +103,8 @@
       if (response.ok) {
         const data = await response.json();
         currentFeedback = data.feedback;
+        // Cache the result
+        globalFeedbackCache.set(messageId, data.feedback);
       } else {
         console.error('Failed to load existing feedback');
         currentFeedback = null;
@@ -97,6 +164,8 @@
       if (response.ok) {
         const data = await response.json();
         currentFeedback = data.feedback;
+        // Update cache
+        globalFeedbackCache.set(messageId, data.feedback);
         statusMessage = data.message;
         showStatusMessage();
         

@@ -107,7 +107,7 @@
 
 {#if menuVisible && selectedText}
   <div 
-    class="selection-menu fixed z-50 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg py-0.5 min-w-[130px]"
+    class="selection-menu fixed z-[9999] bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg py-0.5 min-w-[130px]"
     style="left: {menuX}px; top: {menuY}px;"
   >
     <button

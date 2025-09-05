@@ -1064,7 +1064,7 @@ function handleFactTogglePin(event) {
 
 function handleDocAdd(event) {
   if (contextManager) {
-    contextManager.addDoc();
+    contextManager.addDoc(event.detail);
   }
 }
 
@@ -1726,10 +1726,10 @@ function handleTextAddToDocs(event) {
 </script>
 
   <!-- Layout -->
-<div class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
+<div id="projects-page-layout" class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Facts/Docs -->
-<div class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? (rightPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
+<div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? (rightPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel}
       <Sidebar
         bind:this={sidebarComponent}
@@ -1776,7 +1776,7 @@ function handleTextAddToDocs(event) {
 
 
   <!-- MAIN AREA: Chat (Center) -->
-  <div class="{isDesktop ? (leftPanelCollapsed && !rightPanelCollapsed ? 'w-[50%]' : !leftPanelCollapsed && rightPanelCollapsed ? 'w-[70%]' : 'flex-1') : 'flex-1'} flex flex-col relative">
+  <div id="main-chat-area" class="{isDesktop ? (leftPanelCollapsed && !rightPanelCollapsed ? 'w-[50%]' : !leftPanelCollapsed && rightPanelCollapsed ? 'w-[70%]' : 'flex-1') : 'flex-1'} flex flex-col relative">
     <!-- Upgrade Success Message -->
                 {#if upgradeMessage}
               <div class="w-full p-4 mb-4 rounded-lg border transition-all duration-300 {upgradeMessageType === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200' : 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200'}" data-testid="upgrade-success">
@@ -1947,7 +1947,7 @@ function handleTextAddToDocs(event) {
 
 
   <!-- RIGHT PANEL: Questions/Ideas -->
-<div class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
+<div id="right-panel" class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showRightPanel}
       <IdeasColumn
         bind:this={ideasColumnComponent}
@@ -1980,7 +1980,7 @@ function handleTextAddToDocs(event) {
       }
     }}
   >
-          <div class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
+          <div id="mobile-hamburger-menu" class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
       <!-- Usage Stats -->
       <button 
         type="button"
