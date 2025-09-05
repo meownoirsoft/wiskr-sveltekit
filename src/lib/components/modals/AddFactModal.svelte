@@ -29,6 +29,18 @@
       return;
     }
     
+    // Validate that a title/key is provided
+    if (!factKey || !factKey.trim()) {
+      alert('Please provide a name/title for this fact.');
+      return;
+    }
+    
+    // Validate that content is provided
+    if (!factValue || !factValue.trim()) {
+      alert('Please provide content for this fact.');
+      return;
+    }
+    
     const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     dispatch('add', {
       type: factType,

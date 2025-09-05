@@ -21,6 +21,18 @@
   let saylessFieldType = 'doc';
   
   function handleSave() {
+    // Validate that a title is provided
+    if (!docTitle || !docTitle.trim()) {
+      alert('Please provide a title for this document.');
+      return;
+    }
+    
+    // Validate that content is provided
+    if (!docContent || !docContent.trim()) {
+      alert('Please provide content for this document.');
+      return;
+    }
+    
     const tags = docTags ? docTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     dispatch('add', {
       title: docTitle,

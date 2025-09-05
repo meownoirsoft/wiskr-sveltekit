@@ -6,7 +6,7 @@ export const POST = async ({ request, locals }) => {
   if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
   const { project_id, title, content = '', tags = [], pinned = false } = await request.json();
-  if (!project_id || !title?.trim()) {
+  if (!project_id || !title?.trim() || !content?.trim()) {
     return json({ message: 'Missing required fields' }, { status: 400 });
   }
 
