@@ -16,6 +16,8 @@
     "build": "svelte-kit sync && vite build",
     "build:admin": "vite build --config vite.admin.config.js",
     "build:both": "pnpm run build && pnpm run build:admin",
+    "increment-build": "node scripts/increment-build.js",
+    "build:increment": "pnpm run increment-build && pnpm run build",
     "preview": "vite preview",
     "preview:admin": "vite preview --config vite.admin.config.js --port 5175",
     "start": "node build",

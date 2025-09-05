@@ -4,6 +4,8 @@
      import { User, Palette, Sliders, Paintbrush, Info, Sun, Moon, Crown, Gift, ChevronDown, X, CreditCard } from 'lucide-svelte';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
   import { getTierDisplayInfo } from '$lib/tiers.js';
+  import { getBuildInfo } from '$lib/config/build.js';
+  import UpgradeModal from '$lib/components/modals/UpgradeModal.svelte';
   
   const dispatch = createEventDispatcher();
 
@@ -26,6 +28,10 @@
   let portalContainer;
   let dropdownPosition = { top: 0, left: 0 };
   let dropdownButtonEl;
+  let showUpgradeModal = false;
+  
+  // Build info
+  const buildInfo = getBuildInfo();
   
   // Reactive variable for facts grid size (converted to string for select element)
   $: factsGridSizeString = userPreferences.facts_grid_size?.toString() || '3';
@@ -72,6 +78,14 @@
         dropdownButtonEl && !dropdownButtonEl.contains(event.target)) {
       showDropdown = false;
     }
+  }
+  
+  function handleUpgradeClick() {
+    showUpgradeModal = true;
+  }
+  
+  function handleUpgradeModalClose() {
+    showUpgradeModal = false;
   }
   
   // Tab configuration
@@ -434,8 +448,8 @@
                             {/if}
                           </div>
                           {#if effectiveTier === 0 || getTierDisplayInfo(userTier, trialEndsAt).status === 'trial' || getTierDisplayInfo(userTier, trialEndsAt).status === 'expired'}
-                            <a 
-                              href="/upgrade" 
+                            <button 
+                              on:click={handleUpgradeClick}
                               class="px-3 py-1 text-xs font-medium rounded-lg transition-colors border"
                               style="background-color: var(--color-accent); color: var(--color-accent-text); border-color: var(--color-accent);"
                               on:mouseenter={(e) => {
@@ -454,7 +468,7 @@
                               {:else}
                                 Upgrade to Pro
                               {/if}
-                            </a>
+                            </button>
                           {:else if userTier > 0}
                             <button
                               on:click={handleManageSubscription}
@@ -661,7 +675,7 @@
                        <div class="flex items-center justify-between">
                          <img src="/wiskr-logo.png" alt="Wiskr" class="h-12" />
                          <div class="ml-auto">
-                           <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-full">v1.0.0</span>
+                           <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-full">{buildInfo.versionString}</span>
                          </div>
                        </div>
                       <!-- <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -776,4 +790,13 @@
     {/each}
   </div>
 {/if}
+
+<!-- Upgrade Modal -->
+<UpgradeModal
+  bind:showModal={showUpgradeModal}
+  targetTier={1}
+  feature="pro-subscription"
+  user={userData}
+  on:close={handleUpgradeModalClose}
+/>
 
