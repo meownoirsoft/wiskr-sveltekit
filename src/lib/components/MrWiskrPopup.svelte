@@ -317,7 +317,7 @@
         <div class="flex justify-center mb-4 mt-6">
           <div class="relative">
             <img 
-              src="/mr-wiskr.png" 
+              src="/mr-wiskr.webp" 
               alt="Mr Wiskr" 
               class="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 shadow-lg bg-white transition-transform hover:scale-105"
               style="border-color: #5D60DD;"

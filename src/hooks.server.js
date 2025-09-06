@@ -5,7 +5,21 @@ import { createServerClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { redirect } from '@sveltejs/kit';
 
+// Set Sentry environment based on URL
+function setSentryEnvironment(event) {
+  const hostname = event.url.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    Sentry.setTag('environment', 'development');
+  } else if (hostname === 'wiskr.app') {
+    Sentry.setTag('environment', 'production');
+  } else {
+    Sentry.setTag('environment', 'development'); // Default fallback
+  }
+}
+
 export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
+  // Set environment for this request
+  setSentryEnvironment(event);
   event.locals.supabase = createServerClient(
     PUBLIC_SUPABASE_URL,
     PUBLIC_SUPABASE_ANON_KEY,

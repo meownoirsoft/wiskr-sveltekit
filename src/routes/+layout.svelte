@@ -696,7 +696,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
          {#if shouldShowLogo && !isPublicPage}
            <button type="button" on:click={reloadProjects} class="{isDesktop ? 'flex' : 'hidden'} flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors hover:opacity-80">
              <span class="text-lg {isDesktop ? 'text-xl' : ''} inline-flex items-center">
-               <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
+               <img src="/wiskr-logo.webp" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
              </span>
            </button>
          {/if}
@@ -705,7 +705,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
          {#if isPublicPage}
            <a href="/" class="flex flex-shrink-0 items-center font-semibold text-gray-900 dark:text-gray-100 transition-colors">
              <span class="text-lg text-xl inline-flex items-center">
-               <img src="/wiskr-logo.png" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
+               <img src="/wiskr-logo.webp" alt="Wiskr" class="w-32 py-2 -ml-2 mb-0" />
              </span>
            </a>
          {/if}
@@ -840,21 +840,6 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               <span>Usage</span>
             </button>
           </div>
-
-          <!-- Mobile: Branches button (moved to right side) -->
-          <!-- <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
-            <button
-              type="button"
-              class="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              on:click={() => {
-                window.dispatchEvent(new CustomEvent('mobile:toggle-branches'));
-              }}
-              aria-label="Branches"
-              title="Branches"
-            >
-              <GitBranch class="w-6 h-6" />
-            </button>
-          </div> -->
           
           <!-- Mobile hamburger menu (positioned between branches and ideas) -->
           <div class="{isDesktop ? 'hidden' : 'block'} relative">

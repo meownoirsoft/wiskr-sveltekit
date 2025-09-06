@@ -679,7 +679,7 @@
                   <div class="space-y-6">
                                          <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
                        <div class="flex items-center justify-between">
-                         <img src="/wiskr-logo.png" alt="Wiskr" class="h-12" />
+                         <img src="/wiskr-logo.webp" alt="Wiskr" class="h-12" />
                          <div class="ml-auto">
                            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-full">{buildInfo.versionString}</span>
                          </div>

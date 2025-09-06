@@ -26,7 +26,7 @@
 			<!-- Mr. Wiskr Avatar with Introduction -->
 			<div class="mb-8 flex items-center justify-center gap-6">
 				<div class="w-32 h-32 rounded-full bg-white shadow-lg border-4 border-gray-200 dark:border-gray-700 flex items-center justify-center">
-					<img src="/mr-wiskr.png" alt="Mr. Wiskr" class="w-24 h-24 rounded-full" />
+					<img src="/mr-wiskr.webp" alt="Mr. Wiskr" class="w-24 h-24 rounded-full" />
 				</div>
 				<div class="text-left">
 					<p class="text-lg text-gray-700 dark:text-gray-300 font-medium">
@@ -217,7 +217,7 @@
 		<div class="grid md:grid-cols-4 gap-8">
 			<div>
 				<a href="/">
-					<img src="/wiskr-logo.png" alt="Wiskr" class="h-8 mb-4" />
+					<img src="/wiskr-logo.webp" alt="Wiskr" class="h-8 mb-4" />
 				</a>
 				<p class="text-sm">
 					Master your AI conversations with context control and intelligent organization.

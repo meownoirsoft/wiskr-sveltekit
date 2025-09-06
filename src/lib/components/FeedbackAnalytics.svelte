@@ -220,7 +220,7 @@
                   <!-- Total Mr Wiskr Feedback -->
                   <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border" style="background-color: #35353d;">
                     <div class="flex items-center gap-2 mb-2">
-                      <img src="/mr-wiskr-emoji.png" alt="Mr Wiskr" class="w-5 h-5" />
+                      <img src="/mr-wiskr-emoji.webp" alt="Mr Wiskr" class="w-5 h-5" />
                       <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Feedback</span>
                     </div>
                     <div class="text-2xl font-bold text-gray-900 dark:text-gray-100" style="color: var(--text-primary);">

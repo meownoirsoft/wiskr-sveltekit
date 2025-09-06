@@ -263,9 +263,9 @@
             on:click={(e) => openMrWiskrForMessage(index, e)}
             title="Get help from Albert with this response"
           >
-            <img src="/mr-wiskr-emoji.png" alt="Albert" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" fetchpriority="high" />
-            <span class="hidden xs:inline">Help</span>
-            <span class="xs:hidden">Help</span>
+            <img src="/mr-wiskr-emoji.webp" alt="Albert" class="w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0" fetchpriority="high" />
+            <span class="hidden xs:inline">HALP!</span>
+            <span class="xs:hidden">HALP!</span>
           </button>
         </div>
       {/if}
