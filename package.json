@@ -9,8 +9,8 @@
   "packageManager": "pnpm@9.12.3",
   "scripts": {
     "dev": "vite dev",
-    "dev:fast": "phase run --env development 'NODE_ENV=development vite dev --force'",
-    "dev:hmr": "phase run --env development 'NODE_ENV=development vite dev --port 5173 --force --host'",
+    "dev:fast": "NODE_ENV=development vite dev --force",
+    "dev:hmr": "NODE_ENV=development vite dev --port 5173 --force --host",
     "dev:admin": "vite dev --config vite.admin.config.js --port 5174",
     "dev:both": "concurrently \"pnpm run dev\" \"pnpm run dev:admin\"",
     "build": "svelte-kit sync && vite build",

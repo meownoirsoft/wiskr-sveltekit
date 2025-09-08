@@ -15,7 +15,7 @@ The `test-stripe-checkout.js` script automates the complete Stripe checkout flow
 
 ### Prerequisites:
 
-1. **Environment Variables** (add to `.env` or Phase secrets):
+1. **Environment Variables** (add to `.env`):
    ```bash
    APP_URL=http://localhost:5173
    SUPABASE_URL=your_supabase_url

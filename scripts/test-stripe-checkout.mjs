@@ -10,7 +10,7 @@ const STRIPE_TEST_CVC = '123';
 // Chrome profile path (optional - will use default if not set)
 const CHROME_USER_DATA_DIR = process.env.CHROME_USER_DATA_DIR || process.env.HOME + '/.config/google-chrome/Default';
 
-// Supabase client for verification (will be set when running through Phase)
+// Supabase client for verification
 let supabase = null;
 
 // Initialize Supabase if environment variables are available
@@ -21,7 +21,7 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
   );
 } else {
   console.log('⚠️ Supabase environment variables not found - database verification will be skipped');
-  console.log('💡 Run with: pnpm run test:stripe (uses Phase environment)');
+  console.log('💡 Make sure to set SUPABASE_URL and SUPABASE_ANON_KEY environment variables');
 }
 
 async function testStripeCheckout() {

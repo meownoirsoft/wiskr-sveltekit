@@ -40,7 +40,7 @@
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-4 pb-2 border-b border-gray-200 dark:border-gray-700">
         <div>
-          <h2 id="create-modal-title" class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Project</h2>
+          <h2 id="create-modal-title" class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create World</h2>
         </div>
         <button
           on:click={closeModal}
@@ -59,7 +59,7 @@
           <!-- Project Name and Info Box Row -->
           <div class="grid grid-cols-2 gap-6">
             <div>
-              <label for="new-project-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Project Name</label>
+              <label for="new-project-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">World Name</label>
               <input 
                 id="new-project-name"
                 type="text" 
@@ -94,7 +94,7 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <label for="new-project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Project Description
+                World Description
                 <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/70 dark:text-blue-100 rounded-full">Most Important</span>
               </label>
             </div>
@@ -146,7 +146,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                {creatingProject ? 'Creating...' : 'Create Project'}
+                {creatingProject ? 'Creating...' : 'Create World'}
               </button>
             </div>
           </div>

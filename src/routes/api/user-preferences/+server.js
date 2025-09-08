@@ -76,8 +76,8 @@ export async function POST({ request, locals }) {
     }
     
     if (facts_grid_size !== undefined) {
-      if (typeof facts_grid_size !== 'number' || facts_grid_size < 1 || facts_grid_size > 4) {
-        return json({ error: 'facts_grid_size must be a number between 1 and 4' }, { status: 400 });
+      if (typeof facts_grid_size !== 'number' || facts_grid_size < 1 || facts_grid_size > 7) {
+        return json({ error: 'facts_grid_size must be a number between 1 and 7' }, { status: 400 });
       }
     }
     

@@ -336,8 +336,8 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   
   
   // Panel visibility state - responsive defaults
-  let showLeftPanel = false;   // Facts/Docs panel
-  let showRightPanel = false;  // Questions/Ideas panel
+  let showLeftPanel = true;    // Facts/Docs panel - always show for cards
+  let showRightPanel = false;  // Questions/Ideas panel - hidden
   let isDesktop = false;       // Track if we're on desktop
   
   // Mobile menu state
@@ -407,12 +407,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       // Initial load - set panel state based on screen size
       if (wasDesktop !== isDesktop) {
         if (isDesktop) {
-          // Switch to desktop mode - show both panels
+          // Switch to desktop mode - show cards panel only
           showLeftPanel = true;
-          showRightPanel = true;
+          showRightPanel = false;
         } else {
-          // Switch to mobile mode - hide both panels to show chat
-          showLeftPanel = false;
+          // Switch to mobile mode - show cards panel only
+          showLeftPanel = true;
           showRightPanel = false;
         }
       }
@@ -522,12 +522,10 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       
       // Force initial panel state after checkScreenSize runs
       if (isDesktop) {
-    
         showLeftPanel = true;
-        showRightPanel = true;
+        showRightPanel = false;
       } else {
-    
-        showLeftPanel = false;
+        showLeftPanel = true;
         showRightPanel = false;
       }
       
@@ -1728,8 +1726,8 @@ function handleTextAddToDocs(event) {
   <!-- Layout -->
 <div id="projects-page-layout" class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
-  <!-- LEFT PANEL: Facts/Docs -->
-<div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? (rightPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
+  <!-- LEFT PANEL: Cards (Full Width) -->
+<div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-full' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel}
       <Sidebar
         bind:this={sidebarComponent}
@@ -1798,8 +1796,8 @@ function handleTextAddToDocs(event) {
       </div>
     {/if}
     
-    <!-- Chat Container -->
-    <div class="w-full h-full flex flex-col relative">
+    <!-- Chat Container - Hidden for Cards UI -->
+    <!-- <div class="w-full h-full flex flex-col relative">
 
     <ChatInterface
       {current}
@@ -1834,6 +1832,7 @@ function handleTextAddToDocs(event) {
       on:toggle-session-navigator={handleToggleSessionNavigator}
 
     />
+    </div> -->
     
     <!-- Fixed position collapse/expand buttons with changing icons -->
     {#if isDesktop}
@@ -1946,8 +1945,8 @@ function handleTextAddToDocs(event) {
 
 
 
-  <!-- RIGHT PANEL: Questions/Ideas -->
-<div id="right-panel" class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
+  <!-- RIGHT PANEL: Questions/Ideas - Hidden for Cards UI -->
+  <!-- <div id="right-panel" class="{showRightPanel ? (isDesktop && !rightPanelCollapsed ? (leftPanelCollapsed ? 'w-[50%]' : 'w-[30%]') : isDesktop && rightPanelCollapsed ? 'w-0' : 'fixed inset-0 z-40 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-40 w-full')} {!isDesktop ? 'mobile-panel-right' : ''} {!isDesktop && showRightPanel ? 'mobile-panel-right-enter' : ''} {!isDesktop && !showRightPanel ? 'mobile-panel-right-exit' : ''} transition-all duration-300 ease-in-out border-l border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-right); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showRightPanel}
       <IdeasColumn
         bind:this={ideasColumnComponent}
@@ -1963,7 +1962,7 @@ function handleTextAddToDocs(event) {
         on:generate-ideas={handleGenerateIdeas}
       />
     {/if}
-  </div>
+  </div> -->
 
 <!-- Mobile Hamburger Menu (positioned after columns for proper z-order) -->
 {#if showMobileMenu && !isDesktop}
@@ -1971,14 +1970,14 @@ function handleTextAddToDocs(event) {
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div 
     class="fixed inset-0 z-[200]" 
-    on:click={() => {
-      showMobileMenu = false;
-      // Keep panels hidden on mobile for maximum content space
-      if (!isDesktop) {
-        showLeftPanel = false;
-        showRightPanel = false;
-      }
-    }}
+        on:click={() => {
+          showMobileMenu = false;
+          // Keep cards panel visible for full screen cards UI
+          if (!isDesktop) {
+            showLeftPanel = true;
+            showRightPanel = false;
+          }
+        }}
   >
           <div id="mobile-hamburger-menu" class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
       <!-- Usage Stats -->
@@ -1988,7 +1987,7 @@ function handleTextAddToDocs(event) {
         on:click={() => {
           showUsagePopover = !showUsagePopover;
           showMobileMenu = false;
-          showLeftPanel = false;
+          showLeftPanel = true;
           showRightPanel = false;
         }}
       >
@@ -2003,7 +2002,7 @@ function handleTextAddToDocs(event) {
           class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
-            showLeftPanel = false;
+            showLeftPanel = true;
             showRightPanel = false;
           }}
         >
@@ -2020,7 +2019,7 @@ function handleTextAddToDocs(event) {
           on:click={() => {
             window.dispatchEvent(new CustomEvent('layout:open-settings', { detail: { tab: 'account' } }));
             showMobileMenu = false;
-            showLeftPanel = false;
+            showLeftPanel = true;
             showRightPanel = false;
           }}
         >
@@ -2034,7 +2033,7 @@ function handleTextAddToDocs(event) {
           class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
-            showLeftPanel = false;
+            showLeftPanel = true;
             showRightPanel = false;
           }}
         >
@@ -2048,7 +2047,7 @@ function handleTextAddToDocs(event) {
           class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
-            showLeftPanel = false;
+            showLeftPanel = true;
             showRightPanel = false;
           }}
         >
@@ -2061,7 +2060,7 @@ function handleTextAddToDocs(event) {
           class="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-blue-600 transition-colors"
           on:click={() => {
             showMobileMenu = false;
-            showLeftPanel = false;
+            showLeftPanel = true;
             showRightPanel = false;
           }}
         >
@@ -2265,8 +2264,6 @@ function handleTextAddToDocs(event) {
   on:project-settings-closed={handleProjectSettingsModalClose}
   on:copy-success={handleCopySuccess}
 />
-
-</div>
 
 <!-- Panel Manager (handles responsive UI state) -->
 <PanelManager 

@@ -108,9 +108,9 @@
 				<div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4 mx-auto">
 					<GitBranch size="28" class="text-purple-600 dark:text-purple-400" />
 				</div>
-				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Project-First, Not Chat-First</h3>
+				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">World-First, Not Chat-First</h3>
 				<p class="text-gray-600 dark:text-gray-300">
-					Plain AI leaves you with an inbox of random chats. Wiskr organizes everything under your projects, so work actually builds.
+					Plain AI leaves you with an inbox of random chats. Wiskr organizes everything under your worlds, so work actually builds.
 				</p>
 			</div>
 			
@@ -153,9 +153,9 @@
 			<!-- Step 1 -->
 			<div class="text-center">
 				<div class="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
-				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Create a Project</h3>
+				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Create a World</h3>
 				<p class="text-gray-600 dark:text-gray-300">
-					Start a new project workspace to organize your AI conversations and research.
+					Start a new world workspace to organize your AI conversations and research.
 				</p>
 			</div>
 			
@@ -191,7 +191,7 @@
 			{#if isLoggedIn}
 				<a href="/projects" class="inline-flex items-center px-8 py-4 text-lg font-semibold text-blue-600 bg-white hover:bg-gray-100 rounded-xl transition-all transform hover:scale-105 shadow-lg">
 					<MessageSquare size="20" class="mr-2" />
-					Go to Your Projects
+					Go to Your Worlds
 					<ArrowRight size="20" class="ml-2" />
 				</a>
 			{:else}

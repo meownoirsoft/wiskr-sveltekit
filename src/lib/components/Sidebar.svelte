@@ -2,6 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import ContextSummary from './ContextSummary.svelte';
   import FactsManager from './FactsManager.svelte';
+  import CardsManager from './CardsManager.svelte';
   import DocsManager from './DocsManager.svelte';
   import EntityCards from './EntityCards.svelte';
   import { Search, X, ToggleLeft, ToggleRight, Info, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
@@ -325,6 +326,31 @@
     dispatch('fact-toggle-pin', event.detail);
   }
 
+  // Card-specific event handlers
+  function handleFactEdit(event) {
+    dispatch('fact-edit', event.detail);
+  }
+
+  function handleCardProgressChange(event) {
+    dispatch('card-progress-change', event.detail);
+  }
+
+  function handleCardRarityChange(event) {
+    dispatch('card-rarity-change', event.detail);
+  }
+
+  function handleCardSplit(event) {
+    dispatch('card-split', event.detail);
+  }
+
+  function handleCardMerge(event) {
+    dispatch('card-merge', event.detail);
+  }
+
+  function handleCardGenerateArt(event) {
+    dispatch('card-generate-art', event.detail);
+  }
+
   // Docs manager events
   function handleDocAdd(event) {
     dispatch('doc-add', event.detail);
@@ -551,28 +577,24 @@
             on:regenerate={handleBriefRegenerate}
           />
         {:else if activeTab === 'facts'}
-          <FactsManager
+          <CardsManager
             bind:this={factsManagerComponent}
-            facts={filteredFacts}
-            {loadingFacts}
-            projectId={current?.id}
+            cards={filteredFacts}
+            loadingCards={loadingFacts}
+            worldId={current?.id}
             {user}
-            bind:showAddFactForm
-            bind:factType
-            bind:factKey
-            bind:factValue
-            bind:factTags
+            bind:showAddCardForm={showAddFactForm}
             searchTerm={currentSearchTerm}
-            factsGridSize={userPreferences.facts_grid_size}
+            cardsGridSize={userPreferences.facts_grid_size}
             on:add={handleFactAdd}
-            on:cancel-add={handleFactCancelAdd}
-            on:start-edit={handleFactStartEdit}
-            on:cancel-edit={handleFactCancelEdit}
-            on:save-edit={handleFactSaveEdit}
+            on:edit={handleFactEdit}
             on:delete={handleFactDelete}
             on:toggle-pin={handleFactTogglePin}
-            on:tag-click={handleTagClick}
-            on:type-click={handleTypeClick}
+            on:progress-change={handleCardProgressChange}
+            on:rarity-change={handleCardRarityChange}
+            on:split={handleCardSplit}
+            on:merge={handleCardMerge}
+            on:generate-art={handleCardGenerateArt}
           />
         {:else if activeTab === 'docs'}
           <DocsManager

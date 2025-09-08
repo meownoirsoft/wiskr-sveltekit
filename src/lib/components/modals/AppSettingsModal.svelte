@@ -509,9 +509,9 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This name will appear in your chat messages</p>
                           </div>
                           
-                          <!-- Facts Grid Size -->
+                          <!-- Cards Grid Size -->
                           <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="facts-grid-size">Facts Grid Size</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="facts-grid-size">Cards Grid Size</label>
                             <select 
                               id="facts-grid-size"
                               bind:value={factsGridSizeString}
@@ -523,8 +523,11 @@
                               <option value="2">2 cards per row</option>
                               <option value="3">3 cards per row</option>
                               <option value="4">4 cards per row</option>
+                              <option value="5">5 cards per row</option>
+                              <option value="6">6 cards per row</option>
+                              <option value="7">7 cards per row</option>
                             </select>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How many fact/doc cards to display horizontally</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How many idea cards to display horizontally</p>
                           </div>
                         </div>
                                                  <!-- Max Related Ideas - Hidden -->

@@ -6,13 +6,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 // You'll need to temporarily add your Supabase credentials here
-// Get them from phase.dev
+// Get them from your environment variables or Supabase dashboard
 const supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
 const supabaseServiceKey = 'YOUR_SUPABASE_SERVICE_KEY_HERE';
 
 if (!supabaseUrl || !supabaseServiceKey || supabaseUrl.includes('YOUR_')) {
   console.error('Please update the supabaseUrl and supabaseServiceKey in this script');
-  console.error('Get the values from phase.dev and temporarily add them to this script');
+  console.error('Get the values from your environment variables or Supabase dashboard');
   process.exit(1);
 }
 

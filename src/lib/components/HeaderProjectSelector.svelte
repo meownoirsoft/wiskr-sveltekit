@@ -183,7 +183,7 @@
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
           style="background-color: white !important; border-color: #1d4ed8 !important; color: black !important;"
-          placeholder="Search projects..."
+          placeholder="Search worlds..."
           bind:value={search}
         />
         {#if search}
@@ -230,7 +230,7 @@
         {/each}
         {#if !filtered.length}
           <div class="p-3 text-sm text-center" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;">
-            {search ? 'No projects found' : 'No projects yet'}
+            {search ? 'No worlds found' : 'No worlds yet'}
           </div>
         {/if}
       </div>
@@ -247,7 +247,7 @@
         <span class="text-xs md:text-sm flex-shrink-0">{current.icon ?? '📁'}</span>
         <span class="font-medium text-xs md:text-sm truncate flex-1 text-left" style="color: var(--text-header);">{current.name}</span>
       {:else}
-        <span class="text-xs md:text-sm flex-1 text-left" style="color: var(--text-header-secondary);">Select project...</span>
+        <span class="text-xs md:text-sm flex-1 text-left" style="color: var(--text-header-secondary);">Select world...</span>
       {/if}
       <ChevronDown size="16" style="color: var(--text-header-secondary);" class="flex-shrink-0 ml-auto" />
     </button>
@@ -264,14 +264,14 @@
     <!-- Header with search -->
     <div class="p-3 border-b" style="border-color: var(--border-header-input);">
       <div class="flex items-center justify-between mb-2">
-        <h4 class="font-semibold text-sm" style="color: #f8fafc !important;">Projects</h4>
+        <h4 class="font-semibold text-sm" style="color: #f8fafc !important;">Worlds</h4>
         <button
           class="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-all hover:scale-105 active:scale-95 font-medium"
           style="background-color: var(--color-accent); color: var(--color-accent-text);"
           on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'}
           on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}
           on:click={createNewProject}
-          title="Create New Project"
+          title="Create New World"
         >
           <Plus size="12" />
           <span>New</span>
@@ -284,7 +284,7 @@
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
           style="background-color: white !important; border-color: #1d4ed8 !important; color: black !important;"
-          placeholder="Search projects..."
+          placeholder="Search worlds..."
           bind:value={search}
         />
         {#if search}
@@ -333,7 +333,7 @@
       {/each}
       {#if !filtered.length}
         <div class="p-3 text-sm text-center" style="color: var(--text-header-secondary);">
-          {search ? 'No projects found' : 'No projects yet'}
+          {search ? 'No worlds found' : 'No worlds yet'}
         </div>
       {/if}
     </div>
