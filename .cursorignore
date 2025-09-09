@@ -1,0 +1,16 @@
+node_modules
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+.DS_Store
+Thumbs.db
+.phase
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+/docs
+/migrations
+/.playwright-mcp
+.sentry-build-plugin

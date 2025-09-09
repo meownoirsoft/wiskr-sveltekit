@@ -32,11 +32,11 @@
 
   // Progress levels
   const progressLevels = [
-    { level: 1, name: 'Raw', icon: '⛰️', description: 'Just an idea, needs development' },
-    { level: 2, name: 'Rough', icon: '⛏️', description: 'Basic concept, needs refinement' },
-    { level: 3, name: 'Crystal', icon: '💎', description: 'Clear idea, needs polishing' },
-    { level: 4, name: 'Cut', icon: '✨', description: 'Well-formed, needs final touches' },
-    { level: 5, name: 'Shimmer', icon: '🌟', description: 'Complete and ready to use' }
+    { level: 1, name: 'Raw', description: 'Just an idea, needs development' },
+    { level: 2, name: 'Rough', description: 'Basic concept, needs refinement' },
+    { level: 3, name: 'Crystal', description: 'Clear idea, needs polishing' },
+    { level: 4, name: 'Cut', description: 'Well-formed, needs final touches' },
+    { level: 5, name: 'Shimmer', description: 'Complete and ready to use' }
   ];
 
   // Rarity options
@@ -197,11 +197,11 @@
                 {#each progressLevels as level}
                   <button
                     type="button"
-                    class="flex flex-col items-center gap-1 p-2 rounded-lg border transition-colors {progress === level.level ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}"
+                    class="flex flex-col items-center gap-1 p-2 rounded-lg border transition-colors cursor-pointer {progress === level.level ? 'progress-star-selected' : 'progress-star-unselected'}"
                     on:click={() => progress = level.level}
                     title="{level.name}: {level.description}"
                   >
-                    <span class="text-lg">{level.icon}</span>
+                    <Star size="16" style="fill: {progress >= level.level ? '#000000' : '#9ca3af'}; color: {progress >= level.level ? '#000000' : '#9ca3af'};" />
                     <span class="text-xs font-medium">{level.name}</span>
                   </button>
                 {/each}
@@ -345,3 +345,24 @@
     </div>
   {/if}
 {/if}
+
+<style>
+  .progress-star-selected {
+    background-color: #1e40af !important; /* blue-800 - distinct blue background */
+    border-color: #60a5fa !important; /* blue-400 */
+  }
+  
+  .progress-star-unselected {
+    background-color: transparent !important;
+    border-color: #4b5563 !important; /* gray-600 */
+  }
+  
+  .progress-star-selected:hover {
+    background-color: #374151 !important; /* gray-700 */
+  }
+  
+  .progress-star-unselected:hover {
+    background-color: #374151 !important; /* gray-700 */
+    border-color: #6b7280 !important; /* gray-500 */
+  }
+</style>

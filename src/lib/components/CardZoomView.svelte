@@ -1,0 +1,928 @@
+<!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
+<script>
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, RotateCcw } from 'lucide-svelte';
+  import ArtManager from './ArtManager.svelte';
+
+  export let card = null;
+  export let isOpen = false;
+
+  const dispatch = createEventDispatcher();
+
+  function isDarkMode() {
+    if (typeof window === 'undefined') return false;
+    return document.documentElement.classList.contains('dark') || 
+           window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  // Progress levels (1-5 stars)
+  const progressLevels = [
+    { level: 1, name: 'Raw', color: '#6b7280' },
+    { level: 2, name: 'Rough', color: '#f97316' },
+    { level: 3, name: 'Crystal', color: '#ef4444' },
+    { level: 4, name: 'Cut', color: '#1d4ed8' },
+    { level: 5, name: 'Shimmer', color: '#7c3aed' }
+  ];
+
+  // Rarity configurations
+  const rarityConfig = {
+    common: {
+      borderColor: '#14b8a6',
+      bgColor: '#f0fdfa',
+      bgColorDark: '#064e3b',
+      textColor: '#0f766e',
+      textColorDark: '#6ee7b7'
+    },
+    special: {
+      borderColor: '#3b82f6',
+      bgColor: '#eff6ff',
+      bgColorDark: '#1e3a8a',
+      textColor: '#1d4ed8',
+      textColorDark: '#60a5fa'
+    },
+    rare: {
+      borderColor: '#8b5cf6',
+      bgColor: '#faf5ff',
+      bgColorDark: '#581c87',
+      textColor: '#7c3aed',
+      textColorDark: '#a78bfa'
+    },
+    legendary: {
+      borderColor: '#f59e0b',
+      bgColor: '#fffbeb',
+      bgColorDark: '#92400e',
+      textColor: '#d97706',
+      textColorDark: '#fbbf24'
+    }
+  };
+
+  // Editable state
+  let isEditing = false;
+  let editedCard = null;
+  let title = '';
+  let content = '';
+  let tags = [];
+  let newTag = '';
+  let artUrl = '';
+  let showArtManager = false;
+  
+  // Tooltip state
+  let showTooltip = false;
+  let tooltipContent = '';
+  let tooltipType = '';
+  let tooltipPosition = { x: 0, y: 0 };
+  let hoverTimeout = null;
+  
+  // Modal states
+  let showNotesModal = false;
+  let showBranchesModal = false;
+  let showDecksModal = false;
+  let showResourcesModal = false;
+
+  // Reactive values
+  $: rarity = getRarityConfig(editedCard?.rarity || card?.rarity || 'common');
+  $: progress = getProgressInfo(editedCard?.progress || card?.progress || 1);
+  $: investmentCost = editedCard?.investment_cost || card?.investment_cost || 0;
+  $: darkMode = isDarkMode();
+  
+  // Force reactivity when editedCard changes
+  $: if (editedCard) {
+    console.log('🔍 editedCard changed, rarity:', editedCard.rarity);
+  }
+
+  // Update artUrl when card changes
+  $: if (card && card.art_url !== artUrl) {
+    artUrl = card.art_url || '';
+    console.log('🔍 CardZoomView: Updated artUrl from card:', artUrl);
+  }
+
+  // Debug art display
+  $: console.log('🔍 CardZoomView art display state:', {
+    artUrl,
+    editedCardArtUrl: editedCard?.art_url,
+    isEditing,
+    displayArt: artUrl || editedCard?.art_url
+  });
+
+  // Initialize edited card when modal opens
+  $: if (isOpen && card) {
+    console.log('🔍 CardZoomView received card:', card);
+    // Clear previous state first
+    editedCard = null;
+    isEditing = false;
+    title = '';
+    content = '';
+    tags = [];
+    artUrl = '';
+    initializeEditedCard();
+  }
+
+  function initializeEditedCard() {
+    if (!card) return;
+    
+    console.log('🔍 CardZoomView initializing with card:', card);
+    
+    // Parse card data
+    let cardData = {};
+    if (card.value && typeof card.value === 'string') {
+      try {
+        cardData = JSON.parse(card.value);
+        console.log('🔍 Parsed cardData from JSON:', cardData);
+      } catch (e) {
+        cardData = { content: card.value };
+        console.log('🔍 Using card.value as content:', card.value);
+      }
+    } else if (card.value && typeof card.value === 'object') {
+      cardData = card.value;
+      console.log('🔍 Using card.value as cardData:', cardData);
+    }
+
+    editedCard = {
+      ...card,
+      title: card.title || card.key || 'Untitled Card',
+      content: cardData.content || card.content || 'No content',
+      tags: cardData.tags || [],
+      art_url: cardData.art_url || null,
+      rarity: card.rarity || 'common',
+      progress: card.progress || 1,
+      investment_cost: card.investment_cost || 0,
+      pinned: card.pinned || false
+    };
+
+    console.log('🔍 Final editedCard:', editedCard);
+
+    title = editedCard.title;
+    content = editedCard.content;
+    tags = [...editedCard.tags];
+    artUrl = editedCard.art_url || '';
+  }
+
+  function getRarityConfig(rarity) {
+    return rarityConfig[rarity] || rarityConfig.common;
+  }
+
+  function getProgressInfo(level) {
+    return progressLevels.find(p => p.level === level) || progressLevels[0];
+  }
+
+  function startEditing() {
+    isEditing = true;
+  }
+
+  function cancelEditing() {
+    isEditing = false;
+    initializeEditedCard();
+  }
+
+  function saveCard() {
+    if (!editedCard) return;
+
+    const updatedCard = {
+      ...editedCard,
+      title,
+      content,
+      tags: tags.filter(tag => tag.trim()),
+      art_url: artUrl.trim() || null
+    };
+
+    dispatch('save', { card: updatedCard });
+    isEditing = false;
+  }
+
+  function deleteCard() {
+    if (confirm('Are you sure you want to delete this card?')) {
+      dispatch('delete', { card });
+      closeModal();
+    }
+  }
+
+  function closeModal() {
+    dispatch('close');
+  }
+
+  function handleRarityUpgrade() {
+    const rarities = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarities.indexOf(editedCard.rarity);
+    if (currentIndex < rarities.length - 1) {
+      editedCard.rarity = rarities[currentIndex + 1];
+      dispatch('rarity-change', { card, newRarity: editedCard.rarity });
+    }
+  }
+
+  function handleRarityDowngrade() {
+    const rarities = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarities.indexOf(editedCard.rarity);
+    if (currentIndex > 0) {
+      editedCard.rarity = rarities[currentIndex - 1];
+      dispatch('rarity-change', { card, newRarity: editedCard.rarity });
+    }
+  }
+
+  function handleProgressClick(targetLevel) {
+    editedCard.progress = targetLevel;
+    dispatch('progress-change', { card, targetLevel });
+  }
+
+  function togglePin() {
+    editedCard.pinned = !editedCard.pinned;
+    dispatch('toggle-pin', { card });
+  }
+
+  function addTag() {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      tags = [...tags, newTag.trim()];
+      newTag = '';
+    }
+  }
+
+  function removeTag(tagToRemove) {
+    tags = tags.filter(tag => tag !== tagToRemove);
+  }
+
+  function handleKeydown(event) {
+    if (event.key === 'Enter' && event.target.id === 'new-tag') {
+      addTag();
+    }
+  }
+
+  function handleMerge() {
+    dispatch('merge', { card });
+  }
+
+  function handleSplit() {
+    dispatch('split', { card });
+  }
+
+  function handleGenerateArt() {
+    showArtManager = true;
+  }
+
+  function handleArtSelected(event) {
+    const { artUrl: newArtUrl, source } = event.detail;
+    console.log('🔍 Art selected:', { newArtUrl, source });
+    
+    artUrl = newArtUrl;
+    if (editedCard) {
+      editedCard.art_url = newArtUrl;
+    }
+    showArtManager = false;
+    
+    // Update the original card object to keep everything in sync
+    if (card) {
+      card.art_url = newArtUrl;
+    }
+    
+    console.log('🔍 Updated artUrl:', artUrl, 'editedCard.art_url:', editedCard?.art_url);
+    
+    // Dispatch to parent with updated card
+    dispatch('generate-art', { card, artUrl: newArtUrl, source });
+  }
+
+  function closeArtManager() {
+    showArtManager = false;
+  }
+
+  // Tooltip functions
+  function showTooltipForType(type, event) {
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      hoverTimeout = null;
+    }
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    tooltipPosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    };
+    tooltipType = type;
+    showTooltip = true;
+    
+    // Generate mock content based on type
+    switch (type) {
+      case 'notes':
+        tooltipContent = [
+          'Card development notes from brainstorming session',
+          'User feedback: "This idea has potential for expansion"',
+          'Research findings: Similar concepts in other media',
+          'Implementation notes: Consider adding visual elements',
+          'Follow-up: Schedule review with team next week'
+        ];
+        break;
+      case 'branches':
+        tooltipContent = [
+          'Character Development Branch',
+          'World Building Branch',
+          'Plot Twist Branch'
+        ];
+        break;
+      case 'decks':
+        tooltipContent = [
+          'Main Story Deck',
+          'Character Arcs Deck',
+          'World Building Deck',
+          'Plot Points Deck',
+          'Side Quests Deck',
+          'Romance Subplot Deck',
+          'Action Sequences Deck',
+          'Dialogue Deck'
+        ];
+        break;
+      case 'resources':
+        tooltipContent = [
+          { name: 'Character Concept Art', type: 'image', icon: '🎨' },
+          { name: 'Voice Recording Sample', type: 'audio', icon: '🎵' },
+          { name: 'World Map Video', type: 'video', icon: '🎬' },
+          { name: 'Research Document', type: 'text', icon: '📄' },
+          { name: 'Storyboard Sketches', type: 'doodle', icon: '✏️' },
+          { name: 'Reference Links', type: 'link', icon: '🔗' }
+        ];
+        break;
+    }
+  }
+
+  function hideTooltip() {
+    // Add a small delay before hiding to allow mouse to move to tooltip
+    hoverTimeout = setTimeout(() => {
+      showTooltip = false;
+    }, 150);
+  }
+
+  function keepTooltipVisible() {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      hoverTimeout = null;
+    }
+  }
+
+  // Content modal functions
+  function openContentModal(type) {
+    switch (type) {
+      case 'notes':
+        showNotesModal = true;
+        break;
+      case 'branches':
+        showBranchesModal = true;
+        break;
+      case 'decks':
+        showDecksModal = true;
+        break;
+      case 'resources':
+        showResourcesModal = true;
+        break;
+    }
+    hideTooltip();
+  }
+
+  function closeContentModal(type) {
+    switch (type) {
+      case 'notes':
+        showNotesModal = false;
+        break;
+      case 'branches':
+        showBranchesModal = false;
+        break;
+      case 'decks':
+        showDecksModal = false;
+        break;
+      case 'resources':
+        showResourcesModal = false;
+        break;
+    }
+  }
+</script>
+
+{#if isOpen && editedCard}
+  <!-- Background -->
+  <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={closeModal}>
+    
+    <!-- Just the Card -->
+    <div 
+      class="card-container relative transition-all duration-200"
+      style="width: 500px; height: 700px;"
+      on:click|stopPropagation
+    >
+      <!-- Card Frame -->
+      <div 
+        class="card-frame border-2 rounded-lg h-full flex flex-col"
+        style="
+          border-color: {rarity.borderColor};
+          background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};
+          color: {darkMode ? rarity.textColorDark : rarity.textColor};
+        "
+      >
+
+        <!-- Mana Cost - Top Right -->
+        <div 
+          class="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+          style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
+        >
+          <span>{investmentCost}</span>
+        </div>
+
+        <!-- Header: Title -->
+        <div class="mb-4 px-4 pt-4">
+          {#if isEditing}
+            <input
+              bind:value={title}
+              class="w-full text-lg font-bold bg-transparent border-none outline-none"
+              style="color: {darkMode ? '#f9fafb' : '#111827'};"
+              placeholder="Card title..."
+            />
+          {:else}
+            <h3 class="text-lg font-bold leading-tight" style="color: {darkMode ? '#f9fafb' : '#111827'};">
+              {editedCard.title}
+            </h3>
+          {/if}
+        </div>
+
+        <!-- Art Area -->
+        <div 
+          class="art-area mb-4 mx-4 rounded-md overflow-hidden flex items-center justify-center relative group" 
+          style="height: 160px; background-color: {darkMode ? '#4b5563' : '#f3f4f6'};"
+        >
+          {#if isEditing}
+            <div class="w-full h-full flex flex-col items-center justify-center">
+              <input
+                bind:value={artUrl}
+                class="w-full px-2 py-1 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded"
+                placeholder="Image URL..."
+              />
+              <p class="text-xs text-gray-500 mt-1">Enter image URL for card art</p>
+            </div>
+          {:else if artUrl || editedCard.art_url}
+            <img src={artUrl || editedCard.art_url} alt="Card art" class="w-full h-full object-cover" />
+            <!-- Art Edit Button - Bottom Right Corner -->
+            <button
+              class="absolute bottom-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+              on:click={handleGenerateArt}
+              title="Edit art"
+            >
+              <Palette size="16" class="text-white" />
+            </button>
+          {:else}
+            <button 
+              class="w-full h-full flex flex-col items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+              style="background: linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%);"
+              on:click={handleGenerateArt}
+              title="Add art to this card"
+            >
+              <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3" style="background-color: {darkMode ? '#6b7280' : '#9ca3af'};">
+                <div class="text-white text-2xl">🎨</div>
+              </div>
+              <div class="text-sm font-medium" style="color: {darkMode ? '#9ca3af' : '#6b7280'};">No Art</div>
+              <div class="text-xs" style="color: {darkMode ? '#6b7280' : '#9ca3af'};">Click to add art</div>
+            </button>
+          {/if}
+        </div>
+
+        <!-- Tags -->
+        <div class="px-4 mb-4">
+          {#if isEditing}
+            <div class="space-y-2">
+              <div class="flex flex-wrap gap-1">
+                {#each tags as tag}
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded-full">
+                    {tag}
+                    <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
+                      ×
+                    </button>
+                  </span>
+                {/each}
+              </div>
+              <div class="flex gap-2">
+                <input
+                  id="new-tag"
+                  bind:value={newTag}
+                  on:keydown={handleKeydown}
+                  class="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
+                  placeholder="Add tag..."
+                />
+                <button on:click={addTag} class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                  Add
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="flex flex-wrap gap-1">
+              {#each editedCard.tags as tag}
+                <span class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded-full">
+                  {tag}
+                </span>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 px-4 mb-4">
+          {#if isEditing}
+            <textarea
+              bind:value={content}
+              class="w-full h-32 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
+              placeholder="Card content..."
+            ></textarea>
+          {:else}
+            <div class="text-sm leading-tight" style="color: {darkMode ? '#d1d5db' : '#374151'};">
+              {editedCard.content}
+            </div>
+          {/if}
+        </div>
+
+        <!-- Link Buttons -->
+        <div class="px-4 mb-3">
+          <div class="flex items-center justify-between text-xs">
+            <button
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              on:click={() => openContentModal('notes')}
+              on:mouseenter={(e) => showTooltipForType('notes', e)}
+              on:mouseleave={hideTooltip}
+            >
+              Notes
+            </button>
+            <button
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              on:click={() => openContentModal('branches')}
+              on:mouseenter={(e) => showTooltipForType('branches', e)}
+              on:mouseleave={hideTooltip}
+            >
+              Branches
+            </button>
+            <button
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              on:click={() => openContentModal('decks')}
+              on:mouseenter={(e) => showTooltipForType('decks', e)}
+              on:mouseleave={hideTooltip}
+            >
+              Decks
+            </button>
+            <button
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              on:click={() => openContentModal('resources')}
+              on:mouseenter={(e) => showTooltipForType('resources', e)}
+              on:mouseleave={hideTooltip}
+            >
+              Resources
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Bar: Rarity and Progress -->
+        <div class="bottom-bar flex items-center justify-between px-4 mb-4">
+          <!-- Rarity -->
+          <div class="flex items-center">
+            <!-- Left Arrow (Upgrade) -->
+            <div class="w-6 flex justify-center">
+              {#if editedCard.rarity !== 'legendary'}
+                <button 
+                  class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                  on:click={handleRarityUpgrade}
+                  title="Upgrade rarity"
+                  style="color: {darkMode ? '#ffffff' : '#000000'};"
+                >
+                  ↑
+                </button>
+              {/if}
+            </div>
+            
+            <!-- Rarity Label -->
+            <span 
+              class="text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2"
+              style="color: {rarity.textColor};"
+            >
+              {editedCard.rarity}
+            </span>
+            
+            <!-- Right Arrow (Downgrade) -->
+            <div class="w-6 flex justify-center">
+              {#if editedCard.rarity !== 'common'}
+                <button 
+                  class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                  on:click={handleRarityDowngrade}
+                  title="Downgrade rarity"
+                  style="color: {darkMode ? '#ffffff' : '#000000'};"
+                >
+                  ↓
+                </button>
+              {/if}
+            </div>
+          </div>
+
+          <!-- Progress Stars -->
+          <div class="flex items-center gap-1">
+            {#each progressLevels as level}
+              <button
+                class="transition-colors hover:scale-110 cursor-pointer"
+                on:click={() => handleProgressClick(level.level)}
+                title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
+                style="color: {editedCard.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')};"
+              >
+                <Star size="16" class="fill-current" />
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons flex items-center justify-between px-4 pb-4 border-t" style="border-color: {darkMode ? '#4b5563' : '#e5e7eb'};">
+          <div class="flex items-center gap-2">
+            <button
+              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={togglePin}
+              title="{editedCard.pinned ? 'Unpin' : 'Pin'} card"
+              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            >
+              {#if editedCard.pinned}
+                <Pin size="16" class="fill-current" />
+              {:else}
+                <PinOff size="16" />
+              {/if}
+            </button>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            {#if isEditing}
+              <button
+                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                on:click={saveCard}
+                title="Save changes"
+                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              >
+                <Save size="16" />
+              </button>
+              <button
+                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                on:click={cancelEditing}
+                title="Cancel editing"
+                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              >
+                <RotateCcw size="16" />
+              </button>
+            {:else}
+              <button
+                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                on:click={startEditing}
+                title="Edit card"
+                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              >
+                <Pencil size="16" />
+              </button>
+              <button
+                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                on:click={deleteCard}
+                title="Delete card"
+                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              >
+                <Trash size="16" />
+              </button>
+            {/if}
+            <button
+              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={handleSplit}
+              title="Split card"
+              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            >
+              <Split size="16" />
+            </button>
+            <button
+              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={handleMerge}
+              title="Merge cards"
+              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            >
+              <Merge size="16" />
+            </button>
+            <button
+              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={closeModal}
+              title="Close card"
+              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            >
+              <X size="16" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  {#if showTooltip}
+    <div 
+      class="fixed z-[10000] bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 rounded-lg shadow-lg p-3 max-w-xs border border-gray-700 dark:border-gray-600 cursor-pointer hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+      style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px; transform: translateX(-50%) translateY(-100%);"
+      on:mouseenter={keepTooltipVisible}
+      on:mouseleave={hideTooltip}
+      on:click={() => openContentModal(tooltipType)}
+    >
+      <div class="text-sm font-medium mb-2 capitalize text-white dark:text-gray-100">{tooltipType}</div>
+      
+      {#if tooltipType === 'notes'}
+        <div class="space-y-1">
+          {#each tooltipContent as note, index}
+            <div class="text-xs text-gray-300 dark:text-gray-300 truncate">
+              {index + 1}. {note}
+            </div>
+          {/each}
+        </div>
+      {:else if tooltipType === 'branches'}
+        <div class="space-y-1">
+          {#each tooltipContent as branch}
+            <div class="text-xs text-gray-300 dark:text-gray-300">
+              • {branch}
+            </div>
+          {/each}
+        </div>
+      {:else if tooltipType === 'decks'}
+        <div class="space-y-1 max-h-32 overflow-y-auto">
+          {#each tooltipContent as deck}
+            <div class="text-xs text-gray-300 dark:text-gray-300">
+              • {deck}
+            </div>
+          {/each}
+        </div>
+      {:else if tooltipType === 'resources'}
+        <div class="space-y-1">
+          {#each tooltipContent as resource}
+            <div class="text-xs text-gray-300 dark:text-gray-300 flex items-center gap-2">
+              <span>{resource.icon}</span>
+              <span>{resource.name}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+      
+      <div class="mt-2 pt-2 border-t border-gray-700 dark:border-gray-600">
+        <div class="text-xs text-gray-400 dark:text-gray-400 text-center">
+          Click to edit
+        </div>
+      </div>
+    </div>
+  {/if}
+{/if}
+
+<!-- Art Manager Modal -->
+<ArtManager 
+  bind:isOpen={showArtManager}
+  {card}
+  currentArtUrl={artUrl}
+  on:art-selected={handleArtSelected}
+  on:close={closeArtManager}
+/>
+
+<!-- Notes Modal -->
+{#if showNotesModal}
+  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('notes')}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notes for {editedCard?.title || 'Card'}</h3>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            on:click={() => closeContentModal('notes')}
+          >
+            <X size="20" />
+          </button>
+        </div>
+        <div class="space-y-3">
+          {#each tooltipContent as note, index}
+            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="text-sm font-medium text-gray-900 dark:text-white mb-1">Note {index + 1}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-300">{note}</div>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            on:click={() => closeContentModal('notes')}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Branches Modal -->
+{#if showBranchesModal}
+  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('branches')}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Branches for {editedCard?.title || 'Card'}</h3>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            on:click={() => closeContentModal('branches')}
+          >
+            <X size="20" />
+          </button>
+        </div>
+        <div class="space-y-2">
+          {#each tooltipContent as branch}
+            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
+              <span class="text-sm text-gray-900 dark:text-white">{branch}</span>
+              <button class="text-blue-500 hover:text-blue-600 text-sm">View</button>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            on:click={() => closeContentModal('branches')}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Decks Modal -->
+{#if showDecksModal}
+  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('decks')}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Decks for {editedCard?.title || 'Card'}</h3>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            on:click={() => closeContentModal('decks')}
+          >
+            <X size="20" />
+          </button>
+        </div>
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+          {#each tooltipContent as deck}
+            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
+              <span class="text-sm text-gray-900 dark:text-white">{deck}</span>
+              <button class="text-blue-500 hover:text-blue-600 text-sm">View</button>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            on:click={() => closeContentModal('decks')}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Resources Modal -->
+{#if showResourcesModal}
+  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('resources')}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Resources for {editedCard?.title || 'Card'}</h3>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            on:click={() => closeContentModal('resources')}
+          >
+            <X size="20" />
+          </button>
+        </div>
+        <div class="space-y-2">
+          {#each tooltipContent as resource}
+            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">{resource.icon}</span>
+                <span class="text-sm text-gray-900 dark:text-white">{resource.name}</span>
+              </div>
+              <button class="text-blue-500 hover:text-blue-600 text-sm">Open</button>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            on:click={() => closeContentModal('resources')}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .card-container {
+    transform-style: preserve-3d;
+  }
+  
+  .card-frame {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+</style>

@@ -1,10 +1,12 @@
 <!-- CardsManager.svelte - MTG-style card collection manager -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Filter, Grid, List, Star, Zap } from 'lucide-svelte';
+  import { Plus, Filter, Grid, List, Star, Zap, Package } from 'lucide-svelte';
   import Card from './Card.svelte';
+  import CardZoomView from './CardZoomView.svelte';
   import EditCardModal from './modals/EditCardModal.svelte';
   import AddCardModal from './modals/AddCardModal.svelte';
+  import PackOpener from './PackOpener.svelte';
   import LoadingSpinner from './LoadingSpinner.svelte';
 
   export let cards = [];
@@ -20,10 +22,14 @@
   let showEditModal = false;
   let editingCard = null;
   let showAddModal = false;
+  let showPackOpener = false;
+  let showCardZoom = false;
+  let zoomedCard = null;
   let selectedCards = new Set();
   let viewMode = 'binder'; // 'binder', 'timeline', 'clusters'
   let rarityFilter = 'all'; // 'all', 'common', 'special', 'rare', 'legendary'
   let progressFilter = 'all'; // 'all', 'raw', 'rough', 'crystal', 'cut', 'shimmer'
+  let updatingCards = new Set(); // Track cards currently being updated
 
   const dispatch = createEventDispatcher();
 
@@ -144,10 +150,19 @@
         dispatch('toggle-pin', { card });
         break;
       case 'progress-change':
-        dispatch('progress-change', { card });
+        console.log('CardsManager: Received progress-change event for card:', card.id, 'target level:', detail.targetLevel);
+        handleProgressChange(card, detail.targetLevel);
         break;
       case 'rarity-change':
         dispatch('rarity-change', { card });
+        break;
+      case 'rarity-upgrade':
+        console.log('CardsManager: Received rarity-upgrade event for card:', card.id, 'timestamp:', Date.now());
+        handleRarityUpgrade(card);
+        break;
+      case 'rarity-downgrade':
+        console.log('CardsManager: Received rarity-downgrade event for card:', card.id);
+        handleRarityDowngrade(card);
         break;
       case 'split':
         dispatch('split', { card });
@@ -173,6 +188,234 @@
     editingCard = null;
   }
 
+  function openCardZoom(event) {
+    zoomedCard = event.detail.card;
+    showCardZoom = true;
+  }
+
+  function closeCardZoom() {
+    showCardZoom = false;
+    zoomedCard = null;
+  }
+
+  function handleCardZoomSave(event) {
+    const { card } = event.detail;
+    dispatch('edit', { card, updates: card });
+    closeCardZoom();
+  }
+
+  function handleCardZoomDelete(event) {
+    const { card } = event.detail;
+    dispatch('delete', { card });
+    closeCardZoom();
+  }
+
+  function handleCardZoomRarityChange(event) {
+    const { card, newRarity } = event.detail;
+    dispatch('rarity-change', { card, newRarity });
+  }
+
+  function handleCardZoomProgressChange(event) {
+    const { card, targetLevel } = event.detail;
+    dispatch('progress-change', { card, targetLevel });
+  }
+
+  function handleCardZoomTogglePin(event) {
+    const { card } = event.detail;
+    dispatch('toggle-pin', { card });
+  }
+
+  function handleCardZoomMerge(event) {
+    const { card } = event.detail;
+    dispatch('merge', { card });
+  }
+
+  function handleCardZoomSplit(event) {
+    const { card } = event.detail;
+    dispatch('split', { card });
+  }
+
+  function handleCardZoomGenerateArt(event) {
+    const { card, artUrl, source } = event.detail;
+    console.log('🔍 CardsManager received art update:', { cardId: card.id, artUrl, source });
+    
+    // Optimistically update the cards array to keep UI in sync
+    const updatedCards = cards.map(c => 
+      c.id === card.id 
+        ? { ...c, art_url: artUrl }
+        : c
+    );
+    
+    console.log('🔍 CardsManager updating cards array:', updatedCards.find(c => c.id === card.id));
+    cards = updatedCards;
+    
+    dispatch('generate-art', { card, artUrl, source });
+  }
+
+  function handlePackComplete(event) {
+    const { cards } = event.detail;
+    showPackOpener = false;
+    
+    // Dispatch the new cards to parent component
+    dispatch('pack-complete', { cards });
+  }
+
+  async function handleRarityUpgrade(card) {
+    // Prevent multiple simultaneous updates
+    if (updatingCards.has(card.id)) {
+      console.log('Card already being updated, ignoring click');
+      return;
+    }
+    
+    console.log('🔍 CardsManager: Card object for upgrade:', {
+      id: card.id,
+      title: card.title,
+      rarity: card.rarity,
+      type: typeof card.rarity
+    });
+    
+    const rarityOrder = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarityOrder.indexOf(card.rarity);
+    
+    console.log('🔍 CardsManager: Current rarity index:', currentIndex, 'for rarity:', card.rarity);
+    
+    if (currentIndex < rarityOrder.length - 1) {
+      const newRarity = rarityOrder[currentIndex + 1];
+      console.log('🔍 CardsManager: Upgrading from', card.rarity, 'to', newRarity);
+      await updateCardRarity(card, newRarity);
+    } else {
+      console.log('🔍 CardsManager: Cannot upgrade - already at max rarity');
+    }
+  }
+
+  async function handleRarityDowngrade(card) {
+    // Prevent multiple simultaneous updates
+    if (updatingCards.has(card.id)) {
+      console.log('Card already being updated, ignoring click');
+      return;
+    }
+    
+    const rarityOrder = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarityOrder.indexOf(card.rarity);
+    
+    if (currentIndex > 0) {
+      const newRarity = rarityOrder[currentIndex - 1];
+      await updateCardRarity(card, newRarity);
+    }
+  }
+
+  async function updateCardRarity(card, newRarity) {
+    console.log('Updating card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
+    
+    // Mark card as being updated
+    updatingCards.add(card.id);
+    
+    // Optimistically update the UI first for immediate feedback
+    cards = cards.map(c => 
+      c.id === card.id 
+        ? { ...c, rarity: newRarity }
+        : c
+    );
+
+    try {
+      const response = await fetch('/api/cards/rarity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          newRarity: newRarity
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update rarity');
+      }
+
+      const result = await response.json();
+      console.log('Rarity update successful:', result);
+      
+      // Dispatch event to parent to reload context (this will sync with server)
+      dispatch('reload-context');
+
+    } catch (error) {
+      console.error('Error updating card rarity:', error);
+      
+      // Revert the optimistic update on error
+      cards = cards.map(c => 
+        c.id === card.id 
+          ? { ...c, rarity: card.rarity }
+          : c
+      );
+      
+      alert(`Failed to update rarity: ${error.message}`);
+    } finally {
+      // Remove card from updating set
+      updatingCards.delete(card.id);
+    }
+  }
+
+  async function handleProgressChange(card, targetLevel) {
+    // Prevent multiple simultaneous updates
+    if (updatingCards.has(card.id)) {
+      console.log('Card already being updated, ignoring progress click');
+      return;
+    }
+
+    console.log('CardsManager: Updating card progress:', card.id, 'from', card.progress, 'to', targetLevel);
+
+    // Mark card as being updated
+    updatingCards.add(card.id);
+
+    // Optimistically update the UI first for immediate feedback
+    cards = cards.map(c =>
+      c.id === card.id
+        ? { ...c, progress: targetLevel }
+        : c
+    );
+
+    try {
+      const response = await fetch('/api/cards/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          newProgress: targetLevel
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update progress');
+      }
+
+      const result = await response.json();
+      console.log('Progress update successful:', result);
+
+      // Dispatch event to parent to reload context (this will sync with server)
+      dispatch('reload-context');
+
+    } catch (error) {
+      console.error('Error updating card progress:', error);
+
+      // Revert the optimistic update on error
+      cards = cards.map(c =>
+        c.id === card.id
+          ? { ...c, progress: card.progress }
+          : c
+      );
+
+      alert(`Failed to update progress: ${error.message}`);
+    } finally {
+      // Remove card from updating set
+      updatingCards.delete(card.id);
+    }
+  }
+
   function clearFilters() {
     rarityFilter = 'all';
     progressFilter = 'all';
@@ -189,10 +432,55 @@
 
 <div class="cards-manager h-full flex flex-col">
   <!-- Header -->
-  <div class="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
-    <div class="flex items-center justify-between mb-4">
+  <div class="flex-shrink-0 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Cards</h2>
+        
+        <!-- Filters inline -->
+        <div class="flex items-center gap-4">
+          <!-- Rarity Filter -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Rarity:</label>
+            <select 
+              bind:value={rarityFilter}
+              class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="all">All ({cards.length})</option>
+              <option value="common">Common ({getRarityCount('common')})</option>
+              <option value="special">Special ({getRarityCount('special')})</option>
+              <option value="rare">Rare ({getRarityCount('rare')})</option>
+              <option value="legendary">Legendary ({getRarityCount('legendary')})</option>
+            </select>
+          </div>
+
+          <!-- Progress Filter -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Progress:</label>
+            <select 
+              bind:value={progressFilter}
+              class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="all">All</option>
+              <option value="raw">Raw ({getProgressCount(1)})</option>
+              <option value="rough">Rough ({getProgressCount(2)})</option>
+              <option value="crystal">Crystal ({getProgressCount(3)})</option>
+              <option value="cut">Cut ({getProgressCount(4)})</option>
+              <option value="shimmer">Shimmer ({getProgressCount(5)})</option>
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          {#if rarityFilter !== 'all' || progressFilter !== 'all'}
+            <button
+              class="text-sm text-blue-600 dark:text-blue-500 hover:underline"
+              on:click={clearFilters}
+            >
+              Clear Filters
+            </button>
+          {/if}
+        </div>
+        
         <div class="flex items-center gap-2">
           <button
             class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium"
@@ -202,6 +490,15 @@
           >
             <Plus size="16" />
             <span>New Card</span>
+          </button>
+          
+          <button
+            class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            on:click={() => showPackOpener = true}
+            title="Summon Pack from the Void"
+          >
+            <Package size="16" />
+            <span>Summon Pack</span>
           </button>
         </div>
       </div>
@@ -227,49 +524,6 @@
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="flex items-center gap-4 flex-wrap">
-      <!-- Rarity Filter -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Rarity:</label>
-        <select 
-          bind:value={rarityFilter}
-          class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        >
-          <option value="all">All ({cards.length})</option>
-          <option value="common">Common ({getRarityCount('common')})</option>
-          <option value="special">Special ({getRarityCount('special')})</option>
-          <option value="rare">Rare ({getRarityCount('rare')})</option>
-          <option value="legendary">Legendary ({getRarityCount('legendary')})</option>
-        </select>
-      </div>
-
-      <!-- Progress Filter -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Progress:</label>
-        <select 
-          bind:value={progressFilter}
-          class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        >
-          <option value="all">All</option>
-          <option value="raw">Raw ({getProgressCount(1)})</option>
-          <option value="rough">Rough ({getProgressCount(2)})</option>
-          <option value="crystal">Crystal ({getProgressCount(3)})</option>
-          <option value="cut">Cut ({getProgressCount(4)})</option>
-          <option value="shimmer">Shimmer ({getProgressCount(5)})</option>
-        </select>
-      </div>
-
-      <!-- Clear Filters -->
-      {#if rarityFilter !== 'all' || progressFilter !== 'all'}
-        <button
-          class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-          on:click={clearFilters}
-        >
-          Clear Filters
-        </button>
-      {/if}
-    </div>
   </div>
 
   <!-- Cards Grid -->
@@ -285,12 +539,16 @@
             {card}
             {searchTerm}
             isSelected={selectedCards.has(card.id)}
+            showActions={false}
+            on:card-click={openCardZoom}
             on:select={handleCardAction}
             on:edit={handleCardAction}
             on:delete={handleCardAction}
             on:toggle-pin={handleCardAction}
             on:progress-change={handleCardAction}
             on:rarity-change={handleCardAction}
+            on:rarity-upgrade={handleCardAction}
+            on:rarity-downgrade={handleCardAction}
             on:split={handleCardAction}
             on:merge={handleCardAction}
             on:generate-art={handleCardAction}
@@ -370,6 +628,30 @@
     on:cancel={handleEditModalCancel}
   />
 {/if}
+
+{#if showPackOpener}
+  <PackOpener
+    isOpen={showPackOpener}
+    {worldId}
+    {user}
+    on:pack-complete={handlePackComplete}
+  />
+{/if}
+
+<!-- Card Zoom View -->
+<CardZoomView 
+  card={zoomedCard}
+  bind:isOpen={showCardZoom}
+  on:close={closeCardZoom}
+  on:save={handleCardZoomSave}
+  on:delete={handleCardZoomDelete}
+  on:rarity-change={handleCardZoomRarityChange}
+  on:progress-change={handleCardZoomProgressChange}
+  on:toggle-pin={handleCardZoomTogglePin}
+  on:merge={handleCardZoomMerge}
+  on:split={handleCardZoomSplit}
+  on:generate-art={handleCardZoomGenerateArt}
+/>
 
 <style>
   .cards-grid {

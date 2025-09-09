@@ -108,7 +108,8 @@
   <!-- Header -->
   <div class="p-2 sm:p-4">
     <div class="flex items-center">
-      {#if isDesktop && showCollapseButton && onToggleCollapse}
+      <!-- Desktop collapse button - HIDDEN -->
+      <!-- {#if isDesktop && showCollapseButton && onToggleCollapse}
         <button
           class="p-1 text-xs bg-white dark:bg-slate-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 		  style="margin-left: -3rem; position: absolute;"
@@ -117,14 +118,12 @@
           title={isCollapsed ? 'Expand Questions & Ideas' : 'Collapse Questions & Ideas'}
         >
           {#if isCollapsed} 
-            <!-- Expand - double chevrons pointing left -->
             <ChevronsLeft size="24" />
           {:else}
-            <!-- Collapse - double chevrons pointing right -->
             <ChevronsRight size="24" />
           {/if}
         </button>
-      {/if}
+      {/if} -->
     </div>
   </div>
   

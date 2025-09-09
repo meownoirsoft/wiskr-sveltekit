@@ -8,7 +8,7 @@
   import { marked } from 'marked';
   
 // Import components
-import Sidebar from '$lib/components/Sidebar.svelte';
+import Binder from '$lib/components/Binder.svelte';
 import IdeasColumn from '$lib/components/IdeasColumn.svelte';
 import ChatInterface from '$lib/components/ChatInterface.svelte';
 import FormatModal from '$lib/components/modals/FormatModal.svelte';
@@ -46,6 +46,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   // Project state is now managed by ProjectState component
   // These will be bound to ProjectState component
   let projects = data?.projects ?? [];
+  
+  // Test project removed - context menu positioning fix is complete
+  
   let selectedId = null;
   let current = null;
   let hasInit = false;
@@ -79,7 +82,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     if (nextId) await selectProjectById(nextId);
   }
 
-  // Always show sidebar (removed builder mode)
+  // Always show binder (removed builder mode)
 
   // Mobile Search state
   let showMobileSearch = false;
@@ -175,15 +178,15 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     switch (result.type) {
       case 'facts':
         // Scroll to facts panel and highlight the fact
-        if (sidebarComponent) {
-          sidebarComponent.highlightFact(result.id, searchTerm);
+        if (binderComponent) {
+          binderComponent.highlightFact(result.id, searchTerm);
         }
         break;
         
       case 'docs':
         // Scroll to docs panel and highlight the doc
-        if (sidebarComponent) {
-          sidebarComponent.highlightDoc(result.id, searchTerm);
+        if (binderComponent) {
+          binderComponent.highlightDoc(result.id, searchTerm);
         }
         break;
         
@@ -310,7 +313,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let mrWiskrLoading = false;
   
   // Component references
-  let sidebarComponent;
+  let binderComponent;
   let sessionLogicManager;
   let contextManager;
   let chatManager;
@@ -323,7 +326,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let relatedIdeas = [];
   let isGeneratingIdeas = false;
   
-  // Sidebar tab state
+  // Binder tab state
   let activeTab = 'facts';
   
   // Session management state
@@ -1030,6 +1033,12 @@ function handleFactAdd(event) {
   }
 }
 
+function handleReloadContext(event) {
+  if (contextManager) {
+    contextManager.loadContext();
+  }
+}
+
 function handleFactStartEdit(event) {
   if (contextManager) {
     contextManager.startEditFact(event.detail.fact, event.detail.index);
@@ -1152,9 +1161,9 @@ function handleProjectSettingsModalClose() {
   showProjectSettingsModal = false;
   projectSettingsProject = null;
   
-  // Refresh fact types in the Sidebar to ensure they are up-to-date
-  if (sidebarComponent && activeTab === 'facts') {
-    sidebarComponent.refreshFactTypes();
+  // Refresh fact types in the Binder to ensure they are up-to-date
+  if (binderComponent && activeTab === 'facts') {
+    binderComponent.refreshFactTypes();
   }
 }
 
@@ -1726,11 +1735,11 @@ function handleTextAddToDocs(event) {
   <!-- Layout -->
 <div id="projects-page-layout" class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
-  <!-- LEFT PANEL: Cards (Full Width) -->
+  <!-- LEFT PANEL: Binder (Full Width) -->
 <div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-full' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel}
-      <Sidebar
-        bind:this={sidebarComponent}
+      <Binder
+        bind:this={binderComponent}
         {current}
         {facts}
         {docs}
@@ -1767,6 +1776,7 @@ function handleTextAddToDocs(event) {
         on:doc-save-edit={handleDocSaveEdit}
         on:doc-delete={handleDocDelete}
         on:doc-toggle-pin={handleDocTogglePin}
+        on:reload-context={handleReloadContext}
       />
     {/if}
   </div>
@@ -1853,22 +1863,20 @@ function handleTextAddToDocs(event) {
         </button>
       </div>
       
-      <!-- Right panel toggle button (always visible, icon changes based on state) -->
-      <div class="absolute right-0 top-0 z-50">
+      <!-- Right panel toggle button - HIDDEN -->
+      <!-- <div class="absolute right-0 top-0 z-50">
         <button
           class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleRightPanelCollapse}
           title={rightPanelCollapsed ? "Expand Questions & Ideas" : "Collapse Questions & Ideas"}
         >
           {#if rightPanelCollapsed}
-            <!-- Double chevrons pointing left (expand) -->
             <ChevronsLeft size="32" />
           {:else}
-            <!-- Double chevrons pointing right (collapse) -->
             <ChevronsRight size="32" />
           {/if}
         </button>
-      </div>
+      </div> -->
     {/if}
     
     <!-- MOBILE SEARCH PANEL -->

@@ -281,11 +281,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     }
     
     // Listen for panel state changes to update chevron icons
-    window.addEventListener('sidebar:left-panel-changed', (e) => {
+    window.addEventListener('binder:left-panel-changed', (e) => {
       showLeftPanel = e.detail.visible;
     });
     
-    window.addEventListener('sidebar:right-panel-changed', (e) => {
+    window.addEventListener('binder:right-panel-changed', (e) => {
       showRightPanel = e.detail.visible;
     });
     
@@ -644,7 +644,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         {#if isProjectsPage}
           <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
             <!-- Left panel toggle (Context/Facts) -->
-            <button
+            <!-- Facts & Docs Toggle Button - HIDDEN -->
+            <!-- <button
               type="button"
               class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-context'))}
@@ -652,14 +653,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               title="Facts & Docs"
             >
               {#if showLeftPanel}
-                <!-- Panel is open - chevrons pointing OUT (left) -->
                 <ChevronsLeft size="24" />
               {:else}
-                <!-- Panel is closed - chevrons pointing IN (right) -->
                 <ChevronsRight size="24" />
               {/if}
-              <!-- <span class="text-xs mt-1">Facts</span> -->
-            </button>
+            </button> -->
             <!-- Project Menu Button -->
             <button
               type="button"
@@ -760,9 +758,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 projectId={currentProject.id}
                 on:open-dashboard={() => { goto(`/context-dashboard?projectId=${currentProject.id}`); }}
                 on:open-settings={() => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject })); }}
-                on:navigate-facts={() => { window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' })); }}
+                on:navigate-facts={() => { window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'facts' })); }}
                 on:generate-entities={() => {
-                  window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'entities' }));
+                  window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'entities' }));
                   window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
                 }}
               />
@@ -861,8 +859,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           
           <!-- Mobile: Right panel control (Ideas) -->
           <div class="{isDesktop ? 'hidden' : 'flex'} items-center">
-            <!-- Right panel toggle (Add-Ins) -->
-            <button
+            <!-- Right panel toggle (Add-Ins) - HIDDEN -->
+            <!-- <button
               type="button"
               class="flex flex-col items-center px-1 py-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
               on:click={() => window.dispatchEvent(new CustomEvent('mobile:toggle-addins'))}
@@ -870,14 +868,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               title="Questions & Ideas"
             >
               {#if !showRightPanel}
-                <!-- Panel NOT shown - chevrons pointing IN (left) to show panel -->
                 <ChevronsLeft size="24" />
               {:else}
-                <!-- Panel shown - chevrons pointing OUT (right) to hide panel -->
                 <ChevronsRight size="24" />
               {/if}
-              <!-- <span class="text-xs mt-1">Ideas</span> -->
-            </button>
+            </button> -->
           </div>
         {/if}
 
@@ -1097,11 +1092,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 showProjectMenu = false;
               }}
               on:navigate-facts={() => {
-                window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'facts' }));
+                window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'facts' }));
                 showProjectMenu = false;
               }}
               on:generate-entities={() => {
-                window.dispatchEvent(new CustomEvent('sidebar:switch-tab', { detail: 'entities' }));
+                window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'entities' }));
                 window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
                 showProjectMenu = false;
               }}

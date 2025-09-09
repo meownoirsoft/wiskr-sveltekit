@@ -37,12 +37,112 @@
   export async function loadContext() {
     if (!current) return;
     loadingFacts = true;
+    
+    // Add cache-busting to ensure fresh data
+    const timestamp = Date.now();
     const [{ data: f }, { data: d }, { data: p }] = await Promise.all([
-      supabase.from('facts').select('*').eq('project_id', current.id).order('created_at'),
-      supabase.from('docs').select('*').eq('project_id', current.id).order('created_at').limit(10),
+      supabase.from('facts').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
+      supabase.from('docs').select('*').eq('project_id', current.id).order('created_at', { ascending: false }).limit(10),
       supabase.from('projects').select('*').eq('id', current.id).single()
     ]);
-    facts = f ?? [];
+    // Parse facts and convert card-type facts to card objects
+    const rawFacts = f ?? [];
+    console.log('🔍 ContextManager: Loading facts, found', rawFacts.length, 'total facts');
+    
+    // Test cards removed - context menu positioning fix is complete
+    
+    facts = rawFacts.map(fact => {
+      console.log('🔍 ContextManager: Processing fact:', {
+        id: fact.id,
+        type: fact.type,
+        key: fact.key,
+        value: fact.value?.substring(0, 50) + '...'
+      });
+      
+      if (fact.type === 'card') {
+        try {
+          const cardData = JSON.parse(fact.value);
+          console.log('🎴 ContextManager: Parsed card:', fact.key, 'raw rarity:', cardData.rarity, 'final rarity:', cardData.rarity || 'common');
+          return {
+            id: fact.id,
+            title: fact.key,
+            content: cardData.content,
+            tags: cardData.tags || [],
+            type: cardData.type || 'other',
+            rarity: cardData.rarity || 'common',
+            progress: cardData.progress || 1,
+            investment_cost: cardData.investment_cost || 0,
+            art_url: cardData.art_url,
+            pinned: fact.pinned,
+            created_at: fact.created_at,
+            project_id: fact.project_id
+          };
+        } catch (e) {
+          console.error('Error parsing card data:', e, 'Raw fact:', fact);
+          
+          // Check if the content itself is a JSON string (dev cards issue)
+          if (typeof fact.value === 'string' && fact.value.startsWith('{"content":')) {
+            try {
+              const nestedCardData = JSON.parse(fact.value);
+              console.log('🔄 ContextManager: Found nested JSON in content, parsing:', nestedCardData);
+              return {
+                id: fact.id,
+                title: fact.key,
+                content: nestedCardData.content,
+                tags: nestedCardData.tags || [],
+                type: nestedCardData.type || 'other',
+                rarity: nestedCardData.rarity || 'common',
+                progress: nestedCardData.progress || 1,
+                investment_cost: nestedCardData.investment_cost || 0,
+                art_url: nestedCardData.art_url,
+                pinned: fact.pinned,
+                created_at: fact.created_at,
+                project_id: fact.project_id
+              };
+            } catch (nestedError) {
+              console.error('Error parsing nested card data:', nestedError);
+            }
+          }
+          
+          return fact; // Return original fact if parsing fails
+        }
+      } else {
+        // Convert old facts to card format
+        console.log('🔄 ContextManager: Converting old fact to card format:', {
+          id: fact.id,
+          key: fact.key,
+          type: fact.type,
+          value: fact.value?.substring(0, 100) + '...',
+          valueType: typeof fact.value,
+          allKeys: Object.keys(fact)
+        });
+        return {
+          id: fact.id,
+          title: fact.key,
+          content: fact.value,
+          tags: fact.tags || ['converted', 'idea'],
+          type: 'other',
+          rarity: 'common',
+          progress: 1,
+          investment_cost: 0,
+          art_url: null,
+          pinned: fact.pinned,
+          created_at: fact.created_at,
+          project_id: fact.project_id
+        };
+      }
+    });
+    
+    console.log('🎴 ContextManager: Final facts array:', facts.length, 'items');
+    if (facts.length > 0) {
+      console.log('🎴 ContextManager: First converted card:', {
+        id: facts[0].id,
+        title: facts[0].title,
+        content: facts[0].content?.substring(0, 50) + '...',
+        rarity: facts[0].rarity,
+        hasContent: 'content' in facts[0]
+      });
+    }
     docs = d ?? [];
     if (p) {
       // Update current project with fresh brief_text
