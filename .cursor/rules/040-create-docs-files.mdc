@@ -1,0 +1,9 @@
+---
+description: Always create .md files inside the docs folder
+globs:
+alwaysApply: true
+---
+  Create a markdown file inside the `docs` directory. Do not place it in root or libs.
+  Follow this format:
+  - Filename: kebab-case
+  - Include frontmatter with title

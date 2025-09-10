@@ -5,6 +5,7 @@
   import { browser } from '$app/environment';
   import { robustFetch, robustFetchJSON, getNetworkStatus, offlineQueue } from '$lib/utils/networkUtils.js';
   import { incrementPendingOperations, decrementPendingOperations, addNetworkError } from '$lib/stores/networkStore.js';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -15,6 +16,10 @@
   // State that will be managed by this component
   export let facts = [];
   export let docs = [];
+  
+  // Delete confirmation state
+  let showDeleteConfirm = false;
+  let cardToDelete = null;
   
   // Form state for facts
   export let factType = 'character';
@@ -40,102 +45,89 @@
     
     // Add cache-busting to ensure fresh data
     const timestamp = Date.now();
-    const [{ data: f }, { data: d }, { data: p }] = await Promise.all([
-      supabase.from('facts').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
+    const [{ data: c }, { data: d }, { data: p }] = await Promise.all([
+      supabase.from('cards').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
       supabase.from('docs').select('*').eq('project_id', current.id).order('created_at', { ascending: false }).limit(10),
       supabase.from('projects').select('*').eq('id', current.id).single()
     ]);
-    // Parse facts and convert card-type facts to card objects
-    const rawFacts = f ?? [];
-    console.log('🔍 ContextManager: Loading facts, found', rawFacts.length, 'total facts');
+    // Load cards directly from the cards table
+    const rawCards = c ?? [];
+    console.log('🔍 ContextManager: Loading cards, found', rawCards.length, 'total cards');
     
-    // Test cards removed - context menu positioning fix is complete
-    
-    facts = rawFacts.map(fact => {
-      console.log('🔍 ContextManager: Processing fact:', {
-        id: fact.id,
-        type: fact.type,
-        key: fact.key,
-        value: fact.value?.substring(0, 50) + '...'
-      });
-      
-      if (fact.type === 'card') {
-        try {
-          const cardData = JSON.parse(fact.value);
-          console.log('🎴 ContextManager: Parsed card:', fact.key, 'raw rarity:', cardData.rarity, 'final rarity:', cardData.rarity || 'common');
-          return {
-            id: fact.id,
-            title: fact.key,
-            content: cardData.content,
-            tags: cardData.tags || [],
-            type: cardData.type || 'other',
-            rarity: cardData.rarity || 'common',
-            progress: cardData.progress || 1,
-            investment_cost: cardData.investment_cost || 0,
-            art_url: cardData.art_url,
-            pinned: fact.pinned,
-            created_at: fact.created_at,
-            project_id: fact.project_id
-          };
-        } catch (e) {
-          console.error('Error parsing card data:', e, 'Raw fact:', fact);
-          
-          // Check if the content itself is a JSON string (dev cards issue)
-          if (typeof fact.value === 'string' && fact.value.startsWith('{"content":')) {
-            try {
-              const nestedCardData = JSON.parse(fact.value);
-              console.log('🔄 ContextManager: Found nested JSON in content, parsing:', nestedCardData);
-              return {
-                id: fact.id,
-                title: fact.key,
-                content: nestedCardData.content,
-                tags: nestedCardData.tags || [],
-                type: nestedCardData.type || 'other',
-                rarity: nestedCardData.rarity || 'common',
-                progress: nestedCardData.progress || 1,
-                investment_cost: nestedCardData.investment_cost || 0,
-                art_url: nestedCardData.art_url,
-                pinned: fact.pinned,
-                created_at: fact.created_at,
-                project_id: fact.project_id
-              };
-            } catch (nestedError) {
-              console.error('Error parsing nested card data:', nestedError);
-            }
-          }
-          
-          return fact; // Return original fact if parsing fails
+    // Add mock cards for testing when no cards are found
+    if (rawCards.length === 0) {
+      console.log('🎴 ContextManager: No cards found, adding mock cards for testing');
+      const mockCards = [
+        {
+          id: '00000000-0000-0000-0000-000000000101',
+          title: 'The Mysterious Forest',
+          content: 'A dense forest where ancient magic still flows through the trees. Creatures of legend are said to dwell here, hidden from the modern world.',
+          tags: ['location', 'magic', 'forest'],
+          rarity: 'rare',
+          progress: 3,
+          investment_cost: 4,
+          art_url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop',
+          pinned: false,
+          created_at: new Date().toISOString(),
+          project_id: current.id
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000102',
+          title: 'The Crystal Sword',
+          content: 'A legendary weapon forged from pure crystal. It glows with inner light and can cut through any material.',
+          tags: ['weapon', 'legendary', 'crystal'],
+          rarity: 'legendary',
+          progress: 2,
+          investment_cost: 6,
+          art_url: 'https://picsum.photos/400/300?random=1',
+          pinned: true,
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          project_id: current.id
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000103',
+          title: 'The Village Elder',
+          content: 'A wise old woman who knows the secrets of the land. She has lived for centuries and remembers when the world was young.',
+          tags: ['character', 'wise', 'ancient'],
+          rarity: 'special',
+          progress: 4,
+          investment_cost: 3,
+          art_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+          pinned: false,
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+          project_id: current.id
         }
-      } else {
-        // Convert old facts to card format
-        console.log('🔄 ContextManager: Converting old fact to card format:', {
-          id: fact.id,
-          key: fact.key,
-          type: fact.type,
-          value: fact.value?.substring(0, 100) + '...',
-          valueType: typeof fact.value,
-          allKeys: Object.keys(fact)
-        });
-        return {
-          id: fact.id,
-          title: fact.key,
-          content: fact.value,
-          tags: fact.tags || ['converted', 'idea'],
-          type: 'other',
-          rarity: 'common',
-          progress: 1,
-          investment_cost: 0,
-          art_url: null,
-          pinned: fact.pinned,
-          created_at: fact.created_at,
-          project_id: fact.project_id
-        };
-      }
+      ];
+      rawCards.push(...mockCards);
+    }
+    
+    facts = rawCards.map(card => {
+      // console.log('🔍 ContextManager: Processing card:', {
+      //   id: card.id,
+      //   title: card.title,
+      //   content: card.content?.substring(0, 50) + '...'
+      // });
+      
+      // Cards are already in the correct format from the cards table
+      return {
+        id: card.id,
+        title: card.title,
+        content: card.content,
+        tags: card.tags || [],
+        type: 'card', // All cards are of type 'card'
+        rarity: card.rarity || 'common',
+        progress: card.progress || 1,
+        investment_cost: card.investment_cost || 1,
+        art_url: card.art_url,
+        pinned: card.pinned || false,
+        created_at: card.created_at,
+        project_id: card.project_id
+      };
     });
     
-    console.log('🎴 ContextManager: Final facts array:', facts.length, 'items');
+    console.log('🎴 ContextManager: Final cards array:', facts.length, 'items');
     if (facts.length > 0) {
-      console.log('🎴 ContextManager: First converted card:', {
+      console.log('🎴 ContextManager: First card:', {
         id: facts[0].id,
         title: facts[0].title,
         content: facts[0].content?.substring(0, 50) + '...',
@@ -188,16 +180,18 @@
     // Check if offline - queue the request
     if (!getNetworkStatus()) {
       offlineQueue.add(async () => {
-        await robustFetchJSON('/api/facts/create', {
+        await robustFetchJSON('/api/cards/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             project_id: current.id,
-            type: factType || 'note',
-            key: factKey.trim(),
-            value: factValue.trim(),
+            title: factKey.trim(),
+            content: factValue.trim(),
             tags: tags,
-            pinned: false
+            pinned: false,
+            rarity: 'common',
+            progress: 1,
+            investment_cost: 1
           })
         });
         // Reload context after sync
@@ -217,16 +211,18 @@
     incrementPendingOperations();
     
     try {
-      const { fact } = await robustFetchJSON('/api/facts/create', {
+      const { card } = await robustFetchJSON('/api/cards/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: current.id,
-          type: factType || 'note',
-          key: factKey.trim(),
-          value: factValue.trim(),
+          title: factKey.trim(),
+          content: factValue.trim(),
           tags: tags,
-          pinned: false
+          pinned: false,
+          rarity: 'common',
+          progress: 1,
+          investment_cost: 1
         })
       }, {
         timeout: 15000,
@@ -240,8 +236,8 @@
       
       // Dispatch event for context score refresh
       if (browser) {
-        window.dispatchEvent(new CustomEvent('fact:created', {
-          detail: { fact, projectId: current.id }
+        window.dispatchEvent(new CustomEvent('card:created', {
+          detail: { card, projectId: current.id }
         }));
       }
       
@@ -276,7 +272,7 @@
   }
 
   export function startEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.key, _editValue: x.value, _editTags: (x.tags || []).join(', ') } : x);
+    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.title, _editValue: x.content, _editTags: (x.tags || []).join(', ') } : x);
   }
 
   export function cancelEditFact(f, i) {
@@ -284,11 +280,12 @@
   }
 
   export async function saveFactEdit(f, { type, key, value, tags }) {
-    const res = await fetch(`/api/facts/create/${f.id}/update`, {
+    const res = await fetch(`/api/cards/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        type, key, value,
+        title: key, 
+        content: value,
         tags,
         reembed: 'auto' // re-embed if text changed
       })
@@ -306,23 +303,66 @@
   }
 
   export async function deleteFact(f, i) {
-    if (!confirm('Delete this fact?')) return;
-    const { error } = await supabase.from('facts').delete().eq('id', f.id);
-    if (error) { alert(error.message); return; }
-    facts = facts.filter((_, idx) => idx !== i);
+    // Show confirmation modal
+    showDeleteConfirm = true;
+    cardToDelete = { fact: f, index: i };
+  }
+
+  // Alternative delete function that doesn't require index
+  export async function deleteFactById(cardId) {
+    // Find the card and its index
+    const cardIndex = facts.findIndex(f => f.id === cardId);
+    if (cardIndex === -1) {
+      console.error('Card not found:', cardId);
+      return;
+    }
     
-    // Auto-regenerate summary since fact was deleted
-    await autoRegenerateSummary();
+    const card = facts[cardIndex];
+    showDeleteConfirm = true;
+    cardToDelete = { fact: card, index: cardIndex };
+  }
+
+  async function confirmDelete() {
+    if (!cardToDelete) return;
+    
+    const { fact: f, index: i } = cardToDelete;
+    
+    // Close modal immediately
+    showDeleteConfirm = false;
+    cardToDelete = null;
+    
+    try {
+      const { error } = await supabase.from('cards').delete().eq('id', f.id);
+      if (error) { 
+        alert(error.message); 
+        return; 
+      }
+      
+      // Remove from local array
+      facts = facts.filter((_, idx) => idx !== i);
+      
+      // Auto-regenerate summary since fact was deleted
+      await autoRegenerateSummary();
+      
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      alert('Failed to delete card');
+    }
+  }
+
+  function cancelDelete() {
+    showDeleteConfirm = false;
+    cardToDelete = null;
   }
 
   export async function toggleFactPin(f) {
     const wasPinned = f.pinned;
     const willBePinned = !f.pinned;
     
-    const res = await fetch(`/api/facts/create/${f.id}/update`, {
+    const res = await fetch(`/api/cards/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: willBePinned, reembed: 'skip' }) // pin doesn't change meaning
+      body: JSON.stringify({ pinned: willBePinned })
     });
     if (!res.ok) {
       console.error(await res.text());
@@ -330,13 +370,13 @@
       return;
     }
     
-    const { fact } = await res.json();
+    const { card } = await res.json();
     
     // Dispatch event for context score refresh when pinning status changes
     if (browser && wasPinned !== willBePinned) {
-      const eventType = willBePinned ? 'fact:pinned' : 'fact:unpinned';
+      const eventType = willBePinned ? 'card:pinned' : 'card:unpinned';
       window.dispatchEvent(new CustomEvent(eventType, {
-        detail: { fact, projectId: current.id }
+        detail: { card, projectId: current.id }
       }));
     }
     
@@ -520,3 +560,15 @@
 </script>
 
 <!-- This component has no template - it's pure logic -->
+
+<!-- Delete Confirmation Modal -->
+<ConfirmModal
+  bind:isOpen={showDeleteConfirm}
+  title="Delete Card"
+  message="Are you sure you want to delete this card? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  confirmClass="bg-red-600 hover:bg-red-700 text-white"
+  on:confirm={confirmDelete}
+  on:cancel={cancelDelete}
+/>

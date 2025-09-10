@@ -28,8 +28,8 @@ export async function POST({ request, locals }) {
     // If cardId is provided, get the card content to use as prompt
     if (cardId && !prompt) {
       const { data: card, error: cardError } = await locals.supabase
-        .from('facts')
-        .select('key, value, type')
+        .from('cards')
+        .select('title, content, type')
         .eq('id', cardId)
         .single();
 
@@ -37,21 +37,9 @@ export async function POST({ request, locals }) {
         return json({ error: 'Card not found' }, { status: 404 });
       }
 
-      // Parse card data if it's a card type
-      let cardTitle = card.key;
-      let cardContent = card.value;
-      
-      if (card.type === 'card') {
-        try {
-          const cardData = JSON.parse(card.value);
-          cardTitle = cardData.title || card.key;
-          cardContent = cardData.content || card.value;
-        } catch (e) {
-          // If parsing fails, use the raw values
-          cardTitle = card.key;
-          cardContent = card.value;
-        }
-      }
+      // Use the card data directly from the cards table
+      let cardTitle = card.title;
+      let cardContent = card.content;
 
       // Create a prompt based on the card content
       finalPrompt = `Based on this idea: "${cardTitle}" - ${cardContent}
@@ -68,7 +56,7 @@ Generate related and expanded ideas that build upon this concept. Consider diffe
 
     // Get existing cards in the world for context
     const { data: existingCards } = await locals.supabase
-      .from('facts')
+      .from('cards')
       .select('title, content, tags, type, rarity')
       .eq('project_id', worldId)
       .eq('user_id', user.id)

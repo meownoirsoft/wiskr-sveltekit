@@ -1,0 +1,6 @@
+---
+description: Generate SQL migration in /migrations only
+globs:
+alwaysApply: true
+---
+  Create a SQL migration file inside the  project root `migrations` folder, with a filename starting with a UTC timestamp. Do not place this in libs or root directly.

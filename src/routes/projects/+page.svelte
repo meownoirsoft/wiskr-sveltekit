@@ -21,6 +21,8 @@ import BranchManager from '$lib/components/BranchManager.svelte';
 import SessionLogicManager from '$lib/components/SessionLogicManager.svelte';
 import ContextManager from '$lib/components/ContextManager.svelte';
 import ChatManager from '$lib/components/ChatManager.svelte';
+import DeckDrawer from '$lib/components/DeckDrawer.svelte';
+import DeckView from '$lib/components/DeckView.svelte';
 
 // New management components
 import ProjectState from '$lib/components/ProjectState.svelte';
@@ -29,7 +31,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   
   // Import Lucide icons
-  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight, BarChart3, Settings, Settings2, LogOut } from 'lucide-svelte';
+  import { Music, Camera, Video, ShoppingBag, MessageCircle, Briefcase, Shirt, MapPin, Users, MessageSquare, FileText, Hash, ChevronsLeft, ChevronsRight, BarChart3, Settings, Settings2, LogOut, X } from 'lucide-svelte';
   import MobileSearch from '$lib/components/MobileSearch.svelte';
 
   // Import styles
@@ -350,6 +352,174 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   // Desktop-only collapse state for panels
   let leftPanelCollapsed = false;   // Whether left panel is collapsed on desktop
   let rightPanelCollapsed = false;  // Whether right panel is collapsed on desktop
+  
+  // Deck drawer state
+  let showDeckDrawer = false;
+  let currentDeck = null;
+  let decks = [];
+  let pinnedDecks = [];
+  let showDeckView = false;
+
+
+  // Load decks from database when project changes
+  $: if (current?.id && projects.length > 0) {
+    loadDecks(current.id);
+  }
+
+  async function loadDecks(projectId) {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/decks`);
+      if (response.ok) {
+        const data = await response.json();
+        decks = data.decks || [];
+        pinnedDecks = decks.filter(deck => deck.isPinned);
+      } else {
+        console.error('Failed to load decks:', response.status);
+        decks = [];
+        pinnedDecks = [];
+      }
+    } catch (error) {
+      console.error('Error loading decks:', error);
+      decks = [];
+      pinnedDecks = [];
+    }
+  }
+
+  // Deck drawer functions
+  function toggleDeckDrawer() {
+    showDeckDrawer = !showDeckDrawer;
+  }
+
+  function handleDeckDrawerToggle(event) {
+    showDeckDrawer = event.detail.isOpen;
+  }
+
+  async function handleCreateDeck() {
+    if (!current?.id) return;
+    
+    const deckName = prompt('Enter deck name:');
+    if (!deckName) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${current.id}/decks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: deckName,
+          description: ''
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Reload decks to include the new one
+        await loadDecks(current.id);
+        console.log('Deck created successfully:', data.deck);
+      } else {
+        console.error('Failed to create deck:', response.status);
+        alert('Failed to create deck. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating deck:', error);
+      alert('Error creating deck. Please try again.');
+    }
+  }
+
+  function handleViewDeck(event) {
+    const { deck } = event.detail;
+    currentDeck = deck;
+    showDeckDrawer = false;
+    showDeckView = true;
+  }
+
+  function handleTogglePin(event) {
+    const { deck } = event.detail;
+    const deckIndex = decks.findIndex(d => d.id === deck.id);
+    if (deckIndex !== -1) {
+      decks[deckIndex].isPinned = !decks[deckIndex].isPinned;
+      decks = [...decks]; // Trigger reactivity
+      pinnedDecks = decks.filter(d => d.isPinned);
+    }
+  }
+
+  function handleReorderDeck(event) {
+    const { deckId, fromIndex, toIndex, section } = event.detail;
+    console.log('Reorder deck:', deckId, 'from index:', fromIndex, 'to index:', toIndex, 'in section:', section);
+    
+    // Reorder the decks array
+    if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
+      if (section === 'pinned') {
+        // Reorder within pinned decks
+        const newPinnedDecks = [...pinnedDecks];
+        const [movedDeck] = newPinnedDecks.splice(fromIndex, 1);
+        newPinnedDecks.splice(toIndex, 0, movedDeck);
+        pinnedDecks = newPinnedDecks;
+        
+        // Update main decks array
+        const unpinnedDecks = decks.filter(d => !d.isPinned);
+        decks = [...newPinnedDecks, ...unpinnedDecks];
+      } else if (section === 'unpinned') {
+        // Reorder within unpinned decks
+        const unpinnedDecks = decks.filter(d => !d.isPinned);
+        const [movedDeck] = unpinnedDecks.splice(fromIndex, 1);
+        unpinnedDecks.splice(toIndex, 0, movedDeck);
+        
+        // Update main decks array
+        decks = [...pinnedDecks, ...unpinnedDecks];
+      } else {
+        // Fallback to original logic
+        const newDecks = [...decks];
+        const [movedDeck] = newDecks.splice(fromIndex, 1);
+        newDecks.splice(toIndex, 0, movedDeck);
+        decks = newDecks;
+        pinnedDecks = decks.filter(d => d.isPinned);
+      }
+      
+      // TODO: Save reorder to database
+      console.log('Deck reordered successfully');
+    }
+  }
+
+  function closeDeck() {
+    currentDeck = null;
+    showDeckView = false;
+  }
+
+  function handleDeckUpdated(event) {
+    const updatedDeck = event.detail;
+    currentDeck = updatedDeck;
+
+    // also update the deck in the main decks list
+    const index = decks.findIndex(d => d.id === updatedDeck.id);
+    if (index !== -1) {
+      decks[index] = updatedDeck;
+      decks = [...decks]; // trigger reactivity
+    }
+  }
+
+  // Listen for deck drawer toggle events and ESC key
+  onMount(() => {
+    const handleToggleDeckDrawer = () => {
+      toggleDeckDrawer();
+    };
+
+    const handleKeyDown = (event) => {
+      // ESC key to close deck view
+      if (event.key === 'Escape' && showDeckView) {
+        closeDeck();
+      }
+    };
+
+    window.addEventListener('toggle-deck-drawer', handleToggleDeckDrawer);
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('toggle-deck-drawer', handleToggleDeckDrawer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  });
   
 
   // Store the handler reference so it can be properly cleaned up
@@ -1059,7 +1229,9 @@ function handleFactSaveEdit(event) {
 
 function handleFactDelete(event) {
   if (contextManager) {
-    contextManager.deleteFact(event.detail.fact, event.detail.index);
+    const card = event.detail.card;
+    // Use the simpler delete function that finds the card internally
+    contextManager.deleteFactById(card.id);
   }
 }
 
@@ -1358,7 +1530,12 @@ function handleTextAddToDocs(event) {
   
   // Panel collapse functions (work on both desktop and mobile)
   function toggleLeftPanelCollapse() {
-    leftPanelCollapsed = !leftPanelCollapsed;
+    if (showDeckView) {
+      // If in deck view, close it instead of collapsing
+      closeDeck();
+    } else {
+      leftPanelCollapsed = !leftPanelCollapsed;
+    }
   }
   
   function toggleRightPanelCollapse() {
@@ -1735,49 +1912,60 @@ function handleTextAddToDocs(event) {
   <!-- Layout -->
 <div id="projects-page-layout" class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
-  <!-- LEFT PANEL: Binder (Full Width) -->
+  <!-- LEFT PANEL: Binder or Deck View (Full Width) -->
 <div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-full' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
     {#if showLeftPanel}
-      <Binder
-        bind:this={binderComponent}
-        {current}
-        {facts}
-        {docs}
-        {loadingFacts}
-        {search}
-        {isDesktop}
-        user={data?.user}
-        userPreferences={userPreferences}
-        showCollapseButton={isDesktop}
-        isCollapsed={leftPanelCollapsed}
-        onToggleCollapse={toggleLeftPanelCollapse}
-        bind:showAddFactForm
-        bind:factType
-        bind:factKey
-        bind:factValue
-        bind:factTags
-        bind:showAddDocForm
-        bind:docTitle
-        bind:docContent
-        bind:docTags
-        bind:activeTab
-        on:brief-regenerate={regenerateBrief}
-        on:fact-add={handleFactAdd}
-        on:fact-cancel-add={() => { contextManager?.clearFactForm(); }}
-        on:fact-start-edit={handleFactStartEdit}
-        on:fact-cancel-edit={handleFactCancelEdit}
-        on:fact-save-edit={handleFactSaveEdit}
-        on:fact-delete={handleFactDelete}
-        on:fact-toggle-pin={handleFactTogglePin}
-        on:doc-add={handleDocAdd}
-        on:doc-cancel-add={() => { contextManager?.clearDocForm(); }}
-        on:doc-start-edit={handleDocStartEdit}
-        on:doc-cancel-edit={handleDocCancelEdit}
-        on:doc-save-edit={handleDocSaveEdit}
-        on:doc-delete={handleDocDelete}
-        on:doc-toggle-pin={handleDocTogglePin}
-        on:reload-context={handleReloadContext}
-      />
+      {#if showDeckView && currentDeck}
+        <DeckView
+          deck={currentDeck}
+          cards={facts}
+          isOpen={showDeckView}
+          projectId={current?.id}
+          on:close-deck={closeDeck}
+          on:deck-updated={handleDeckUpdated}
+        />
+      {:else}
+        <Binder
+          bind:this={binderComponent}
+          {current}
+          {facts}
+          {docs}
+          {loadingFacts}
+          {search}
+          {isDesktop}
+          user={data?.user}
+          userPreferences={userPreferences}
+          showCollapseButton={isDesktop}
+          isCollapsed={leftPanelCollapsed}
+          onToggleCollapse={toggleLeftPanelCollapse}
+          bind:showAddFactForm
+          bind:factType
+          bind:factKey
+          bind:factValue
+          bind:factTags
+          bind:showAddDocForm
+          bind:docTitle
+          bind:docContent
+          bind:docTags
+          bind:activeTab
+          on:brief-regenerate={regenerateBrief}
+          on:fact-add={handleFactAdd}
+          on:fact-cancel-add={() => { contextManager?.clearFactForm(); }}
+          on:fact-start-edit={handleFactStartEdit}
+          on:fact-cancel-edit={handleFactCancelEdit}
+          on:fact-save-edit={handleFactSaveEdit}
+          on:fact-delete={handleFactDelete}
+          on:fact-toggle-pin={handleFactTogglePin}
+          on:doc-add={handleDocAdd}
+          on:doc-cancel-add={() => { contextManager?.clearDocForm(); }}
+          on:doc-start-edit={handleDocStartEdit}
+          on:doc-cancel-edit={handleDocCancelEdit}
+          on:doc-save-edit={handleDocSaveEdit}
+          on:doc-delete={handleDocDelete}
+          on:doc-toggle-pin={handleDocTogglePin}
+          on:reload-context={handleReloadContext}
+        />
+      {/if}
     {/if}
   </div>
 
@@ -1851,9 +2039,12 @@ function handleTextAddToDocs(event) {
         <button
           class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleLeftPanelCollapse}
-          title={leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
+          title={showDeckView ? "Close Deck View" : leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
         >
-          {#if leftPanelCollapsed}
+          {#if showDeckView}
+            <!-- X icon for closing deck view -->
+            <X size="32" />
+          {:else if leftPanelCollapsed}
             <!-- Double chevrons pointing right (expand) -->
             <ChevronsRight size="32" />
           {:else}
@@ -2283,5 +2474,18 @@ function handleTextAddToDocs(event) {
   bind:showSessionNavigator
   bind:sessionNavigatorElement
   bind:search
+/>
+
+<!-- Deck Drawer -->
+<DeckDrawer
+  bind:isOpen={showDeckDrawer}
+  currentWorld={current?.name || 'Current World'}
+  {decks}
+  {pinnedDecks}
+  on:toggle={handleDeckDrawerToggle}
+  on:create-deck={handleCreateDeck}
+  on:view-deck={handleViewDeck}
+  on:toggle-pin={handleTogglePin}
+  on:reorder-deck={handleReorderDeck}
 />
 

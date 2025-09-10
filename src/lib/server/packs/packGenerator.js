@@ -369,7 +369,7 @@ async function analyzeIdeaQuality(idea, worldId, context) {
   
   // Check for existing similar ideas (uniqueness)
   const { data: similarIdeas } = await supabase
-    .from('facts')
+    .from('cards')
     .select('content, tags')
     .eq('project_id', worldId)
     .ilike('content', `%${idea.title}%`);
@@ -482,22 +482,20 @@ function applyPackRules(ideasWithRarity) {
 async function savePackCards(packCards, worldId, userId) {
   const cardsToInsert = packCards.map(card => ({
     project_id: worldId,
-    key: card.title,
-    value: JSON.stringify({
-      content: card.content,
-      tags: card.tags,
-      rarity: card.rarity,
-      progress: card.progress,
-      investment_cost: card.investment_cost,
-      art_url: card.art_url
-    }),
-    type: 'card', // Use 'card' type to distinguish from regular facts
+    user_id: userId,
+    title: card.title,
+    content: card.content,
+    tags: card.tags,
+    rarity: card.rarity,
+    progress: card.progress,
+    investment_cost: card.investment_cost,
+    art_url: card.art_url,
     pinned: card.pinned,
     created_at: card.created_at
   }));
   
   const { data, error } = await supabase
-    .from('facts')
+    .from('cards')
     .insert(cardsToInsert)
     .select();
   

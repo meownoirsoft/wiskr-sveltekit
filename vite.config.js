@@ -10,10 +10,12 @@ export default defineConfig({
             org: "meow-noir-software",
             project: "javascript-sveltekit"
         }
-    }), tailwindcss(), sveltekit(), visualizer({
-      emitFile: true,
-      filename: "stats.html",
-    })],
+    }), tailwindcss(), sveltekit(),  visualizer({
+		filename: './stats.html', // or wherever you want
+		open: true,                    // auto-open in browser
+		gzipSize: true,
+		brotliSize: true
+	  })],
 	
 	// Development optimizations
 	optimizeDeps: {

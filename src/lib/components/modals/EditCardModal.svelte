@@ -22,7 +22,7 @@
   // Initialize form with card data
   $: if (card) {
     title = card.title || card.key || '';
-    content = card.content || card.value || '';
+    content = card.content || '';
     tags = card.tags ? card.tags.join(', ') : '';
     rarity = card.rarity || 'common';
     progress = card.progress || 1;

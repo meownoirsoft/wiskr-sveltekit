@@ -16,8 +16,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Read the migration file
-const migrationSQL = readFileSync('src/lib/migrations/add_user_avatar_preferences.sql', 'utf8');
+// Read the migration file from command line argument
+const migrationFile = process.argv[2] || 'src/lib/migrations/add_user_avatar_preferences.sql';
+const migrationSQL = readFileSync(migrationFile, 'utf8');
 
 // Split into individual statements (remove comments and empty lines)
 const statements = migrationSQL

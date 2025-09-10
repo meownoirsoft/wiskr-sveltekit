@@ -1,7 +1,8 @@
 <!-- ArtManager.svelte - Handles art upload, cropping, and AI generation -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Upload, Wand2, X, Crop, Download, RotateCw } from 'lucide-svelte';
+  import { Upload, Wand2, X, Crop, Download, RotateCw, Flag } from 'lucide-svelte';
+  import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
 
   export let isOpen = false;
   export let card = null;
@@ -16,6 +17,8 @@
   let cropMode = false;
   let cropData = { x: 0, y: 0, width: 100, height: 100 };
   let generatedArtUrl = '';
+  let showFeedbackModal = false;
+  let feedbackArtUrl = '';
 
   // Reset state when modal opens
   $: if (isOpen) {
@@ -62,26 +65,44 @@
       );
       
       canvas.toBlob((blob) => {
-        uploadArt(blob);
+        // Create a proper filename with .jpg extension
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 15);
+        const filename = `art-${timestamp}-${randomId}.jpg`;
+        uploadArt(blob, filename);
       }, 'image/jpeg', 0.9);
     };
     
     img.src = previewUrl;
   }
 
-  async function uploadArt(blob) {
+  async function uploadArt(blob, filename = null) {
     isUploading = true;
     try {
-      // In a real implementation, you'd upload to a service like Cloudinary or AWS S3
-      // For now, we'll create a data URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        console.log('🔍 ArtManager dispatching art-selected for upload:', dataUrl);
-        dispatch('art-selected', { artUrl: dataUrl, source: 'upload' });
-        closeModal();
-      };
-      reader.readAsDataURL(blob);
+      // Upload to BunnyCDN
+      const formData = new FormData();
+      
+      // If we have a filename, create a File object with proper name
+      if (filename) {
+        const file = new File([blob], filename, { type: 'image/jpeg' });
+        formData.append('file', file);
+      } else {
+        formData.append('file', blob);
+      }
+      
+      const response = await fetch('/api/art/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const { url } = await response.json();
+      console.log('🔍 ArtManager dispatching art-selected for upload:', url);
+      dispatch('art-selected', { artUrl: url, source: 'upload' });
+      closeModal();
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. Please try again.');
@@ -135,6 +156,45 @@
     dispatch('art-selected', { artUrl: null, source: 'remove' });
     closeModal();
   }
+
+  function reportBadArt(artUrl) {
+    feedbackArtUrl = artUrl;
+    showFeedbackModal = true;
+  }
+
+  async function handleFeedbackSubmit(event) {
+    const { artUrl, cardId, reason, details } = event.detail;
+    
+    try {
+      const response = await fetch('/api/art/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artUrl,
+          cardId,
+          reason,
+          details
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      alert('Thank you for your feedback! This helps us improve art generation.');
+      showFeedbackModal = false;
+    } catch (error) {
+      console.error('Feedback submission failed:', error);
+      alert('Failed to submit feedback. Please try again.');
+    }
+  }
+
+  function closeFeedbackModal() {
+    showFeedbackModal = false;
+    feedbackArtUrl = '';
+  }
 </script>
 
 {#if isOpen}
@@ -164,12 +224,21 @@
             <div class="relative w-full h-32 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
               <img src={currentArtUrl} alt="Current art" class="w-full h-full object-cover" />
             </div>
-            <button
-              on:click={removeArt}
-              class="mt-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              Remove Art
-            </button>
+            <div class="flex gap-2 mt-2">
+              <button
+                on:click={removeArt}
+                class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                Remove Art
+              </button>
+              <button
+                on:click={() => reportBadArt(currentArtUrl)}
+                class="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 flex items-center gap-1"
+              >
+                <Flag size="12" />
+                Report Issue
+              </button>
+            </div>
           </div>
         {/if}
 
@@ -265,6 +334,13 @@
                 <div class="relative w-full h-24 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
                   <img src={generatedArtUrl} alt="Generated art" class="w-full h-full object-cover" />
                 </div>
+                <button
+                  on:click={() => reportBadArt(generatedArtUrl)}
+                  class="mt-2 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 flex items-center gap-1"
+                >
+                  <Flag size="10" />
+                  Report Issue
+                </button>
               </div>
             {/if}
           </div>
@@ -276,7 +352,8 @@
           <ul class="text-xs text-gray-700 dark:text-gray-300 space-y-1">
             <li>• Card art works best with a 16:10 aspect ratio (400x240px)</li>
             <li>• High contrast images look great on cards</li>
-            <li>• AI art is generated based on your card's title, content, and rarity</li>
+            <li>• AI art is generated in MTG-style fantasy art without text or borders</li>
+            <li>• Report art issues using the flag button to help improve generation</li>
             <li>• You can always change or remove art later</li>
           </ul>
         </div>
@@ -284,3 +361,13 @@
     </div>
   </div>
 {/if}
+
+<!-- Art Feedback Modal -->
+<ArtFeedbackModal
+  bind:isOpen={showFeedbackModal}
+  artUrl={feedbackArtUrl}
+  cardId={card?.id}
+  cardTitle={card?.title}
+  on:submit={handleFeedbackSubmit}
+  on:close={closeFeedbackModal}
+/>

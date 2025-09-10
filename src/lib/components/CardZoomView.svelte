@@ -1,13 +1,16 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, RotateCcw } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, RotateCcw, Flag } from 'lucide-svelte';
   import ArtManager from './ArtManager.svelte';
+  import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
 
   export let card = null;
   export let isOpen = false;
 
   const dispatch = createEventDispatcher();
+  
+  // Delete confirmation state
 
   function isDarkMode() {
     if (typeof window === 'undefined') return false;
@@ -78,6 +81,8 @@
   let showBranchesModal = false;
   let showDecksModal = false;
   let showResourcesModal = false;
+  let showFeedbackModal = false;
+  let feedbackArtUrl = '';
 
   // Reactive values
   $: rarity = getRarityConfig(editedCard?.rarity || card?.rarity || 'common');
@@ -122,27 +127,13 @@
     
     console.log('🔍 CardZoomView initializing with card:', card);
     
-    // Parse card data
-    let cardData = {};
-    if (card.value && typeof card.value === 'string') {
-      try {
-        cardData = JSON.parse(card.value);
-        console.log('🔍 Parsed cardData from JSON:', cardData);
-      } catch (e) {
-        cardData = { content: card.value };
-        console.log('🔍 Using card.value as content:', card.value);
-      }
-    } else if (card.value && typeof card.value === 'object') {
-      cardData = card.value;
-      console.log('🔍 Using card.value as cardData:', cardData);
-    }
-
+    // Use card data directly from the new cards table structure
     editedCard = {
       ...card,
-      title: card.title || card.key || 'Untitled Card',
-      content: cardData.content || card.content || 'No content',
-      tags: cardData.tags || [],
-      art_url: cardData.art_url || null,
+      title: card.title || 'Untitled Card',
+      content: card.content || 'No content',
+      tags: card.tags || [],
+      art_url: card.art_url || null,
       rarity: card.rarity || 'common',
       progress: card.progress || 1,
       investment_cost: card.investment_cost || 0,
@@ -189,11 +180,10 @@
     isEditing = false;
   }
 
-  function deleteCard() {
-    if (confirm('Are you sure you want to delete this card?')) {
-      dispatch('delete', { card });
-      closeModal();
-    }
+  function deleteCard(event) {
+    event.stopPropagation();
+    event.preventDefault();
+    dispatch('delete', { card });
   }
 
   function closeModal() {
@@ -280,6 +270,45 @@
 
   function closeArtManager() {
     showArtManager = false;
+  }
+
+  function reportBadArt(artUrl) {
+    feedbackArtUrl = artUrl;
+    showFeedbackModal = true;
+  }
+
+  async function handleFeedbackSubmit(event) {
+    const { artUrl, cardId, reason, details } = event.detail;
+    
+    try {
+      const response = await fetch('/api/art/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artUrl,
+          cardId,
+          reason,
+          details
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      alert('Thank you for your feedback! This helps us improve art generation.');
+      showFeedbackModal = false;
+    } catch (error) {
+      console.error('Feedback submission failed:', error);
+      alert('Failed to submit feedback. Please try again.');
+    }
+  }
+
+  function closeFeedbackModal() {
+    showFeedbackModal = false;
+    feedbackArtUrl = '';
   }
 
   // Tooltip functions
@@ -412,14 +441,6 @@
         "
       >
 
-        <!-- Mana Cost - Top Right -->
-        <div 
-          class="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-          style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
-        >
-          <span>{investmentCost}</span>
-        </div>
-
         <!-- Header: Title -->
         <div class="mb-4 px-4 pt-4">
           {#if isEditing}
@@ -438,19 +459,18 @@
 
         <!-- Art Area -->
         <div 
-          class="art-area mb-4 mx-4 rounded-md overflow-hidden flex items-center justify-center relative group" 
+          class="art-area mb-4 mx-4 rounded-md flex items-center justify-center relative group" 
           style="height: 160px; background-color: {darkMode ? '#4b5563' : '#f3f4f6'};"
         >
-          {#if isEditing}
-            <div class="w-full h-full flex flex-col items-center justify-center">
-              <input
-                bind:value={artUrl}
-                class="w-full px-2 py-1 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded"
-                placeholder="Image URL..."
-              />
-              <p class="text-xs text-gray-500 mt-1">Enter image URL for card art</p>
-            </div>
-          {:else if artUrl || editedCard.art_url}
+          <!-- Mana Cost - Top Right -->
+          <div 
+            class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+            style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
+          >
+            <span>{investmentCost}</span>
+          </div>
+
+          {#if artUrl || editedCard.art_url}
             <img src={artUrl || editedCard.art_url} alt="Card art" class="w-full h-full object-cover" />
             <!-- Art Edit Button - Bottom Right Corner -->
             <button
@@ -459,6 +479,14 @@
               title="Edit art"
             >
               <Palette size="16" class="text-white" />
+            </button>
+            <!-- Art Feedback Button - Bottom Left Corner -->
+            <button
+              class="absolute bottom-2 left-2 p-2 rounded-full bg-orange-500/50 hover:bg-orange-500/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+              on:click={() => reportBadArt(artUrl || editedCard.art_url)}
+              title="Report art issue"
+            >
+              <Flag size="16" class="text-white" />
             </button>
           {:else}
             <button 
@@ -506,7 +534,7 @@
           {:else}
             <div class="flex flex-wrap gap-1">
               {#each editedCard.tags as tag}
-                <span class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded-full">
+                <span class="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
                   {tag}
                 </span>
               {/each}
@@ -916,6 +944,16 @@
     </div>
   </div>
 {/if}
+
+<!-- Art Feedback Modal -->
+<ArtFeedbackModal
+  bind:isOpen={showFeedbackModal}
+  artUrl={feedbackArtUrl}
+  cardId={card?.id}
+  cardTitle={card?.title}
+  on:submit={handleFeedbackSubmit}
+  on:close={closeFeedbackModal}
+/>
 
 <style>
   .card-container {

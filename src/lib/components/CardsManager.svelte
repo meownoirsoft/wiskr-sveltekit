@@ -1,7 +1,7 @@
 <!-- CardsManager.svelte - MTG-style card collection manager -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Filter, Grid, List, Star, Zap, Package } from 'lucide-svelte';
+  import { Plus, Filter, Grid, List, Star, Zap, Package, Layers } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import EditCardModal from './modals/EditCardModal.svelte';
@@ -44,6 +44,11 @@
     showAddCardForm = false;
   }
 
+  // Debug: Log cards received by CardsManager
+  $: if (cards.length > 0) {
+    // console.log('🔍 CardsManager received cards:', cards.map(c => ({ id: c.id, title: c.title, art_url: c.art_url, hasArtUrl: !!c.art_url })));
+  }
+
   // Filter cards based on search, rarity, and progress
   $: filteredCards = cards.filter(card => {
     const matchesSearch = !searchTerm || 
@@ -62,13 +67,8 @@
     return matchesSearch && matchesRarity && matchesProgress;
   });
 
-  // Sort cards: pinned first, then by investment cost (mana), then by creation date
-  $: sortedCards = filteredCards.sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    if (a.investment_cost !== b.investment_cost) return (b.investment_cost || 0) - (a.investment_cost || 0);
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
+  // Use filteredCards directly since sorting is handled by the parent Binder component
+  $: sortedCards = filteredCards;
 
   async function loadProjectFactTypes() {
     if (!worldId) return;
@@ -207,7 +207,7 @@
   function handleCardZoomDelete(event) {
     const { card } = event.detail;
     dispatch('delete', { card });
-    closeCardZoom();
+    closeCardZoom(); // Close the zoom view after dispatching delete
   }
 
   function handleCardZoomRarityChange(event) {
@@ -235,7 +235,7 @@
     dispatch('split', { card });
   }
 
-  function handleCardZoomGenerateArt(event) {
+  async function handleCardZoomGenerateArt(event) {
     const { card, artUrl, source } = event.detail;
     console.log('🔍 CardsManager received art update:', { cardId: card.id, artUrl, source });
     
@@ -248,6 +248,35 @@
     
     console.log('🔍 CardsManager updating cards array:', updatedCards.find(c => c.id === card.id));
     cards = updatedCards;
+    
+    // Save art URL to database
+    try {
+      console.log('🔍 CardsManager: Sending art URL to database:', { cardId: card.id, artUrl });
+      const response = await fetch('/api/cards/art', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          artUrl: artUrl
+        })
+      });
+      
+      console.log('🔍 CardsManager: API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API error response:', errorText);
+        throw new Error(`Failed to save art URL to database: ${response.status} ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Art URL saved to database successfully:', result);
+    } catch (error) {
+      console.error('❌ Error saving art URL to database:', error);
+      // TODO: Show user-friendly error message
+    }
     
     dispatch('generate-art', { card, artUrl, source });
   }
@@ -500,6 +529,18 @@
             <Package size="16" />
             <span>Summon Pack</span>
           </button>
+          
+          <button
+            class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            on:click={() => {
+              // Dispatch event to toggle deck drawer
+              window.dispatchEvent(new CustomEvent('toggle-deck-drawer'));
+            }}
+            title="Toggle Decks"
+          >
+            <Layers size="16" />
+            <span>Decks</span>
+          </button>
         </div>
       </div>
 
@@ -568,7 +609,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate">{card.title || card.key}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{card.content || card.value}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{card.content}</p>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">

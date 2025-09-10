@@ -26,7 +26,7 @@ export const load = async ({ locals }) => {
 
   // If user has no projects, create a default "My First Project" on the server side
   // For testing purposes, also create a project if no user is authenticated
-  if (finalProjects.length === 0) {
+  if (finalProjects.length === 0 && user) {
     //console.log('🆕 New user detected on server, creating default project for:', user.email);
     
     try {
@@ -128,17 +128,36 @@ export const load = async ({ locals }) => {
     }
   }
   
-  // Test project creation removed - context menu positioning fix is complete
+  // Add mock data for testing when no user is authenticated
+  if (!user && finalProjects.length === 0) {
+    finalProjects = [
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'Test World',
+        icon: '🌍',
+        color: '#3b82f6',
+        brief_text: 'A test world for development',
+        description: 'This is a mock project for testing purposes',
+        created_at: new Date().toISOString()
+      }
+    ];
+  }
 
   // Check if user has admin permissions
-  const adminCheck = await isAdmin(locals.supabase, user);
+  const adminCheck = user ? await isAdmin(locals.supabase, user) : { isAdmin: false };
 
   // Load user preferences
-  const { data: userPreferences } = await locals.supabase
-    .from('user_preferences')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
+  let userPreferences = { facts_grid_size: 3 };
+  
+  if (user) {
+    const { data: prefs } = await locals.supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    userPreferences = prefs || { facts_grid_size: 3 };
+  }
 
   return { 
     projects: finalProjects,

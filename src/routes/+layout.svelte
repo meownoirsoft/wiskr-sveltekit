@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
-import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Plus, ClipboardList, MessageSquare, GitBranch } from 'lucide-svelte';
+import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Plus, ClipboardList, MessageSquare, GitBranch, Layers } from 'lucide-svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';

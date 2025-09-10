@@ -48,6 +48,10 @@
   let selectedTags = [];
   let tagFilterMode = 'AND'; // 'AND' or 'OR'
   
+  // Sorting state
+  let sortBy = 'title'; // 'title', 'rarity', 'progress', 'investment_cost', 'created_at'
+  let sortOrder = 'asc'; // 'asc' or 'desc'
+  
   // Project fact types for filtering
   let projectFactTypes = [];
   
@@ -190,7 +194,7 @@
   
   // Get all available tags for current tab
   $: availableTags = activeTab === 'facts' 
-    ? [...new Set(facts.flatMap(f => f.tags || []))].sort()
+    ? [...new Set(facts.flatMap(card => card.tags || []))].sort()
     : activeTab === 'docs'
     ? [...new Set(docs.flatMap(d => d.tags || []))].sort()
     : [];
@@ -217,16 +221,15 @@
   }
   
   // Filter facts/docs based on selected tags and search term
-  
-  $: filteredFacts = facts.filter(fact => {
+  $: filteredFacts = facts.filter(card => {
     // First apply search term filter
     const searchTerm = search.toLowerCase().trim();
-    const factTypeDisplayName = getFactTypeDisplayName(fact.type);
+    const cardTypeDisplayName = getFactTypeDisplayName(card.type);
     const matchesSearch = !searchTerm || 
-      fact.key.toLowerCase().includes(searchTerm) ||
-      fact.value.toLowerCase().includes(searchTerm) ||
-      factTypeDisplayName.toLowerCase().includes(searchTerm) ||
-      (fact.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
+      card.title.toLowerCase().includes(searchTerm) ||
+      card.content.toLowerCase().includes(searchTerm) ||
+      cardTypeDisplayName.toLowerCase().includes(searchTerm) ||
+      (card.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
     
     
     if (!matchesSearch) return false;
@@ -234,9 +237,9 @@
     // Then apply tag filters if any
     if (selectedTags.length === 0) return true;
     
-    const factTags = fact.tags || [];
-    // Combine regular tags with the fact type display name for filtering
-    const allFilterableItems = [...factTags, factTypeDisplayName];
+    const cardTags = card.tags || [];
+    // Combine regular tags with the card type display name for filtering
+    const allFilterableItems = [...cardTags, cardTypeDisplayName];
     
     if (tagFilterMode === 'AND') {
       return selectedTags.every(tag => allFilterableItems.includes(tag));
@@ -245,6 +248,56 @@
     }
   });
   
+  // Sort the filtered facts when sortBy or sortOrder changes, but only when not loading
+  $: sortedFacts = loadingFacts ? filteredFacts : [...filteredFacts].sort((a, b) => {
+    // Apply sorting
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'rarity':
+        const rarityOrder = { 'common': 1, 'special': 2, 'rare': 3, 'legendary': 4 };
+        aValue = rarityOrder[a.rarity] || 0;
+        bValue = rarityOrder[b.rarity] || 0;
+        break;
+      case 'progress':
+        aValue = a.progress || 0;
+        bValue = b.progress || 0;
+        break;
+      case 'investment_cost':
+        aValue = a.investment_cost || 0;
+        bValue = b.investment_cost || 0;
+        break;
+      case 'created_at':
+      default:
+        aValue = new Date(a.created_at || 0);
+        bValue = new Date(b.created_at || 0);
+        break;
+    }
+    
+    if (sortBy === 'title') {
+      // String comparison
+      return sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    } else {
+      // Numeric/date comparison
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      
+      // If values are equal (especially for dates), sort by title as secondary sort
+      if (sortBy === 'created_at' && aValue.getTime() === bValue.getTime()) {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        return aTitle.localeCompare(bTitle);
+      }
+      
+      return 0;
+    }
+  });
   
   $: filteredDocs = docs.filter(doc => {
     // First apply search term filter
@@ -389,9 +442,9 @@
   // Bulk pin/unpin functions
   function bulkPinFiltered() {
     if (activeTab === 'facts') {
-      filteredFacts.forEach(fact => {
-        if (!fact.pinned) {
-          dispatch('fact-toggle-pin', fact);
+      filteredFacts.forEach(card => {
+        if (!card.pinned) {
+          dispatch('fact-toggle-pin', card);
         }
       });
     } else if (activeTab === 'docs') {
@@ -405,9 +458,9 @@
   
   function bulkUnpinFiltered() {
     if (activeTab === 'facts') {
-      filteredFacts.forEach(fact => {
-        if (fact.pinned) {
-          dispatch('fact-toggle-pin', fact);
+      filteredFacts.forEach(card => {
+        if (card.pinned) {
+          dispatch('fact-toggle-pin', card);
         }
       });
     } else if (activeTab === 'docs') {
@@ -421,11 +474,9 @@
   
   // Export function to refresh fact types from parent component
   export function refreshFactTypes() {
-    // Refresh fact types in both the Sidebar and FactsManager
+    // Refresh fact types in the Binder
     loadProjectFactTypes();
-    if (factsManagerComponent) {
-      factsManagerComponent.refreshFactTypes();
-    }
+    // Note: CardsManager doesn't need fact type refresh since it uses cards table
   }
 </script>
 
@@ -473,21 +524,21 @@
                 <button
                   on:click={bulkPinFiltered}
                   class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
-                  title="Pin all filtered {activeTab}"
+                  title="Pin all filtered {activeTab === 'facts' ? 'cards' : activeTab}"
                 >
                   📌 Pin all ({activeTab === 'facts' ? filteredFacts.length : filteredDocs.length})
                 </button>
                 <button
                   on:click={bulkUnpinFiltered}
                   class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                  title="Unpin all filtered {activeTab}"
+                  title="Unpin all filtered {activeTab === 'facts' ? 'cards' : activeTab}"
                 >
-                  📍 Unpin all ({activeTab === 'facts' ? filteredFacts.filter(f => f.pinned).length : filteredDocs.filter(d => d.pinned).length})
+                  📍 Unpin all ({activeTab === 'facts' ? sortedFacts.filter(card => card.pinned).length : filteredDocs.filter(d => d.pinned).length})
                 </button>
               </div>
               <span class="text-xs text-gray-500 dark:text-gray-400">
                 {activeTab === 'facts' 
-                  ? `${filteredFacts.filter(f => f.pinned).length} of ${filteredFacts.length} pinned`
+                  ? `${sortedFacts.filter(card => card.pinned).length} of ${sortedFacts.length} pinned`
                   : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
                 }
               </span>
@@ -511,6 +562,34 @@
             </div>
           </div>
         {/if}
+        
+        <!-- Sorting Controls (only for facts/cards tab) -->
+        {#if activeTab === 'facts'}
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-gray-500 dark:text-gray-400 font-medium">Sort by:</span>
+            <select 
+              bind:value={sortBy}
+              class="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="created_at">Date Created</option>
+              <option value="title">Title</option>
+              <option value="rarity">Rarity</option>
+              <option value="progress">Progress</option>
+              <option value="investment_cost">Investment Cost</option>
+            </select>
+            <button
+              on:click={() => sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'}
+              class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              title={`Currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+            >
+              {#if sortOrder === 'asc'}
+                ↑ Asc
+              {:else}
+                ↓ Desc
+              {/if}
+            </button>
+          </div>
+        {/if}
       </div>
       
       <!-- Tab Headers - Hidden for Cards UI -->
@@ -524,7 +603,7 @@
           } {activeTab !== 'facts' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'facts'}
         >
-          Facts ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
+          Cards ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
         </button>
         <button
           class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
@@ -573,7 +652,7 @@
         {:else if activeTab === 'facts'}
           <CardsManager
             bind:this={factsManagerComponent}
-            cards={filteredFacts}
+            cards={sortedFacts}
             loadingCards={loadingFacts}
             worldId={current?.id}
             {user}
@@ -617,7 +696,7 @@
             projectId={current?.id}
             facts={facts}
             on:cards-generated={() => {
-              // Optionally reload facts or do other updates when cards are generated
+              // Optionally reload cards or do other updates when cards are generated
             }}
           />
         {/if}

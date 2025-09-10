@@ -29,7 +29,7 @@ export async function POST({ request, locals }) {
 
     // Get the current card
     const { data: currentCard, error: fetchError } = await locals.supabase
-      .from('facts')
+      .from('cards')
       .select('*')
       .eq('id', cardId)
       .single();
@@ -41,51 +41,17 @@ export async function POST({ request, locals }) {
 
     console.log('Current card data:', {
       id: currentCard.id,
-      type: currentCard.type,
-      key: currentCard.key,
-      value: currentCard.value,
-      valueType: typeof currentCard.value
+      title: currentCard.title,
+      progress: currentCard.progress
     });
 
-    // Parse the current card data
-    let cardData;
-    try {
-      cardData = JSON.parse(currentCard.value);
-      console.log('Successfully parsed card data:', cardData);
-    } catch (e) {
-      console.error('Failed to parse card data:', e);
-      console.error('Raw value:', currentCard.value);
-      
-      // If it's not JSON, it might be an old fact format - convert it
-      if (currentCard.type === 'card') {
-        return json({ error: 'Invalid card data format - expected JSON but got: ' + typeof currentCard.value }, { status: 400 });
-      } else {
-        // Convert old fact format to card format
-        cardData = {
-          content: currentCard.value,
-          tags: [],
-          type: 'other',
-          rarity: 'common',
-          progress: 1,
-          investment_cost: 0,
-          art_url: null
-        };
-        console.log('Converted old fact to card format:', cardData);
-      }
-    }
-
-    // Update the progress
-    cardData.progress = newProgress;
-
-    // Update the card in the database
+    // Update the progress directly in the cards table
     console.log('🔄 API: Updating card progress in database:', newProgress);
-    console.log('🔄 API: Card data to save:', JSON.stringify(cardData, null, 2));
     
     const { data: updatedCard, error: updateError } = await locals.supabase
-      .from('facts')
+      .from('cards')
       .update({
-        value: JSON.stringify(cardData),
-        type: 'card'  // Ensure it's marked as a card
+        progress: newProgress
       })
       .eq('id', cardId)
       .select()

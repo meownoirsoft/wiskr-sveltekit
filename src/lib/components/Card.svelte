@@ -1,25 +1,27 @@
 <!-- Card.svelte - Clean MTG-style idea card component -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette, X } from 'lucide-svelte';
 
   export let card = null;
   export let searchTerm = '';
   export let isSelected = false;
   export let showActions = true;
+  export let showRemoveButton = false;
+  export let xPaddingClass = 'px-2';
   
   // Debug card structure
   $: if (card) {
-    console.log('🎴 Card component received card:', {
-      id: card.id,
-      title: card.title,
-      content: card.content,
-      value: card.value,
-      rarity: card.rarity,
-      art_url: card.art_url,
-      hasContent: 'content' in card,
-      hasValue: 'value' in card
-    });
+    // console.log('🎴 Card component received card:', {
+    //   id: card.id,
+    //   title: card.title,
+    //   content: card.content,
+    //   value: card.value,
+    //   rarity: card.rarity,
+    //   art_url: card.art_url,
+    //   hasContent: 'content' in card,
+    //   hasValue: 'value' in card
+    // });
   }
 
   const dispatch = createEventDispatcher();
@@ -86,6 +88,24 @@
     if (!term || !text) return text;
     const regex = new RegExp(`(${term})`, 'gi');
     return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
+  }
+
+  // Helper function to generate a title from content
+  function generateTitle(card) {
+    if (card?.title) return card.title;
+    if (card?.key) return card.key;
+    if (card?.content) {
+      // Take first 3-5 words from content as title
+      const words = card.content.split(' ').slice(0, 5);
+      let title = words.join(' ');
+      // Remove trailing punctuation and add ellipsis if truncated
+      title = title.replace(/[.,;:!?]+$/, '');
+      if (card.content.split(' ').length > 5) {
+        title += '...';
+      }
+      return title;
+    }
+    return 'Untitled Card';
   }
 
   function toggleMenu(event) {
@@ -166,6 +186,10 @@
 
   function handleDeleteClick(event) {
     event.stopPropagation();
+    event.preventDefault();
+    // Close menu immediately
+    showMenu = false;
+    // Dispatch delete event immediately
     dispatch('delete', { card });
   }
 
@@ -184,6 +208,11 @@
     dispatch('generate-art', { card });
   }
 
+  function handleRemoveClick(event) {
+    event.stopPropagation();
+    dispatch('remove', { card });
+  }
+
   // Investment cost (mana system) - tracks user engagement
   $: investmentCost = card?.investment_cost || 0;
   $: rarity = getRarityConfig(card?.rarity || 'common');
@@ -192,16 +221,26 @@
 </script>
 
 <div 
-  class="card-container relative cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg {isSelected ? 'ring-2 ring-blue-500' : ''}"
+  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg {isSelected ? 'ring-2 ring-blue-500' : ''}"
   style="width: 250px; height: 350px;"
   on:click={handleCardClick}
   on:keydown={(e) => e.key === 'Enter' && handleCardClick()}
   role="button"
   tabindex="0"
 >
+  {#if showRemoveButton}
+    <button
+      class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full transition-opacity flex items-center justify-center hover:bg-red-600 z-30"
+      on:click={handleRemoveClick}
+      title="Remove from section"
+    >
+      <X size="12" />
+    </button>
+  {/if}
+
   <!-- Card Frame with explicit styling -->
   <div 
-    class="card-frame border-2 rounded-lg px-2 pt-4 pb-2 h-full flex flex-col {isSelected ? 'ring-2 ring-blue-500' : ''}"
+    class="card-frame border-2 rounded-lg {xPaddingClass} pt-4 pb-2 h-full flex flex-col {isSelected ? 'ring-2 ring-blue-500' : ''}"
     style="
       width: 100%; 
       height: 100%;
@@ -211,14 +250,6 @@
     "
   >
     
-    <!-- Mana Cost - Top Corner -->
-    <div 
-      class="absolute top-1 right-1 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-      style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
-    >
-      <span>{investmentCost}</span>
-    </div>
-
     <!-- Header: Title -->
     <div class="mb-2 -mt-2">
       <h3 class="font-bold text-sm leading-tight truncate" style="color: {darkMode ? '#f9fafb' : '#111827'};">
@@ -228,11 +259,19 @@
 
     <!-- Art Area -->
     <div 
-      class="art-area mb-3 rounded-md overflow-hidden flex items-center justify-center" 
+      class="art-area relative mb-3 rounded-md flex items-center justify-center" 
       style="height: 80px; background-color: {darkMode ? '#4b5563' : '#f3f4f6'};"
     >
+      <!-- Mana Cost - Top Corner -->
+      <div 
+        class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+        style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
+      >
+        <span>{investmentCost}</span>
+      </div>
+
       {#if card?.art_url}
-        <img src={card.art_url} alt="Card art" class="w-full h-full object-cover" />
+        <img src={card.art_url} alt="Card art" class="w-full h-full object-cover" draggable="false" />
       {:else}
         <div class="w-full h-full flex flex-col items-center justify-center" style="background: linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%);">
           <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2" style="background-color: {darkMode ? '#6b7280' : '#9ca3af'};">
@@ -249,7 +288,7 @@
       <div class="flex flex-wrap gap-1 mb-3">
         {#each card.tags.slice(0, 3) as tag}
           <span 
-            class="text-xs px-2 py-1 rounded-full"
+            class="text-xs px-1.5 py-0.5 rounded-md"
             style="background-color: {darkMode ? '#4b5563' : '#e5e7eb'}; color: {darkMode ? '#d1d5db' : '#374151'};"
           >
             {tag}
@@ -257,7 +296,7 @@
         {/each}
         {#if card.tags.length > 3}
           <span 
-            class="text-xs px-2 py-1 rounded-full"
+            class="text-xs px-1.5 py-0.5 rounded-md"
             style="background-color: {darkMode ? '#4b5563' : '#e5e7eb'}; color: {darkMode ? '#d1d5db' : '#374151'};"
           >
             +{card.tags.length - 3}
@@ -273,12 +312,6 @@
     >
       <div class="line-clamp-4">
         {@html highlightText(card?.content || 'No content', searchTerm)}
-        <!-- Debug info -->
-        {#if card?.content === undefined}
-          <div class="text-xs text-red-500 mt-1">
-            DEBUG: content is undefined, using value: {card?.value?.substring(0, 50)}...
-          </div>
-        {/if}
       </div>
     </div>
 
@@ -293,7 +326,7 @@
     {/if}
 
     <!-- Bottom Bar: Rarity and Progress -->
-    <div class="bottom-bar flex items-center justify-between">
+    <div class="bottom-bar flex items-center flex-wrap gap-y-1">
       <!-- Rarity -->
       <div class="flex items-center">
         <!-- Left Arrow (Upgrade) -->
@@ -333,13 +366,15 @@
         </div>
       </div>
 
+      <div class="flex-grow"></div>
+
       <!-- Progress Stars -->
       <div class="flex items-center gap-1">
         {#each progressLevels as level}
           <button
-            class="transition-colors hover:scale-110 cursor-pointer"
+            class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
             on:click={(e) => handleProgressClick(e, level.level)}
-            title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
+            title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
             style="color: {card?.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')};"
           >
             <Star size="14" class="fill-current" />
