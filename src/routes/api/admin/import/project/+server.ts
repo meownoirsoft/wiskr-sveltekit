@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { isAdmin } from '$lib/auth/admin';
 import JSZip from 'jszip';
-import { detectEntities, mapEntitiesToFacts } from '$lib/server/services/entityDetection.js';
+import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
 
@@ -21,7 +21,7 @@ async function generateEntityCards(projectId: string): Promise<number> {
 
     // Get all facts for this project
     const { data: facts, error: factsError } = await supabaseAdmin
-      .from('facts')
+      .from('cards')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
@@ -47,7 +47,7 @@ async function generateEntityCards(projectId: string): Promise<number> {
     }
 
     // Map entities to facts
-    const entityCardsData = mapEntitiesToFacts(detectedEntities, facts, projectId);
+    const entityCardsData = mapEntitiesToCards(detectedEntities, facts, projectId);
 
     console.log('🏗️ Import: Creating', entityCardsData.length, 'entity cards...');
 
@@ -152,7 +152,7 @@ Summary:`;
 
         // Clear old entity-fact relationships and insert new ones
         await supabaseAdmin
-          .from('entity_card_facts')
+          .from('entity_cards')
           .delete()
           .eq('entity_card_id', upsertedCard.id);
 
@@ -164,7 +164,7 @@ Summary:`;
 
         if (factRelationships.length > 0) {
           const { error: relationError } = await supabaseAdmin
-            .from('entity_card_facts')
+            .from('entity_cards')
             .insert(factRelationships);
 
           if (relationError) {
@@ -424,7 +424,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         case 'replace':
           // Delete existing facts
           await supabaseAdmin
-            .from('facts')
+            .from('cards')
             .delete()
             .eq('project_id', existingProject.id);
           
@@ -517,7 +517,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
       if (factsToImport.length > 0) {
         const { data: insertedFacts, error: factsError } = await supabaseAdmin
-          .from('facts')
+          .from('cards')
           .insert(factsToImport)
           .select('id');
 

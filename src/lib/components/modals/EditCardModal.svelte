@@ -201,7 +201,7 @@
                     on:click={() => progress = level.level}
                     title="{level.name}: {level.description}"
                   >
-                    <Star size="16" style="fill: {progress >= level.level ? '#000000' : '#9ca3af'}; color: {progress >= level.level ? '#000000' : '#9ca3af'};" />
+                    <Star size="16" fill={progress >= level.level ? '#000000' : '#9ca3af'} color={progress >= level.level ? '#000000' : '#9ca3af'} />
                     <span class="text-xs font-medium">{level.name}</span>
                   </button>
                 {/each}

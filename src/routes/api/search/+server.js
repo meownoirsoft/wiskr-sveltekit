@@ -39,7 +39,7 @@ export async function GET({ url, locals }) {
     
     const { searchParams } = url;
     const searchTerm = searchParams.get('q');
-    const includeTypes = searchParams.get('types')?.split(',') || ['facts', 'docs', 'chats'];
+    const includeTypes = searchParams.get('types')?.split(',') || ['cards', 'docs', 'chats'];
     const currentProjectId = searchParams.get('projectId');
     
     if (!searchTerm || !searchTerm.trim()) {
@@ -53,28 +53,26 @@ export async function GET({ url, locals }) {
     const results = [];
     const { supabase } = locals;
     
-    // Search facts
-    if (includeTypes.includes('facts')) {
-      const { data: facts, error: factsError } = await supabase
-        .from('facts')
+    // Search cards
+    if (includeTypes.includes('cards')) {
+      const { data: cards, error: cardsError } = await supabase
+        .from('cards')
         .select('*')
         .eq('project_id', currentProjectId)
-        .or(`key.ilike.%${searchTerm}%,value.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`)
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(10);
       
-      if (!factsError && facts) {
-        facts.forEach(fact => {
+      if (!cardsError && cards) {
+        cards.forEach(card => {
           results.push({
-            id: fact.id,
-            type: 'facts',
-            key: fact.key || 'Untitled Fact',
-            title: fact.key || 'Untitled Fact',
-            name: fact.key || 'Untitled Fact',
-            value: fact.value,
-            snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
-            content: fact.value,
-            factType: fact.type
+            id: card.id,
+            type: 'cards',
+            title: card.title || 'Untitled Card',
+            name: card.title || 'Untitled Card',
+            snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+            content: card.content,
+            cardType: card.type
           });
         });
       }
@@ -329,7 +327,7 @@ export async function GET({ url, locals }) {
     
     // Return results in the structure that GlobalSearch expects
     const structuredResults = {
-      facts: results.filter(r => r.type === 'facts'),
+      cards: results.filter(r => r.type === 'cards'),
       docs: results.filter(r => r.type === 'docs'),
       chatMessages: chatResults,
       questions: results.filter(r => r.type === 'questions'),
@@ -384,7 +382,7 @@ export async function POST({ request, locals }) {
     }
     
     
-    const { query, projectId, includeTypes = ['facts', 'docs', 'chats', 'questions', 'ideas'] } = await request.json();
+    const { query, projectId, includeTypes = ['cards', 'docs', 'chats', 'questions', 'ideas'] } = await request.json();
     
     
     if (!query || !query.trim()) {
@@ -404,28 +402,26 @@ export async function POST({ request, locals }) {
     const { supabase } = locals;
     
     
-    // Search facts
-    if (includeTypes.includes('facts')) {
-      const { data: facts, error: factsError } = await supabase
-        .from('facts')
+    // Search cards
+    if (includeTypes.includes('cards')) {
+      const { data: cards, error: cardsError } = await supabase
+        .from('cards')
         .select('*')
         .eq('project_id', currentProjectId)
-        .or(`key.ilike.%${searchTerm}%,value.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`)
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(10);
       
-      if (!factsError && facts) {
-        facts.forEach(fact => {
+      if (!cardsError && cards) {
+        cards.forEach(card => {
           results.push({
-            id: fact.id,
-            type: 'facts',
-            key: fact.key || 'Untitled Fact',
-            title: fact.key || 'Untitled Fact',
-            name: fact.key || 'Untitled Fact',
-            value: fact.value,
-            snippet: fact.value?.substring(0, 100) + (fact.value?.length > 100 ? '...' : ''),
-            content: fact.value,
-            factType: fact.type
+            id: card.id,
+            type: 'cards',
+            title: card.title || 'Untitled Card',
+            name: card.title || 'Untitled Card',
+            snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+            content: card.content,
+            cardType: card.type
           });
         });
       }
@@ -650,7 +646,7 @@ export async function POST({ request, locals }) {
     }
     
     console.log('🔍 Search API POST: Result counts:', {
-      facts: results.filter(r => r.type === 'facts').length,
+      cards: results.filter(r => r.type === 'cards').length,
       docs: results.filter(r => r.type === 'docs').length,
       chats: results.filter(r => r.type === 'chats').length,
       questions: results.filter(r => r.type === 'questions').length,
@@ -697,7 +693,7 @@ export async function POST({ request, locals }) {
     
     // Return results in the structure that GlobalSearch expects
     const structuredResults = {
-      facts: results.filter(r => r.type === 'facts'),
+      cards: results.filter(r => r.type === 'cards'),
       docs: results.filter(r => r.type === 'docs'),
       chatMessages: chatResults,
       questions: results.filter(r => r.type === 'questions'),

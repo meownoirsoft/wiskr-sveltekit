@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { detectEntities, mapEntitiesToFacts } from '$lib/server/services/entityDetection.js';
+import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
 import { refreshContextScore } from '$lib/server/utils/contextScore.js';
@@ -195,7 +195,7 @@ export async function POST({ request, locals }) {
     if (importData.facts && importData.facts.length > 0) {
       for (const fact of importData.facts) {
         const { data: newFact, error } = await locals.supabase
-          .from('facts')
+          .from('cards')
           .insert({
             project_id: targetProjectId,
             type: fact.type,
@@ -304,7 +304,7 @@ export async function POST({ request, locals }) {
         
         // Get all facts for the project to generate entity cards
         const { data: allFacts, error: factsError } = await locals.supabase
-          .from('facts')
+          .from('cards')
           .select('*')
           .eq('project_id', targetProjectId)
           .order('created_at', { ascending: true });
@@ -317,7 +317,7 @@ export async function POST({ request, locals }) {
           
           if (detectedEntities.length > 0) {
             // Map entities to facts
-            const entityCardsData = mapEntitiesToFacts(detectedEntities, allFacts, targetProjectId);
+            const entityCardsData = mapEntitiesToCards(detectedEntities, allFacts, targetProjectId);
             
             // Get model config for summary generation
             const { config: modelConf, client: openai } = getModelConfig('micro');

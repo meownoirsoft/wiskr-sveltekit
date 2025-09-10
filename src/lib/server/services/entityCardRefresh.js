@@ -1,18 +1,18 @@
-// Auto-refresh system for entity cards when facts change
-import { detectEntities, mapEntitiesToFacts, matchFactToEntities } from './entityDetection.js';
+// Auto-refresh system for entity cards when cards change
+import { detectEntities, mapEntitiesToCards, matchCardToEntities } from './entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 
 /**
- * Handle when a new fact is added - check if it relates to existing entities or creates new ones
+ * Handle when a new card is added - check if it relates to existing entities or creates new ones
  * @param {Object} supabase - Supabase client
- * @param {Object} newFact - The newly created fact
+ * @param {Object} newCard - The newly created card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleNewFact(supabase, newFact) {
-  console.log('🔄 EntityCardRefresh: Processing new fact:', newFact.key);
+export async function handleNewCard(supabase, newCard) {
+  console.log('🔄 EntityCardRefresh: Processing new card:', newCard.title);
   
   try {
-    const projectId = newFact.project_id;
+    const projectId = newCard.project_id;
     
     // Get existing entity cards for this project
     const { data: existingCards, error: cardsError } = await supabase
@@ -28,42 +28,42 @@ export async function handleNewFact(supabase, newFact) {
     let actionsPerformed = {
       newEntitiesDetected: 0,
       existingEntitiesUpdated: 0,
-      factRelationshipsAdded: 0
+      cardRelationshipsAdded: 0
     };
     
-    // Check if this fact relates to existing entities
+    // Check if this card relates to existing entities
     if (existingCards && existingCards.length > 0) {
-      const entityMatches = await matchFactToEntities(newFact, existingCards);
+      const entityMatches = await matchCardToEntities(newCard, existingCards);
       
       if (entityMatches.length > 0) {
-        console.log('🔗 EntityCardRefresh: Found', entityMatches.length, 'entity matches for new fact');
+        console.log('🔗 EntityCardRefresh: Found', entityMatches.length, 'entity matches for new card');
         
         for (const match of entityMatches) {
           const entity = existingCards.find(e => e.entity_name === match.entity_name);
           if (entity) {
-            // Add relationship between fact and entity
+            // Add relationship between card and entity
             const { error: relationError } = await supabase
-              .from('entity_card_facts')
+              .from('entity_card_cards')
               .upsert({
                 entity_card_id: entity.id,
-                fact_id: newFact.id,
+                card_id: newCard.id,
                 relevance_score: match.relevance_score
               }, {
-                onConflict: 'entity_card_id,fact_id',
+                onConflict: 'entity_card_id,card_id',
                 ignoreDuplicates: false
               });
             
             if (relationError) {
-              console.error('❌ EntityCardRefresh: Error adding fact relationship:', relationError);
+              console.error('❌ EntityCardRefresh: Error adding card relationship:', relationError);
             } else {
-              actionsPerformed.factRelationshipsAdded++;
+              actionsPerformed.cardRelationshipsAdded++;
               
-              // Update entity card's fact count and last check time
+              // Update entity card's card count and last check time
               const { error: updateError } = await supabase
                 .from('entity_cards')
                 .update({
-                  fact_count: entity.fact_count + 1,
-                  last_facts_check: new Date().toISOString()
+                  card_count: entity.card_count + 1,
+                  last_cards_check: new Date().toISOString()
                 })
                 .eq('id', entity.id);
               
@@ -82,25 +82,25 @@ export async function handleNewFact(supabase, newFact) {
       }
     }
     
-    // Check if this fact creates new entities (run periodically, not for every fact)
+    // Check if this card creates new entities (run periodically, not for every card)
     const shouldCheckForNewEntities = Math.random() < 0.2; // 20% chance to check for new entities
     
     if (shouldCheckForNewEntities) {
       console.log('🔍 EntityCardRefresh: Checking for new entities (periodic check)');
       
-      // Get recent facts (including the new one) to check for new entities
-      const { data: recentFacts, error: factsError } = await supabase
-        .from('facts')
+      // Get recent cards (including the new one) to check for new entities
+      const { data: recentCards, error: cardsError } = await supabase
+        .from('cards')
         .select('*')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
-        .limit(50); // Check last 50 facts for new entities
+        .limit(50); // Check last 50 cards for new entities
       
-      if (factsError) {
-        console.error('❌ EntityCardRefresh: Error fetching recent facts:', factsError);
+      if (cardsError) {
+        console.error('❌ EntityCardRefresh: Error fetching recent cards:', cardsError);
       } else {
-        const detectedEntities = await detectEntities(recentFacts);
-        const entityCardsData = mapEntitiesToFacts(detectedEntities, recentFacts, projectId);
+        const detectedEntities = await detectEntities(recentCards);
+        const entityCardsData = mapEntitiesToCards(detectedEntities, recentCards, projectId);
         
         // Only create entity cards for truly new entities
         for (const entityData of entityCardsData) {
@@ -111,7 +111,7 @@ export async function handleNewFact(supabase, newFact) {
           
           if (!existsAlready && entityData.confidenceScore > 0.7) {
             console.log('🆕 EntityCardRefresh: Creating new entity card for', entityData.entityName);
-            const created = await createEntityCard(supabase, entityData, recentFacts);
+            const created = await createEntityCard(supabase, entityData, recentCards);
             if (created) {
               actionsPerformed.newEntitiesDetected++;
             }
@@ -120,33 +120,33 @@ export async function handleNewFact(supabase, newFact) {
       }
     }
     
-    console.log('✅ EntityCardRefresh: New fact processing complete:', actionsPerformed);
+    console.log('✅ EntityCardRefresh: New card processing complete:', actionsPerformed);
     return { success: true, actions: actionsPerformed };
     
   } catch (error) {
-    console.error('❌ EntityCardRefresh: Error processing new fact:', error);
+    console.error('❌ EntityCardRefresh: Error processing new card:', error);
     return { error: error.message };
   }
 }
 
 /**
- * Handle when a fact is updated - update related entity cards
+ * Handle when a card is updated - update related entity cards
  * @param {Object} supabase - Supabase client  
- * @param {Object} updatedFact - The updated fact
+ * @param {Object} updatedCard - The updated card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleUpdatedFact(supabase, updatedFact) {
-  console.log('🔄 EntityCardRefresh: Processing updated fact:', updatedFact.key);
+export async function handleUpdatedCard(supabase, updatedCard) {
+  console.log('🔄 EntityCardRefresh: Processing updated card:', updatedCard.title);
   
   try {
-    // Find entity cards that reference this fact
+    // Find entity cards that reference this card
     const { data: relatedCards, error: cardsError } = await supabase
-      .from('entity_card_facts')
+      .from('entity_card_cards')
       .select(`
         entity_card_id,
         entity_cards(id, entity_name, entity_type)
       `)
-      .eq('fact_id', updatedFact.id);
+      .eq('card_id', updatedCard.id);
     
     if (cardsError) {
       console.error('❌ EntityCardRefresh: Error fetching related cards:', cardsError);
@@ -154,20 +154,20 @@ export async function handleUpdatedFact(supabase, updatedFact) {
     }
     
     if (!relatedCards || relatedCards.length === 0) {
-      console.log('⚠️ EntityCardRefresh: No entity cards affected by fact update');
+      console.log('⚠️ EntityCardRefresh: No entity cards affected by card update');
       return { success: true, actions: { entitiesUpdated: 0 } };
     }
     
     let entitiesUpdated = 0;
     
-    // Update last_facts_check timestamp for affected entities and trigger summary regeneration
+    // Update last_cards_check timestamp for affected entities and trigger summary regeneration
     for (const relation of relatedCards) {
       const entityCard = relation.entity_cards;
       if (entityCard) {
         // Update timestamp
         const { error: updateError } = await supabase
           .from('entity_cards')
-          .update({ last_facts_check: new Date().toISOString() })
+          .update({ last_cards_check: new Date().toISOString() })
           .eq('id', entityCard.id);
         
         if (!updateError) {
@@ -182,36 +182,36 @@ export async function handleUpdatedFact(supabase, updatedFact) {
       }
     }
     
-    console.log('✅ EntityCardRefresh: Updated fact processing complete:', { entitiesUpdated });
+    console.log('✅ EntityCardRefresh: Updated card processing complete:', { entitiesUpdated });
     return { success: true, actions: { entitiesUpdated } };
     
   } catch (error) {
-    console.error('❌ EntityCardRefresh: Error processing updated fact:', error);
+    console.error('❌ EntityCardRefresh: Error processing updated card:', error);
     return { error: error.message };
   }
 }
 
 /**
- * Handle when a fact is deleted - remove from entity relationships and potentially delete entity cards
+ * Handle when a card is deleted - remove from entity relationships and potentially delete entity cards
  * @param {Object} supabase - Supabase client
- * @param {string} deletedFactId - ID of the deleted fact
+ * @param {string} deletedCardId - ID of the deleted card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleDeletedFact(supabase, deletedFactId) {
-  console.log('🗑️ EntityCardRefresh: Processing deleted fact:', deletedFactId);
+export async function handleDeletedCard(supabase, deletedCardId) {
+  console.log('🗑️ EntityCardRefresh: Processing deleted card:', deletedCardId);
   
   try {
-    // Find and remove entity-fact relationships
+    // Find and remove entity-card relationships
     const { data: relationships, error: fetchError } = await supabase
-      .from('entity_card_facts')
+      .from('entity_card_cards')
       .select(`
         entity_card_id,
-        entity_cards(id, entity_name, fact_count)
+        entity_cards(id, entity_name, card_count)
       `)
-      .eq('fact_id', deletedFactId);
+      .eq('card_id', deletedCardId);
     
     if (fetchError) {
-      console.error('❌ EntityCardRefresh: Error fetching fact relationships:', fetchError);
+      console.error('❌ EntityCardRefresh: Error fetching card relationships:', fetchError);
       return { error: 'Failed to fetch relationships' };
     }
     
@@ -222,9 +222,9 @@ export async function handleDeletedFact(supabase, deletedFactId) {
     
     // Remove relationships
     const { error: deleteError } = await supabase
-      .from('entity_card_facts')
+      .from('entity_card_cards')
       .delete()
-      .eq('fact_id', deletedFactId);
+      .eq('card_id', deletedCardId);
     
     if (deleteError) {
       console.error('❌ EntityCardRefresh: Error removing relationships:', deleteError);
@@ -238,10 +238,10 @@ export async function handleDeletedFact(supabase, deletedFactId) {
     for (const relation of relationships) {
       const entityCard = relation.entity_cards;
       if (entityCard) {
-        const newFactCount = Math.max(0, entityCard.fact_count - 1);
+        const newCardCount = Math.max(0, entityCard.card_count - 1);
         
-        // If entity has no more facts, delete the card
-        if (newFactCount === 0) {
+        // If entity has no more cards, delete the card
+        if (newCardCount === 0) {
           const { error: deleteEntityError } = await supabase
             .from('entity_cards')
             .delete()
@@ -252,18 +252,18 @@ export async function handleDeletedFact(supabase, deletedFactId) {
             console.log('🗑️ EntityCardRefresh: Deleted empty entity card:', entityCard.entity_name);
           }
         } else {
-          // Update fact count and timestamp
+          // Update card count and timestamp
           const { error: updateError } = await supabase
             .from('entity_cards')
             .update({
-              fact_count: newFactCount,
-              last_facts_check: new Date().toISOString()
+              card_count: newCardCount,
+              last_cards_check: new Date().toISOString()
             })
             .eq('id', entityCard.id);
           
           if (!updateError) {
             entitiesUpdated++;
-            console.log('🔄 EntityCardRefresh: Updated entity fact count:', entityCard.entity_name);
+            console.log('🔄 EntityCardRefresh: Updated entity card count:', entityCard.entity_name);
             
             // Trigger summary regeneration (async)
             regenerateEntitySummary(supabase, entityCard.id).catch(error => {
@@ -280,11 +280,11 @@ export async function handleDeletedFact(supabase, deletedFactId) {
       entitiesDeleted 
     };
     
-    console.log('✅ EntityCardRefresh: Deleted fact processing complete:', actions);
+    console.log('✅ EntityCardRefresh: Deleted card processing complete:', actions);
     return { success: true, actions };
     
   } catch (error) {
-    console.error('❌ EntityCardRefresh: Error processing deleted fact:', error);
+    console.error('❌ EntityCardRefresh: Error processing deleted card:', error);
     return { error: error.message };
   }
 }
@@ -293,18 +293,18 @@ export async function handleDeletedFact(supabase, deletedFactId) {
  * Create a new entity card
  * @param {Object} supabase - Supabase client
  * @param {Object} entityData - Entity data from detection
- * @param {Array} facts - All facts for context
+ * @param {Array} cards - All cards for context
  * @returns {boolean} - Whether card was created successfully
  */
-async function createEntityCard(supabase, entityData, facts) {
+async function createEntityCard(supabase, entityData, cards) {
   try {
     // Generate summary
     const { config: modelConf, client: openai } = getModelConfig('micro');
     
-    const relatedFactsText = entityData.relatedFacts
-      .map(rf => {
-        const fact = facts.find(f => f.id === rf.factId);
-        return fact ? `[${fact.type}] ${fact.key}: ${fact.value}` : '';
+    const relatedCardsText = entityData.relatedCards
+      .map(rc => {
+        const card = cards.find(c => c.id === rc.cardId);
+        return card ? `[${card.type}] ${card.title}: ${card.content}` : '';
       })
       .filter(Boolean)
       .join('\n');
@@ -312,7 +312,7 @@ async function createEntityCard(supabase, entityData, facts) {
     const summaryPrompt = `Create a concise summary for this entity:
     
 Entity: ${entityData.entityName} (${entityData.entityType})
-Facts: ${relatedFactsText}
+Cards: ${relatedCardsText}
 
 Write a 2-3 sentence summary that introduces the entity and highlights key information.`;
     
@@ -351,10 +351,10 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
       entity_type: entityData.entityType,
       summary: summary,
       summary_tokens: Math.ceil(summary.length / 4),
-      fact_count: entityData.factCount,
+      card_count: entityData.cardCount,
       confidence_score: entityData.confidenceScore,
       embedding: embedding,
-      last_facts_check: new Date().toISOString()
+      last_cards_check: new Date().toISOString()
     };
     
     const { data: newCard, error: cardError } = await supabase
@@ -368,16 +368,16 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
       return false;
     }
     
-    // Add fact relationships
-    const factRelationships = entityData.relatedFacts.map(rf => ({
+    // Add card relationships
+    const cardRelationships = entityData.relatedCards.map(rc => ({
       entity_card_id: newCard.id,
-      fact_id: rf.factId,
-      relevance_score: rf.relevanceScore
+      card_id: rc.cardId,
+      relevance_score: rc.relevanceScore
     }));
     
     const { error: relationError } = await supabase
-      .from('entity_card_facts')
-      .insert(factRelationships);
+      .from('entity_card_cards')
+      .insert(cardRelationships);
     
     if (relationError) {
       console.error('❌ EntityCardRefresh: Error adding relationships:', relationError);
@@ -393,20 +393,20 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
 }
 
 /**
- * Regenerate summary for an entity card based on current facts
+ * Regenerate summary for an entity card based on current cards
  * @param {Object} supabase - Supabase client
  * @param {string} entityCardId - ID of the entity card to regenerate
  */
 async function regenerateEntitySummary(supabase, entityCardId) {
   try {
-    // Get entity card and its related facts
+    // Get entity card and its related cards
     const { data: cardData, error: cardError } = await supabase
       .from('entity_cards')
       .select(`
         *,
-        entity_card_facts(
+        entity_card_cards(
           relevance_score,
-          facts(*)
+          cards(*)
         )
       `)
       .eq('id', entityCardId)
@@ -417,29 +417,29 @@ async function regenerateEntitySummary(supabase, entityCardId) {
       return;
     }
     
-    const facts = cardData.entity_card_facts?.map(ecf => ecf.facts).filter(Boolean) || [];
-    if (facts.length === 0) {
-      console.log('⚠️ EntityCardRefresh: No facts to regenerate summary for', cardData.entity_name);
+    const cards = cardData.entity_card_cards?.map(ecc => ecc.cards).filter(Boolean) || [];
+    if (cards.length === 0) {
+      console.log('⚠️ EntityCardRefresh: No cards to regenerate summary for', cardData.entity_name);
       return;
     }
     
     // Generate new summary
     const { config: modelConf, client: openai } = getModelConfig('micro');
     
-    const factsText = facts.map(f => `[${f.type}] ${f.key}: ${f.value}`).join('\n');
+    const cardsText = cards.map(c => `[${c.type}] ${c.title}: ${c.content}`).join('\n');
     
     const summaryPrompt = `Create an updated summary for this entity:
     
 Entity: ${cardData.entity_name} (${cardData.entity_type})
-Current Facts:
-${factsText}
+Current Cards:
+${cardsText}
 
 Write a 2-3 sentence summary that captures all current information about this entity.`;
     
     const summaryResponse = await openai.chat.completions.create({
       model: modelConf.name,
       messages: [
-        { role: 'system', content: 'Write updated entity summaries based on current facts.' },
+        { role: 'system', content: 'Write updated entity summaries based on current cards.' },
         { role: 'user', content: summaryPrompt }
       ],
       temperature: 0.3,

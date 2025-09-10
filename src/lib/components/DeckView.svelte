@@ -1,6 +1,6 @@
 <!-- DeckView.svelte - Shows cards organized in deck sections -->
 <script>
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2 } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
@@ -20,6 +20,8 @@
   let draggedCard = null;
   let dragOverSection = null;
   let dragOverIndex = -1;
+  let autoScrollInterval = null;
+  let mouseY = 0;
   let editingSection = null;
   let editingSectionName = '';
   let showCardLibrary = false;
@@ -28,6 +30,28 @@
   let branchConnections = [];
   let allSectionsCollapsed = false;
   let sectionCollapsedStates = {};
+
+  // Set up global drag prevention and cleanup
+  onMount(() => {
+    // Prevent default drag behavior on document to avoid tab switching
+    const preventDefaultDrag = (e) => {
+      e.preventDefault();
+    };
+    
+    document.addEventListener('dragover', preventDefaultDrag);
+    document.addEventListener('drop', preventDefaultDrag);
+    
+    // Cleanup function
+    return () => {
+      document.removeEventListener('dragover', preventDefaultDrag);
+      document.removeEventListener('drop', preventDefaultDrag);
+    };
+  });
+
+  // Cleanup auto-scroll interval when component is destroyed
+  onDestroy(() => {
+    stopAutoScroll();
+  });
 
   // Initialize sections when deck changes
   $: if (deck) {
@@ -237,10 +261,19 @@
       content: card.content,
       hasTitle: !!card.title
     });
+    
     draggedCard = card;
+    
+    // Set drag data to prevent browser navigation/tab switching
     event.dataTransfer.setData('text/plain', card.id);
+    event.dataTransfer.setData('application/json', JSON.stringify({ type: 'card', id: card.id }));
     event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.dropEffect = 'move';
+    
     event.target.style.opacity = '0.5';
+    
+    // Start auto-scroll when dragging begins
+    startAutoScroll();
   }
 
   function handleDragEnd(event) {
@@ -249,6 +282,9 @@
     draggedCard = null;
     dragOverSection = null;
     dragOverIndex = -1;
+    
+    // Stop auto-scroll when dragging ends
+    stopAutoScroll();
   }
 
   function handleDragOver(event, sectionId, cardIndex) {
@@ -264,6 +300,71 @@
     if (!event.currentTarget.contains(event.relatedTarget)) {
       dragOverSection = null;
       dragOverIndex = -1;
+    }
+  }
+
+  function startAutoScroll() {
+    if (autoScrollInterval) return;
+    
+    // Track mouse movement during drag operations
+    const trackMouse = (e) => {
+      mouseY = e.clientY;
+    };
+    
+    // Use dragover instead of mousemove for better drag tracking
+    document.addEventListener('dragover', trackMouse);
+    document.addEventListener('mousemove', trackMouse);
+    
+    autoScrollInterval = setInterval(() => {
+      const scrollContainer = document.querySelector('.deck-view-container') || document.documentElement;
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate normalized position (0 = top edge, 1 = bottom edge)
+      const normalizedY = mouseY / viewportHeight;
+      
+      // Create smooth linear acceleration curves with much larger bottom zone
+      let scrollSpeed = 0;
+      
+      // Check if we can scroll (prevent infinite scrolling)
+      const canScrollDown = scrollContainer.scrollTop < scrollContainer.scrollHeight - scrollContainer.clientHeight - 10;
+      const canScrollUp = scrollContainer.scrollTop > 10;
+      
+      // Scroll down when in bottom 30% of screen (70%-100%) - more limited zone
+      if (normalizedY > 0.7 && canScrollDown) {
+        const bottomDistance = (normalizedY - 0.7) / 0.3; // 0 to 1 as we approach bottom
+        // Use a smoother curve: starts slow, accelerates gradually
+        scrollSpeed = Math.pow(bottomDistance, 0.7) * 6; // Smoother acceleration, max 6px
+      }
+      // Scroll up when in top 30% of screen (0%-30%) - balanced zone
+      else if (normalizedY < 0.3 && canScrollUp) {
+        const topDistance = (0.3 - normalizedY) / 0.3; // 0 to 1 as we approach top
+        // Use a smoother curve: starts slow, accelerates gradually
+        scrollSpeed = -Math.pow(topDistance, 0.7) * 4; // Smoother acceleration, max 4px up
+      }
+      // No scrolling in middle 40% (30%-70%) - much larger neutral zone
+      
+      // Apply scroll if we have any meaningful speed
+      if (Math.abs(scrollSpeed) > 0.5) {
+        scrollContainer.scrollBy(0, scrollSpeed);
+        console.log('Auto-scroll:', { mouseY, normalizedY, scrollSpeed, canScrollDown, canScrollUp });
+      }
+    }, 20); // 50fps for smoother, less jumpy response
+    
+    // Store cleanup function
+    autoScrollInterval.cleanup = () => {
+      document.removeEventListener('dragover', trackMouse);
+      document.removeEventListener('mousemove', trackMouse);
+    };
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollInterval) {
+      // Clean up mouse event listener
+      if (autoScrollInterval.cleanup) {
+        autoScrollInterval.cleanup();
+      }
+      clearInterval(autoScrollInterval);
+      autoScrollInterval = null;
     }
   }
 
@@ -542,6 +643,7 @@
     }
   }
 
+
   async function saveCardAddition(cardId, sectionId, position) {
     if (!deck || !deck.id) return;
     
@@ -563,6 +665,9 @@
       }
       
       console.log('Card added to deck successfully');
+      
+      // Note: Deck data will be refreshed by the parent component
+      // No need to refresh here as the local state is already updated
     } catch (error) {
       console.error('Error adding card to deck:', error);
       // TODO: Show user-friendly error message
@@ -661,7 +766,12 @@
     <!-- Deck Content -->
     <div class="flex-1 flex overflow-hidden">
       <!-- Main Deck Content -->
-      <div class="flex-1 overflow-y-auto p-4 pb-20 deck-view-container">
+      <div 
+        class="flex-1 overflow-y-auto p-4 pb-20 deck-view-container"
+        role="application"
+        on:dragover|preventDefault
+        on:drop|preventDefault
+      >
       <div class="space-y-4 relative">
         <!-- Branching Paths Overlay -->
         {#if showBranchingPaths}

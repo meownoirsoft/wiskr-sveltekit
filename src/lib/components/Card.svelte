@@ -252,7 +252,7 @@
     
     <!-- Header: Title -->
     <div class="mb-2 -mt-2">
-      <h3 class="font-bold text-sm leading-tight truncate" style="color: {darkMode ? '#f9fafb' : '#111827'};">
+      <h3 class="font-bold text-sm leading-tight truncate" style:color={darkMode ? '#f9fafb' : '#111827'}>
         {@html highlightText(card?.title || card?.key || 'Untitled Card', searchTerm)}
       </h3>
     </div>
@@ -260,12 +260,14 @@
     <!-- Art Area -->
     <div 
       class="art-area relative mb-3 rounded-md flex items-center justify-center" 
-      style="height: 80px; background-color: {darkMode ? '#4b5563' : '#f3f4f6'};"
+      style="height: 80px;" 
+      style:background-color={darkMode ? '#4b5563' : '#f3f4f6'}
     >
       <!-- Mana Cost - Top Corner -->
       <div 
         class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-        style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
+        style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
+        style:color={rarity.textColor}
       >
         <span>{investmentCost}</span>
       </div>
@@ -273,12 +275,12 @@
       {#if card?.art_url}
         <img src={card.art_url} alt="Card art" class="w-full h-full object-cover" draggable="false" />
       {:else}
-        <div class="w-full h-full flex flex-col items-center justify-center" style="background: linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%);">
-          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2" style="background-color: {darkMode ? '#6b7280' : '#9ca3af'};">
+        <div class="w-full h-full flex flex-col items-center justify-center" style:background="linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%)">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2" style:background-color={darkMode ? '#6b7280' : '#9ca3af'}>
             <div class="text-white text-xl">🎨</div>
           </div>
-          <div class="text-xs font-medium" style="color: {darkMode ? '#9ca3af' : '#6b7280'};">No Art</div>
-          <div class="text-xs" style="color: {darkMode ? '#6b7280' : '#9ca3af'};">Click to add</div>
+          <div class="text-xs font-medium" style:color={darkMode ? '#9ca3af' : '#6b7280'}>No Art</div>
+          <div class="text-xs" style:color={darkMode ? '#6b7280' : '#9ca3af'}>Click to add</div>
         </div>
       {/if}
     </div>
@@ -289,7 +291,8 @@
         {#each card.tags.slice(0, 3) as tag}
           <span 
             class="text-xs px-1.5 py-0.5 rounded-md"
-            style="background-color: {darkMode ? '#4b5563' : '#e5e7eb'}; color: {darkMode ? '#d1d5db' : '#374151'};"
+            style:background-color={darkMode ? '#4b5563' : '#e5e7eb'} 
+            style:color={darkMode ? '#d1d5db' : '#374151'}
           >
             {tag}
           </span>
@@ -297,7 +300,8 @@
         {#if card.tags.length > 3}
           <span 
             class="text-xs px-1.5 py-0.5 rounded-md"
-            style="background-color: {darkMode ? '#4b5563' : '#e5e7eb'}; color: {darkMode ? '#d1d5db' : '#374151'};"
+            style:background-color={darkMode ? '#4b5563' : '#e5e7eb'} 
+            style:color={darkMode ? '#d1d5db' : '#374151'}
           >
             +{card.tags.length - 3}
           </span>
@@ -308,7 +312,7 @@
     <!-- Content -->
     <div 
       class="content-area flex-1 mb-3 text-sm leading-tight overflow-hidden"
-      style="color: {darkMode ? '#d1d5db' : '#374151'};"
+      style:color={darkMode ? '#d1d5db' : '#374151'}
     >
       <div class="line-clamp-4">
         {@html highlightText(card?.content || 'No content', searchTerm)}
@@ -319,7 +323,8 @@
     {#if card?.flavor_text}
       <div 
         class="flavor-text mb-3 text-xs italic border-l-2 pl-2"
-        style="color: {darkMode ? '#9ca3af' : '#6b7280'}; border-color: {darkMode ? '#4b5563' : '#d1d5db'};"
+        style:color={darkMode ? '#9ca3af' : '#6b7280'} 
+        style:border-color={darkMode ? '#4b5563' : '#d1d5db'}
       >
         {@html highlightText(card.flavor_text, searchTerm)}
       </div>
@@ -336,7 +341,7 @@
               class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
               on:click={handleRarityUpgrade}
               title="Upgrade rarity"
-              style="color: {darkMode ? '#ffffff' : '#000000'};"
+              style:color={darkMode ? '#ffffff' : '#000000'}
             >
               ↑
             </button>
@@ -346,7 +351,7 @@
         <!-- Rarity Label -->
         <span 
           class="text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5"
-          style="color: {rarity.textColor};"
+          style:color={rarity.textColor}
         >
           {card?.rarity || 'common'}
         </span>
@@ -358,7 +363,7 @@
               class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
               on:click={handleRarityDowngrade}
               title="Downgrade rarity"
-              style="color: {darkMode ? '#ffffff' : '#000000'};"
+              style:color={darkMode ? '#ffffff' : '#000000'}
             >
               ↓
             </button>
@@ -375,7 +380,7 @@
             class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
             on:click={(e) => handleProgressClick(e, level.level)}
             title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
-            style="color: {card?.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')};"
+            style:color={card?.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')}
           >
             <Star size="14" class="fill-current" />
           </button>
@@ -385,13 +390,13 @@
 
     <!-- Action Buttons -->
     {#if showActions}
-      <div class="action-buttons flex items-center justify-between mt-1 pt-1 border-t" style="border-color: {darkMode ? '#4b5563' : '#e5e7eb'};">
+      <div class="action-buttons flex items-center justify-between mt-1 pt-1 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
         <div class="flex items-center gap-2">
           <button
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleGenerateArtClick}
             title="Generate art"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             <Palette size="14" />
           </button>
@@ -399,7 +404,7 @@
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleSplitClick}
             title="Split card"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             <Split size="14" />
           </button>
@@ -407,7 +412,7 @@
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleMergeClick}
             title="Merge cards"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             <Merge size="14" />
           </button>
@@ -418,7 +423,7 @@
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handlePinClick}
             title="{card?.pinned ? 'Unpin' : 'Pin'} card"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             {#if card?.pinned}
               <Pin size="14" class="fill-current" />
@@ -430,7 +435,7 @@
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleEditClick}
             title="Edit card"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             <Pencil size="14" />
           </button>
@@ -438,7 +443,7 @@
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={toggleMenu}
             title="More options"
-            style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+            style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
             <MoreHorizontal size="14" />
           </button>
@@ -452,7 +457,7 @@
   {#if showMenu}
     <div 
       class="context-menu fixed z-[99999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-32"
-      style="top: {menuPosition.top}px; left: {menuPosition.left}px;"
+      style:top="{menuPosition.top}px" style:left="{menuPosition.left}px"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="menu"

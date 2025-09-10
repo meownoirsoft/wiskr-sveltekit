@@ -178,7 +178,7 @@
     <div class="space-y-3">
       <!-- Search box -->
       <div class="relative">
-        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;" />
+        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} />
         <input
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
@@ -189,7 +189,7 @@
         {#if search}
           <button
             class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
-            style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
+            style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
             on:click={() => search = ''}
           >
             <X size="16" />
@@ -211,7 +211,7 @@
             <div class="flex items-center gap-1 px-2">
               <button
                 class="p-1 transition-colors"
-                style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
+                style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
                 title="Project Settings"
                 on:click={(e) => openSettings(project, e)}
               >
@@ -219,7 +219,7 @@
               </button>
               <button
                 class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-                style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
+                style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
                 title="Delete"
                 on:click={(e) => deleteProject(project, e)}
               >
@@ -229,7 +229,7 @@
           </div>
         {/each}
         {#if !filtered.length}
-          <div class="p-3 text-sm text-center" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;">
+          <div class="p-3 text-sm text-center" style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}>
             {search ? 'No worlds found' : 'No worlds yet'}
           </div>
         {/if}
@@ -259,7 +259,11 @@
   <div id="project-selector-dropdown"
     use:createPortal
     class="fixed w-80 border rounded-lg shadow-lg max-h-[70vh] overflow-hidden project-selector-dropdown"
-    style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'} !important; color: white !important; top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
+    style:background-color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#0f172a'} 
+    style:border="2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#1e293b'}" 
+    style:color="white" 
+    style:top="{dropdownPosition.top}px" 
+    style:left="{dropdownPosition.left}px"
   >
     <!-- Header with search -->
     <div class="p-3 border-b" style="border-color: var(--border-header-input);">
@@ -279,7 +283,7 @@
       </div>
       
       <div class="relative">
-        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;" />
+        <Search size="16" class="absolute left-2.5 top-1/2 transform -translate-y-1/2" color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} />
         <input
           type="text"
           class="w-full pl-8 pr-8 py-1.5 border rounded text-sm"
@@ -290,7 +294,7 @@
         {#if search}
           <button
             class="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors"
-            style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
+            style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
             on:click={() => search = ''}
           >
             <X size="16" />
@@ -302,19 +306,21 @@
     <!-- Project list -->
     <div class="max-h-64 overflow-y-auto">
       {#each filtered as project}
-        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important; background-color: {current?.id === project.id ? '#1d4ed8' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#e0f2fe')} !important;">
+        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" 
+             style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} 
+             style:background-color={current?.id === project.id ? '#1d4ed8' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#e0f2fe')}>
           <button
             class="flex items-center gap-2 flex-1 p-3 text-left"
-            style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;"
+            style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')}
             on:click={() => selectProject(project)}
           >
             <span class="text-sm">{project.icon ?? '📁'}</span>
-            <span class="font-medium text-sm truncate" style="color: {current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} !important;">{project.name}</span>
+            <span class="font-medium text-sm truncate" style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')}>{project.name}</span>
           </button>
           <div class="flex items-center gap-1 px-2">
             <button
               class="p-1 transition-colors"
-              style="color: {current?.id === project.id ? '#f8fafc' : 'black'} !important;"
+              style:color={current?.id === project.id ? '#f8fafc' : 'black'}
               title="Project Settings"
               on:click={(e) => openSettings(project, e)}
             >
@@ -322,7 +328,7 @@
             </button>
             <button
               class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-              style="color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'} !important;"
+              style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
               title="Delete"
               on:click={(e) => deleteProject(project, e)}
             >

@@ -17,8 +17,8 @@
   export let searchTerm = '';
   export let cardsGridSize = 3;
   
-  let projectFactTypes = [];
-  let loadingFactTypes = false;
+  let projectCardTypes = [];
+  let loadingCardTypes = false;
   let showEditModal = false;
   let editingCard = null;
   let showAddModal = false;
@@ -33,9 +33,9 @@
 
   const dispatch = createEventDispatcher();
 
-  // Load project fact types when worldId changes
+  // Load project card types when worldId changes
   $: if (worldId) {
-    loadProjectFactTypes();
+    loadProjectCardTypes();
   }
 
   // React to showAddCardForm prop changes from parent
@@ -70,31 +70,31 @@
   // Use filteredCards directly since sorting is handled by the parent Binder component
   $: sortedCards = filteredCards;
 
-  async function loadProjectFactTypes() {
+  async function loadProjectCardTypes() {
     if (!worldId) return;
     
-    loadingFactTypes = true;
+    loadingCardTypes = true;
     try {
-      const response = await fetch(`/api/projects/${worldId}/fact-types`, {
+      const response = await fetch(`/api/projects/${worldId}/card-types`, {
         credentials: 'include'
       });
       const data = await response.json();
       
       if (response.ok) {
-        projectFactTypes = data.factTypes || [];
+        projectCardTypes = data.cardTypes || [];
       } else {
-        console.error('Failed to load fact types:', data.error);
-        projectFactTypes = getDefaultFactTypes();
+        console.error('Failed to load card types:', data.error);
+        projectCardTypes = getDefaultCardTypes();
       }
     } catch (error) {
-      console.error('Error loading fact types:', error);
-      projectFactTypes = getDefaultFactTypes();
+      console.error('Error loading card types:', error);
+      projectCardTypes = getDefaultCardTypes();
     } finally {
-      loadingFactTypes = false;
+      loadingCardTypes = false;
     }
   }
 
-  function getDefaultFactTypes() {
+  function getDefaultCardTypes() {
     return [
       { type_key: 'character', display_name: 'Character', color_class: 'bg-blue-100 text-blue-700', sort_order: 1 },
       { type_key: 'location', display_name: 'Location', color_class: 'bg-green-100 text-green-700', sort_order: 2 },
@@ -574,8 +574,10 @@
     {/if}
 
     {#if viewMode === 'binder'}
-      <div class="cards-grid gap-4" style="grid-template-columns: repeat({cardsGridSize}, minmax(0, 1fr));">
+      <!-- Line 577 -->
+      <div class="cards-grid gap-4" style:grid-template-columns="repeat({cardsGridSize}, minmax(0, 1fr))">
         {#each sortedCards as card (card.id)}
+          <!-- Line 580 -->
           <Card 
             {card}
             {searchTerm}
@@ -655,7 +657,7 @@
 <!-- Modals -->
 {#if showAddModal}
   <AddCardModal
-    {projectFactTypes}
+    projectCardTypes={projectCardTypes}
     on:save={handleAddModalSave}
     on:cancel={handleAddModalCancel}
   />
@@ -664,7 +666,7 @@
 {#if showEditModal && editingCard}
   <EditCardModal
     card={editingCard}
-    {projectFactTypes}
+    projectCardTypes={projectCardTypes}
     on:save={handleEditModalSave}
     on:cancel={handleEditModalCancel}
   />

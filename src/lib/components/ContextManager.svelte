@@ -1,4 +1,4 @@
-<!-- ContextManager.svelte - Context (Facts & Docs) management logic extracted from projects/+page.svelte -->
+<!-- ContextManager.svelte - Context (Cards & Docs) management logic extracted from projects/+page.svelte -->
 <script>
   import { createEventDispatcher } from 'svelte';
   import { supabase } from '$lib/supabase.js';
@@ -11,22 +11,22 @@
 
   // Props - passed from parent component
   export let current; // current project
-  export let loadingFacts;
+  export let loadingCards;
 
   // State that will be managed by this component
-  export let facts = [];
+  export let cards = [];
   export let docs = [];
   
   // Delete confirmation state
   let showDeleteConfirm = false;
   let cardToDelete = null;
   
-  // Form state for facts
-  export let factType = 'character';
-  export let factKey = '';
-  export let factValue = '';
-  export let factTags = '';
-  export let showAddFactForm = false;
+  // Form state for cards
+  export let cardType = 'character';
+  export let cardTitle = '';
+  export let cardContent = '';
+  export let cardTags = '';
+  export let showAddCardForm = false;
   
   // Form state for docs
   export let docTitle = '';
@@ -41,7 +41,7 @@
   // Context loading function
   export async function loadContext() {
     if (!current) return;
-    loadingFacts = true;
+    loadingCards = true;
     
     // Add cache-busting to ensure fresh data
     const timestamp = Date.now();
@@ -101,7 +101,7 @@
       rawCards.push(...mockCards);
     }
     
-    facts = rawCards.map(card => {
+    cards = rawCards.map(card => {
       // console.log('🔍 ContextManager: Processing card:', {
       //   id: card.id,
       //   title: card.title,
@@ -125,14 +125,14 @@
       };
     });
     
-    console.log('🎴 ContextManager: Final cards array:', facts.length, 'items');
-    if (facts.length > 0) {
+    console.log('🎴 ContextManager: Final cards array:', cards.length, 'items');
+    if (cards.length > 0) {
       console.log('🎴 ContextManager: First card:', {
-        id: facts[0].id,
-        title: facts[0].title,
-        content: facts[0].content?.substring(0, 50) + '...',
-        rarity: facts[0].rarity,
-        hasContent: 'content' in facts[0]
+        id: cards[0].id,
+        title: cards[0].title,
+        content: cards[0].content?.substring(0, 50) + '...',
+        rarity: cards[0].rarity,
+        hasContent: 'content' in cards[0]
       });
     }
     docs = d ?? [];
@@ -140,7 +140,7 @@
       // Update current project with fresh brief_text
       dispatch('project-updated', p);
     }
-    loadingFacts = false;
+    loadingCards = false;
   }
 
   // Helper function for auto-regenerating summary when content changes
@@ -168,14 +168,14 @@
     }
   }
 
-  // FACTS MANAGEMENT FUNCTIONS
+  // CARDS MANAGEMENT FUNCTIONS
 
-  export async function addFact() {
+  export async function addCard() {
     if (!current) return;
-    if (!factKey?.trim() || !factValue?.trim()) return;
+    if (!cardTitle?.trim() || !cardContent?.trim()) return;
 
     // Parse tags
-    const tags = factTags ? factTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const tags = cardTags ? cardTags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     // Check if offline - queue the request
     if (!getNetworkStatus()) {
@@ -185,8 +185,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             project_id: current.id,
-            title: factKey.trim(),
-            content: factValue.trim(),
+            title: cardTitle.trim(),
+            content: cardContent.trim(),
             tags: tags,
             pinned: false,
             rarity: 'common',
@@ -196,15 +196,15 @@
         });
         // Reload context after sync
         await loadContext();
-      }, { type: 'create_fact', factKey: factKey.trim() });
+      }, { type: 'create_card', cardTitle: cardTitle.trim() });
       
       if (browser && window.showNetworkToast) {
-        window.showNetworkToast.offline('Fact will be saved when you come back online.');
+        window.showNetworkToast.offline('Card will be saved when you come back online.');
       }
       
       // Clear form optimistically
-      factKey = ''; factValue = ''; factTags = '';
-      showAddFactForm = false;
+      cardTitle = ''; cardContent = ''; cardTags = '';
+      showAddCardForm = false;
       return;
     }
 
@@ -216,8 +216,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: current.id,
-          title: factKey.trim(),
-          content: factValue.trim(),
+          title: cardTitle.trim(),
+          content: cardContent.trim(),
           tags: tags,
           pinned: false,
           rarity: 'common',
@@ -229,7 +229,7 @@
         maxRetries: 2,
         onRetry: (attempt) => {
           if (browser && window.showNetworkToast) {
-            window.showNetworkToast.retry('Retrying fact creation', attempt, 3);
+            window.showNetworkToast.retry('Retrying card creation', attempt, 3);
           }
         }
       });
@@ -242,24 +242,24 @@
       }
       
       // clear form and hide
-      factKey = ''; factValue = ''; factTags = '';
-      showAddFactForm = false;
+      cardTitle = ''; cardContent = ''; cardTags = '';
+      showAddCardForm = false;
 
       // reload lists
       await loadContext();
       
-      // Auto-regenerate summary since facts content changed
+      // Auto-regenerate summary since cards content changed
       await autoRegenerateSummary();
       
     } catch (error) {
-      console.error('ContextManager: Error adding fact:', error);
+      console.error('ContextManager: Error adding card:', error);
       addNetworkError(error);
       
       const errorMessage = error.message.includes('Network connection failed') ?
-        'Network error. Fact will be saved when connection is restored.' :
+        'Network error. Card will be saved when connection is restored.' :
         error.message.includes('timeout') ?
         'Request timed out. Please try again.' :
-        `Failed to save fact: ${error.message}`;
+        `Failed to save card: ${error.message}`;
       
       if (browser && window.showNetworkToast) {
         window.showNetworkToast.error(errorMessage);
@@ -271,61 +271,61 @@
     }
   }
 
-  export function startEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: true, _editKey: x.title, _editValue: x.content, _editTags: (x.tags || []).join(', ') } : x);
+  export function startEditCard(f, i) {
+    cards = cards.map((x, idx) => idx === i ? { ...x, _editing: true, _editTitle: x.title, _editContent: x.content, _editTags: (x.tags || []).join(', ') } : x);
   }
 
-  export function cancelEditFact(f, i) {
-    facts = facts.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
+  export function cancelEditCard(f, i) {
+    cards = cards.map((x, idx) => idx === i ? { ...x, _editing: false } : x);
   }
 
-  export async function saveFactEdit(f, { type, key, value, tags }) {
+  export async function saveCardEdit(f, { type, title, content, tags }) {
     const res = await fetch(`/api/cards/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: key, 
-        content: value,
+        title: title, 
+        content: content,
         tags,
         reembed: 'auto' // re-embed if text changed
       })
     });
     if (!res.ok) {
       console.error(await res.text());
-      alert('Failed to update fact');
+      alert('Failed to update card');
       return;
     }
     // Refresh lists
     await loadContext();
     
-    // Auto-regenerate summary since fact content changed
+    // Auto-regenerate summary since card content changed
     await autoRegenerateSummary();
   }
 
-  export async function deleteFact(f, i) {
+  export async function deleteCard(f, i) {
     // Show confirmation modal
     showDeleteConfirm = true;
-    cardToDelete = { fact: f, index: i };
+    cardToDelete = { card: f, index: i };
   }
 
   // Alternative delete function that doesn't require index
-  export async function deleteFactById(cardId) {
+  export async function deleteCardById(cardId) {
     // Find the card and its index
-    const cardIndex = facts.findIndex(f => f.id === cardId);
+    const cardIndex = cards.findIndex(f => f.id === cardId);
     if (cardIndex === -1) {
       console.error('Card not found:', cardId);
       return;
     }
     
-    const card = facts[cardIndex];
+    const card = cards[cardIndex];
     showDeleteConfirm = true;
-    cardToDelete = { fact: card, index: cardIndex };
+    cardToDelete = { card: card, index: cardIndex };
   }
 
   async function confirmDelete() {
     if (!cardToDelete) return;
     
-    const { fact: f, index: i } = cardToDelete;
+    const { card: f, index: i } = cardToDelete;
     
     // Close modal immediately
     showDeleteConfirm = false;
@@ -339,9 +339,9 @@
       }
       
       // Remove from local array
-      facts = facts.filter((_, idx) => idx !== i);
+      cards = cards.filter((_, idx) => idx !== i);
       
-      // Auto-regenerate summary since fact was deleted
+      // Auto-regenerate summary since card was deleted
       await autoRegenerateSummary();
       
     } catch (error) {
@@ -355,7 +355,7 @@
     cardToDelete = null;
   }
 
-  export async function toggleFactPin(f) {
+  export async function toggleCardPin(f) {
     const wasPinned = f.pinned;
     const willBePinned = !f.pinned;
     
@@ -533,11 +533,11 @@
 
   // HELPER FUNCTIONS FOR PARENT COMPONENT
 
-  // Clear fact form
-  export function clearFactForm() {
-    factKey = '';
-    factValue = '';
-    factTags = '';
+  // Clear card form
+  export function clearCardForm() {
+    cardTitle = '';
+    cardContent = '';
+    cardTags = '';
   }
 
   // Clear doc form  

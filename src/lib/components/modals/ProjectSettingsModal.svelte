@@ -2,7 +2,7 @@
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, X, Download, Upload, Database } from 'lucide-svelte';
   import { createModalClickHandler } from '$lib/utils/modalClickHandler.js';
-  import FactTypesManager from '../FactTypesManager.svelte';
+  import CardTypesManager from '../CardTypesManager.svelte';
   import SayLessModal from './SayLessModal.svelte';
   import SayLessButton from '../SayLessButton.svelte';
   import FeatureGate from '../FeatureGate.svelte';
@@ -45,7 +45,7 @@
   
      const tabs = [
      { id: 'general', label: 'General', icon: Settings },
-     { id: 'fact-types', label: 'Fact\u00A0Types', icon: Settings },
+     { id: 'card-types', label: 'Card Types', icon: Settings },
      { id: 'data', label: 'Import/Export', icon: Database },
      // Future tabs can be added here
    ];
@@ -254,16 +254,16 @@
       </div>
 
              <!-- Modal Body - Scrollable Content -->
-       <div class="flex-1 overflow-y-auto min-h-0 {activeTab === 'fact-types' ? 'p-0' : 'p-6'}">
-         {#if activeTab === 'fact-types'}
+       <div class="flex-1 overflow-y-auto min-h-0 {activeTab === 'card-types' ? 'p-0' : 'p-6'}">
+         {#if activeTab === 'card-types'}
            <div class="w-full px-6">
              <div class="mb-4 md:mb-6">
-               <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Fact Types</h3>
-               <!-- <p class="text-gray-600 dark:text-gray-400">Customize fact types in your project. Rename, add new, and change colors.</p> -->
+               <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Card Types</h3>
+               <!-- <p class="text-gray-600 dark:text-gray-400">Customize card types in your project. Rename, add new, and change colors.</p> -->
              </div>
              
              <div class="w-full">
-               <FactTypesManager projectId={project?.id} user={{ ...user, tier: userTier }} />
+               <CardTypesManager projectId={project?.id} user={{ ...user, tier: userTier }} />
              </div>
            </div>
         {:else if activeTab === 'data'}

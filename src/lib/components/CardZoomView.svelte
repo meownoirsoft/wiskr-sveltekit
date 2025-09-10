@@ -447,11 +447,11 @@
             <input
               bind:value={title}
               class="w-full text-lg font-bold bg-transparent border-none outline-none"
-              style="color: {darkMode ? '#f9fafb' : '#111827'};"
+              style:color={darkMode ? '#f9fafb' : '#111827'}
               placeholder="Card title..."
             />
           {:else}
-            <h3 class="text-lg font-bold leading-tight" style="color: {darkMode ? '#f9fafb' : '#111827'};">
+            <h3 class="text-lg font-bold leading-tight" style:color={darkMode ? '#f9fafb' : '#111827'}>
               {editedCard.title}
             </h3>
           {/if}
@@ -460,12 +460,12 @@
         <!-- Art Area -->
         <div 
           class="art-area mb-4 mx-4 rounded-md flex items-center justify-center relative group" 
-          style="height: 160px; background-color: {darkMode ? '#4b5563' : '#f3f4f6'};"
+          style="height: 160px;" style:background-color={darkMode ? '#4b5563' : '#f3f4f6'}
         >
           <!-- Mana Cost - Top Right -->
           <div 
             class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-            style="background-color: {darkMode ? '#ffffff' : '#ffffff'}; color: {rarity.textColor};"
+            style:background-color={darkMode ? '#ffffff' : '#ffffff'} style:color={rarity.textColor}
           >
             <span>{investmentCost}</span>
           </div>
@@ -491,15 +491,15 @@
           {:else}
             <button 
               class="w-full h-full flex flex-col items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-              style="background: linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%);"
+              style:background="linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%)"
               on:click={handleGenerateArt}
               title="Add art to this card"
             >
-              <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3" style="background-color: {darkMode ? '#6b7280' : '#9ca3af'};">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3" style:background-color={darkMode ? '#6b7280' : '#9ca3af'}>
                 <div class="text-white text-2xl">🎨</div>
               </div>
-              <div class="text-sm font-medium" style="color: {darkMode ? '#9ca3af' : '#6b7280'};">No Art</div>
-              <div class="text-xs" style="color: {darkMode ? '#6b7280' : '#9ca3af'};">Click to add art</div>
+              <div class="text-sm font-medium" style:color={darkMode ? '#9ca3af' : '#6b7280'}>No Art</div>
+              <div class="text-xs" style:color={darkMode ? '#6b7280' : '#9ca3af'}>Click to add art</div>
             </button>
           {/if}
         </div>
@@ -551,7 +551,7 @@
               placeholder="Card content..."
             ></textarea>
           {:else}
-            <div class="text-sm leading-tight" style="color: {darkMode ? '#d1d5db' : '#374151'};">
+            <div class="text-sm leading-tight" style:color={darkMode ? '#d1d5db' : '#374151'}>
               {editedCard.content}
             </div>
           {/if}
@@ -562,7 +562,7 @@
           <div class="flex items-center justify-between text-xs">
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
-              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('notes')}
               on:mouseenter={(e) => showTooltipForType('notes', e)}
               on:mouseleave={hideTooltip}
@@ -571,7 +571,7 @@
             </button>
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
-              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('branches')}
               on:mouseenter={(e) => showTooltipForType('branches', e)}
               on:mouseleave={hideTooltip}
@@ -580,7 +580,7 @@
             </button>
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
-              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('decks')}
               on:mouseenter={(e) => showTooltipForType('decks', e)}
               on:mouseleave={hideTooltip}
@@ -589,7 +589,7 @@
             </button>
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
-              style="color: {darkMode ? '#9ca3af' : '#6b7280'};"
+              style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('resources')}
               on:mouseenter={(e) => showTooltipForType('resources', e)}
               on:mouseleave={hideTooltip}
@@ -610,7 +610,7 @@
                   class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityUpgrade}
                   title="Upgrade rarity"
-                  style="color: {darkMode ? '#ffffff' : '#000000'};"
+                  style:color={darkMode ? '#ffffff' : '#000000'}
                 >
                   ↑
                 </button>
@@ -620,7 +620,7 @@
             <!-- Rarity Label -->
             <span 
               class="text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2"
-              style="color: {rarity.textColor};"
+              style:color={rarity.textColor}
             >
               {editedCard.rarity}
             </span>
@@ -632,7 +632,7 @@
                   class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityDowngrade}
                   title="Downgrade rarity"
-                  style="color: {darkMode ? '#ffffff' : '#000000'};"
+                  style:color={darkMode ? '#ffffff' : '#000000'}
                 >
                   ↓
                 </button>
@@ -647,7 +647,7 @@
                 class="transition-colors hover:scale-110 cursor-pointer"
                 on:click={() => handleProgressClick(level.level)}
                 title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
-                style="color: {editedCard.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')};"
+                style:color={editedCard.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')}
               >
                 <Star size="16" class="fill-current" />
               </button>
@@ -656,13 +656,13 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="action-buttons flex items-center justify-between px-4 pb-4 border-t" style="border-color: {darkMode ? '#4b5563' : '#e5e7eb'};">
+        <div class="action-buttons flex items-center justify-between px-4 pb-4 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
           <div class="flex items-center gap-2">
             <button
               class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={togglePin}
               title="{editedCard.pinned ? 'Unpin' : 'Pin'} card"
-              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               {#if editedCard.pinned}
                 <Pin size="16" class="fill-current" />
@@ -678,7 +678,7 @@
                 class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={saveCard}
                 title="Save changes"
-                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+                style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Save size="16" />
               </button>
@@ -686,7 +686,7 @@
                 class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={cancelEditing}
                 title="Cancel editing"
-                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+                style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <RotateCcw size="16" />
               </button>
@@ -695,7 +695,7 @@
                 class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={startEditing}
                 title="Edit card"
-                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+                style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Pencil size="16" />
               </button>
@@ -703,7 +703,7 @@
                 class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={deleteCard}
                 title="Delete card"
-                style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+                style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Trash size="16" />
               </button>
@@ -712,7 +712,7 @@
               class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleSplit}
               title="Split card"
-              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <Split size="16" />
             </button>
@@ -720,7 +720,7 @@
               class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleMerge}
               title="Merge cards"
-              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <Merge size="16" />
             </button>
@@ -728,7 +728,7 @@
               class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={closeModal}
               title="Close card"
-              style="color: {darkMode ? '#ffffff' : rarity.textColor};"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <X size="16" />
             </button>
@@ -742,7 +742,7 @@
   {#if showTooltip}
     <div 
       class="fixed z-[10000] bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 rounded-lg shadow-lg p-3 max-w-xs border border-gray-700 dark:border-gray-600 cursor-pointer hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
-      style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px; transform: translateX(-50%) translateY(-100%);"
+      style:left="{tooltipPosition.x}px" style:top="{tooltipPosition.y}px" style:transform="translateX(-50%) translateY(-100%)"
       on:mouseenter={keepTooltipVisible}
       on:mouseleave={hideTooltip}
       on:click={() => openContentModal(tooltipType)}

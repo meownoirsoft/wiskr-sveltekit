@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import ContextSummary from './ContextSummary.svelte';
-  import FactsManager from './FactsManager.svelte';
   import CardsManager from './CardsManager.svelte';
   import DocsManager from './DocsManager.svelte';
   import EntityCards from './EntityCards.svelte';
@@ -10,14 +9,14 @@
   import { supabase } from '$lib/supabase.js';
 
   export let current = null;
-  export let facts = [];
+  export let cards = [];
   export let docs = [];
-  export let loadingFacts = false;
-  export let showAddFactForm = false;
-  export let factType = 'character';
-  export let factKey = '';
-  export let factValue = '';
-  export let factTags = '';
+  export let loadingCards = false;
+  export let showAddCardForm = false;
+  export let cardType = 'character';
+  export let cardTitle = '';
+  export let cardContent = '';
+  export let cardTags = '';
   export let showAddDocForm = false;
   export let docTitle = '';
   export let docContent = '';
@@ -25,7 +24,7 @@
   export let search = ''; // Filter content by this search string
   export let isDesktop = false;
   export let user = null; // User object with tier info
-  export let userPreferences = { facts_grid_size: 3 }; // User preferences including grid size
+  export let userPreferences = { cards_grid_size: 3 }; // User preferences including grid size
   // Desktop collapse button props
   export let showCollapseButton = false;
   export let isCollapsed = false;
@@ -33,16 +32,16 @@
 
   const dispatch = createEventDispatcher();
   
-  // Reference to FactsManager component
-  let factsManagerComponent;
+  // Reference to CardsManager component
+  let cardsManagerComponent;
   
   // Search highlighting state
   let currentSearchTerm = '';
-  let highlightedFactId = null;
+  let highlightedCardId = null;
   let highlightedDocId = null;
   
   // Tab state - exported so parent can control it
-  export let activeTab = 'facts'; // 'summary', 'facts', 'docs', or 'entities'
+  export let activeTab = 'cards'; // 'summary', 'cards', 'docs', or 'entities'
   
   // Tag filtering state
   let selectedTags = [];
@@ -52,8 +51,8 @@
   let sortBy = 'title'; // 'title', 'rarity', 'progress', 'investment_cost', 'created_at'
   let sortOrder = 'asc'; // 'asc' or 'desc'
   
-  // Project fact types for filtering
-  let projectFactTypes = [];
+  // Project card types for filtering
+  let projectCardTypes = [];
   
   // Admin check state
   let userIsAdmin = false;
@@ -71,9 +70,9 @@
         userIsAdmin = false;
       }
       
-      // If non-admin user was on entities tab, switch to facts tab
+      // If non-admin user was on entities tab, switch to cards tab
       if (!userIsAdmin && activeTab === 'entities') {
-        activeTab = 'facts';
+        activeTab = 'cards';
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -88,9 +87,9 @@
     };
   });
   
-  // Load project fact types when current project changes
+  // Load project card types when current project changes
   $: if (current?.id) {
-    loadProjectFactTypes();
+    loadProjectCardTypes();
   }
   
   // Update currentSearchTerm when search prop changes for highlighting
@@ -100,28 +99,28 @@
     currentSearchTerm = '';
   }
   
-  async function loadProjectFactTypes() {
+  async function loadProjectCardTypes() {
     if (!current?.id) return;
     
     try {
-      const response = await fetch(`/api/projects/${current.id}/fact-types`, {
+      const response = await fetch(`/api/projects/${current.id}/card-types`, {
         credentials: 'include'
       });
       const data = await response.json();
       
       if (response.ok) {
-        projectFactTypes = data.factTypes || [];
+        projectCardTypes = data.cardTypes || [];
       } else {
-        console.error('Failed to load fact types:', data.error);
-        projectFactTypes = getDefaultFactTypes();
+        console.error('Failed to load card types:', data.error);
+        projectCardTypes = getDefaultCardTypes();
       }
     } catch (error) {
-      console.error('Error loading fact types:', error);
-      projectFactTypes = getDefaultFactTypes();
+      console.error('Error loading card types:', error);
+      projectCardTypes = getDefaultCardTypes();
     }
   }
   
-  function getDefaultFactTypes() {
+  function getDefaultCardTypes() {
     return [
       { type_key: 'person', display_name: 'person', color_class: 'bg-blue-100 text-blue-700', sort_order: 1 },
       { type_key: 'place', display_name: 'place', color_class: 'bg-green-100 text-green-700', sort_order: 2 },
@@ -135,30 +134,30 @@
   function handleSearchHighlight(event) {
     const { result, searchTerm } = event.detail;
     
-    if (result.type === 'facts') {
-      highlightFact(result.id, searchTerm);
+    if (result.type === 'cards') {
+      highlightCard(result.id, searchTerm);
     } else if (result.type === 'docs') {
       highlightDoc(result.id, searchTerm);
     }
   }
   
-  function highlightFact(factId, searchTerm) {
-    highlightedFactId = factId;
+  function highlightCard(cardId, searchTerm) {
+    highlightedCardId = cardId;
     currentSearchTerm = searchTerm;
     
-    // Switch to facts tab if not already there
-    if (activeTab !== 'facts') {
-      activeTab = 'facts';
+    // Switch to cards tab if not already there
+    if (activeTab !== 'cards') {
+      activeTab = 'cards';
     }
     
-    // Scroll to the fact
+    // Scroll to the card
     setTimeout(() => {
-      const factElement = document.querySelector(`[data-fact-id="${factId}"]`);
-      if (factElement) {
-        factElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        factElement.classList.add('search-highlight-scroll');
+      const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+      if (cardElement) {
+        cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cardElement.classList.add('search-highlight-scroll');
         setTimeout(() => {
-          factElement.classList.remove('search-highlight-scroll');
+          cardElement.classList.remove('search-highlight-scroll');
         }, 3000);
       }
     }, 100);
@@ -186,15 +185,15 @@
     }, 100);
   }
   
-  // Helper function to get fact type display name
-  function getFactTypeDisplayName(type) {
-    const projectType = projectFactTypes.find(ft => ft.type_key === type);
+  // Helper function to get card type display name
+  function getCardTypeDisplayName(type) {
+    const projectType = projectCardTypes.find(ft => ft.type_key === type);
     return projectType ? projectType.display_name : type;
   }
   
   // Get all available tags for current tab
-  $: availableTags = activeTab === 'facts' 
-    ? [...new Set(facts.flatMap(card => card.tags || []))].sort()
+  $: availableTags = activeTab === 'cards' 
+    ? [...new Set(cards.flatMap(card => card.tags || []))].sort()
     : activeTab === 'docs'
     ? [...new Set(docs.flatMap(d => d.tags || []))].sort()
     : [];
@@ -207,8 +206,8 @@
         tag.toLowerCase().includes(searchTerm)
       );
       
-      // Also check fact types
-      const matchingTypes = projectFactTypes
+      // Also check card types
+      const matchingTypes = projectCardTypes
         .filter(ft => ft.display_name.toLowerCase().includes(searchTerm))
         .map(ft => ft.display_name);
       
@@ -220,11 +219,11 @@
     }
   }
   
-  // Filter facts/docs based on selected tags and search term
-  $: filteredFacts = facts.filter(card => {
+  // Filter cards/docs based on selected tags and search term
+  $: filteredCards = cards.filter(card => {
     // First apply search term filter
     const searchTerm = search.toLowerCase().trim();
-    const cardTypeDisplayName = getFactTypeDisplayName(card.type);
+    const cardTypeDisplayName = getCardTypeDisplayName(card.type);
     const matchesSearch = !searchTerm || 
       card.title.toLowerCase().includes(searchTerm) ||
       card.content.toLowerCase().includes(searchTerm) ||
@@ -248,8 +247,8 @@
     }
   });
   
-  // Sort the filtered facts when sortBy or sortOrder changes, but only when not loading
-  $: sortedFacts = loadingFacts ? filteredFacts : [...filteredFacts].sort((a, b) => {
+  // Sort the filtered cards when sortBy or sortOrder changes, but only when not loading
+  $: sortedCards = loadingCards ? filteredCards : [...filteredCards].sort((a, b) => {
     // Apply sorting
     let aValue, bValue;
     
@@ -351,38 +350,45 @@
     dispatch('brief-regenerate');
   }
 
-  // Facts manager events
-  function handleFactAdd(event) {
-    dispatch('fact-add', event.detail);
+  // Cards manager events
+  function handleCardAdd(event) {
+    dispatch('card-add', event.detail);
   }
 
-  function handleFactCancelAdd() {
-    dispatch('fact-cancel-add');
+  function handleCardCancelAdd() {
+    dispatch('card-cancel-add');
   }
 
-  function handleFactStartEdit(event) {
-    dispatch('fact-start-edit', event.detail);
+  function handleCardStartEdit(event) {
+    dispatch('card-start-edit', event.detail);
   }
 
-  function handleFactCancelEdit(event) {
-    dispatch('fact-cancel-edit', event.detail);
+  function handleCardCancelEdit(event) {
+    dispatch('card-cancel-edit', event.detail);
   }
 
-  function handleFactSaveEdit(event) {
-    dispatch('fact-save-edit', event.detail);
+  function handleCardSaveEdit(event) {
+    dispatch('card-save-edit', event.detail);
   }
 
-  function handleFactDelete(event) {
-    dispatch('fact-delete', event.detail);
+  function handleCardDelete(event) {
+    dispatch('card-delete', event.detail);
   }
 
-  function handleFactTogglePin(event) {
-    dispatch('fact-toggle-pin', event.detail);
+  function handleCardTogglePin(event) {
+    dispatch('card-toggle-pin', event.detail);
   }
 
-  // Card-specific event handlers
-  function handleFactEdit(event) {
-    dispatch('fact-edit', event.detail);
+  // Card-specific event handlers from CardsManager
+  function handleCardEdit(event) {
+    // This is a new, more generic edit handler from CardsManager
+    // It can replace handleCardStartEdit and handleCardSaveEdit in the future
+    // For now, let's just log it to see what data it provides
+    console.log('Generic card edit event received:', event.detail);
+    
+    // For now, we can just forward this to the existing start-edit handler
+    // as it's likely being used for opening the edit modal
+    dispatch('card-start-edit', event.detail);
   }
 
   function handleCardProgressChange(event) {
@@ -406,7 +412,7 @@
   }
 
   function handlePackComplete(event) {
-    // Reload facts to include the new pack cards
+    // Reload cards to include the new pack cards
     dispatch('reload-context');
   }
 
@@ -441,10 +447,10 @@
   
   // Bulk pin/unpin functions
   function bulkPinFiltered() {
-    if (activeTab === 'facts') {
-      filteredFacts.forEach(card => {
+    if (activeTab === 'cards') {
+      filteredCards.forEach(card => {
         if (!card.pinned) {
-          dispatch('fact-toggle-pin', card);
+          dispatch('card-toggle-pin', card);
         }
       });
     } else if (activeTab === 'docs') {
@@ -457,10 +463,10 @@
   }
   
   function bulkUnpinFiltered() {
-    if (activeTab === 'facts') {
-      filteredFacts.forEach(card => {
+    if (activeTab === 'cards') {
+      filteredCards.forEach(card => {
         if (card.pinned) {
-          dispatch('fact-toggle-pin', card);
+          dispatch('card-toggle-pin', card);
         }
       });
     } else if (activeTab === 'docs') {
@@ -472,11 +478,11 @@
     }
   }
   
-  // Export function to refresh fact types from parent component
-  export function refreshFactTypes() {
-    // Refresh fact types in the Binder
-    loadProjectFactTypes();
-    // Note: CardsManager doesn't need fact type refresh since it uses cards table
+  // Export function to refresh card types from parent component
+  export function refreshCardTypes() {
+    // Refresh card types in the Binder
+    loadProjectCardTypes();
+    // Note: CardsManager doesn't need card type refresh since it uses cards table
   }
 </script>
 
@@ -524,21 +530,21 @@
                 <button
                   on:click={bulkPinFiltered}
                   class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
-                  title="Pin all filtered {activeTab === 'facts' ? 'cards' : activeTab}"
+                  title="Pin all filtered {activeTab === 'cards' ? 'cards' : activeTab}"
                 >
-                  📌 Pin all ({activeTab === 'facts' ? filteredFacts.length : filteredDocs.length})
+                  📌 Pin all ({activeTab === 'cards' ? filteredCards.length : filteredDocs.length})
                 </button>
                 <button
                   on:click={bulkUnpinFiltered}
                   class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                  title="Unpin all filtered {activeTab === 'facts' ? 'cards' : activeTab}"
+                  title="Unpin all filtered {activeTab === 'cards' ? 'cards' : activeTab}"
                 >
-                  📍 Unpin all ({activeTab === 'facts' ? sortedFacts.filter(card => card.pinned).length : filteredDocs.filter(d => d.pinned).length})
+                  📍 Unpin all ({activeTab === 'cards' ? sortedCards.filter(card => card.pinned).length : filteredDocs.filter(d => d.pinned).length})
                 </button>
               </div>
               <span class="text-xs text-gray-500 dark:text-gray-400">
-                {activeTab === 'facts' 
-                  ? `${sortedFacts.filter(card => card.pinned).length} of ${sortedFacts.length} pinned`
+                {activeTab === 'cards' 
+                  ? `${sortedCards.filter(card => card.pinned).length} of ${sortedCards.length} pinned`
                   : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
                 }
               </span>
@@ -563,8 +569,8 @@
           </div>
         {/if}
         
-        <!-- Sorting Controls (only for facts/cards tab) -->
-        {#if activeTab === 'facts'}
+        <!-- Sorting Controls (only for cards/cards tab) -->
+        {#if activeTab === 'cards'}
           <div class="flex items-center gap-2 text-xs">
             <span class="text-gray-500 dark:text-gray-400 font-medium">Sort by:</span>
             <select 
@@ -597,13 +603,13 @@
         <button
           class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
           style="{
-            activeTab === 'facts' 
+            activeTab === 'cards' 
               ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
               : 'border-color: transparent; font-size: 15px;'
-          } {activeTab !== 'facts' ? 'color: #6b7280;' : ''}"
-          on:click={() => activeTab = 'facts'}
+          } {activeTab !== 'cards' ? 'color: #6b7280;' : ''}"
+          on:click={() => activeTab = 'cards'}
         >
-          Cards ({selectedTags.length > 0 ? filteredFacts.length : facts.length})
+          Cards ({selectedTags.length > 0 ? filteredCards.length : cards.length})
         </button>
         <button
           class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
@@ -649,20 +655,20 @@
             {current}
             on:regenerate={handleBriefRegenerate}
           />
-        {:else if activeTab === 'facts'}
+        {:else if activeTab === 'cards'}
           <CardsManager
-            bind:this={factsManagerComponent}
-            cards={sortedFacts}
-            loadingCards={loadingFacts}
+            bind:this={cardsManagerComponent}
+            cards={sortedCards}
+            loadingCards={loadingCards}
             worldId={current?.id}
             {user}
-            bind:showAddCardForm={showAddFactForm}
+            bind:showAddCardForm={showAddCardForm}
             searchTerm={currentSearchTerm}
-            cardsGridSize={userPreferences.facts_grid_size}
-            on:add={handleFactAdd}
-            on:edit={handleFactEdit}
-            on:delete={handleFactDelete}
-            on:toggle-pin={handleFactTogglePin}
+            cardsGridSize={userPreferences.cards_grid_size}
+            on:add={handleCardAdd}
+            on:edit={handleCardEdit}
+            on:delete={handleCardDelete}
+            on:toggle-pin={handleCardTogglePin}
             on:progress-change={handleCardProgressChange}
             on:rarity-change={handleCardRarityChange}
             on:split={handleCardSplit}
@@ -673,7 +679,7 @@
         {:else if activeTab === 'docs'}
           <DocsManager
             docs={filteredDocs}
-            loadingDocs={loadingFacts}
+            loadingDocs={loadingCards}
             projectId={current?.id}
             {user}
             bind:showAddDocForm
@@ -681,7 +687,7 @@
             bind:docContent
             bind:docTags
             searchTerm={currentSearchTerm}
-            factsGridSize={userPreferences.facts_grid_size}
+            cardsGridSize={userPreferences.cards_grid_size}
             on:add={handleDocAdd}
             on:cancel-add={handleDocCancelAdd}
             on:start-edit={handleDocStartEdit}
@@ -694,7 +700,7 @@
         {:else if activeTab === 'entities'}
           <EntityCards 
             projectId={current?.id}
-            facts={facts}
+            cards={cards}
             on:cards-generated={() => {
               // Optionally reload cards or do other updates when cards are generated
             }}

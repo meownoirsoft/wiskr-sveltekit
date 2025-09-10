@@ -6,12 +6,12 @@
   export let projectId;
   export let user = null; // User object with tier info
   
-  let factTypes = [];
+  let cardTypes = [];
   let loading = false;
   let saving = false;
   let showAddForm = false;
   let showActionMenu = null; // Track which action menu is open
-  let newFactType = { type_key: '', display_name: '', color_class: 'bg-blue-100 text-blue-700' };
+  let newCardType = { type_key: '', display_name: '', color_class: 'bg-blue-100 text-blue-700' };
   
   const colorOptions = [
     { class: 'bg-blue-100 text-blue-700', name: 'Blue' },
@@ -26,40 +26,40 @@
   ];
   
   onMount(() => {
-    loadFactTypes();
+    loadCardTypes();
   });
   
-  async function loadFactTypes() {
+  async function loadCardTypes() {
     if (!projectId) return;
     
     loading = true;
     try {
-      const response = await fetch(`/api/projects/${projectId}/fact-types`, {
+      const response = await fetch(`/api/projects/${projectId}/card-types`, {
         credentials: 'include'
       });
       const data = await response.json();
       
       if (response.ok) {
-        factTypes = data.factTypes || [];
-        // If no custom fact types exist, populate with defaults for editing
-        if (factTypes.length === 0) {
-          factTypes = getDefaultFactTypes();
-          console.log('No custom fact types found, populating with defaults for customization');
+        cardTypes = data.cardTypes || [];
+        // If no custom card types exist, populate with defaults for editing
+        if (cardTypes.length === 0) {
+          cardTypes = getDefaultCardTypes();
+          console.log('No custom card types found, populating with defaults for customization');
         }
       } else {
-        console.error('Failed to load fact types:', data.error);
+        console.error('Failed to load card types:', data.error);
         // Initialize with default types if API fails
-        factTypes = getDefaultFactTypes();
+        cardTypes = getDefaultCardTypes();
       }
     } catch (error) {
-      console.error('Error loading fact types:', error);
-      factTypes = getDefaultFactTypes();
+      console.error('Error loading card types:', error);
+      cardTypes = getDefaultCardTypes();
     } finally {
       loading = false;
     }
   }
   
-  function getDefaultFactTypes() {
+  function getDefaultCardTypes() {
     return [
       { type_key: 'person', display_name: 'person', color_class: 'bg-blue-100 text-blue-700', sort_order: 1 },
       { type_key: 'place', display_name: 'place', color_class: 'bg-green-100 text-green-700', sort_order: 2 },
@@ -69,91 +69,91 @@
     ];
   }
   
-  async function saveFactTypes() {
+  async function saveCardTypes() {
     if (!projectId) return;
     
     saving = true;
     try {
       // Update sort orders based on current array position
-      const updatedFactTypes = factTypes.map((ft, index) => ({
+      const updatedCardTypes = cardTypes.map((ft, index) => ({
         ...ft,
         sort_order: index + 1
       }));
       
-      const response = await fetch(`/api/projects/${projectId}/fact-types`, {
+      const response = await fetch(`/api/projects/${projectId}/card-types`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ factTypes: updatedFactTypes })
+        body: JSON.stringify({ cardTypes: updatedCardTypes })
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        factTypes = data.factTypes;
+        cardTypes = data.cardTypes;
         // Show success message (you could add a toast notification here)
-        console.log('Fact types saved successfully');
+        console.log('Card types saved successfully');
       } else {
-        console.error('Failed to save fact types:', data.error);
-        alert('Failed to save fact types: ' + data.error);
+        console.error('Failed to save card types:', data.error);
+        alert('Failed to save card types: ' + data.error);
       }
     } catch (error) {
-      console.error('Error saving fact types:', error);
-      alert('Error saving fact types');
+      console.error('Error saving card types:', error);
+      alert('Error saving card types');
     } finally {
       saving = false;
     }
   }
   
-  function addFactType() {
-    if (!newFactType.type_key.trim() || !newFactType.display_name.trim()) {
+  function addCardType() {
+    if (!newCardType.type_key.trim() || !newCardType.display_name.trim()) {
       alert('Please fill in both the key and display name');
       return;
     }
     
     // Check for duplicate keys
-    if (factTypes.some(ft => ft.type_key === newFactType.type_key.trim())) {
-      alert('A fact type with this key already exists');
+    if (cardTypes.some(ft => ft.type_key === newCardType.type_key.trim())) {
+      alert('A card type with this key already exists');
       return;
     }
     
-    const factType = {
-      type_key: newFactType.type_key.trim().toLowerCase().replace(/\s+/g, '_'),
-      display_name: newFactType.display_name.trim(),
-      color_class: newFactType.color_class,
-      sort_order: factTypes.length + 1
+    const cardType = {
+      type_key: newCardType.type_key.trim().toLowerCase().replace(/\s+/g, '_'),
+      display_name: newCardType.display_name.trim(),
+      color_class: newCardType.color_class,
+      sort_order: cardTypes.length + 1
     };
     
-    factTypes = [...factTypes, factType];
+    cardTypes = [...cardTypes, cardType];
     
     // Reset form
-    newFactType = { type_key: '', display_name: '', color_class: 'bg-blue-100 text-blue-700' };
+    newCardType = { type_key: '', display_name: '', color_class: 'bg-blue-100 text-blue-700' };
     showAddForm = false;
   }
   
-  function removeFactType(index) {
-    if (confirm('Are you sure you want to remove this fact type? This action cannot be undone.')) {
-      factTypes = factTypes.filter((_, i) => i !== index);
+  function removeCardType(index) {
+    if (confirm('Are you sure you want to remove this card type? This action cannot be undone.')) {
+      cardTypes = cardTypes.filter((_, i) => i !== index);
     }
   }
   
   function moveUp(index) {
     if (index > 0) {
-      const temp = factTypes[index];
-      factTypes[index] = factTypes[index - 1];
-      factTypes[index - 1] = temp;
-      factTypes = [...factTypes]; // Trigger reactivity
+      const temp = cardTypes[index];
+      cardTypes[index] = cardTypes[index - 1];
+      cardTypes[index - 1] = temp;
+      cardTypes = [...cardTypes]; // Trigger reactivity
     }
   }
   
   function moveDown(index) {
-    if (index < factTypes.length - 1) {
-      const temp = factTypes[index];
-      factTypes[index] = factTypes[index + 1];
-      factTypes[index + 1] = temp;
-      factTypes = [...factTypes]; // Trigger reactivity
+    if (index < cardTypes.length - 1) {
+      const temp = cardTypes[index];
+      cardTypes[index] = cardTypes[index + 1];
+      cardTypes[index + 1] = temp;
+      cardTypes = [...cardTypes]; // Trigger reactivity
     }
   }
   
@@ -172,7 +172,7 @@
     return colorMap[colorClass] || '#f3f4f6';
   }
   
-  // Hover handlers for the "Add Custom Fact Type" button
+  // Hover handlers for the "Add Custom Card Type" button
   function handleHover(event) {
     event.target.style.backgroundColor = 'var(--color-accent-light)';
   }
@@ -192,14 +192,14 @@
 <div class="space-y-3 min-h-[150px] md:min-h-[350px] w-full max-h-[60vh] overflow-y-auto" on:click={handleClickOutside}>
   {#if loading}
     <div class="text-center py-6">
-      <div class="text-gray-500">Loading fact types...</div>
+      <div class="text-gray-500">Loading card types...</div>
     </div>
   {:else}
     
 
-         <!-- Current Fact Types -->
+         <!-- Current Card Types -->
      <FeatureGate
-       featureKey="custom-fact-types"
+       featureKey="custom-card-types"
        {user}
        requiredTier={1}
        className="w-full"
@@ -207,7 +207,7 @@
      >
       <!-- Desktop: New layout -->
       <div class="hidden md:block space-y-3">
-        {#each factTypes as factType, index}
+        {#each cardTypes as cardType, index}
           <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
             <!-- Top row: Name input + Action buttons -->
             <div class="flex items-center gap-3 mb-3">
@@ -225,19 +225,19 @@
                 {#if hasAccess}
                   <input
                     type="text"
-                    bind:value={factType.display_name}
+                    bind:value={cardType.display_name}
                     class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
                     on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
                     on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
-                    placeholder="Fact type name"
+                    placeholder="Card type name"
                   />
                 {:else}
                   <input
                     type="text"
-                    value={factType.display_name}
+                    value={cardType.display_name}
                     disabled
                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
-                    placeholder="Fact type name"
+                    placeholder="Card type name"
                   />
                 {/if}
               </div>
@@ -256,7 +256,7 @@
                   </button>
                   <button
                     on:click={() => moveDown(index)}
-                    disabled={index === factTypes.length - 1}
+                    disabled={index === cardTypes.length - 1}
                     class="p-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                     title="Move down"
                   >
@@ -265,9 +265,9 @@
                   
                   <!-- Remove Button -->
                   <button
-                    on:click={() => removeFactType(index)}
+                    on:click={() => removeCardType(index)}
                     class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded cursor-pointer border border-red-200 dark:border-red-700"
-                    title="Remove fact type"
+                    title="Remove card type"
                   >
                     <Trash2 size="16" />
                   </button>
@@ -291,7 +291,7 @@
                   <button
                     disabled
                     class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50 rounded border border-gray-200 dark:border-gray-600"
-                    title="Remove fact type (Pro feature)"
+                    title="Remove card type (Pro feature)"
                   >
                     <Trash2 size="16" />
                   </button>
@@ -305,7 +305,7 @@
               <div>
                 {#if hasAccess}
                   <select
-                    bind:value={factType.color_class}
+                    bind:value={cardType.color_class}
                     class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
                     on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
                     on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
@@ -316,11 +316,11 @@
                   </select>
                 {:else}
                   <select
-                    value={factType.color_class}
+                    value={cardType.color_class}
                     disabled
                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
                   >
-                    <option value={factType.color_class}>{colorOptions.find(c => c.class === factType.color_class)?.name || 'Color'}</option>
+                    <option value={cardType.color_class}>{colorOptions.find(c => c.class === cardType.color_class)?.name || 'Color'}</option>
                   </select>
                 {/if}
               </div>
@@ -328,8 +328,8 @@
               <!-- Preview -->
               <div class="flex items-center gap-2">
                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preview</label>
-                <span class="text-sm px-3 py-2 rounded-full font-medium {factType.color_class}">
-                  {factType.display_name}
+                <span class="text-sm px-3 py-2 rounded-full font-medium {cardType.color_class}">
+                  {cardType.display_name}
                 </span>
               </div>
             </div>
@@ -339,7 +339,7 @@
 
                      <!-- Mobile: Same layout as desktop -->
         <div class="md:hidden space-y-3 w-full">
-          {#each factTypes as factType, index}
+          {#each cardTypes as cardType, index}
             <div class="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
              <!-- Top row: Name input + Action buttons -->
              <div class="flex items-center gap-3 mb-3">
@@ -357,19 +357,19 @@
                  {#if hasAccess}
                    <input
                      type="text"
-                     bind:value={factType.display_name}
+                     bind:value={cardType.display_name}
                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
                      on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
                      on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
-                     placeholder="Fact type name"
+                     placeholder="Card type name"
                    />
                  {:else}
                    <input
                      type="text"
-                     value={factType.display_name}
+                     value={cardType.display_name}
                      disabled
                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
-                     placeholder="Fact type name"
+                     placeholder="Card type name"
                    />
                  {/if}
                </div>
@@ -398,14 +398,14 @@
                          </button>
                          <button
                            on:click={(e) => { e.stopPropagation(); moveDown(index); showActionMenu = null; }}
-                           disabled={index === factTypes.length - 1}
+                           disabled={index === cardTypes.length - 1}
                            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                          >
                            ↓ Move Down
                          </button>
                          <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
                          <button
-                           on:click={(e) => { e.stopPropagation(); removeFactType(index); showActionMenu = null; }}
+                           on:click={(e) => { e.stopPropagation(); removeCardType(index); showActionMenu = null; }}
                            class="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2"
                          >
                            <Trash2 size="14" />
@@ -432,7 +432,7 @@
                <div class="ml-10">
                  {#if hasAccess}
                    <select
-                     bind:value={factType.color_class}
+                     bind:value={cardType.color_class}
                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" style="--tw-ring-color: var(--color-accent);" 
                      on:focus={() => {this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)';}} 
                      on:blur={() => {this.style.borderColor=''; this.style.boxShadow='';}}
@@ -443,11 +443,11 @@
                    </select>
                  {:else}
                    <select
-                     value={factType.color_class}
+                     value={cardType.color_class}
                      disabled
                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded cursor-not-allowed"
                    >
-                     <option value={factType.color_class}>{colorOptions.find(c => c.class === factType.color_class)?.name || 'Color'}</option>
+                     <option value={cardType.color_class}>{colorOptions.find(c => c.class === cardType.color_class)?.name || 'Color'}</option>
                    </select>
                  {/if}
                </div>
@@ -455,8 +455,8 @@
                <!-- Preview -->
                <div class="flex items-center gap-2">
                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preview</label>
-                 <span class="text-sm px-3 py-2 rounded-full font-medium {factType.color_class}">
-                   {factType.display_name}
+                 <span class="text-sm px-3 py-2 rounded-full font-medium {cardType.color_class}">
+                   {cardType.display_name}
                  </span>
                </div>
               </div>
@@ -465,10 +465,10 @@
        </div>
     </FeatureGate>
     
-    <!-- Add New Fact Type -->
+    <!-- Add New Card Type -->
     <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
       <FeatureGate
-        featureKey="custom-fact-types"
+        featureKey="custom-card-types"
         {user}
         requiredTier={1}
         let:hasAccess
@@ -482,18 +482,18 @@
             on:mouseleave={handleLeave}
           >
             <Plus size="16" />
-            Add Custom Fact Type
+            Add Custom Card Type
           </button>
         {:else if hasAccess && showAddForm}
           <div class="p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800">
-            <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Add New Fact Type</h3>
+            <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Add New Card Type</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-key">Type Key</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="card-type-key">Type Key</label>
                 <input
                   type="text"
-                  bind:value={newFactType.type_key}
+                  bind:value={newCardType.type_key}
                   class="w-full px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" 
                   style="--tw-ring-color: var(--color-accent);" 
                   on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
@@ -504,10 +504,10 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="fact-type-display-name">Display Name</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="card-type-display-name">Display Name</label>
                 <input
                   type="text"
-                  bind:value={newFactType.display_name}
+                  bind:value={newCardType.display_name}
                   class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded focus:outline-none focus:ring-2" 
                   style="--tw-ring-color: var(--color-accent);" 
                   on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
@@ -519,7 +519,7 @@
               
               <div>
                 <select
-                  bind:value={newFactType.color_class}
+                  bind:value={newCardType.color_class}
                   class="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2" 
                   style="--tw-ring-color: var(--color-accent);" 
                   on:focus={() => { this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 0 0 2px var(--color-accent-light)'; }} 
@@ -534,11 +534,11 @@
             
             <div class="flex items-center gap-2">
               <button
-                on:click={addFactType}
+                on:click={addCardType}
                 class="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
               >
                 <Save size="16" />
-                Add Fact Type
+                Add Card Type
               </button>
               
               <button
@@ -557,7 +557,7 @@
             class="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
           >
             <Plus size="16" />
-            Add Custom Fact Type
+            Add Custom Card Type
           </button>
         {/if}
       </FeatureGate>
@@ -566,7 +566,7 @@
     <!-- Save Button -->
     <div class="flex justify-end pt-3 border-t">
       <button
-        on:click={saveFactTypes}
+        on:click={saveCardTypes}
         disabled={saving}
         class="flex items-center gap-2 px-4 py-2 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed" 
         style="background-color: var(--color-accent);" 

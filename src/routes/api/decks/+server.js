@@ -21,7 +21,7 @@ export async function GET({ url, locals }) {
           *,
           deck_cards (
             *,
-            facts (*)
+            cards (*)
           )
         )
       `)
@@ -48,7 +48,7 @@ export async function GET({ url, locals }) {
           position: section.position,
           cards: section.deck_cards
             .sort((a, b) => a.position - b.position)
-            .map(deckCard => deckCard.facts)
+            .map(deckCard => deckCard.cards)
         }))
     }));
 

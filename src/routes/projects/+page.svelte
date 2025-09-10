@@ -147,7 +147,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     closeAllPanels();
     
     switch (panelType) {
-      case 'facts':
+      case 'cards':
         showLeftPanel = true;
         break;
       case 'questions':
@@ -178,10 +178,10 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     
     // Handle different result types
     switch (result.type) {
-      case 'facts':
-        // Scroll to facts panel and highlight the fact
+      case 'cards':
+        // Scroll to cards panel and highlight the card
         if (binderComponent) {
-          binderComponent.highlightFact(result.id, searchTerm);
+          binderComponent.highlightCard(result.id, searchTerm);
         }
         break;
         
@@ -260,12 +260,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let loadingQuestions = false;
 
   // Context state
-  let facts = [];
+  let cards = [];
   let docs = [];
-  let loadingFacts = false;
+  let loadingCards = false;
   
   // User preferences
-  let userPreferences = data?.userPreferences || { facts_grid_size: 3 };
+  let userPreferences = data?.userPreferences || { cards_grid_size: 3 };
   
   // Listen for user preferences updates from Account Settings
   onMount(() => {
@@ -280,12 +280,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     };
   });
 
-  // Add Fact form
-  let factType = 'character';
-  let factKey = '';
-  let factValue = '';
-  let factTags = '';
-  let showAddFactForm = false;
+  // Add Card form
+  let cardType = 'character';
+  let cardTitle = '';
+  let cardContent = '';
+  let cardTags = '';
+  let showAddCardForm = false;
 
   // Add Doc form
   let docTitle = '';
@@ -329,7 +329,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let isGeneratingIdeas = false;
   
   // Binder tab state
-  let activeTab = 'facts';
+  let activeTab = 'cards';
   
   // Session management state
   let sessions = [];
@@ -488,14 +488,20 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   }
 
   function handleDeckUpdated(event) {
+    console.log('--- handleDeckUpdated received ---');
     const updatedDeck = event.detail;
+    console.log('Updated deck data:', updatedDeck);
     currentDeck = updatedDeck;
 
     // also update the deck in the main decks list
     const index = decks.findIndex(d => d.id === updatedDeck.id);
+    console.log(`Deck found in main list at index: ${index}`);
     if (index !== -1) {
       decks[index] = updatedDeck;
       decks = [...decks]; // trigger reactivity
+      console.log('Main decks array updated.');
+    } else {
+      console.log('Deck NOT found in main list. State will be stale.');
     }
   }
 
@@ -1197,9 +1203,9 @@ function handleProjectDelete(event) {
   deleteProject(event.detail);
 }
 
-function handleFactAdd(event) {
+function handleCardAdd(event) {
   if (contextManager) {
-    contextManager.addFact();
+    contextManager.addCard();
   }
 }
 
@@ -1209,35 +1215,35 @@ function handleReloadContext(event) {
   }
 }
 
-function handleFactStartEdit(event) {
+function handleCardStartEdit(event) {
   if (contextManager) {
-    contextManager.startEditFact(event.detail.fact, event.detail.index);
+    contextManager.startEditCard(event.detail.card, event.detail.index);
   }
 }
 
-function handleFactCancelEdit(event) {
+function handleCardCancelEdit(event) {
   if (contextManager) {
-    contextManager.cancelEditFact(event.detail.fact, event.detail.index);
+    contextManager.cancelEditCard(event.detail.card, event.detail.index);
   }
 }
 
-function handleFactSaveEdit(event) {
+function handleCardSaveEdit(event) {
   if (contextManager) {
-    contextManager.saveFactEdit(event.detail.fact, event.detail.editData);
+    contextManager.saveCardEdit(event.detail.card, event.detail.editData);
   }
 }
 
-function handleFactDelete(event) {
+function handleCardDelete(event) {
   if (contextManager) {
     const card = event.detail.card;
     // Use the simpler delete function that finds the card internally
-    contextManager.deleteFactById(card.id);
+    contextManager.deleteCardById(card.id);
   }
 }
 
-function handleFactTogglePin(event) {
+function handleCardTogglePin(event) {
   if (contextManager) {
-    contextManager.toggleFactPin(event.detail);
+    contextManager.toggleCardPin(event.detail);
   }
 }
 
@@ -1334,8 +1340,8 @@ function handleProjectSettingsModalClose() {
   projectSettingsProject = null;
   
   // Refresh fact types in the Binder to ensure they are up-to-date
-  if (binderComponent && activeTab === 'facts') {
-    binderComponent.refreshFactTypes();
+  if (binderComponent && activeTab === 'cards') {
+    binderComponent.refreshCardTypes();
   }
 }
 
@@ -1433,7 +1439,7 @@ async function handleGenerateIdeas() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         projectId: current.id,
-        facts: facts.slice(0, 10), // Send first 10 facts for context
+        cards: cards.slice(0, 10), // Send first 10 cards for context
         docs: docs.slice(0, 5),    // Send first 5 docs for context
         recentMessages: messages.slice(-5), // Send last 5 messages for context
         likedIdeasCount: likedIdeasCount, // Send count of already liked ideas
@@ -1458,15 +1464,15 @@ async function handleGenerateIdeas() {
 }
 
 // Text selection handlers from ChatInterface
-function handleTextAddToFacts(event) {
+function handleTextAddToCards(event) {
   const text = event.detail.text;
-  // Auto-populate fact form with selected text
-  factKey = text.length > 50 ? text.substring(0, 50) + '...' : text;
-  factValue = text;
-  factType = 'note'; // Default type for selected text
-  showAddFactForm = true;
-  // Switch to facts tab and ensure left panel is visible
-  activeTab = 'facts';
+  // Auto-populate card form with selected text
+  cardTitle = text.length > 50 ? text.substring(0, 50) + '...' : text;
+  cardContent = text;
+  cardType = 'note'; // Default type for selected text
+  showAddCardForm = true;
+  // Switch to cards tab and ensure left panel is visible
+  activeTab = 'cards';
   showLeftPanel = true;
   // On mobile, close right panel if both are open
   if (!isDesktop && showRightPanel) {
@@ -1545,7 +1551,7 @@ function handleTextAddToDocs(event) {
   // Global search event handlers
   function handleSearchActivateTab(event) {
     const tabName = event.detail;
-    if (tabName === 'facts' || tabName === 'docs') {
+    if (tabName === 'cards' || tabName === 'docs') {
       activeTab = tabName;
       showLeftPanel = true;
       // On mobile, close right panel if both are open
@@ -1568,14 +1574,14 @@ function handleTextAddToDocs(event) {
     search = query;
     
     if (type === 'all') {
-      // Handle unified search - default to facts tab
-      activeTab = 'facts';
+      // Handle unified search - default to cards tab
+      activeTab = 'cards';
       showLeftPanel = true;
       if (!isDesktop && showRightPanel) {
         showRightPanel = false;
       }
-    } else if (type === 'facts') {
-      activeTab = 'facts';
+    } else if (type === 'cards') {
+      activeTab = 'cards';
       showLeftPanel = true;
       if (!isDesktop && showRightPanel) {
         showRightPanel = false;
@@ -1913,12 +1919,12 @@ function handleTextAddToDocs(event) {
 <div id="projects-page-layout" class="flex h-[calc(100vh-4rem)] relative overflow-hidden">
   
   <!-- LEFT PANEL: Binder or Deck View (Full Width) -->
-<div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-full' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left); {!isDesktop ? 'top: 4rem;' : ''}">
-    {#if showLeftPanel}
+<div id="left-panel" class="{showLeftPanel ? (isDesktop && !leftPanelCollapsed ? 'w-full' : isDesktop && leftPanelCollapsed ? 'w-0' : 'fixed inset-0 z-50 w-full') : (isDesktop ? 'w-0' : 'fixed inset-0 z-50 w-full')} {!isDesktop ? 'mobile-panel' : ''} {!isDesktop && showLeftPanel ? 'mobile-panel-enter' : ''} {!isDesktop && !showLeftPanel ? 'mobile-panel-exit' : ''} transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 panel-scrollbar safe-area-inset-bottom" style="background-color: var(--bg-panel-left);" style:top={!isDesktop ? '4rem' : ''}>
+  {#if showLeftPanel}
       {#if showDeckView && currentDeck}
         <DeckView
           deck={currentDeck}
-          cards={facts}
+          cards={cards}
           isOpen={showDeckView}
           projectId={current?.id}
           on:close-deck={closeDeck}
@@ -1928,9 +1934,9 @@ function handleTextAddToDocs(event) {
         <Binder
           bind:this={binderComponent}
           {current}
-          {facts}
+          {cards}
           {docs}
-          {loadingFacts}
+          loadingCards={loadingCards}
           {search}
           {isDesktop}
           user={data?.user}
@@ -1938,24 +1944,24 @@ function handleTextAddToDocs(event) {
           showCollapseButton={isDesktop}
           isCollapsed={leftPanelCollapsed}
           onToggleCollapse={toggleLeftPanelCollapse}
-          bind:showAddFactForm
-          bind:factType
-          bind:factKey
-          bind:factValue
-          bind:factTags
+          bind:showAddCardForm
+          bind:cardType
+          bind:cardTitle
+          bind:cardContent
+          bind:cardTags
           bind:showAddDocForm
           bind:docTitle
           bind:docContent
           bind:docTags
           bind:activeTab
           on:brief-regenerate={regenerateBrief}
-          on:fact-add={handleFactAdd}
-          on:fact-cancel-add={() => { contextManager?.clearFactForm(); }}
-          on:fact-start-edit={handleFactStartEdit}
-          on:fact-cancel-edit={handleFactCancelEdit}
-          on:fact-save-edit={handleFactSaveEdit}
-          on:fact-delete={handleFactDelete}
-          on:fact-toggle-pin={handleFactTogglePin}
+          on:card-add={handleCardAdd}
+          on:card-cancel-add={() => { contextManager?.clearCardForm(); }}
+          on:card-start-edit={handleCardStartEdit}
+          on:card-cancel-edit={handleCardCancelEdit}
+          on:card-save-edit={handleCardSaveEdit}
+          on:card-delete={handleCardDelete}
+          on:card-toggle-pin={handleCardTogglePin}
           on:doc-add={handleDocAdd}
           on:doc-cancel-add={() => { contextManager?.clearDocForm(); }}
           on:doc-start-edit={handleDocStartEdit}
@@ -2023,7 +2029,7 @@ function handleTextAddToDocs(event) {
       on:open-branch-modal={handleOpenBranchModal}
       on:branch-renamed={handleBranchRenamed}
       on:branch-deleted={handleBranchDeleted}
-      on:add-to-facts={handleTextAddToFacts}
+      on:add-to-cards={handleTextAddToCards}
       on:add-to-docs={handleTextAddToDocs}
       on:add-to-questions={handleTextAddToQuestions}
       on:format-text={handleFormatText}
@@ -2039,7 +2045,7 @@ function handleTextAddToDocs(event) {
         <button
           class="flex items-center text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
           on:click={toggleLeftPanelCollapse}
-          title={showDeckView ? "Close Deck View" : leftPanelCollapsed ? "Expand Facts & Docs" : "Collapse Facts & Docs"}
+          title={showDeckView ? "Close Deck View" : leftPanelCollapsed ? "Expand Cards & Docs" : "Collapse Cards & Docs"}
         >
           {#if showDeckView}
             <!-- X icon for closing deck view -->
@@ -2178,7 +2184,11 @@ function handleTextAddToDocs(event) {
           }
         }}
   >
-          <div id="mobile-hamburger-menu" class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" style="background-color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} !important; border: 2px solid {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'} !important; color: white !important;">
+          <div id="mobile-hamburger-menu" 
+          class="absolute top-16 right-2 sm:right-6 rounded-lg shadow-xl min-w-48 max-w-[90vw] py-2 z-[201]" 
+          style:background-color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#0f172a' : '#93c5fd'} 
+          style:border={`2px solid ${typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#60a5fa'}`} 
+          style:color="white">
       <!-- Usage Stats -->
       <button 
         type="button"
@@ -2324,7 +2334,7 @@ function handleTextAddToDocs(event) {
 {/if}
 
 <!-- Session Logic Manager (hidden component for session management) -->
-<SessionLogicManager 
+<!-- <SessionLogicManager 
   bind:this={sessionLogicManager}
   {current}
   bind:sessions
@@ -2334,20 +2344,20 @@ function handleTextAddToDocs(event) {
   bind:branches
   bind:loadingMessages
   bind:currentBranch
-/>
+/> -->
 
 <!-- Context Manager (hidden component for facts/docs management) -->
 <ContextManager
   bind:this={contextManager}
   {current}
-  bind:loadingFacts
-  bind:facts
+  bind:loadingCards
+  bind:cards
   bind:docs
-  bind:factType
-  bind:factKey
-  bind:factValue
-  bind:factTags
-  bind:showAddFactForm
+  bind:cardType
+  bind:cardTitle
+  bind:cardContent
+  bind:cardTags
+  bind:showAddCardForm
   bind:docTitle
   bind:docContent
   bind:docTags
@@ -2356,7 +2366,7 @@ function handleTextAddToDocs(event) {
 />
 
 <!-- Chat Manager (hidden component for chat/messages/questions management) -->
-<ChatManager 
+<!-- <ChatManager 
   bind:this={chatManager}
   {current}
   {currentSession}
@@ -2371,7 +2381,7 @@ function handleTextAddToDocs(event) {
   bind:goodQuestions
   bind:loadingQuestions
   on:usage-updated={() => loadUsage()}
-/>
+/> -->
 
 <!-- Modals -->
 <FormatModal

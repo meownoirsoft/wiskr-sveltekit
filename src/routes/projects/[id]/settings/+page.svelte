@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { Settings, Save, Plus, Trash2, GripVertical, ArrowLeft, Share2 } from 'lucide-svelte';
-  import FactTypesManager from '$lib/components/FactTypesManager.svelte';
+  import CardTypesManager from '$lib/components/CardTypesManager.svelte';
   import ProjectSharingSettings from '$lib/components/ProjectSharingSettings.svelte';
 
   export let data;
@@ -26,7 +26,7 @@
   
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
-    { id: 'fact-types', label: 'Fact Types', icon: Settings },
+    { id: 'card-types', label: 'Card Types', icon: Settings },
     { id: 'sharing', label: 'Sharing', icon: Share2 },
     // Future tabs can be added here
   ];
@@ -114,14 +114,14 @@
 
   <!-- Tab Content -->
   <div class="max-w-4xl">
-    {#if activeTab === 'fact-types'}
+    {#if activeTab === 'card-types'}
       <div class="bg-white rounded-lg shadow-sm border p-6">
         <div class="mb-6">
-          <h2 class="text-xl font-semibold text-gray-900 mb-2">Fact Types</h2>
-          <p class="text-gray-600">Customize the fact types available in your project. You can rename existing types, add new ones, and change their colors.</p>
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">Card Types</h2>
+          <p class="text-gray-600">Customize the card types available in your project. You can rename existing types, add new ones, and change their colors.</p>
         </div>
         
-        <FactTypesManager {projectId} {user} />
+        <CardTypesManager {projectId} {user} />
       </div>
     {:else if activeTab === 'general'}
       <div class="bg-white rounded-lg shadow-sm border p-6">

@@ -8,7 +8,7 @@ import { getUserTier } from '$lib/utils/tiers.js';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
-  const { projectId, facts = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [], tz = 'UTC' } = body;
+  const { projectId, cards = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [], tz = 'UTC' } = body;
 
   const { data: { user } } = await locals.supabase.auth.getUser();
   if (!user) return new Response('Unauthorized', { status: 401 });
@@ -48,11 +48,11 @@ export const POST = async ({ request, locals }) => {
   // Build context from project data
   const contextParts = [];
   
-  // Add facts to context
-  if (facts.length > 0) {
+  // Add cards to context
+  if (cards.length > 0) {
     contextParts.push(
-      `PROJECT FACTS:\n` + 
-      facts.map(f => `- [${f.type || 'note'}] ${f.key}: ${f.value}`).join('\n')
+      `PROJECT CARDS:\n` + 
+      cards.map(c => `- [${c.type || 'note'}] ${c.title}: ${c.content}`).join('\n')
     );
   }
   

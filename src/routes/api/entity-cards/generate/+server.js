@@ -1,6 +1,6 @@
 // API endpoint for generating entity card summaries
 import { json } from '@sveltejs/kit';
-import { detectEntities, mapEntitiesToFacts } from '$lib/server/services/entityDetection.js';
+import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
 
@@ -35,35 +35,35 @@ export async function POST({ request, locals }) {
       return json({ error: 'Project not found or access denied' }, { status: 404 });
     }
 
-    // Get all facts for this project
-    const { data: facts, error: factsError } = await locals.supabase
-      .from('facts')
+    // Get all cards for this project
+    const { data: cards, error: cardsError } = await locals.supabase
+      .from('cards')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
 
-    if (factsError) {
-      console.error('❌ EntityCards: Error fetching facts:', factsError);
-      return json({ error: 'Failed to fetch facts' }, { status: 500 });
+    if (cardsError) {
+      console.error('❌ EntityCards: Error fetching cards:', cardsError);
+      return json({ error: 'Failed to fetch cards' }, { status: 500 });
     }
 
-    if (!facts || facts.length === 0) {
-      console.log('⚠️ EntityCards: No facts found for project');
-      return json({ message: 'No facts to analyze', cardsGenerated: 0 });
+    if (!cards || cards.length === 0) {
+      console.log('⚠️ EntityCards: No cards found for project');
+      return json({ message: 'No cards to analyze', cardsGenerated: 0 });
     }
 
-    console.log('📋 EntityCards: Analyzing', facts.length, 'facts...');
+    console.log('📋 EntityCards: Analyzing', cards.length, 'cards...');
 
-    // Detect entities from facts
-    const detectedEntities = await detectEntities(facts);
+    // Detect entities from cards
+    const detectedEntities = await detectEntities(cards);
     
     if (detectedEntities.length === 0) {
       console.log('⚠️ EntityCards: No entities detected');
-      return json({ message: 'No entities detected in facts', cardsGenerated: 0 });
+      return json({ message: 'No entities detected in cards', cardsGenerated: 0 });
     }
 
-    // Map entities to facts
-    const entityCardsData = mapEntitiesToFacts(detectedEntities, facts, projectId);
+    // Map entities to cards
+    const entityCardsData = mapEntitiesToCards(detectedEntities, cards, projectId);
 
     console.log('🏗️ EntityCards: Creating', entityCardsData.length, 'entity cards...');
 
@@ -94,20 +94,20 @@ export async function POST({ request, locals }) {
         }
 
         // Generate summary for this entity
-        const relatedFactsText = entityData.relatedFacts
-          .map(rf => {
-            const fact = facts.find(f => f.id === rf.factId);
-            return fact ? `[${fact.type}] ${fact.key}: ${fact.value}` : '';
+        const relatedCardsText = entityData.relatedCards
+          .map(rc => {
+            const card = cards.find(c => c.id === rc.cardId);
+            return card ? `[${card.type || 'note'}] ${card.title}: ${card.content}` : '';
           })
           .filter(Boolean)
           .join('\n');
 
-        const summaryPrompt = `Create a concise, informative summary for this entity based on the related facts. 
+        const summaryPrompt = `Create a concise, informative summary for this entity based on the related cards. 
         
 Entity: ${entityData.entityName} (${entityData.entityType})
 
-Related Facts:
-${relatedFactsText}
+Related Cards:
+${relatedCardsText}
 
 Create a 2-3 sentence summary that:
 1. Introduces the entity clearly
@@ -164,10 +164,10 @@ Summary:`;
           entity_type: entityData.entityType,
           summary: summary,
           summary_tokens: summaryTokens,
-          fact_count: entityData.factCount,
+          card_count: entityData.cardCount,
           confidence_score: entityData.confidenceScore,
           embedding: embedding,
-          last_facts_check: new Date().toISOString()
+          last_cards_check: new Date().toISOString()
         };
 
         const { data: upsertedCard, error: upsertError } = await locals.supabase
@@ -184,25 +184,25 @@ Summary:`;
           continue;
         }
 
-        // Clear old entity-fact relationships and insert new ones
+        // Clear old entity-card relationships and insert new ones
         await locals.supabase
-          .from('entity_card_facts')
+          .from('entity_card_cards')
           .delete()
           .eq('entity_card_id', upsertedCard.id);
 
-        const factRelationships = entityData.relatedFacts.map(rf => ({
+        const cardRelationships = entityData.relatedCards.map(rc => ({
           entity_card_id: upsertedCard.id,
-          fact_id: rf.factId,
-          relevance_score: rf.relevanceScore
+          card_id: rc.cardId,
+          relevance_score: rc.relevanceScore
         }));
 
-        if (factRelationships.length > 0) {
+        if (cardRelationships.length > 0) {
           const { error: relationError } = await locals.supabase
-            .from('entity_card_facts')
-            .insert(factRelationships);
+            .from('entity_card_cards')
+            .insert(cardRelationships);
 
           if (relationError) {
-            console.error('❌ EntityCards: Error inserting fact relationships:', relationError);
+            console.error('❌ EntityCards: Error inserting card relationships:', relationError);
           }
         }
 
@@ -245,12 +245,12 @@ export async function GET({ url, locals }) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Get entity cards with fact counts
+    // Get entity cards with card counts
     const { data: cards, error } = await locals.supabase
       .from('entity_cards')
       .select(`
         *,
-        entity_card_facts(count)
+        entity_card_cards(count)
       `)
       .eq('project_id', projectId)
       .order('updated_at', { ascending: false });
@@ -260,10 +260,10 @@ export async function GET({ url, locals }) {
       return json({ error: 'Failed to fetch entity cards' }, { status: 500 });
     }
 
-    // Transform the response to include fact counts
+    // Transform the response to include card counts
     const transformedCards = cards?.map(card => ({
       ...card,
-      actual_fact_count: card.entity_card_facts?.[0]?.count || 0
+      actual_card_count: card.entity_card_cards?.[0]?.count || 0
     })) || [];
 
     return json({

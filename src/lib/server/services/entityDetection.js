@@ -7,34 +7,34 @@ import { OPENAI_API_KEY } from '$env/static/private';
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 /**
- * Analyze facts to detect entities that should become cards
- * @param {Array} facts - Array of fact objects with type, key, value
+ * Analyze cards to detect entities that should become cards
+ * @param {Array} cards - Array of card objects with type, title, content
  * @returns {Array} - Array of detected entities with metadata
  */
-export async function detectEntities(facts) {
-  if (!facts || facts.length === 0) {
+export async function detectEntities(cards) {
+  if (!cards || cards.length === 0) {
     return [];
   }
 
-  console.log('🔍 EntityDetection: Analyzing', facts.length, 'facts for entities...');
+  console.log('🔍 EntityDetection: Analyzing', cards.length, 'cards for entities...');
 
-  // Prepare facts for analysis
-  const factsText = facts.map(f => `[${f.type}] ${f.key}: ${f.value}`).join('\n');
+  // Prepare cards for analysis
+  const cardsText = cards.map(c => `[${c.type}] ${c.title}: ${c.content}`).join('\n');
 
-  const prompt = `Analyze these facts and identify distinct entities (characters, places, events, organizations, concepts) that appear across multiple facts or are significant enough to warrant their own summary card.
+  const prompt = `Analyze these cards and identify distinct entities (characters, places, events, organizations, concepts) that appear across multiple cards or are significant enough to warrant their own summary card.
 
-FACTS:
-${factsText}
+CARDS:
+${cardsText}
 
 For each entity you identify, provide:
 1. entity_name: The canonical name (e.g., "Sarah Connor", "New York City", "Battle of Hastings")
 2. entity_type: One of: character, place, event, organization, concept, object, other
 3. confidence: 0.0-1.0 score for how confident you are this is a distinct entity
-4. fact_indices: Array of fact indices (0-based) that relate to this entity
+4. card_indices: Array of card indices (0-based) that relate to this entity
 5. reasoning: Brief explanation of why this is an entity worth summarizing
 
 Return a JSON array of entities. Only include entities that:
-- Appear in multiple facts OR are inherently significant
+- Appear in multiple cards OR are inherently significant
 - Would benefit from a summary card
 - Are concrete enough to be useful
 
@@ -44,8 +44,8 @@ Example response:
     "entity_name": "Sarah Connor",
     "entity_type": "character", 
     "confidence": 0.95,
-    "fact_indices": [0, 3, 7],
-    "reasoning": "Main character mentioned in multiple facts about appearance, background, and relationships"
+    "card_indices": [0, 3, 7],
+    "reasoning": "Main character mentioned in multiple cards about appearance, background, and relationships"
   }
 ]`;
 
@@ -55,7 +55,7 @@ Example response:
       messages: [
         { 
           role: 'system', 
-          content: 'You are an expert at identifying entities from facts. Return only valid JSON arrays.' 
+          content: 'You are an expert at identifying entities from cards. Return only valid JSON arrays.' 
         },
         { role: 'user', content: prompt }
       ],
@@ -84,8 +84,8 @@ Example response:
       return entity.entity_name && 
              entity.entity_type && 
              entity.confidence >= 0.3 && // Minimum confidence threshold
-             Array.isArray(entity.fact_indices) &&
-             entity.fact_indices.length > 0;
+             Array.isArray(entity.card_indices) &&
+             entity.card_indices.length > 0;
     });
 
     console.log('✅ EntityDetection: Found', validEntities.length, 'valid entities');
@@ -104,26 +104,26 @@ Example response:
 }
 
 /**
- * Map detected entities to facts and prepare for database insertion
+ * Map detected entities to cards and prepare for database insertion
  * @param {Array} detectedEntities - Entities from detectEntities()
- * @param {Array} facts - Original facts array  
+ * @param {Array} cards - Original cards array  
  * @param {string} projectId - Project ID
  * @returns {Array} - Array of entity card data ready for database
  */
-export function mapEntitiesToFacts(detectedEntities, facts, projectId) {
+export function mapEntitiesToCards(detectedEntities, cards, projectId) {
   return detectedEntities.map(entity => {
-    // Get the facts that relate to this entity
-    const relatedFacts = entity.fact_indices.map(index => facts[index]).filter(Boolean);
+    // Get the cards that relate to this entity
+    const relatedCards = entity.card_indices.map(index => cards[index]).filter(Boolean);
     
     return {
       projectId,
       entityName: entity.entity_name,
       entityType: entity.entity_type,
       confidenceScore: entity.confidence,
-      factCount: relatedFacts.length,
-      relatedFacts: relatedFacts.map((fact, index) => ({
-        factId: fact.id,
-        relevanceScore: 1.0 - (index * 0.1) // First fact is most relevant, others slightly less
+      cardCount: relatedCards.length,
+      relatedCards: relatedCards.map((card, index) => ({
+        cardId: card.id,
+        relevanceScore: 1.0 - (index * 0.1) // First card is most relevant, others slightly less
       })),
       reasoning: entity.reasoning
     };
@@ -131,34 +131,34 @@ export function mapEntitiesToFacts(detectedEntities, facts, projectId) {
 }
 
 /**
- * Analyze a single new fact to see if it relates to existing entities
- * @param {Object} newFact - The new fact to analyze
+ * Analyze a single new card to see if it relates to existing entities
+ * @param {Object} newCard - The new card to analyze
  * @param {Array} existingEntities - Current entity cards
  * @returns {Array} - Array of entity matches with relevance scores
  */
-export async function matchFactToEntities(newFact, existingEntities) {
+export async function matchCardToEntities(newCard, existingEntities) {
   if (!existingEntities || existingEntities.length === 0) {
     return [];
   }
 
-  console.log('🔍 EntityDetection: Matching new fact to', existingEntities.length, 'existing entities');
+  console.log('🔍 EntityDetection: Matching new card to', existingEntities.length, 'existing entities');
 
-  const factText = `[${newFact.type}] ${newFact.key}: ${newFact.value}`;
+  const cardText = `[${newCard.type}] ${newCard.title}: ${newCard.content}`;
   const entitiesText = existingEntities.map(e => 
     `${e.entity_name} (${e.entity_type}): ${e.summary.substring(0, 200)}...`
   ).join('\n\n');
 
-  const prompt = `Analyze this new fact and determine which existing entities (if any) it relates to:
+  const prompt = `Analyze this new card and determine which existing entities (if any) it relates to:
 
-NEW FACT:
-${factText}
+NEW CARD:
+${cardText}
 
 EXISTING ENTITIES:
 ${entitiesText}
 
-For each entity this fact relates to, return:
+For each entity this card relates to, return:
 1. entity_name: Exact name from the existing entities
-2. relevance_score: 0.0-1.0 score for how relevant this fact is to the entity
+2. relevance_score: 0.0-1.0 score for how relevant this card is to the entity
 3. reasoning: Brief explanation of the relationship
 
 Only include entities with relevance_score >= 0.3.
@@ -168,7 +168,7 @@ Return JSON array:
   {
     "entity_name": "Sarah Connor",
     "relevance_score": 0.8,
-    "reasoning": "This fact provides new information about Sarah's background"
+    "reasoning": "This card provides new information about Sarah's background"
   }
 ]`;
 
@@ -178,7 +178,7 @@ Return JSON array:
       messages: [
         { 
           role: 'system', 
-          content: 'You analyze relationships between facts and entities. Return valid JSON arrays only.' 
+          content: 'You analyze relationships between cards and entities. Return valid JSON arrays only.' 
         },
         { role: 'user', content: prompt }
       ],
@@ -196,11 +196,11 @@ Return JSON array:
       existingEntities.some(e => e.entity_name === match.entity_name)
     );
 
-    console.log('✅ EntityDetection: Found', validMatches.length, 'entity matches for new fact');
+    console.log('✅ EntityDetection: Found', validMatches.length, 'entity matches for new card');
     return validMatches;
 
   } catch (error) {
-    console.error('❌ EntityDetection: Error matching fact to entities:', error.message);
+    console.error('❌ EntityDetection: Error matching card to entities:', error.message);
     return [];
   }
 }

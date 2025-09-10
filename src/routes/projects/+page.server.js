@@ -1,24 +1,40 @@
 // src/routes/projects/+page.server.js
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { isAdmin } from '$lib/auth/admin.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '$env/static/private';
 
 export const load = async ({ locals }) => {
-  // locals.supabase + locals.user should be set in your hooks.server.js (@supabase/ssr)
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  // Server-side validation of Supabase credentials
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('❌ Supabase environment variables are missing on the server.');
+    throw error(500, {
+      message: 'Server configuration error: Missing database credentials.',
+      hint: 'Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file.'
+    });
+  }
+  const { data, error: authError } = await locals.supabase.auth.getUser();
+  if (authError) {
+    console.error('Authentication error in projects page load:', authError);
+    throw error(500, {
+      message: 'Authentication error',
+      hint: 'There was a problem verifying your session. Please try logging in again.'
+    });
+  }
 
-  // Temporarily disabled for testing context menu fix
-  // if (!user) {
-  //   // Redirect to login if not authenticated
-  //   throw redirect(302, '/login');
-  // }
+  const { user } = data;
+  
+  if (!user) {
+    // Redirect to login if not authenticated
+    throw redirect(302, '/login');
+  }
 
-  const { data: projects, error } = await locals.supabase
+  const { data: projects, error: projectsError } = await locals.supabase
     .from('projects')
     .select('id, name, icon, color, brief_text, description, created_at')
     .order('created_at');
 
-  if (error) {
-    console.error('projects load error', error);
+  if (projectsError) {
+    console.error('projects load error', projectsError);
     return { projects: [] };
   }
 
@@ -147,7 +163,7 @@ export const load = async ({ locals }) => {
   const adminCheck = user ? await isAdmin(locals.supabase, user) : { isAdmin: false };
 
   // Load user preferences
-  let userPreferences = { facts_grid_size: 3 };
+  let userPreferences = { cards_grid_size: 3 };
   
   if (user) {
     const { data: prefs } = await locals.supabase
@@ -156,7 +172,7 @@ export const load = async ({ locals }) => {
       .eq('user_id', user.id)
       .single();
     
-    userPreferences = prefs || { facts_grid_size: 3 };
+    userPreferences = prefs || { cards_grid_size: 3 };
   }
 
   return { 
@@ -172,7 +188,7 @@ export const load = async ({ locals }) => {
       display_name: null,
       avatar_type: 'default',
       avatar_value: null,
-      facts_grid_size: 3
+      cards_grid_size: 3
     }
   };
 };
