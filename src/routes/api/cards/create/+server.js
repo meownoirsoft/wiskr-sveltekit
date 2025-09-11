@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
+import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -64,6 +65,11 @@ export async function POST({ request, locals }) {
         console.error('Error updating card with embedding:', updateError);
       }
     }
+
+    // Update world context in background (don't await to avoid blocking)
+    generateWorldContext(project_id).catch(error => {
+      console.error('Error updating world context:', error);
+    });
 
     return json({ card });
   } catch (error) {

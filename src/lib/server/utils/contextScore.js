@@ -131,11 +131,13 @@ export async function refreshContextScore(supabase, projectId) {
       return 0;
     }
 
-    // Get pinned facts and docs counts
-    const [{ data: pinnedFacts }, { data: entityCards }] = await Promise.all([
-      supabase.from('facts').select('id,value').eq('project_id', projectId).eq('pinned', true).limit(50),
-      supabase.from('entity_cards').select('id').eq('project_id', projectId).limit(15)
-    ]);
+    // Get pinned cards count
+    const { data: pinnedCards } = await supabase
+      .from('cards')
+      .select('id, title, content')
+      .eq('project_id', projectId)
+      .eq('pinned', true)
+      .limit(50);
 
     // Calculate total characters from project description and pinned content
     let totalCharacters = 0;
@@ -145,16 +147,16 @@ export async function refreshContextScore(supabase, projectId) {
     if (project.brief_text) {
       totalCharacters += project.brief_text.length;
     }
-    if (pinnedFacts?.length) {
-      totalCharacters += pinnedFacts.reduce((sum, fact) => sum + fact.value.length, 0);
+    if (pinnedCards?.length) {
+      totalCharacters += pinnedCards.reduce((sum, card) => sum + (card.title?.length || 0) + (card.content?.length || 0), 0);
     }
 
     // Calculate the score
     const score = calculateContextQualityScore({
       hasProjectDescription: !!project?.description?.trim(),
       projectDescription: project?.description || '',
-      pinnedFactsCount: pinnedFacts?.length || 0,
-      entityCardsCount: entityCards?.length || 0,
+      pinnedFactsCount: pinnedCards?.length || 0,
+      entityCardsCount: 0, // No longer using entity cards
       totalCharacters
     });
 

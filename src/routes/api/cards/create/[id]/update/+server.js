@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
+import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 
 export async function POST({ params, request, locals }) {
   try {
@@ -65,6 +66,13 @@ export async function POST({ params, request, locals }) {
           console.error('Error updating card with embedding:', embeddingError);
         }
       }
+    }
+
+    // Update world context in background if content changed
+    if (content !== undefined || title !== undefined) {
+      generateWorldContext(card.project_id).catch(error => {
+        console.error('Error updating world context:', error);
+      });
     }
 
     return json({ card });

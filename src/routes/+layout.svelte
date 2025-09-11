@@ -639,6 +639,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       <div class="flex-1 flex items-center gap-2 md:gap-4">
         <!-- Left section content will go here -->
       <!-- Left: Mobile Controls + Desktop Brand & Project Controls -->
+      
       <div class="flex items-center gap-1 -ml-4 md:ml-0">
         <!-- Mobile: Left-side controls (Facts & Projects) -->
         {#if isProjectsPage}
@@ -751,20 +752,24 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               }}
             />
             
+            <!-- Context Quality Indicator - Right after project selector -->
             {#if currentProject?.id}
               <ContextQualityIndicator 
                 score={contextQualityScore}
                 loading={loadingContextScore}
                 projectId={currentProject.id}
+                isMobile={!isDesktop}
+                {darkMode}
                 on:open-dashboard={() => { goto(`/context-dashboard?projectId=${currentProject.id}`); }}
                 on:open-settings={() => { window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject })); }}
-                on:navigate-facts={() => { window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'facts' })); }}
+                on:navigate-cards={() => { window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'cards' })); }}
                 on:generate-entities={() => {
                   window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'entities' }));
                   window.dispatchEvent(new CustomEvent('entities:generate', { detail: currentProject }));
                 }}
               />
             {/if}
+            
           </div>
         {/if}
       </div>
@@ -1083,6 +1088,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
               loading={loadingContextScore}
               projectId={currentProject.id}
               isMobile={!isDesktop}
+              {darkMode}
               on:open-dashboard={() => {
                 goto(`/context-dashboard?projectId=${currentProject.id}`);
                 showProjectMenu = false;
@@ -1091,8 +1097,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 window.dispatchEvent(new CustomEvent('project:open-settings', { detail: currentProject }));
                 showProjectMenu = false;
               }}
-              on:navigate-facts={() => {
-                window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'facts' }));
+              on:navigate-cards={() => {
+                window.dispatchEvent(new CustomEvent('binder:switch-tab', { detail: 'cards' }));
                 showProjectMenu = false;
               }}
               on:generate-entities={() => {

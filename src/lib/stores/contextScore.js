@@ -78,25 +78,25 @@ function setupEventListeners() {
   if (!browser) return;
   
   // Remove existing listeners to prevent duplicates
-  window.removeEventListener('fact:created', handleFactEvent);
-  window.removeEventListener('fact:updated', handleFactEvent);
-  window.removeEventListener('fact:pinned', handleFactEvent);
-  window.removeEventListener('fact:unpinned', handleFactEvent);
+  window.removeEventListener('card:created', handleCardEvent);
+  window.removeEventListener('card:updated', handleCardEvent);
+  window.removeEventListener('card:pinned', handleCardEvent);
+  window.removeEventListener('card:unpinned', handleCardEvent);
   window.removeEventListener('project:updated', handleProjectEvent);
   
   // Add new listeners
-  window.addEventListener('fact:created', handleFactEvent);
-  window.addEventListener('fact:updated', handleFactEvent);
-  window.addEventListener('fact:pinned', handleFactEvent);
-  window.addEventListener('fact:unpinned', handleFactEvent);
+  window.addEventListener('card:created', handleCardEvent);
+  window.addEventListener('card:updated', handleCardEvent);
+  window.addEventListener('card:pinned', handleCardEvent);
+  window.addEventListener('card:unpinned', handleCardEvent);
   window.addEventListener('project:updated', handleProjectEvent);
 }
 
 /**
- * Handle fact-related events that affect context score
+ * Handle card-related events that affect context score
  */
-function handleFactEvent(event) {
-  const { fact, projectId } = event.detail || {};
+function handleCardEvent(event) {
+  const { card, projectId } = event.detail || {};
   
   // Only refresh if this event is for our current project
   if (projectId && projectId === currentProjectId) {
@@ -140,10 +140,10 @@ function scheduleRefresh(projectId) {
 export function cleanupContextScoreTracking() {
   if (!browser) return;
   
-  window.removeEventListener('fact:created', handleFactEvent);
-  window.removeEventListener('fact:updated', handleFactEvent);
-  window.removeEventListener('fact:pinned', handleFactEvent);
-  window.removeEventListener('fact:unpinned', handleFactEvent);
+  window.removeEventListener('card:created', handleCardEvent);
+  window.removeEventListener('card:updated', handleCardEvent);
+  window.removeEventListener('card:pinned', handleCardEvent);
+  window.removeEventListener('card:unpinned', handleCardEvent);
   window.removeEventListener('project:updated', handleProjectEvent);
   
   if (refreshTimeout) {

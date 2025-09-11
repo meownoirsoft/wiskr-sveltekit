@@ -1,20 +1,21 @@
 <script>
-  import { createEventDispatcher, onDestroy } from 'svelte';
-  import { Info, TrendingUp, X, Pin, FileText, Users, ChevronDown } from 'lucide-svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { Info, TrendingUp, X, FileText, Users, ChevronDown, Brain, Sparkles } from 'lucide-svelte';
 
   export let score = 0;
   export let loading = false;
   export let projectId = null;
   export let isMobile = false;
+  export let darkMode = false;
 
   const dispatch = createEventDispatcher();
 
   let showTooltip = false;
-  let analysis = null;
-  let loadingAnalysis = false;
-  let lastAnalysisScore = null;
+  // Removed old analysis system
   let buttonElement;
   let portalContainer;
+  let worldContext = null;
+  let loadingWorldContext = false;
 
   $: scoreColor = getScoreColor(score);
   $: scoreLabel = getScoreLabel(score);
@@ -43,23 +44,53 @@
       }
     };
   }
-  
-  // Auto-load analysis for mobile immediately when score is available
-  $: if (isMobile && score && projectId && !analysis && !loadingAnalysis) {
-    loadAnalysis();
-  }
-  
-  // Clear analysis when score changes (indicates fresh data)
-  $: if (analysis && lastAnalysisScore !== score) {
-    const wasTooltipOpen = showTooltip;
-    analysis = null;
-    lastAnalysisScore = score;
+
+  async function loadWorldContext() {
+    if (!projectId) return;
     
-    // If tooltip is currently open OR mobile, refresh the analysis immediately
-    if (wasTooltipOpen || isMobile) {
-      loadAnalysis();
+    loadingWorldContext = true;
+    try {
+      const response = await fetch(`/api/projects/${projectId}/world-context?action=readiness`);
+      if (response.ok) {
+        worldContext = await response.json();
+      }
+    } catch (error) {
+      console.error('Failed to load world context:', error);
+    } finally {
+      loadingWorldContext = false;
     }
   }
+
+  async function generateWorldContext() {
+    if (!projectId) return;
+    
+    loadingWorldContext = true;
+    try {
+      const response = await fetch(`/api/projects/${projectId}/world-context`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        await loadWorldContext(); // Refresh status
+      }
+    } catch (error) {
+      console.error('Failed to generate world context:', error);
+    } finally {
+      loadingWorldContext = false;
+    }
+  }
+  
+  // Load world context when component mounts or projectId changes
+  onMount(() => {
+    if (projectId) {
+      loadWorldContext();
+    }
+  });
+
+  $: if (projectId && !worldContext && !loadingWorldContext) {
+    loadWorldContext();
+  }
+
+  // No longer using old analysis system - focusing on world context
 
   function getScoreColor(score) {
     if (score >= 80) return '#10b981'; // green
@@ -79,9 +110,10 @@
 
   async function toggleTooltip() {
     if (!showTooltip) {
-      // Always load fresh analysis when opening tooltip, regardless of cache
-      // This ensures suggestions are always up-to-date with the current score
-      await loadAnalysis();
+      // Load fresh world context when opening tooltip
+      if (projectId && !worldContext && !loadingWorldContext) {
+        await loadWorldContext();
+      }
       
       // Position tooltip below button
       if (buttonElement) {
@@ -93,67 +125,40 @@
     showTooltip = !showTooltip;
   }
 
-  async function loadAnalysis() {
-    if (!projectId) return;
-    
-    loadingAnalysis = true;
-    try {
-      const response = await fetch('/api/context/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          projectId,
-          userMessage: "Quick quality check" 
-        })
-      });
-      
-      if (response.ok) {
-        analysis = await response.json();
-        lastAnalysisScore = score; // Track the score this analysis corresponds to
-      }
-    } catch (error) {
-      console.error('Failed to load analysis:', error);
-    } finally {
-      loadingAnalysis = false;
-    }
-  }
+  // Removed old analysis system - now using world context
 
-  function getSuggestions(analysis) {
-    if (!analysis) return [];
-    
+  function getSuggestions() {
     const suggestions = [];
     
-    // Check if project description needs improvement (less than 30 points)
-    const descriptionScore = analysis.summary?.descriptionScore || 0;
-    if (descriptionScore < 30) {
-      if (descriptionScore === 0) {
+    // World context suggestions
+    if (worldContext && !worldContext.isReady) {
+      if (worldContext.missingRequirements?.needsMoreCards) {
         suggestions.push({
-          icon: FileText,
-          text: 'Add a project description',
-          points: '+30 points',
-          action: () => dispatch('open-settings')
+          icon: Users,
+          text: `Add ${worldContext.missingRequirements.cardsNeeded} more cards`,
+          points: 'Unlock AI context',
+          action: () => dispatch('navigate-cards')
         });
-      } else {
+      }
+      if (worldContext.missingRequirements?.needsDescription) {
         suggestions.push({
           icon: FileText,
-          text: 'Improve project description',
-          points: `+${30 - descriptionScore} points`,
+          text: 'Add project description',
+          points: 'Unlock AI context',
           action: () => dispatch('open-settings')
         });
       }
     }
 
-    const pinnedFactsCount = analysis.summary?.pinnedFactsCount || 0;
-    if (pinnedFactsCount < 5) {
-      const needed = Math.min(5 - pinnedFactsCount, 10);
+    // General quality suggestions based on score
+    if (score < 40) {
       suggestions.push({
-        icon: Pin,
-        text: `Pin ${needed} more critical facts`,
-        points: `+${needed * 4} points`,
-        action: () => dispatch('navigate-facts')
+        icon: FileText,
+        text: 'Add more content to improve quality',
+        points: 'Higher quality score',
+        action: () => dispatch('navigate-cards')
       });
     }
-
 
     return suggestions.slice(0, 3); // Show max 3 suggestions
   }
@@ -248,18 +253,78 @@
         {/if}
       </div>
       
-      <!-- Mobile inline suggestions -->
-      {#if !loading && (loadingAnalysis || analysis)}
+      <!-- World Context Status -->
+      {#if worldContext && !loadingWorldContext}
         <div class="border rounded-lg overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
-          {#if loadingAnalysis}
+          <div class="p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <Brain size="16" class={worldContext.isReady ? 'text-green-500' : 'text-yellow-500'} />
+              <span class="text-sm font-medium" style="color: var(--text-header);">
+                AI Context
+              </span>
+              <div class="px-2 py-1 rounded-full text-xs font-medium" 
+                   class:bg-green-100={worldContext.isReady} 
+                   class:text-green-800={worldContext.isReady}
+                   class:bg-yellow-100={!worldContext.isReady} 
+                   class:text-yellow-800={!worldContext.isReady}>
+                {worldContext.isReady ? 'Active' : 'Building'}
+              </div>
+            </div>
+            
+            <div class="space-y-1 text-xs" style="color: var(--text-header-secondary);">
+              <div class="flex items-center gap-2">
+                <Users size="12" class={worldContext.hasEnoughCards ? 'text-green-500' : 'text-gray-400'} />
+                <span>{worldContext.cardCount} cards</span>
+                {#if worldContext.missingRequirements?.needsMoreCards}
+                  <span class="text-yellow-600">(need {worldContext.missingRequirements.cardsNeeded} more)</span>
+                {/if}
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <FileText size="12" class={worldContext.hasDescription ? 'text-green-500' : 'text-gray-400'} />
+                <span>Project description</span>
+                {#if worldContext.missingRequirements?.needsDescription}
+                  <span class="text-yellow-600">(needed)</span>
+                {/if}
+              </div>
+            </div>
+
+            {#if !worldContext.isReady}
+              <button 
+                on:click={generateWorldContext}
+                disabled={loadingWorldContext}
+                class="w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                class:bg-yellow-100={!loadingWorldContext}
+                class:text-yellow-800={!loadingWorldContext}
+                class:bg-gray-100={loadingWorldContext}
+                class:text-gray-500={loadingWorldContext}
+                class:hover:bg-yellow-200={!loadingWorldContext}
+                class:disabled:cursor-not-allowed={loadingWorldContext}
+              >
+                {loadingWorldContext ? 'Generating...' : 'Generate Context'}
+              </button>
+            {:else}
+              <div class="flex items-center gap-1 mt-2 text-xs text-green-600">
+                <Sparkles size="12" />
+                <span>AI context is enhancing your experience!</span>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Mobile inline suggestions -->
+      {#if !loading && (loadingWorldContext || worldContext)}
+        <div class="border rounded-lg overflow-hidden" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
+          {#if loadingWorldContext}
             <div class="flex items-center gap-2 p-3 text-sm text-gray-500 dark:text-gray-400">
               <div class="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-              Loading suggestions...
+              Loading world context...
             </div>
-          {:else if analysis}
-            {#each getSuggestions(analysis) as suggestion, i}
+          {:else}
+            {#each getSuggestions() as suggestion, i}
               <button
-                class="w-full flex items-start gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {i < getSuggestions(analysis).length - 1 ? 'border-b' : ''}" 
+                class="w-full flex items-start gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left {i < getSuggestions().length - 1 ? 'border-b' : ''}" 
                 style="border-color: var(--border-header-input);"
                 on:click={suggestion.action}
               >
@@ -271,7 +336,7 @@
               </button>
             {/each}
             
-            {#if getSuggestions(analysis).length === 0}
+            {#if getSuggestions().length === 0}
               <div class="text-center py-4">
                 <div class="text-green-500 mb-2">🎉</div>
                 <p class="text-sm font-medium text-gray-900 dark:text-white">Great job!</p>
@@ -366,15 +431,73 @@
           </button>
         </div>
         
+        <!-- World Context Status -->
+        {#if worldContext && !loadingWorldContext}
+          <div class="px-4 py-3 border-b dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+              <Brain size="16" class={worldContext.isReady ? 'text-green-500' : 'text-yellow-500'} />
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
+                AI Context
+              </span>
+              <div class="px-2 py-1 rounded-full text-xs font-medium" 
+                   class:bg-green-100={worldContext.isReady} 
+                   class:text-green-800={worldContext.isReady}
+                   class:bg-yellow-100={!worldContext.isReady} 
+                   class:text-yellow-800={!worldContext.isReady}>
+                {worldContext.isReady ? 'Active' : 'Building'}
+              </div>
+            </div>
+            
+            <div class="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+              <div class="flex items-center gap-2">
+                <Users size="12" class={worldContext.hasEnoughCards ? 'text-green-500' : 'text-gray-400'} />
+                <span>{worldContext.cardCount} cards</span>
+                {#if worldContext.missingRequirements?.needsMoreCards}
+                  <span class="text-yellow-600">(need {worldContext.missingRequirements.cardsNeeded} more)</span>
+                {/if}
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <FileText size="12" class={worldContext.hasDescription ? 'text-green-500' : 'text-gray-400'} />
+                <span>Project description</span>
+                {#if worldContext.missingRequirements?.needsDescription}
+                  <span class="text-yellow-600">(needed)</span>
+                {/if}
+              </div>
+            </div>
+
+            {#if !worldContext.isReady}
+              <button 
+                on:click={generateWorldContext}
+                disabled={loadingWorldContext}
+                class="w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                class:bg-yellow-100={!loadingWorldContext}
+                class:text-yellow-800={!loadingWorldContext}
+                class:bg-gray-100={loadingWorldContext}
+                class:text-gray-500={loadingWorldContext}
+                class:hover:bg-yellow-200={!loadingWorldContext}
+                class:disabled:cursor-not-allowed={loadingWorldContext}
+              >
+                {loadingWorldContext ? 'Generating...' : 'Generate Context'}
+              </button>
+            {:else}
+              <div class="flex items-center gap-1 mt-2 text-xs text-green-600">
+                <Sparkles size="12" />
+                <span>AI context is enhancing your experience!</span>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
         <!-- Suggestions -->
         <div class="p-4">
-          {#if loadingAnalysis}
+          {#if loadingWorldContext}
             <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <div class="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-              Loading suggestions...
+              Loading world context...
             </div>
-          {:else if analysis}
-            {#each getSuggestions(analysis) as suggestion}
+          {:else}
+            {#each getSuggestions() as suggestion}
               <button
                 class="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                 on:click={suggestion.action}
@@ -387,7 +510,7 @@
               </button>
             {/each}
             
-            {#if getSuggestions(analysis).length === 0}
+            {#if getSuggestions().length === 0}
               <div class="text-center py-3">
                 <div class="text-green-500 mb-2">🎉</div>
                 <p class="text-sm font-medium text-gray-900 dark:text-white">Great job!</p>
