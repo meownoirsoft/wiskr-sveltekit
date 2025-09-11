@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 export async function POST({ params, request, locals }) {
   try {
     const { id } = params;
-    const { title, content, tags, rarity, progress, investment_cost, art_url, pinned } = await request.json();
+    const { title, content, tags, rarity, progress, mana_cost, art_url, pinned, generation_model, art_model } = await request.json();
     
     if (!id) {
       return json({ error: 'Missing card ID' }, { status: 400 });
@@ -22,9 +22,11 @@ export async function POST({ params, request, locals }) {
     if (tags !== undefined) updateData.tags = tags;
     if (rarity !== undefined) updateData.rarity = rarity;
     if (progress !== undefined) updateData.progress = progress;
-    if (investment_cost !== undefined) updateData.investment_cost = investment_cost;
+    if (mana_cost !== undefined) updateData.mana_cost = mana_cost;
     if (art_url !== undefined) updateData.art_url = art_url;
     if (pinned !== undefined) updateData.pinned = pinned;
+    if (generation_model !== undefined) updateData.generation_model = generation_model;
+    if (art_model !== undefined) updateData.art_model = art_model;
     
     // Add updated_at timestamp
     updateData.updated_at = new Date().toISOString();

@@ -65,7 +65,7 @@
           tags: ['location', 'magic', 'forest'],
           rarity: 'rare',
           progress: 3,
-          investment_cost: 4,
+          mana_cost: 4,
           art_url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop',
           pinned: false,
           created_at: new Date().toISOString(),
@@ -78,7 +78,7 @@
           tags: ['weapon', 'legendary', 'crystal'],
           rarity: 'legendary',
           progress: 2,
-          investment_cost: 6,
+          mana_cost: 6,
           art_url: 'https://picsum.photos/400/300?random=1',
           pinned: true,
           created_at: new Date(Date.now() - 86400000).toISOString(),
@@ -91,7 +91,7 @@
           tags: ['character', 'wise', 'ancient'],
           rarity: 'special',
           progress: 4,
-          investment_cost: 3,
+          mana_cost: 3,
           art_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
           pinned: false,
           created_at: new Date(Date.now() - 172800000).toISOString(),
@@ -117,11 +117,13 @@
         type: 'card', // All cards are of type 'card'
         rarity: card.rarity || 'common',
         progress: card.progress || 1,
-        investment_cost: card.investment_cost || 1,
+        mana_cost: card.mana_cost || 1,
         art_url: card.art_url,
         pinned: card.pinned || false,
         created_at: card.created_at,
-        project_id: card.project_id
+        project_id: card.project_id,
+        generation_model: card.generation_model || 'GPT-4o',
+        art_model: card.art_model || 'Midjourney'
       };
     });
     
@@ -191,7 +193,7 @@
             pinned: false,
             rarity: 'common',
             progress: 1,
-            investment_cost: 1
+            mana_cost: 1
           })
         });
         // Reload context after sync
@@ -222,7 +224,7 @@
           pinned: false,
           rarity: 'common',
           progress: 1,
-          investment_cost: 1
+          mana_cost: 1
         })
       }, {
         timeout: 15000,
@@ -280,6 +282,9 @@
   }
 
   export async function saveCardEdit(f, { type, title, content, tags }) {
+    // Increment mana cost by 1 for each edit
+    const newManaCost = (f.mana_cost || 0) + 1;
+    
     const res = await fetch(`/api/cards/create/${f.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -287,6 +292,7 @@
         title: title, 
         content: content,
         tags,
+        mana_cost: newManaCost,
         reembed: 'auto' // re-embed if text changed
       })
     });

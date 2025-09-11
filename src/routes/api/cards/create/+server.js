@@ -12,7 +12,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST({ request, locals }) {
   try {
-    const { project_id, title, content, tags, rarity, progress, investment_cost, art_url } = await request.json();
+    const { project_id, title, content, tags, rarity, progress, mana_cost, art_url, generation_model, art_model } = await request.json();
     
     if (!project_id || !title) {
       return json({ error: 'Missing required fields' }, { status: 400 });
@@ -35,8 +35,10 @@ export async function POST({ request, locals }) {
         tags: tags || [],
         rarity: rarity || 'common',
         progress: progress || 1,
-        investment_cost: investment_cost || 1,
-        art_url
+        mana_cost: mana_cost || 1,
+        art_url,
+        generation_model: generation_model || 'GPT-4o',
+        art_model: art_model || 'Midjourney'
       })
       .select('*')
       .single();

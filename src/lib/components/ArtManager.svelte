@@ -136,9 +136,9 @@
       const data = await response.json();
       generatedArtUrl = data.artUrl;
       
-      console.log('🔍 ArtManager dispatching art-selected for AI:', data.artUrl);
+      console.log('🔍 ArtManager dispatching art-selected for AI:', data.artUrl, 'model:', data.model);
       // Auto-apply the generated art
-      dispatch('art-selected', { artUrl: data.artUrl, source: 'ai' });
+      dispatch('art-selected', { artUrl: data.artUrl, source: 'ai', model: data.model });
       closeModal();
     } catch (error) {
       console.error('AI art generation failed:', error);

@@ -58,6 +58,7 @@
   export let user = null;
   export let searchTerm = '';
   export let cardsGridSize = 3;
+  export let userPreferences = { display_name: null }; // User preferences
   
   let projectCardTypes = [];
   let loadingCardTypes = false;
@@ -71,6 +72,9 @@
   let viewMode = 'binder'; // 'binder', 'timeline', 'clusters'
   let rarityFilter = 'all'; // 'all', 'common', 'special', 'rare', 'legendary'
   let progressFilter = 'all'; // 'all', 'raw', 'rough', 'crystal', 'cut', 'shimmer'
+  let pinFilter = 'all'; // 'all', 'pinned', 'unpinned'
+  let sortBy = 'title'; // 'title', 'rarity', 'progress', 'mana_cost', 'created_at'
+  let sortOrder = 'asc'; // 'asc' or 'desc'
   let updatingCards = new Set(); // Track cards currently being updated
 
   const dispatch = createEventDispatcher();
@@ -105,15 +109,66 @@
       (progressFilter === 'crystal' && card.progress === 3) ||
       (progressFilter === 'cut' && card.progress === 4) ||
       (progressFilter === 'shimmer' && card.progress === 5);
+    const matchesPin = pinFilter === 'all' || 
+      (pinFilter === 'pinned' && card.pinned) ||
+      (pinFilter === 'unpinned' && !card.pinned);
     
-    return matchesSearch && matchesRarity && matchesProgress;
+    return matchesSearch && matchesRarity && matchesProgress && matchesPin;
   });
 
-  // Sort cards by created_date DESC and group by day for timeline view
+  // Sort cards by pinned status first, then by selected sort criteria
   $: sortedCards = filteredCards.sort((a, b) => {
-    const dateA = new Date(a.created_date || a.created_at);
-    const dateB = new Date(b.created_date || b.created_at);
-    return dateB - dateA; // DESC order
+    // Pinned cards first
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    
+    // Then sort by selected criteria
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'rarity':
+        const rarityOrder = { 'common': 1, 'special': 2, 'rare': 3, 'legendary': 4 };
+        aValue = rarityOrder[a.rarity] || 0;
+        bValue = rarityOrder[b.rarity] || 0;
+        break;
+      case 'progress':
+        aValue = a.progress || 0;
+        bValue = b.progress || 0;
+        break;
+      case 'mana_cost':
+        aValue = a.mana_cost || 0;
+        bValue = b.mana_cost || 0;
+        break;
+      case 'created_at':
+      default:
+        aValue = new Date(a.created_date || a.created_at || 0);
+        bValue = new Date(b.created_date || b.created_at || 0);
+        break;
+    }
+    
+    if (sortBy === 'title') {
+      // String comparison
+      return sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    } else {
+      // Numeric/date comparison
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      
+      // If values are equal, sort by title as secondary sort
+      if (sortBy === 'created_at' && aValue.getTime() === bValue.getTime()) {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        return aTitle.localeCompare(bTitle);
+      }
+      
+      return 0;
+    }
   });
 
   // Group cards by day for timeline view
@@ -305,13 +360,13 @@
   }
 
   async function handleCardZoomGenerateArt(event) {
-    const { card, artUrl, source } = event.detail;
-    console.log('🔍 CardsManager received art update:', { cardId: card.id, artUrl, source });
+    const { card, artUrl, source, model } = event.detail;
+    console.log('🔍 CardsManager received art update:', { cardId: card.id, artUrl, source, model });
     
     // Optimistically update the cards array to keep UI in sync
     const updatedCards = cards.map(c => 
       c.id === card.id 
-        ? { ...c, art_url: artUrl }
+        ? { ...c, art_url: artUrl, ...(model && source === 'ai' ? { art_model: model } : {}) }
         : c
     );
     
@@ -320,7 +375,7 @@
     
     // Save art URL to database
     try {
-      console.log('🔍 CardsManager: Sending art URL to database:', { cardId: card.id, artUrl });
+      console.log('🔍 CardsManager: Sending art URL to database:', { cardId: card.id, artUrl, artModel: model });
       const response = await fetch('/api/cards/art', {
         method: 'POST',
         headers: {
@@ -328,7 +383,8 @@
         },
         body: JSON.stringify({
           cardId: card.id,
-          artUrl: artUrl
+          artUrl: artUrl,
+          artModel: model
         })
       });
       
@@ -517,10 +573,20 @@
   function clearFilters() {
     rarityFilter = 'all';
     progressFilter = 'all';
+    pinFilter = 'all';
   }
 
   function getRarityCount(rarity) {
     return cards.filter(card => card.rarity === rarity).length;
+  }
+
+  function getPinCount(pinStatus) {
+    if (pinStatus === 'pinned') {
+      return cards.filter(card => card.pinned).length;
+    } else if (pinStatus === 'unpinned') {
+      return cards.filter(card => !card.pinned).length;
+    }
+    return cards.length;
   }
 
   function getProgressCount(progress) {
@@ -533,8 +599,6 @@
   <div class="flex-shrink-0 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Cards</h2>
-        
         <!-- Filters inline -->
         <div class="flex items-center gap-4">
           <!-- Rarity Filter -->
@@ -568,8 +632,47 @@
             </select>
           </div>
 
+          <!-- Pin Filter -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Pin:</label>
+            <select 
+              bind:value={pinFilter}
+              class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="all">All ({getPinCount('all')})</option>
+              <option value="pinned">📌 Pinned ({getPinCount('pinned')})</option>
+              <option value="unpinned">📍 Unpinned ({getPinCount('unpinned')})</option>
+            </select>
+          </div>
+
+          <!-- Sort Controls -->
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Sort:</label>
+            <select 
+              bind:value={sortBy}
+              class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="created_at">Date Created</option>
+              <option value="title">Title</option>
+              <option value="rarity">Rarity</option>
+              <option value="progress">Progress</option>
+              <option value="mana_cost">Mana Cost</option>
+            </select>
+            <button
+              on:click={() => sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'}
+              class="flex items-center gap-1 px-2 py-1 text-sm bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              title={`Currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+            >
+              {#if sortOrder === 'asc'}
+                ↑ Asc
+              {:else}
+                ↓ Desc
+              {/if}
+            </button>
+          </div>
+
           <!-- Clear Filters -->
-          {#if rarityFilter !== 'all' || progressFilter !== 'all'}
+          {#if rarityFilter !== 'all' || progressFilter !== 'all' || pinFilter !== 'all'}
             <button
               class="text-sm text-blue-600 dark:text-blue-500 hover:underline"
               on:click={clearFilters}
@@ -757,11 +860,11 @@
         </div>
         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No cards found</h3>
         <p class="text-gray-600 dark:text-gray-400 mb-4">
-          {searchTerm || rarityFilter !== 'all' || progressFilter !== 'all' 
+          {searchTerm || rarityFilter !== 'all' || progressFilter !== 'all' || pinFilter !== 'all'
             ? 'Try adjusting your filters or search terms.' 
             : 'Create your first card to get started!'}
         </p>
-        {#if !searchTerm && rarityFilter === 'all' && progressFilter === 'all'}
+        {#if !searchTerm && rarityFilter === 'all' && progressFilter === 'all' && pinFilter === 'all'}
           <button
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105"
             style="background-color: var(--color-accent); color: var(--color-accent-text);"
@@ -807,6 +910,7 @@
 <CardZoomView 
   card={zoomedCard}
   bind:isOpen={showCardZoom}
+  userPreferences={userPreferences}
   on:close={closeCardZoom}
   on:save={handleCardZoomSave}
   on:delete={handleCardZoomDelete}

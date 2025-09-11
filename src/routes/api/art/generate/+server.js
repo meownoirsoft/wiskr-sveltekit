@@ -90,6 +90,7 @@ The art should be a pure illustration that represents the concept described in t
         artUrl: bunnyUrl,
         originalDallEUrl: dallEUrl,
         prompt: prompt,
+        model: 'DALL-E 3',
         success: true 
       });
       
@@ -99,6 +100,7 @@ The art should be a pure illustration that represents the concept described in t
       return json({ 
         artUrl: dallEUrl,
         prompt: prompt,
+        model: 'DALL-E 3',
         success: true,
         warning: 'Using temporary DALL-E URL - BunnyCDN upload failed'
       });

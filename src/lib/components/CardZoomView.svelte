@@ -1,12 +1,13 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, RotateCcw, Flag } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag } from 'lucide-svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
 
   export let card = null;
   export let isOpen = false;
+  export let userPreferences = { display_name: null };
 
   const dispatch = createEventDispatcher();
   
@@ -16,6 +17,38 @@
     if (typeof window === 'undefined') return false;
     return document.documentElement.classList.contains('dark') || 
            window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
+  function isUserUploadedArt(artUrl) {
+    if (!artUrl) return false;
+    // Check if it's a default art URL or AI-generated
+    return !artUrl.includes('/wiskr-art-default.webp') && 
+           !artUrl.includes('midjourney') && 
+           !artUrl.includes('dall-e') &&
+           !artUrl.includes('stable-diffusion') &&
+           !artUrl.includes('ai-art-') && // BunnyCDN AI art files
+           !artUrl.includes('openai.com'); // Direct DALL-E URLs
+  }
+
+  function getGenerationLabel() {
+    if (!editedCard?.generation_model || editedCard.generation_model === 'GPT-4o') {
+      return `idea: ${userPreferences.display_name || 'User'}`;
+    }
+    return `gen: ${editedCard.generation_model}`;
+  }
+
+  function getArtLabel() {
+    if (isUserUploadedArt(editedCard?.art_url)) {
+      return `art: ${userPreferences.display_name || 'User'}`;
+    }
+    // Use the stored art_model if available, otherwise fall back to default
+    return `art: ${editedCard?.art_model || 'Midjourney'}`;
   }
 
   // Progress levels (1-5 stars)
@@ -87,7 +120,7 @@
   // Reactive values
   $: rarity = getRarityConfig(editedCard?.rarity || card?.rarity || 'common');
   $: progress = getProgressInfo(editedCard?.progress || card?.progress || 1);
-  $: investmentCost = editedCard?.investment_cost || card?.investment_cost || 0;
+  $: manaCost = editedCard?.mana_cost || card?.mana_cost || 0;
   $: darkMode = isDarkMode();
   
   // Force reactivity when editedCard changes
@@ -136,8 +169,11 @@
       art_url: card.art_url || null,
       rarity: card.rarity || 'common',
       progress: card.progress || 1,
-      investment_cost: card.investment_cost || 0,
-      pinned: card.pinned || false
+      mana_cost: card.mana_cost || 0,
+      pinned: card.pinned || false,
+      generation_model: card.generation_model || 'GPT-4o',
+      art_model: card.art_model || 'Midjourney',
+      created_at: card.created_at || new Date().toISOString()
     };
 
     console.log('🔍 Final editedCard:', editedCard);
@@ -168,12 +204,16 @@
   function saveCard() {
     if (!editedCard) return;
 
+    // Increment mana cost by 1 for each edit
+    const newManaCost = (editedCard.mana_cost || 0) + 1;
+
     const updatedCard = {
       ...editedCard,
       title,
       content,
       tags: tags.filter(tag => tag.trim()),
-      art_url: artUrl.trim() || null
+      art_url: artUrl.trim() || null,
+      mana_cost: newManaCost
     };
 
     dispatch('save', { card: updatedCard });
@@ -248,24 +288,30 @@
   }
 
   function handleArtSelected(event) {
-    const { artUrl: newArtUrl, source } = event.detail;
-    console.log('🔍 Art selected:', { newArtUrl, source });
+    const { artUrl: newArtUrl, source, model } = event.detail;
+    console.log('🔍 Art selected:', { newArtUrl, source, model });
     
     artUrl = newArtUrl;
     if (editedCard) {
       editedCard.art_url = newArtUrl;
+      if (model && source === 'ai') {
+        editedCard.art_model = model;
+      }
     }
     showArtManager = false;
     
     // Update the original card object to keep everything in sync
     if (card) {
       card.art_url = newArtUrl;
+      if (model && source === 'ai') {
+        card.art_model = model;
+      }
     }
     
-    console.log('🔍 Updated artUrl:', artUrl, 'editedCard.art_url:', editedCard?.art_url);
+    console.log('🔍 Updated artUrl:', artUrl, 'editedCard.art_url:', editedCard?.art_url, 'art_model:', editedCard?.art_model);
     
     // Dispatch to parent with updated card
-    dispatch('generate-art', { card, artUrl: newArtUrl, source });
+    dispatch('generate-art', { card, artUrl: newArtUrl, source, model });
   }
 
   function closeArtManager() {
@@ -442,7 +488,7 @@
       >
 
         <!-- Header: Title -->
-        <div class="mb-4 px-4 {isEditing ? 'pt-2' : 'pt-4'}">
+        <div class="{isEditing ? 'mb-2' : 'mb-4'} px-4 {isEditing ? 'pt-2' : 'pt-4'}">
           {#if isEditing}
             <input
               bind:value={title}
@@ -463,12 +509,64 @@
           style="height: 256px;"
         >
           <!-- Mana Cost - Top Right -->
-          <div 
-            class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-            style:background-color={darkMode ? '#ffffff' : '#ffffff'} style:color={rarity.textColor}
-          >
-            <span>{investmentCost}</span>
-          </div>
+          {#if editedCard?.rarity === 'common'}
+            <!-- Common cards with green gem socket -->
+            <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+              <img 
+                src="/sockets/gem-socket-green.webp" 
+                alt="Mana socket" 
+                class="w-full h-full object-cover rounded-full"
+              />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-white font-bold text-xs">{manaCost}</span>
+              </div>
+            </div>
+          {:else if editedCard?.rarity === 'special'}
+            <!-- Special cards with blue gem socket -->
+            <div class="absolute -top-3 -right-2 z-10 w-10 h-13">
+              <img 
+                src="/sockets/gem-socket-blue.webp" 
+                alt="Mana socket" 
+                class="w-full h-full object-cover rounded-full"
+              />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-white font-bold text-xs">{manaCost}</span>
+              </div>
+            </div>
+          {:else if editedCard?.rarity === 'rare'}
+            <!-- Rare cards with purple gem socket -->
+            <div class="absolute -top-4 -right-3 z-10 w-14 h-14">
+              <img 
+                src="/sockets/gem-socket-purple.webp" 
+                alt="Mana socket" 
+                class="w-full h-full object-cover rounded-full"
+              />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-white font-bold text-xs">{manaCost}</span>
+              </div>
+            </div>
+          {:else if editedCard?.rarity === 'legendary'}
+            <!-- Legendary cards with orange gem socket -->
+            <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+              <img 
+                src="/sockets/gem-socket-orange.webp" 
+                alt="Mana socket" 
+                class="w-full h-full object-cover rounded-full"
+              />
+              <div class="absolute inset-0 flex items-center justify-center -mt-0.5">
+                <span class="text-white font-bold text-xs">{manaCost}</span>
+              </div>
+            </div>
+          {:else}
+            <!-- Other rarities with white background -->
+            <div 
+              class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+              style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
+              style:color={rarity.textColor}
+            >
+              <span>{manaCost}</span>
+            </div>
+          {/if}
 
           <!-- Art Image (always show default or custom art) -->
           <img 
@@ -505,7 +603,7 @@
             <div class="space-y-2">
               <div class="flex flex-wrap gap-1">
                 {#each tags as tag}
-                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded-full">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
                     {tag}
                     <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
                       ×
@@ -542,7 +640,7 @@
           {#if isEditing}
             <textarea
               bind:value={content}
-              class="w-full h-32 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
+              class="w-full h-40 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
               placeholder="Card content..."
             ></textarea>
           {:else}
@@ -636,96 +734,117 @@
           </div>
 
           <!-- Progress Stars -->
-          <div class="flex items-center gap-1">
-            {#each progressLevels as level}
-              <button
-                class="transition-colors hover:scale-110 cursor-pointer"
-                on:click={() => handleProgressClick(level.level)}
-                title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
-                style:color={editedCard.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')}
-              >
-                <Star size="16" class="fill-current" />
-              </button>
-            {/each}
+          <div class="flex flex-col items-center gap-1">
+            <!-- Stars -->
+            <div class="flex items-center gap-1">
+              {#each progressLevels as level}
+                <button
+                  class="transition-colors hover:scale-110 cursor-pointer"
+                  on:click={() => handleProgressClick(level.level)}
+                  title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
+                  style:color={editedCard.progress >= level.level ? '#ffffff' : (darkMode ? '#4b5563' : '#d1d5db')}
+                >
+                  <Star size="16" class="fill-current" />
+                </button>
+              {/each}
+            </div>
+            
+            <!-- Progress Level Label -->
+            <div class="text-xs font-medium uppercase" style:color={darkMode ? '#d1d5db' : '#374151'}>
+              {progressLevels.find(level => level.level === editedCard.progress)?.name || 'Raw'}
+            </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons flex items-center justify-between px-4 pb-4 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
-          <div class="flex items-center gap-2">
-            <button
-              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
-              on:click={togglePin}
-              title="{editedCard.pinned ? 'Unpin' : 'Pin'} card"
-              style:color={darkMode ? '#ffffff' : rarity.textColor}
-            >
-              {#if editedCard.pinned}
-                <Pin size="16" class="fill-current" />
-              {:else}
-                <PinOff size="16" />
-              {/if}
-            </button>
+        <!-- Action Buttons with Metadata -->
+        <div class="action-buttons flex items-center justify-between pl-4 pr-2 py-2 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
+          <!-- Metadata Section -->
+          <div class="flex items-center gap-6 text-xs" style:color={darkMode ? '#9ca3af' : '#6b7280'}>
+            <!-- Generation info -->
+            <div class="flex flex-col">
+              <div>{getGenerationLabel()}</div>
+              <div class="italic">{formatDate(editedCard.created_at)}</div>
+            </div>
+            
+            <!-- Art info -->
+            <div class="flex flex-col">
+              <div>{getArtLabel()}</div>
+              <div class="italic">{formatDate(editedCard.created_at)}</div>
+            </div>
           </div>
-          
-          <div class="flex items-center gap-2">
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1">
             {#if isEditing}
               <button
-                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={saveCard}
                 title="Save changes"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
-                <Save size="16" />
+                <Save size="20" />
               </button>
               <button
-                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={cancelEditing}
                 title="Cancel editing"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
-                <RotateCcw size="16" />
+                <XCircle size="20" />
               </button>
             {:else}
               <button
-                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={startEditing}
                 title="Edit card"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
-                <Pencil size="16" />
+                <Pencil size="20" />
               </button>
               <button
-                class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+                class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={deleteCard}
                 title="Delete card"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
-                <Trash size="16" />
+                <Trash size="20" />
               </button>
             {/if}
             <button
-              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleSplit}
               title="Split card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
-              <Split size="16" />
+              <Split size="20" />
             </button>
             <button
-              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleMerge}
               title="Merge cards"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
-              <Merge size="16" />
+              <Merge size="20" />
             </button>
             <button
-              class="p-2 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={togglePin}
+              title="Pin card"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
+            >
+              {#if editedCard.pinned}
+                <PinOff size="20" />
+              {:else}
+                <Pin size="20" class="fill-current" />
+              {/if}
+            </button>
+            <button
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={closeModal}
               title="Close card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
-              <X size="16" />
+              <X size="20" />
             </button>
           </div>
         </div>

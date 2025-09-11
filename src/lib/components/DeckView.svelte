@@ -10,6 +10,7 @@
   export let cards = [];
   export let isOpen = false;
   export let projectId = null;
+  export let userPreferences = { display_name: null }; // User preferences
 
 
   const dispatch = createEventDispatcher();
@@ -160,13 +161,17 @@
 
   async function handleCardZoomGenerateArt(event) {
     // Handle art generation from zoom view
-    const { card, artUrl } = event.detail;
+    const { card, artUrl, source, model } = event.detail;
     
     // Update the card in the sections
     sections = sections.map(section => ({
       ...section,
       cards: section.cards.map(c => 
-        c.id === card.id ? { ...c, art_url: artUrl } : c
+        c.id === card.id ? { 
+          ...c, 
+          art_url: artUrl,
+          ...(model && source === 'ai' ? { art_model: model } : {})
+        } : c
       )
     }));
     
@@ -179,7 +184,8 @@
         },
         body: JSON.stringify({
           cardId: card.id,
-          artUrl: artUrl
+          artUrl: artUrl,
+          artModel: model
         })
       });
       
@@ -1040,6 +1046,7 @@
       <CardZoomView
         bind:isOpen={showCardZoom}
         card={zoomedCard}
+        userPreferences={userPreferences}
         on:close={closeCardZoom}
         on:art-selected={handleCardZoomGenerateArt}
         on:rarity-updated={handleCardZoomUpdateRarity}

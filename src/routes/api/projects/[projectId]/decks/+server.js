@@ -29,7 +29,7 @@ export async function GET({ params }) {
               tags,
               rarity,
               progress,
-              investment_cost,
+              mana_cost,
               art_url
             )
           )
@@ -65,8 +65,11 @@ export async function GET({ params }) {
             tags: card.tags || [],
             rarity: card.rarity || 'common',
             progress: card.progress || 1,
-            investment_cost: card.investment_cost || 1,
-            art_url: card.art_url
+            mana_cost: card.mana_cost || 1,
+            art_url: card.art_url,
+            generation_model: card.generation_model || 'GPT-4o',
+            art_model: card.art_model || 'Midjourney',
+            created_at: card.created_at
           };
         }) || []
       })) || []

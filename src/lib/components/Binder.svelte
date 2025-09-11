@@ -48,7 +48,7 @@
   let tagFilterMode = 'AND'; // 'AND' or 'OR'
   
   // Sorting state
-  let sortBy = 'title'; // 'title', 'rarity', 'progress', 'investment_cost', 'created_at'
+  let sortBy = 'title'; // 'title', 'rarity', 'progress', 'mana_cost', 'created_at'
   let sortOrder = 'asc'; // 'asc' or 'desc'
   
   // Project card types for filtering
@@ -266,9 +266,9 @@
         aValue = a.progress || 0;
         bValue = b.progress || 0;
         break;
-      case 'investment_cost':
-        aValue = a.investment_cost || 0;
-        bValue = b.investment_cost || 0;
+      case 'mana_cost':
+        aValue = a.mana_cost || 0;
+        bValue = b.mana_cost || 0;
         break;
       case 'created_at':
       default:
@@ -573,33 +573,6 @@
           </div>
         {/if}
         
-        <!-- Sorting Controls (only for cards/cards tab) -->
-        {#if activeTab === 'cards'}
-          <div class="flex items-center gap-2 text-xs">
-            <span class="text-gray-500 dark:text-gray-400 font-medium">Sort by:</span>
-            <select 
-              bind:value={sortBy}
-              class="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="created_at">Date Created</option>
-              <option value="title">Title</option>
-              <option value="rarity">Rarity</option>
-              <option value="progress">Progress</option>
-              <option value="investment_cost">Investment Cost</option>
-            </select>
-            <button
-              on:click={() => sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'}
-              class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
-              title={`Currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
-            >
-              {#if sortOrder === 'asc'}
-                ↑ Asc
-              {:else}
-                ↓ Desc
-              {/if}
-            </button>
-          </div>
-        {/if}
       </div>
       
       <!-- Tab Headers - Hidden for Cards UI -->
@@ -666,6 +639,7 @@
             loadingCards={loadingCards}
             worldId={current?.id}
             {user}
+            {userPreferences}
             bind:showAddCardForm={showAddCardForm}
             searchTerm={currentSearchTerm}
             cardsGridSize={userPreferences.cards_grid_size}

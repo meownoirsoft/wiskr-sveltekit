@@ -348,7 +348,7 @@ async function assignRarities(ideas, worldId, userId, context) {
       ...cleanIdea,
       rarity,
       progress: 1, // All new cards start as Raw (1 star)
-      investment_cost: 0,
+      mana_cost: 0,
       pinned: false,
       created_at: new Date().toISOString()
     });
@@ -488,7 +488,7 @@ async function savePackCards(packCards, worldId, userId) {
     tags: card.tags,
     rarity: card.rarity,
     progress: card.progress,
-    investment_cost: card.investment_cost,
+    mana_cost: card.mana_cost,
     art_url: card.art_url,
     pinned: card.pinned,
     created_at: card.created_at
@@ -536,7 +536,7 @@ function createFallbackCard() {
     type: 'other',
     rarity: 'common',
     progress: 1,
-    investment_cost: 0,
+    mana_cost: 0,
     pinned: false,
     created_at: new Date().toISOString()
   };

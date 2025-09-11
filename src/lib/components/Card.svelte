@@ -213,8 +213,8 @@
     dispatch('remove', { card });
   }
 
-  // Investment cost (mana system) - tracks user engagement
-  $: investmentCost = card?.investment_cost || 0;
+  // Mana cost - tracks user engagement
+  $: manaCost = card?.mana_cost || 0;
   $: rarity = getRarityConfig(card?.rarity || 'common');
   $: progress = getProgressInfo(card?.progress || 1);
   let darkMode = false;
@@ -310,18 +310,79 @@
 
     <!-- Art Area -->
     <div 
-      class="art-area relative mb-3 rounded-md flex items-center justify-center" 
+      class="art-area relative mb-1 rounded-md flex items-center justify-center" 
       style="height: 120px;"
     >
+      <!-- Pin Indicator - Top Left -->
+      {#if card?.pinned}
+        <div
+          class="pin-indicator absolute -top-1 left-0 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+          style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
+          style:color={rarity.textColor}
+        >
+          <Pin size="12" class="fill-current" />
+        </div>
+      {/if}
+
       <!-- Mana Cost - Top Corner -->
-      <div
-        id="mana-cost" 
-        class="absolute -top-1 right-0 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
-        style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
-        style:color={rarity.textColor}
-      >
-        <span>{investmentCost}</span>
-      </div>
+      {#if card?.rarity === 'common'}
+        <!-- Common cards with green gem socket -->
+        <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+          <img 
+            src="/sockets/gem-socket-green.webp" 
+            alt="Mana socket" 
+            class="w-full h-full object-cover rounded-full"
+          />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-white font-bold text-xs">{manaCost}</span>
+          </div>
+        </div>
+      {:else if card?.rarity === 'special'}
+        <!-- Special cards with blue gem socket -->
+        <div class="absolute -top-3 -right-2 z-10 w-10 h-13">
+          <img 
+            src="/sockets/gem-socket-blue.webp" 
+            alt="Mana socket" 
+            class="w-full h-full object-cover rounded-full"
+          />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-white font-bold text-xs">{manaCost}</span>
+          </div>
+        </div>
+      {:else if card?.rarity === 'rare'}
+        <!-- Rare cards with purple gem socket -->
+        <div class="absolute -top-3 -right-2 z-10 w-14 h-14">
+          <img 
+            src="/sockets/gem-socket-purple.webp" 
+            alt="Mana socket" 
+            class="w-full h-full object-cover rounded-full"
+          />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-white font-bold text-xs">{manaCost}</span>
+          </div>
+        </div>
+      {:else if card?.rarity === 'legendary'}
+        <!-- Legendary cards with orange gem socket -->
+        <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+          <img 
+            src="/sockets/gem-socket-orange.webp" 
+            alt="Mana socket" 
+            class="w-full h-full object-cover rounded-full"
+          />
+          <div class="absolute inset-0 flex items-center justify-center -mt-0.5">
+            <span class="text-white font-bold text-xs">{manaCost}</span>
+          </div>
+        </div>
+      {:else}
+        <!-- Other rarities with white background -->
+        <div
+          class="mana-cost absolute -top-1 right-0 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+          style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
+          style:color={rarity.textColor}
+        >
+          <span>{manaCost}</span>
+        </div>
+      {/if}
 
       {#if card?.art_url}
         <img 
@@ -344,7 +405,7 @@
 
     <!-- Tags -->
     {#if card?.tags && card.tags.length > 0}
-      <div class="flex flex-wrap gap-1 mb-3">
+      <div class="flex flex-wrap gap-1 mb-1">
         {#each card.tags.slice(0, 3) as tag}
           <span 
             class="text-xs px-1.5 py-0.5 rounded-md"
@@ -371,7 +432,7 @@
       class="content-area flex-1 mb-3 text-sm leading-tight overflow-hidden"
       style:color={darkMode ? '#d1d5db' : '#374151'}
     >
-      <div class="line-clamp-4">
+      <div class="line-clamp-6">
         {@html highlightText(card?.content || 'No content', searchTerm)}
       </div>
     </div>
@@ -431,17 +492,25 @@
       <div class="flex-grow"></div>
 
       <!-- Progress Stars -->
-      <div class="flex items-center gap-1">
-        {#each progressLevels as level}
-          <button
-            class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
-            on:click={(e) => handleProgressClick(e, level.level)}
-            title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
-            style:color={card?.progress >= level.level ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af')}
-          >
-            <Star size="14" class="fill-current" />
-          </button>
-        {/each}
+      <div class="flex flex-col items-center gap-1">
+        <!-- Stars -->
+        <div class="flex items-center gap-1">
+          {#each progressLevels as level}
+            <button
+              class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
+              on:click={(e) => handleProgressClick(e, level.level)}
+              title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
+              style:color={card?.progress >= level.level ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af')}
+            >
+              <Star size="14" class="fill-current" />
+            </button>
+          {/each}
+        </div>
+        
+        <!-- Progress Level Label -->
+        <div class="text-xs font-medium uppercase" style:color={darkMode ? '#ffffff' : '#374151'}>
+          {progressLevels.find(level => level.level === card?.progress)?.name || 'Raw'}
+        </div>
       </div>
     </div>
 

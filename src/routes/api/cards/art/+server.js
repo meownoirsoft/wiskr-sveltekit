@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 
 export async function POST({ request, locals }) {
   try {
-    const { cardId, artUrl } = await request.json();
+    const { cardId, artUrl, artModel } = await request.json();
     
     console.log('🔍 Art API received:', { cardId, artUrl });
 
@@ -29,11 +29,14 @@ export async function POST({ request, locals }) {
     // Update the art URL directly in the cards table
     console.log('🔍 Updating art_url from', currentCard.art_url, 'to', artUrl);
     
+    const updateData = { art_url: artUrl };
+    if (artModel) {
+      updateData.art_model = artModel;
+    }
+
     const { data: updatedCard, error: updateError } = await locals.supabase
       .from('cards')
-      .update({
-        art_url: artUrl
-      })
+      .update(updateData)
       .eq('id', cardId)
       .select()
       .single();
