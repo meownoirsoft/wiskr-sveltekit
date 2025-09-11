@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
+import { updateCardChunks } from '$lib/server/utils/cardChunks.js';
 
 export async function POST({ params, request, locals }) {
   try {
@@ -66,6 +67,13 @@ export async function POST({ params, request, locals }) {
           console.error('Error updating card with embedding:', embeddingError);
         }
       }
+    }
+
+    // Update chunks for long cards in background if content changed
+    if (content && content.length > 2000) { // Roughly 500 tokens
+      updateCardChunks(id, content).catch(error => {
+        console.error('Error updating card chunks:', error);
+      });
     }
 
     // Update world context in background if content changed

@@ -4,6 +4,7 @@
   import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2 } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
+  import DeckContextIndicator from './DeckContextIndicator.svelte';
   import { v4 as uuidv4 } from 'uuid';
 
   export let deck = null;
@@ -723,6 +724,7 @@
         <div>
           <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">{cards.length} cards • {sections.length} sections</p>
+          <DeckContextIndicator deckId={deck.id} darkMode={true} />
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -870,6 +872,7 @@
               </button>
       
               <span class="text-sm text-gray-500 dark:text-gray-400">{section.cards.length} cards</span>
+              <DeckContextIndicator sectionId={section.id} darkMode={true} isMobile={false} />
               {#if sectionIndex > 0}
                 <button
                   class="p-1 text-gray-400 hover:text-red-500 transition-colors"

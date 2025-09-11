@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { generateDeckContext, generateSectionContext } from '$lib/server/utils/deckContext.js';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -41,6 +42,14 @@ export async function POST({ params, request }) {
       return json({ error: 'Failed to add card to deck' }, { status: 500 });
     }
 
+    // Generate context for deck and section in background
+    Promise.all([
+      generateDeckContext(deckId, supabase),
+      generateSectionContext(section_id, supabase)
+    ]).catch(error => {
+      console.error('Error generating context after card addition:', error);
+    });
+
     return json({ success: true, deckCard });
 
   } catch (error) {
@@ -69,6 +78,11 @@ export async function DELETE({ params, request }) {
       console.error('Error removing card from deck:', deleteError);
       return json({ error: 'Failed to remove card from deck' }, { status: 500 });
     }
+
+    // Generate context for deck in background after card removal
+    generateDeckContext(deckId, supabase).catch(error => {
+      console.error('Error generating context after card removal:', error);
+    });
 
     return json({ success: true });
 

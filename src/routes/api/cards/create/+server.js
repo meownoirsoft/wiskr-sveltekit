@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
+import { createCardChunks } from '$lib/server/utils/cardChunks.js';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -64,6 +65,13 @@ export async function POST({ request, locals }) {
       if (updateError) {
         console.error('Error updating card with embedding:', updateError);
       }
+    }
+
+    // Create chunks for long cards in background
+    if (content && content.length > 2000) { // Roughly 500 tokens
+      createCardChunks(card.id, content).catch(error => {
+        console.error('Error creating card chunks:', error);
+      });
     }
 
     // Update world context in background (don't await to avoid blocking)

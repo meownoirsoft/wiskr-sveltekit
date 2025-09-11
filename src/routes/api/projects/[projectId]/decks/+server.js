@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { generateDeckContext } from '$lib/server/utils/deckContext.js';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -130,6 +131,11 @@ export async function POST({ params, request }) {
       console.error('Error creating deck sections:', sectionsError);
       // Don't fail the request, just log the error
     }
+
+    // Generate context for the new deck in background
+    generateDeckContext(deck.id, supabase).catch(error => {
+      console.error('Error generating context for new deck:', error);
+    });
 
     return json({ 
       deck: {
