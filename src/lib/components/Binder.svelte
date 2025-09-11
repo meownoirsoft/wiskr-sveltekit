@@ -381,14 +381,18 @@
 
   // Card-specific event handlers from CardsManager
   function handleCardEdit(event) {
-    // This is a new, more generic edit handler from CardsManager
-    // It can replace handleCardStartEdit and handleCardSaveEdit in the future
-    // For now, let's just log it to see what data it provides
-    console.log('Generic card edit event received:', event.detail);
+    // This handles both edit modal opening and zoom view saves
+    const { card, updates } = event.detail;
     
-    // For now, we can just forward this to the existing start-edit handler
-    // as it's likely being used for opening the edit modal
-    dispatch('card-start-edit', event.detail);
+    if (updates) {
+      // This is a save event from zoom view - forward to save handler
+      console.log('Card save event received from zoom view:', event.detail);
+      dispatch('card-save-edit', { card, editData: updates });
+    } else {
+      // This is an edit modal opening event
+      console.log('Card edit modal event received:', event.detail);
+      dispatch('card-start-edit', event.detail);
+    }
   }
 
   function handleCardProgressChange(event) {

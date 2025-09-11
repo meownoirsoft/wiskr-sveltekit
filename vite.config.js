@@ -1,16 +1,16 @@
-import { sentrySvelteKit } from "@sentry/sveltekit";
-import tailwindcss from '@tailwindcss/vite';
+// import { sentrySvelteKit } from "@sentry/sveltekit";
+// import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
-	plugins: [sentrySvelteKit({
+	plugins: [/* sentrySvelteKit({
         sourceMapsUploadOptions: {
             org: "meow-noir-software",
             project: "javascript-sveltekit"
         }
-    }), tailwindcss(), sveltekit(),  visualizer({
+    }), */ sveltekit(),  visualizer({
 		filename: './stats.html', // or wherever you want
 		open: true,                    // auto-open in browser
 		gzipSize: true,

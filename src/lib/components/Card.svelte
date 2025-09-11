@@ -217,7 +217,47 @@
   $: investmentCost = card?.investment_cost || 0;
   $: rarity = getRarityConfig(card?.rarity || 'common');
   $: progress = getProgressInfo(card?.progress || 1);
-  $: darkMode = isDarkMode();
+  let darkMode = false;
+  
+  // Check dark mode once on mount and when needed
+  if (typeof window !== 'undefined') {
+    darkMode = isDarkMode();
+  }
+
+  // Title scrolling functionality
+  let titleElement;
+
+  function handleTitleHover() {
+    if (!titleElement || !titleElement.parentElement) return;
+    
+    try {
+      const container = titleElement.parentElement;
+      const titleWidth = titleElement.scrollWidth;
+      const containerWidth = container.clientWidth;
+      
+      // Only scroll if the title is actually wider than the container
+      if (titleWidth > containerWidth && titleWidth > 0 && containerWidth > 0) {
+        const scrollDistance = titleWidth - containerWidth;
+        
+        // Scroll to the left once and stop
+        titleElement.style.transform = `translateX(-${scrollDistance}px)`;
+      }
+    } catch (error) {
+      console.warn('Error in handleTitleHover:', error);
+    }
+  }
+
+  function handleTitleLeave() {
+    // Reset position to initial state
+    if (titleElement) {
+      try {
+        titleElement.style.transform = 'translateX(0px)';
+      } catch (error) {
+        console.warn('Error in handleTitleLeave:', error);
+      }
+    }
+  }
+
 </script>
 
 <div 
@@ -252,20 +292,31 @@
     
     <!-- Header: Title -->
     <div class="mb-2 -mt-2">
-      <h3 class="font-bold text-sm leading-tight truncate" style:color={darkMode ? '#f9fafb' : '#111827'}>
-        {@html highlightText(card?.title || card?.key || 'Untitled Card', searchTerm)}
-      </h3>
+      <div 
+        class="title-container relative overflow-hidden"
+        style="max-width: 100%;"
+        on:mouseenter={handleTitleHover}
+        on:mouseleave={handleTitleLeave}
+      >
+        <h3 
+          class="font-bold text-sm leading-tight whitespace-nowrap transition-transform duration-1000 ease-in-out" 
+          style:color={darkMode ? '#f9fafb' : '#111827'}
+          bind:this={titleElement}
+        >
+          {@html highlightText(card?.title || card?.key || 'Untitled Card', searchTerm)}
+        </h3>
+      </div>
     </div>
 
     <!-- Art Area -->
     <div 
       class="art-area relative mb-3 rounded-md flex items-center justify-center" 
-      style="height: 80px;" 
-      style:background-color={darkMode ? '#4b5563' : '#f3f4f6'}
+      style="height: 120px;"
     >
       <!-- Mana Cost - Top Corner -->
-      <div 
-        class="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+      <div
+        id="mana-cost" 
+        class="absolute -top-1 right-0 z-10 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
         style:background-color={darkMode ? '#ffffff' : '#ffffff'} 
         style:color={rarity.textColor}
       >
@@ -273,15 +324,21 @@
       </div>
 
       {#if card?.art_url}
-        <img src={card.art_url} alt="Card art" class="w-full h-full object-cover" draggable="false" />
+        <img 
+          src={card.art_url} 
+          alt="Card art" 
+          class="object-cover rounded-md" 
+          style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+          draggable="false" 
+        />
       {:else}
-        <div class="w-full h-full flex flex-col items-center justify-center" style:background="linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%)">
-          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2" style:background-color={darkMode ? '#6b7280' : '#9ca3af'}>
-            <div class="text-white text-xl">🎨</div>
-          </div>
-          <div class="text-xs font-medium" style:color={darkMode ? '#9ca3af' : '#6b7280'}>No Art</div>
-          <div class="text-xs" style:color={darkMode ? '#6b7280' : '#9ca3af'}>Click to add</div>
-        </div>
+        <img 
+          src="/wiskr-art-default.webp" 
+          alt="Default card art" 
+          class="object-cover rounded-md" 
+          style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+          draggable="false" 
+        />
       {/if}
     </div>
 
@@ -333,9 +390,9 @@
     <!-- Bottom Bar: Rarity and Progress -->
     <div class="bottom-bar flex items-center flex-wrap gap-y-1">
       <!-- Rarity -->
-      <div class="flex items-center">
+      <div class="flex items-center gap-0">
         <!-- Left Arrow (Upgrade) -->
-        <div class="w-6 flex justify-center">
+        <div class="flex justify-start" class:w-6={(card?.rarity || 'common') !== 'legendary'}>
           {#if (card?.rarity || 'common') !== 'legendary'}
             <button 
               class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
@@ -380,7 +437,7 @@
             class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
             on:click={(e) => handleProgressClick(e, level.level)}
             title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
-            style:color={card?.progress >= level.level ? level.color : (darkMode ? '#4b5563' : '#d1d5db')}
+            style:color={card?.progress >= level.level ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af')}
           >
             <Star size="14" class="fill-current" />
           </button>

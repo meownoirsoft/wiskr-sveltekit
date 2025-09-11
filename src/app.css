@@ -1,8 +1,6 @@
-@import "tailwindcss";
-
-@variant dark (.dark &);
-
-@config "../tailwind.config.js";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* Light theme */

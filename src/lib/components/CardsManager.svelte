@@ -9,6 +9,48 @@
   import PackOpener from './PackOpener.svelte';
   import LoadingSpinner from './LoadingSpinner.svelte';
 
+  // Rarity configurations with explicit colors (matching Card.svelte)
+  const rarityConfig = {
+    common: {
+      borderColor: '#14b8a6', // teal-500
+      bgColor: '#f0fdfa', // teal-50
+      bgColorDark: '#064e3b', // dark green
+      textColor: '#0f766e', // teal-700
+      textColorDark: '#6ee7b7' // bright green
+    },
+    special: {
+      borderColor: '#3b82f6', // blue-500
+      bgColor: '#eff6ff', // blue-50
+      bgColorDark: '#1e3a8a', // blue-800
+      textColor: '#1d4ed8', // blue-700
+      textColorDark: '#60a5fa' // blue-400
+    },
+    rare: {
+      borderColor: '#8b5cf6', // purple-500
+      bgColor: '#faf5ff', // purple-50
+      bgColorDark: '#581c87', // purple-800
+      textColor: '#6b21a8', // purple-700
+      textColorDark: '#a78bfa' // purple-400
+    },
+    legendary: {
+      borderColor: '#f97316', // orange-500
+      bgColor: '#fff7ed', // orange-50
+      bgColorDark: '#9a3412', // orange-800
+      textColor: '#c2410c', // orange-700
+      textColorDark: '#fb923c' // orange-400
+    }
+  };
+
+  function getRarityConfig(rarity) {
+    return rarityConfig[rarity] || rarityConfig.common;
+  }
+
+  function isDarkMode() {
+    if (typeof window === 'undefined') return false;
+    return document.documentElement.classList.contains('dark') || 
+           (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+
   export let cards = [];
   export let loadingCards = false;
   export let showAddCardForm = false;
@@ -67,8 +109,31 @@
     return matchesSearch && matchesRarity && matchesProgress;
   });
 
-  // Use filteredCards directly since sorting is handled by the parent Binder component
-  $: sortedCards = filteredCards;
+  // Sort cards by created_date DESC and group by day for timeline view
+  $: sortedCards = filteredCards.sort((a, b) => {
+    const dateA = new Date(a.created_date || a.created_at);
+    const dateB = new Date(b.created_date || b.created_at);
+    return dateB - dateA; // DESC order
+  });
+
+  // Group cards by day for timeline view
+  $: cardsByDay = sortedCards.reduce((groups, card) => {
+    const date = new Date(card.created_date || card.created_at);
+    const dayKey = date.toDateString(); // e.g., "Mon Jan 15 2024"
+    
+    if (!groups[dayKey]) {
+      groups[dayKey] = {
+        date: date,
+        dayKey: dayKey,
+        cards: []
+      };
+    }
+    groups[dayKey].cards.push(card);
+    return groups;
+  }, {});
+
+  // Convert to array and sort by date DESC
+  $: dayGroups = Object.values(cardsByDay).sort((a, b) => b.date - a.date);
 
   async function loadProjectCardTypes() {
     if (!worldId) return;
@@ -200,6 +265,10 @@
 
   function handleCardZoomSave(event) {
     const { card } = event.detail;
+    
+    // Update the local cards array
+    cards = cards.map(c => c.id === card.id ? card : c);
+    
     dispatch('edit', { card, updates: card });
     closeCardZoom();
   }
@@ -530,22 +599,23 @@
             <span>Summon Pack</span>
           </button>
           
-          <button
-            class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            on:click={() => {
-              // Dispatch event to toggle deck drawer
-              window.dispatchEvent(new CustomEvent('toggle-deck-drawer'));
-            }}
-            title="Toggle Decks"
-          >
-            <Layers size="16" />
-            <span>Decks</span>
-          </button>
         </div>
       </div>
 
       <!-- View Mode Toggle -->
       <div class="flex items-center gap-2">
+        <button
+          id="toggle-decks"
+          class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+          on:click={() => {
+            // Dispatch event to toggle deck drawer
+            window.dispatchEvent(new CustomEvent('toggle-deck-drawer'));
+          }}
+          title="Toggle Decks"
+        >
+          <Layers size="16" />
+          <span>Decks</span>
+        </button>
         <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
           <button
             class="px-3 py-1 text-sm rounded-md transition-colors {viewMode === 'binder' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}"
@@ -555,6 +625,7 @@
             <Grid size="16" />
           </button>
           <button
+            id="toggle-timeline"
             class="px-3 py-1 text-sm rounded-md transition-colors {viewMode === 'timeline' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}"
             on:click={() => viewMode = 'timeline'}
             title="Timeline View"
@@ -599,30 +670,81 @@
         {/each}
       </div>
     {:else if viewMode === 'timeline'}
-      <div class="space-y-3">
-        {#each sortedCards as card (card.id)}
-          <div class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <div class="w-12 h-12 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              {#if card.art_url}
-                <img src={card.art_url} alt="Card art" class="w-full h-full object-cover rounded" />
-              {:else}
-                <span class="text-gray-400">🎨</span>
-              {/if}
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate">{card.title || card.key}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{card.content}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                {card.rarity}
-              </span>
-              <div class="flex items-center gap-1">
-                {#each Array(5) as _, i}
-                  <Star size="12" class={card.progress > i ? 'text-yellow-500 fill-current' : 'text-gray-300'} />
-                {/each}
+      <div class="space-y-6" id="timeline-view">
+        {#each dayGroups as dayGroup (dayGroup.dayKey)}
+          <div class="space-y-3">
+            <!-- Day Header -->
+            <div class="flex items-center gap-3 py-2">
+              <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+              <div class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+                {dayGroup.date.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
               </div>
+              <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
             </div>
+            
+            <!-- Cards for this day -->
+            {#each dayGroup.cards as card (card.id)}
+              <div 
+                class="card-timeline flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                style:border-color={getRarityConfig(card.rarity).borderColor}
+                style:border-width="2px"
+                style:border-style="solid"
+                on:click={() => openCardZoom({ detail: { card } })}
+                role="button"
+                tabindex="0"
+                on:keydown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openCardZoom({ detail: { card } });
+                  }
+                }}
+              >
+                <div class="rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center" style="width: 88px; height: 48px;">
+                  {#if card.art_url}
+                    <img 
+                      src={card.art_url} 
+                      alt="Card art" 
+                      class="object-cover rounded"
+                      style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+                    />
+                  {:else}
+                    <img
+                      src="/wiskr-art-default.webp"
+                      alt="Default card art"
+                      class="object-cover rounded"
+                      style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+                      draggable="false"
+                    />
+                  {/if}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate">{card.title || card.key}</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 break-words">{card.content}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span 
+                    class="text-xs px-2 py-1 rounded-full font-bold uppercase"
+                    style:background-color={isDarkMode() ? getRarityConfig(card.rarity).bgColorDark : getRarityConfig(card.rarity).bgColor}
+                    style:color={isDarkMode() ? getRarityConfig(card.rarity).textColorDark : getRarityConfig(card.rarity).textColor}
+                    style:border-color={getRarityConfig(card.rarity).borderColor}
+                    style:border-width="1px"
+                    style:border-style="solid"
+                  >
+                    {card.rarity}
+                  </span>
+                  <div class="flex items-center gap-1">
+                    {#each Array(5) as _, i}
+                      <Star size="12" class={card.progress > i ? 'text-yellow-500 fill-current' : 'text-gray-300'} />
+                    {/each}
+                  </div>
+                </div>
+              </div>
+            {/each}
           </div>
         {/each}
       </div>

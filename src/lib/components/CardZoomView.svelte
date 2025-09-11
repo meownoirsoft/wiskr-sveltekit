@@ -442,7 +442,7 @@
       >
 
         <!-- Header: Title -->
-        <div class="mb-4 px-4 pt-4">
+        <div class="mb-4 px-4 {isEditing ? 'pt-2' : 'pt-4'}">
           {#if isEditing}
             <input
               bind:value={title}
@@ -460,7 +460,7 @@
         <!-- Art Area -->
         <div 
           class="art-area mb-4 mx-4 rounded-md flex items-center justify-center relative group" 
-          style="height: 160px;" style:background-color={darkMode ? '#4b5563' : '#f3f4f6'}
+          style="height: 256px;"
         >
           <!-- Mana Cost - Top Right -->
           <div 
@@ -470,36 +470,31 @@
             <span>{investmentCost}</span>
           </div>
 
+          <!-- Art Image (always show default or custom art) -->
+          <img 
+            src={artUrl || editedCard.art_url || '/wiskr-art-default.webp'} 
+            alt="Card art" 
+            class="w-full h-full object-cover rounded-md" 
+          />
+          
+          <!-- Art Edit Button - Bottom Right Corner -->
+          <button
+            class="absolute bottom-2 right-2 flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 hover:bg-black/70 transition-all cursor-pointer"
+            on:click={handleGenerateArt}
+            title="Replace art"
+          >
+            <span class="text-white text-sm font-medium">Replace Art</span>
+            <Palette size="16" class="text-white" />
+          </button>
+          
+          <!-- Art Feedback Button - Bottom Left Corner (only show if custom art) -->
           {#if artUrl || editedCard.art_url}
-            <img src={artUrl || editedCard.art_url} alt="Card art" class="w-full h-full object-cover" />
-            <!-- Art Edit Button - Bottom Right Corner -->
             <button
-              class="absolute bottom-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-              on:click={handleGenerateArt}
-              title="Edit art"
-            >
-              <Palette size="16" class="text-white" />
-            </button>
-            <!-- Art Feedback Button - Bottom Left Corner -->
-            <button
-              class="absolute bottom-2 left-2 p-2 rounded-full bg-orange-500/50 hover:bg-orange-500/70 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+              class="absolute bottom-2 left-2 p-2 rounded-full bg-orange-500/50 hover:bg-orange-500/70 transition-all cursor-pointer"
               on:click={() => reportBadArt(artUrl || editedCard.art_url)}
               title="Report art issue"
             >
               <Flag size="16" class="text-white" />
-            </button>
-          {:else}
-            <button 
-              class="w-full h-full flex flex-col items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-              style:background="linear-gradient(135deg, {darkMode ? '#374151' : '#f3f4f6'} 0%, {darkMode ? '#4b5563' : '#e5e7eb'} 100%)"
-              on:click={handleGenerateArt}
-              title="Add art to this card"
-            >
-              <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3" style:background-color={darkMode ? '#6b7280' : '#9ca3af'}>
-                <div class="text-white text-2xl">🎨</div>
-              </div>
-              <div class="text-sm font-medium" style:color={darkMode ? '#9ca3af' : '#6b7280'}>No Art</div>
-              <div class="text-xs" style:color={darkMode ? '#6b7280' : '#9ca3af'}>Click to add art</div>
             </button>
           {/if}
         </div>
