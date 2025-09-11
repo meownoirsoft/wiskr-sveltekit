@@ -15,11 +15,8 @@
   let showDropdown = false;
   let dropdownDisabled = false; // Prevents dropdown from showing after result selection
   let searchResults = {
-    facts: [],
-    docs: [],
+    cards: [],
     chatMessages: [],
-    questions: [],
-    relatedIdeas: [],
     sessionGroups: [],
     totalSessions: 0
   };
@@ -95,8 +92,8 @@
       // Dispatch single filter event for all content types (prevent duplicate highlighting)
       dispatch('filter', { type: 'all', query: searchTerm });
       
-      // Activate the facts tab by default when searching
-      dispatch('activate-tab', 'facts');
+      // Activate the cards tab by default when searching
+      dispatch('activate-tab', 'cards');
       
       // Always update highlighting when user types - treat as new search
       highlightedTerm = searchTerm;
@@ -128,7 +125,7 @@
        
        // Don't clear search results if we're in highlight mode
        if (!browser || !localStorage.getItem('wiskr-highlight-mode')) {
-         searchResults = { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+         searchResults = { cards: [], chatMessages: [], sessionGroups: [], totalSessions: 0 };
          if (!dropdownDisabled) {
            showDropdown = false;
          }
@@ -166,13 +163,13 @@
         body: JSON.stringify({
           projectId: projectId,
           query: searchTerm,
-          includeTypes: ['facts', 'docs', 'chats', 'questions', 'ideas']
+          includeTypes: ['cards', 'chats']
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        searchResults = data.results || { facts: [], docs: [], chatMessages: [], questions: [], relatedIdeas: [], sessionGroups: [], totalSessions: 0 };
+        searchResults = data.results || { cards: [], chatMessages: [], sessionGroups: [], totalSessions: 0 };
         
         // Search results populated
         
@@ -261,10 +258,7 @@
     
     // For other result types, scroll to the result without multiple dispatch events
     let searchText = '';
-    if (type === 'facts') searchText = result.key;
-    else if (type === 'docs') searchText = result.title;
-    else if (type === 'questions') searchText = result.question;
-    else if (type === 'ideas') searchText = result.title || result.text || result.name;
+    if (type === 'cards') searchText = result.title;
     
     // Update search input with the result text
     searchTerm = searchText;
@@ -426,8 +420,8 @@
   
   // Get first available result for enter key handling (left-to-right order)
   function getFirstResult() {
-    // Check in left-to-right order: Facts -> Docs -> Chat -> Questions
-    const orderedCategories = ['facts', 'docs', 'chatMessages', 'questions'];
+    // Check in left-to-right order: Cards -> Chat
+    const orderedCategories = ['cards', 'chatMessages'];
     
     for (const category of orderedCategories) {
       const results = searchResults[category];
@@ -446,22 +440,18 @@
     showDropdown = false;
     
     // Dispatch filtering events based on results - simplified like MobileSearch
-    const hasFactsResults = searchResults.facts.length > 0;
-    const hasDocsResults = searchResults.docs.length > 0;
+    const hasCardsResults = searchResults.cards.length > 0;
     const hasChatResults = searchResults.chatMessages.length > 0;
-    const hasQuestionsResults = searchResults.questions.length > 0;
     
-    // Activate appropriate tab (priority: facts > docs > questions)
-    if (hasFactsResults) {
-      dispatch('activate-tab', 'facts');
-    } else if (hasDocsResults) {
-      dispatch('activate-tab', 'docs');  
-    } else if (hasQuestionsResults) {
-      dispatch('activate-tab', 'questions');
+    // Activate appropriate tab (priority: cards > chat)
+    if (hasCardsResults) {
+      dispatch('activate-tab', 'cards');
+    } else if (hasChatResults) {
+      dispatch('activate-tab', 'chats');
     }
     
     // Single filter event for all types (like the 'all' type we added earlier)
-    if (hasFactsResults || hasDocsResults || hasChatResults || hasQuestionsResults) {
+    if (hasCardsResults || hasChatResults) {
       dispatch('filter', { type: 'all', query: searchTerm });
     }
     
@@ -649,8 +639,8 @@
     // Check if current session has any chat message results
     const currentSessionMessages = searchResults.chatMessages?.filter(m => m.session_id === currentSessionId) || [];
     
-    // Also check if we have any facts, docs, or questions (these are always visible)
-    const hasNonSessionResults = (searchResults.facts?.length || 0) + (searchResults.docs?.length || 0) + (searchResults.questions?.length || 0) > 0;
+    // Also check if we have any cards (these are always visible)
+    const hasNonSessionResults = (searchResults.cards?.length || 0) > 0;
     
     const hasCurrentSessionResults = currentSessionMessages.length > 0 || hasNonSessionResults;
     
@@ -674,7 +664,7 @@
       // Find the first highlight in a visible panel
       let firstVisibleHighlight = null;
       
-      // Check left panel first (facts/docs)
+      // Check left panel first (cards)
       const leftPanel = document.querySelector('.mobile-sidebar');
       if (leftPanel && !leftPanel.classList.contains('w-0')) {
         const leftHighlights = leftPanel.querySelectorAll('.search-highlight-container');
@@ -683,7 +673,7 @@
         }
       }
       
-      // If no highlight in left panel, check right panel (ideas/questions)
+      // If no highlight in left panel, check right panel (chat)
       if (!firstVisibleHighlight) {
         const rightPanel = document.querySelector('.mobile-ideas-column');
         if (rightPanel && !rightPanel.classList.contains('w-0')) {
@@ -1047,23 +1037,13 @@
   async function getSessionIdForHighlightIndex(targetIndex) {
     let runningIndex = 0;
     
-    // Skip facts, docs, and questions (they don't belong to specific sessions)
-    searchResults.facts.forEach(fact => {
-      const keyMatches = countMatchesInText(fact.key, highlightedTerm);
-      const valueMatches = countMatchesInText(fact.value, highlightedTerm);
-      runningIndex += keyMatches + valueMatches;
-    });
-    
-    searchResults.docs.forEach(doc => {
-      const titleMatches = countMatchesInText(doc.title, highlightedTerm);
-      const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
+    // Skip cards (they don't belong to specific sessions)
+    searchResults.cards.forEach(card => {
+      const titleMatches = countMatchesInText(card.title, highlightedTerm);
+      const contentMatches = countMatchesInText(card.content, highlightedTerm);
       runningIndex += titleMatches + contentMatches;
     });
     
-    searchResults.questions.forEach(question => {
-      const questionMatches = countMatchesInText(question.question, highlightedTerm);
-      runningIndex += questionMatches;
-    });
     
     // If target index is in non-session content, return current session
     if (targetIndex < runningIndex) {
@@ -1179,48 +1159,28 @@
     // Calculate how many highlights come from each category in the global count
     let globalRunningIndex = 0;
     
-    // Count highlights in facts (always visible)
-    let factsHighlights = 0;
-    if (searchResults.facts && searchResults.facts.length > 0) {
-      searchResults.facts.forEach(fact => {
-        const keyMatches = countMatchesInText(fact.key, highlightedTerm);
-        const valueMatches = countMatchesInText(fact.value, highlightedTerm);
-        factsHighlights += keyMatches + valueMatches;
+    // Count highlights in cards (always visible)
+    let cardsHighlights = 0;
+    if (searchResults.cards && searchResults.cards.length > 0) {
+      searchResults.cards.forEach(card => {
+        const titleMatches = countMatchesInText(card.title, highlightedTerm);
+        const contentMatches = countMatchesInText(card.content, highlightedTerm);
+        cardsHighlights += titleMatches + contentMatches;
       });
     }
     
-    // Count highlights in docs (always visible)
-    let docsHighlights = 0;
-    if (searchResults.docs && searchResults.docs.length > 0) {
-      searchResults.docs.forEach(doc => {
-        const titleMatches = countMatchesInText(doc.title, highlightedTerm);
-        const contentMatches = countMatchesInText(doc.content || '', highlightedTerm);
-        docsHighlights += titleMatches + contentMatches;
-      });
-    }
     
-    // Count highlights in questions (always visible)
-    let questionsHighlights = 0;
-    if (searchResults.questions && searchResults.questions.length > 0) {
-      searchResults.questions.forEach(question => {
-        const questionMatches = countMatchesInText(question.question, highlightedTerm);
-        questionsHighlights += questionMatches;
-      });
-    }
-    
-    const nonSessionHighlights = factsHighlights + docsHighlights + questionsHighlights;
+    const nonSessionHighlights = cardsHighlights;
     globalRunningIndex = nonSessionHighlights;
     
     // console.log('🧮 Highlight distribution analysis:', {
-    //   factsHighlights,
-    //   docsHighlights,
-    //   questionsHighlights,
+    //   cardsHighlights,
     //   nonSessionHighlights,
     //   targetIndex,
     //   currentSessionId
     // });
     
-    // If the target index is within non-session content (facts, docs, questions),
+    // If the target index is within non-session content (cards),
     // it maps directly to visible highlights
     if (targetIndex < nonSessionHighlights) {
       //console.log('📝 Target is in non-session content, using direct index:', targetIndex);
@@ -1595,40 +1555,42 @@
   {#if showDropdown && hasResults()}
     {#if browser}
       <div use:createPortal>
-        <div class="fixed z-[999999] w-full max-w-xl border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal); left: var(--search-dropdown-left, 0px); top: var(--search-dropdown-top, 0px);" on:click|stopPropagation>
-          <!-- Facts Results (Left Column) -->
-          {#if searchResults.facts.length > 0}
+        <div class="fixed z-[999999] w-full max-w-xl border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal); left: var(--search-dropdown-left, 0px); top: var(--search-dropdown-top, 0px);" on:click|stopPropagation on:keydown|stopPropagation role="dialog" aria-label="Search results" tabindex="0">
+          <!-- Cards Results (Left Column) -->
+          {#if searchResults.cards.length > 0}
             <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Facts</h4>
-              {#each searchResults.facts.slice(0, 5) as fact}
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Cards</h4>
+              {#each searchResults.cards.slice(0, 5) as card}
                 <button
-                  on:click={() => selectResult(fact, 'facts')}
+                  on:click={() => selectResult(card, 'cards')}
                   class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
                 >
-                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{fact.key}</div>
-                  <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{fact.value}</div>
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{card.title}</div>
+                    {#if card.similarity}
+                      <div class="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        {Math.round(card.similarity * 100)}%
+                      </div>
+                    {/if}
+                  </div>
+                  <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{card.snippet}</div>
+                  <div class="flex items-center gap-2 mt-1">
+                    {#if card.rarity}
+                      <span class="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        {card.rarity}
+                      </span>
+                    {/if}
+                    {#if card.mana_cost !== undefined}
+                      <span class="text-xs px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                        {card.mana_cost} mana
+                      </span>
+                    {/if}
+                  </div>
                 </button>
               {/each}
             </div>
           {/if}
           
-          <!-- Docs Results (Left Column) -->
-          {#if searchResults.docs.length > 0}
-            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Documents</h4>
-              {#each searchResults.docs.slice(0, 5) as doc}
-                <button
-                  on:click={() => selectResult(doc, 'docs')}
-                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-                >
-                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.title}</div>
-                  {#if doc.content}
-                    <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{doc.content.substring(0, 80)}...</div>
-                  {/if}
-                </button>
-              {/each}
-            </div>
-          {/if}
           
           <!-- Chat Messages Results (Middle Column) with Session Grouping -->
           {#if searchResults.chatMessages.length > 0}
@@ -1677,38 +1639,6 @@
             </div>
           {/if}
           
-          <!-- Questions Results (Right Column) -->
-          {#if searchResults.questions.length > 0}
-            <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Questions</h4>
-              {#each searchResults.questions.slice(0, 5) as question}
-                <button
-                  on:click={() => selectResult(question, 'questions')}
-                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-                >
-                  <div class="text-sm text-gray-900 dark:text-gray-100">{question.question}</div>
-                </button>
-              {/each}
-            </div>
-          {/if}
-          
-          <!-- Related Ideas Results (Right Column) -->
-          {#if searchResults.relatedIdeas.length > 0}
-            <div class="p-3">
-              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Ideas</h4>
-              {#each searchResults.relatedIdeas.slice(0, 5) as idea}
-                <button
-                  on:click={() => selectResult(idea, 'ideas')}
-                  class="w-full text-left p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors block"
-                >
-                  <div class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{idea.title || idea.name}</div>
-                  {#if idea.content}
-                    <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{idea.content.substring(0, 80)}...</div>
-                  {/if}
-                </button>
-              {/each}
-            </div>
-          {/if}
         </div>
       </div>
     {/if}
@@ -1808,9 +1738,4 @@
      z-index: 999999 !important;
    }
    
-   /* CSS optimization: Only apply styles when search is active */
-   :global(.search-active .search-highlight),
-   :global(.search-active .search-highlight-container) {
-     /* Styles will be applied via JavaScript when search is active */
-   }
  </style>

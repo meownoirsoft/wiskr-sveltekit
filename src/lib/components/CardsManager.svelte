@@ -1,7 +1,7 @@
 <!-- CardsManager.svelte - MTG-style card collection manager -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Filter, Grid, List, Star, Zap, Package, Layers } from 'lucide-svelte';
+  import { Plus, Filter, Grid, List, Star, Zap, Package, Layers, Brain } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import EditCardModal from './modals/EditCardModal.svelte';
@@ -68,6 +68,8 @@
   let showPackOpener = false;
   let showCardZoom = false;
   let zoomedCard = null;
+  let generatingEmbeddings = false;
+  let embeddingsStatus = '';
   let selectedCards = new Set();
   let viewMode = 'binder'; // 'binder', 'timeline', 'clusters'
   let rarityFilter = 'all'; // 'all', 'common', 'special', 'rare', 'legendary'
@@ -226,6 +228,39 @@
 
   function openAddModal() {
     showAddModal = true;
+  }
+
+  async function generateEmbeddings() {
+    if (generatingEmbeddings) return;
+    
+    generatingEmbeddings = true;
+    embeddingsStatus = 'Starting...';
+    
+    try {
+      const response = await fetch('/api/cards/generate-embeddings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: worldId })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        embeddingsStatus = `✅ ${result.message}`;
+        // Dispatch event to parent to reload context (this will sync with server)
+        dispatch('reload-context');
+      } else {
+        embeddingsStatus = `❌ Error: ${result.error}`;
+      }
+    } catch (error) {
+      embeddingsStatus = `❌ Error: ${error.message}`;
+    } finally {
+      generatingEmbeddings = false;
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        embeddingsStatus = '';
+      }, 5000);
+    }
   }
 
   function handleAddModalSave(event) {
@@ -702,8 +737,25 @@
             <span>Summon Pack</span>
           </button>
           
+          <button
+            class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+            on:click={generateEmbeddings}
+            disabled={generatingEmbeddings}
+            title="Generate AI embeddings for semantic search"
+          >
+            <Brain size="16" />
+            <span>{generatingEmbeddings ? 'Generating...' : 'Generate Embeddings'}</span>
+          </button>
+          
         </div>
       </div>
+
+      <!-- Embeddings Status -->
+      {#if embeddingsStatus}
+        <div class="mt-2 p-2 text-sm rounded-lg {embeddingsStatus.startsWith('✅') ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}">
+          {embeddingsStatus}
+        </div>
+      {/if}
 
       <!-- View Mode Toggle -->
       <div class="flex items-center gap-2">

@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 
 export async function GET({ url, locals }) {
   
@@ -39,7 +40,7 @@ export async function GET({ url, locals }) {
     
     const { searchParams } = url;
     const searchTerm = searchParams.get('q');
-    const includeTypes = searchParams.get('types')?.split(',') || ['cards', 'docs', 'chats'];
+    const includeTypes = searchParams.get('types')?.split(',') || ['cards', 'chats'];
     const currentProjectId = searchParams.get('projectId');
     
     if (!searchTerm || !searchTerm.trim()) {
@@ -53,54 +54,90 @@ export async function GET({ url, locals }) {
     const results = [];
     const { supabase } = locals;
     
-    // Search cards
+    // Search cards using semantic search
     if (includeTypes.includes('cards')) {
-      const { data: cards, error: cardsError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!cardsError && cards) {
-        cards.forEach(card => {
-          results.push({
-            id: card.id,
-            type: 'cards',
-            title: card.title || 'Untitled Card',
-            name: card.title || 'Untitled Card',
-            snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
-            content: card.content,
-            cardType: card.type
-          });
+      try {
+        // First try semantic search
+        const { data: semanticCards, error: semanticError } = await supabase.rpc('search_cards_semantic', {
+          query_embedding: await generateCardEmbedding(searchTerm, ''),
+          project_id: currentProjectId,
+          match_threshold: 0.3, // Lower threshold for broader results
+          match_count: 10
         });
+
+        if (!semanticError && semanticCards && semanticCards.length > 0) {
+          semanticCards.forEach(card => {
+            results.push({
+              id: card.id,
+              type: 'cards',
+              title: card.title || 'Untitled Card',
+              name: card.title || 'Untitled Card',
+              snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+              content: card.content,
+              cardType: card.type,
+              similarity: card.similarity, // Include similarity score
+              rarity: card.rarity,
+              progress: card.progress,
+              mana_cost: card.mana_cost
+            });
+          });
+        } else {
+          // Fallback to text search if semantic search fails or returns no results
+          const { data: cards, error: cardsError } = await supabase
+            .from('cards')
+            .select('*')
+            .eq('project_id', currentProjectId)
+            .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (!cardsError && cards) {
+            cards.forEach(card => {
+              results.push({
+                id: card.id,
+                type: 'cards',
+                title: card.title || 'Untitled Card',
+                name: card.title || 'Untitled Card',
+                snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+                content: card.content,
+                cardType: card.type,
+                rarity: card.rarity,
+                progress: card.progress,
+                mana_cost: card.mana_cost
+              });
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Card search error:', error);
+        // Fallback to text search on error
+        const { data: cards, error: cardsError } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('project_id', currentProjectId)
+          .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (!cardsError && cards) {
+          cards.forEach(card => {
+            results.push({
+              id: card.id,
+              type: 'cards',
+              title: card.title || 'Untitled Card',
+              name: card.title || 'Untitled Card',
+              snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+              content: card.content,
+              cardType: card.type,
+              rarity: card.rarity,
+              progress: card.progress,
+              mana_cost: card.mana_cost
+            });
+          });
+        }
       }
     }
     
-    // Search docs
-    if (includeTypes.includes('docs')) {
-      const { data: docs, error: docsError } = await supabase
-        .from('docs')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!docsError && docs) {
-        docs.forEach(doc => {
-          results.push({
-            id: doc.id,
-            type: 'docs',
-            title: doc.title || 'Untitled Doc',
-            name: doc.title || 'Untitled Doc',
-            snippet: doc.content?.substring(0, 100) + (doc.content?.length > 100 ? '...' : ''),
-            content: doc.content
-          });
-        });
-      }
-    }
     
     // Search chat messages
     if (includeTypes.includes('chats')) {
@@ -239,30 +276,6 @@ export async function GET({ url, locals }) {
       }
     }
     
-    // Search questions
-    if (includeTypes.includes('questions')) {
-      const { data: questions, error: questionsError } = await supabase
-        .from('project_questions')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .ilike('question', `%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!questionsError && questions) {
-        questions.forEach(question => {
-          results.push({
-            id: question.id,
-            type: 'questions',
-            question: question.question,
-            title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
-            name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
-            snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
-            content: question.question
-          });
-        });
-      }
-    }
     
     // Search ideas
     if (includeTypes.includes('ideas')) {
@@ -328,10 +341,7 @@ export async function GET({ url, locals }) {
     // Return results in the structure that GlobalSearch expects
     const structuredResults = {
       cards: results.filter(r => r.type === 'cards'),
-      docs: results.filter(r => r.type === 'docs'),
       chatMessages: chatResults,
-      questions: results.filter(r => r.type === 'questions'),
-      relatedIdeas: results.filter(r => r.type === 'ideas'),
       sessionGroups: sessionGroups,
       totalSessions: sessionGroups.length
     };
@@ -382,7 +392,7 @@ export async function POST({ request, locals }) {
     }
     
     
-    const { query, projectId, includeTypes = ['cards', 'docs', 'chats', 'questions', 'ideas'] } = await request.json();
+    const { query, projectId, includeTypes = ['cards', 'chats'] } = await request.json();
     
     
     if (!query || !query.trim()) {
@@ -402,54 +412,90 @@ export async function POST({ request, locals }) {
     const { supabase } = locals;
     
     
-    // Search cards
+    // Search cards using semantic search
     if (includeTypes.includes('cards')) {
-      const { data: cards, error: cardsError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!cardsError && cards) {
-        cards.forEach(card => {
-          results.push({
-            id: card.id,
-            type: 'cards',
-            title: card.title || 'Untitled Card',
-            name: card.title || 'Untitled Card',
-            snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
-            content: card.content,
-            cardType: card.type
-          });
+      try {
+        // First try semantic search
+        const { data: semanticCards, error: semanticError } = await supabase.rpc('search_cards_semantic', {
+          query_embedding: await generateCardEmbedding(searchTerm, ''),
+          project_id: currentProjectId,
+          match_threshold: 0.3, // Lower threshold for broader results
+          match_count: 10
         });
+
+        if (!semanticError && semanticCards && semanticCards.length > 0) {
+          semanticCards.forEach(card => {
+            results.push({
+              id: card.id,
+              type: 'cards',
+              title: card.title || 'Untitled Card',
+              name: card.title || 'Untitled Card',
+              snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+              content: card.content,
+              cardType: card.type,
+              similarity: card.similarity, // Include similarity score
+              rarity: card.rarity,
+              progress: card.progress,
+              mana_cost: card.mana_cost
+            });
+          });
+        } else {
+          // Fallback to text search if semantic search fails or returns no results
+          const { data: cards, error: cardsError } = await supabase
+            .from('cards')
+            .select('*')
+            .eq('project_id', currentProjectId)
+            .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (!cardsError && cards) {
+            cards.forEach(card => {
+              results.push({
+                id: card.id,
+                type: 'cards',
+                title: card.title || 'Untitled Card',
+                name: card.title || 'Untitled Card',
+                snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+                content: card.content,
+                cardType: card.type,
+                rarity: card.rarity,
+                progress: card.progress,
+                mana_cost: card.mana_cost
+              });
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Card search error:', error);
+        // Fallback to text search on error
+        const { data: cards, error: cardsError } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('project_id', currentProjectId)
+          .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,tags.ilike.%${searchTerm}%`)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (!cardsError && cards) {
+          cards.forEach(card => {
+            results.push({
+              id: card.id,
+              type: 'cards',
+              title: card.title || 'Untitled Card',
+              name: card.title || 'Untitled Card',
+              snippet: card.content?.substring(0, 100) + (card.content?.length > 100 ? '...' : ''),
+              content: card.content,
+              cardType: card.type,
+              rarity: card.rarity,
+              progress: card.progress,
+              mana_cost: card.mana_cost
+            });
+          });
+        }
       }
     }
     
-    // Search docs
-    if (includeTypes.includes('docs')) {
-      const { data: docs, error: docsError } = await supabase
-        .from('docs')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!docsError && docs) {
-        docs.forEach(doc => {
-          results.push({
-            id: doc.id,
-            type: 'docs',
-            title: doc.title || 'Untitled Doc',
-            name: doc.title || 'Untitled Doc',
-            snippet: doc.content?.substring(0, 100) + (doc.content?.length > 100 ? '...' : ''),
-            content: doc.content
-          });
-        });
-      }
-    }
     
     // Search chat messages
     if (includeTypes.includes('chats')) {
@@ -592,65 +638,11 @@ export async function POST({ request, locals }) {
       }
     }
     
-    // Search questions
-    if (includeTypes.includes('questions')) {
-      const { data: questions, error: questionsError } = await supabase
-        .from('project_questions')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .ilike('question', `%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!questionsError && questions) {
-        questions.forEach(question => {
-          results.push({
-            id: question.id,
-            type: 'questions',
-            question: question.question,
-            title: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
-            name: question.question?.substring(0, 50) + (question.question?.length > 50 ? '...' : ''),
-            snippet: question.question?.substring(0, 100) + (question.question?.length > 100 ? '...' : ''),
-            content: question.question
-          });
-        });
-      }
-    }
     
-    // Search ideas
-    if (includeTypes.includes('ideas')) {
-      const { data: ideas, error: ideasError } = await supabase
-        .from('ideas')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,text.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (ideasError) {
-        console.error('Search API: Ideas query error:', ideasError);
-      }
-      
-      if (!ideasError && ideas) {
-        ideas.forEach(idea => {
-          results.push({
-            id: idea.id,
-            type: 'ideas',
-            title: idea.title || idea.text || 'Untitled Idea',
-            name: idea.title || idea.text || 'Untitled Idea',
-            snippet: (idea.description || idea.text)?.substring(0, 100) + ((idea.description || idea.text)?.length > 100 ? '...' : ''),
-            content: idea.description || idea.text
-          });
-        });
-      }
-    }
     
     console.log('🔍 Search API POST: Result counts:', {
       cards: results.filter(r => r.type === 'cards').length,
-      docs: results.filter(r => r.type === 'docs').length,
       chats: results.filter(r => r.type === 'chats').length,
-      questions: results.filter(r => r.type === 'questions').length,
-      ideas: results.filter(r => r.type === 'ideas').length,
       total: results.length
     });
     
@@ -694,10 +686,7 @@ export async function POST({ request, locals }) {
     // Return results in the structure that GlobalSearch expects
     const structuredResults = {
       cards: results.filter(r => r.type === 'cards'),
-      docs: results.filter(r => r.type === 'docs'),
       chatMessages: chatResults,
-      questions: results.filter(r => r.type === 'questions'),
-      relatedIdeas: results.filter(r => r.type === 'ideas'),
       sessionGroups: sessionGroups,
       totalSessions: sessionGroups.length
     };

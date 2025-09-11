@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 
 export async function POST({ params, request, locals }) {
   try {
@@ -47,6 +48,23 @@ export async function POST({ params, request, locals }) {
 
     if (!card) {
       return json({ error: 'Card not found or access denied' }, { status: 404 });
+    }
+
+    // Regenerate embedding if content or title changed
+    if ((content !== undefined || title !== undefined) && (card.content || card.title)) {
+      const embedding = await generateCardEmbedding(card.title, card.content);
+
+      // Update card with new embedding if generated
+      if (embedding) {
+        const { error: embeddingError } = await locals.supabase
+          .from('cards')
+          .update({ embedding })
+          .eq('id', card.id);
+        
+        if (embeddingError) {
+          console.error('Error updating card with embedding:', embeddingError);
+        }
+      }
     }
 
     return json({ card });

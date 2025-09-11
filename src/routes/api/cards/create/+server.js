@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
+import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -12,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST({ request, locals }) {
   try {
-    const { project_id, title, content, tags, rarity, progress, mana_cost, art_url, generation_model, art_model } = await request.json();
+    const { project_id, title, content, tags, rarity, progress, mana_cost, art_url, generation_model, art_model, pinned } = await request.json();
     
     if (!project_id || !title) {
       return json({ error: 'Missing required fields' }, { status: 400 });
@@ -38,7 +39,8 @@ export async function POST({ request, locals }) {
         mana_cost: mana_cost || 1,
         art_url,
         generation_model: generation_model || 'GPT-4o',
-        art_model: art_model || 'Midjourney'
+        art_model: art_model || 'Midjourney',
+        pinned: pinned || false
       })
       .select('*')
       .single();
@@ -46,6 +48,21 @@ export async function POST({ request, locals }) {
     if (insertError) {
       console.error('Error creating card:', insertError);
       return json({ error: insertError.message }, { status: 500 });
+    }
+
+    // Generate embedding for the card content
+    const embedding = await generateCardEmbedding(title, content);
+
+    // Update card with embedding if generated
+    if (embedding) {
+      const { error: updateError } = await locals.supabase
+        .from('cards')
+        .update({ embedding })
+        .eq('id', card.id);
+      
+      if (updateError) {
+        console.error('Error updating card with embedding:', updateError);
+      }
     }
 
     return json({ card });

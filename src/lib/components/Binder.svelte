@@ -4,23 +4,18 @@
   import CardsManager from './CardsManager.svelte';
   import DocsManager from './DocsManager.svelte';
   import EntityCards from './EntityCards.svelte';
-  import { Search, X, ToggleLeft, ToggleRight, Info, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+  import { Search, X, Info, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
   import InfoPopup from './InfoPopup.svelte';
   import { supabase } from '$lib/supabase.js';
 
   export let current = null;
   export let cards = [];
-  export let docs = [];
   export let loadingCards = false;
   export let showAddCardForm = false;
   export let cardType = 'character';
   export let cardTitle = '';
   export let cardContent = '';
   export let cardTags = '';
-  export let showAddDocForm = false;
-  export let docTitle = '';
-  export let docContent = '';
-  export let docTags = '';
   export let search = ''; // Filter content by this search string
   export let isDesktop = false;
   export let user = null; // User object with tier info
@@ -29,6 +24,14 @@
   export let showCollapseButton = false;
   export let isCollapsed = false;
   export let onToggleCollapse = null;
+  export let activeTab = 'cards'; // 'summary', 'cards', or 'entities'
+  
+  // Export function to refresh card types from parent component
+  export function refreshCardTypes() {
+    // Refresh card types in the Binder
+    loadProjectCardTypes();
+    // Note: CardsManager doesn't need card type refresh since it uses cards table
+  }
 
   const dispatch = createEventDispatcher();
   
@@ -38,14 +41,8 @@
   // Search highlighting state
   let currentSearchTerm = '';
   let highlightedCardId = null;
-  let highlightedDocId = null;
   
-  // Tab state - exported so parent can control it
-  export let activeTab = 'cards'; // 'summary', 'cards', 'docs', or 'entities'
   
-  // Tag filtering state
-  let selectedTags = [];
-  let tagFilterMode = 'AND'; // 'AND' or 'OR'
   
   // Sorting state
   let sortBy = 'title'; // 'title', 'rarity', 'progress', 'mana_cost', 'created_at'
@@ -136,8 +133,6 @@
     
     if (result.type === 'cards') {
       highlightCard(result.id, searchTerm);
-    } else if (result.type === 'docs') {
-      highlightDoc(result.id, searchTerm);
     }
   }
   
@@ -163,27 +158,6 @@
     }, 100);
   }
   
-  function highlightDoc(docId, searchTerm) {
-    highlightedDocId = docId;
-    currentSearchTerm = searchTerm;
-    
-    // Switch to docs tab if not already there
-    if (activeTab !== 'docs') {
-      activeTab = 'docs';
-    }
-    
-    // Scroll to the doc
-    setTimeout(() => {
-      const docElement = document.querySelector(`[data-doc-id="${docId}"]`);
-      if (docElement) {
-        docElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        docElement.classList.add('search-highlight-scroll');
-        setTimeout(() => {
-          docElement.classList.remove('search-highlight-scroll');
-        }, 3000);
-      }
-    }, 100);
-  }
   
   // Helper function to get card type display name
   function getCardTypeDisplayName(type) {
@@ -191,60 +165,16 @@
     return projectType ? projectType.display_name : type;
   }
   
-  // Get all available tags for current tab
-  $: availableTags = activeTab === 'cards' 
-    ? [...new Set(cards.flatMap(card => card.tags || []))].sort()
-    : activeTab === 'docs'
-    ? [...new Set(docs.flatMap(d => d.tags || []))].sort()
-    : [];
   
-  // Auto-populate selectedTags based on global search (only for 3+ characters)
-  $: {
-    if (search && search.trim() && search.trim().length >= 3) {
-      const searchTerm = search.toLowerCase().trim();
-      const matchingTags = availableTags.filter(tag => 
-        tag.toLowerCase().includes(searchTerm)
-      );
-      
-      // Also check card types
-      const matchingTypes = projectCardTypes
-        .filter(ft => ft.display_name.toLowerCase().includes(searchTerm))
-        .map(ft => ft.display_name);
-      
-      // Set selectedTags to only the matching tags and types (replace, don't accumulate)
-      selectedTags = [...matchingTags, ...matchingTypes];
-    } else {
-      // Clear selected tags when search is less than 3 characters or empty
-      selectedTags = [];
-    }
-  }
-  
-  // Filter cards/docs based on selected tags and search term
+  // Filter cards based on search term
   $: filteredCards = cards.filter(card => {
-    // First apply search term filter
     const searchTerm = search.toLowerCase().trim();
     const cardTypeDisplayName = getCardTypeDisplayName(card.type);
-    const matchesSearch = !searchTerm || 
+    return !searchTerm || 
       card.title.toLowerCase().includes(searchTerm) ||
       card.content.toLowerCase().includes(searchTerm) ||
       cardTypeDisplayName.toLowerCase().includes(searchTerm) ||
       (card.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
-    
-    
-    if (!matchesSearch) return false;
-    
-    // Then apply tag filters if any
-    if (selectedTags.length === 0) return true;
-    
-    const cardTags = card.tags || [];
-    // Combine regular tags with the card type display name for filtering
-    const allFilterableItems = [...cardTags, cardTypeDisplayName];
-    
-    if (tagFilterMode === 'AND') {
-      return selectedTags.every(tag => allFilterableItems.includes(tag));
-    } else {
-      return selectedTags.some(tag => allFilterableItems.includes(tag));
-    }
   });
   
   // Sort the filtered cards when sortBy or sortOrder changes, but only when not loading
@@ -298,52 +228,7 @@
     }
   });
   
-  $: filteredDocs = docs.filter(doc => {
-    // First apply search term filter
-    const searchTerm = search.toLowerCase().trim();
-    const matchesSearch = !searchTerm || 
-      doc.title.toLowerCase().includes(searchTerm) ||
-      (doc.content || '').toLowerCase().includes(searchTerm) ||
-      (doc.tags || []).some(tag => tag.toLowerCase().includes(searchTerm));
-    
-    if (!matchesSearch) return false;
-    
-    // Then apply tag filters if any
-    if (selectedTags.length === 0) return true;
-    
-    const docTags = doc.tags || [];
-    if (tagFilterMode === 'AND') {
-      return selectedTags.every(tag => docTags.includes(tag));
-    } else {
-      return selectedTags.some(tag => docTags.includes(tag));
-    }
-  });
   
-  function addTagFilter(tag) {
-    if (!selectedTags.includes(tag)) {
-      selectedTags = [...selectedTags, tag];
-    }
-  }
-  
-  function removeTagFilter(index) {
-    selectedTags = selectedTags.filter((_, i) => i !== index);
-  }
-  
-  function clearAllFilters() {
-    selectedTags = [];
-  }
-  
-  function toggleFilterMode() {
-    tagFilterMode = tagFilterMode === 'AND' ? 'OR' : 'AND';
-  }
-  
-  function handleTagClick(event) {
-    addTagFilter(event.detail);
-  }
-  
-  function handleTypeClick(event) {
-    addTagFilter(event.detail);
-  }
 
   // Context summary events
   function handleBriefRegenerate() {
@@ -448,46 +333,7 @@
   function handleDocTogglePin(event) {
     dispatch('doc-toggle-pin', event.detail);
   }
-  
-  // Bulk pin/unpin functions
-  function bulkPinFiltered() {
-    if (activeTab === 'cards') {
-      filteredCards.forEach(card => {
-        if (!card.pinned) {
-          dispatch('card-toggle-pin', card);
-        }
-      });
-    } else if (activeTab === 'docs') {
-      filteredDocs.forEach(doc => {
-        if (!doc.pinned) {
-          dispatch('doc-toggle-pin', doc);
-        }
-      });
-    }
-  }
-  
-  function bulkUnpinFiltered() {
-    if (activeTab === 'cards') {
-      filteredCards.forEach(card => {
-        if (card.pinned) {
-          dispatch('card-toggle-pin', card);
-        }
-      });
-    } else if (activeTab === 'docs') {
-      filteredDocs.forEach(doc => {
-        if (doc.pinned) {
-          dispatch('doc-toggle-pin', doc);
-        }
-      });
-    }
-  }
-  
-  // Export function to refresh card types from parent component
-  export function refreshCardTypes() {
-    // Refresh card types in the Binder
-    loadProjectCardTypes();
-    // Note: CardsManager doesn't need card type refresh since it uses cards table
-  }
+
 </script>
 
 <section class="h-full border-r border-gray-200 dark:border-gray-700 p-2 sm:p-3 flex flex-col mobile-sidebar">
@@ -495,85 +341,6 @@
   {#if current}
     <!-- Three-Tab Interface: Summary, Facts, Docs -->
     <div class="flex flex-col min-h-0 flex-1">
-      <!-- Selected Tags & Controls (reserve space on all tabs) -->
-      <div class="mb-3 space-y-2 transition-all duration-200">
-        {#if activeTab !== 'summary' && selectedTags.length > 0}
-          <!-- Selected Tags & Controls -->
-          <div class="space-y-2">
-            <!-- Filter Mode Toggle -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <button
-                  on:click={toggleFilterMode}
-                  class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
-                  title={`Currently using ${tagFilterMode} logic`}
-                >
-                  {#if tagFilterMode === 'AND'}
-                    <ToggleRight size="14" class="text-blue-600" />
-                    <span class="font-medium" style="color: var(--color-accent);">AND</span>
-                  {:else}
-                    <ToggleLeft size="14" class="text-green-600" />
-                    <span class="font-medium text-green-700">OR</span>
-                  {/if}
-                </button>
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {tagFilterMode === 'AND' ? 'All tags required' : 'Any tag matches'}
-                </span>
-              </div>
-              <button
-                on:click={clearAllFilters}
-                class="text-xs text-red-600 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors"
-              >
-                Clear all
-              </button>
-            </div>
-            
-            <!-- Bulk Pin/Unpin Controls -->
-            <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-              <div class="flex items-center gap-2">
-                <button
-                  on:click={bulkPinFiltered}
-                  class="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors" style="background-color: var(--color-accent-light); color: var(--color-accent);"
-                  title="Pin all filtered {activeTab === 'cards' ? 'cards' : activeTab}"
-                >
-                  📌 Pin all ({activeTab === 'cards' ? filteredCards.length : filteredDocs.length})
-                </button>
-                <button
-                  on:click={bulkUnpinFiltered}
-                  class="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                  title="Unpin all filtered {activeTab === 'cards' ? 'cards' : activeTab}"
-                >
-                  📍 Unpin all ({activeTab === 'cards' ? sortedCards.filter(card => card.pinned).length : filteredDocs.filter(d => d.pinned).length})
-                </button>
-              </div>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                {activeTab === 'cards' 
-                  ? `${sortedCards.filter(card => card.pinned).length} of ${sortedCards.length} pinned`
-                  : `${filteredDocs.filter(d => d.pinned).length} of ${filteredDocs.length} pinned`
-                }
-              </span>
-            </div>
-            
-            <!-- Tag Breadcrumbs -->
-            <div class="flex flex-wrap gap-1">
-              {#each selectedTags as tag, index}
-                <span class="inline-flex items-center gap-1 text-xs" style="background-color: var(--color-accent-light); color: var(--color-accent); padding-top: 0px !important; padding-bottom: 0px !important; padding-left: 10px !important; padding-right: 2px !important; min-height: 0 !important;">
-                  {tag}
-                  <button
-                    on:click={() => removeTagFilter(index)}
-                    class="hover:opacity-80 p-0 m-0 transition-opacity flex items-center justify-center"
-                    style="height: 16px !important; width: 16px !important; min-height: 0 !important;"
-                    title="Remove tag"
-                  >
-                    <X size="12" />
-                  </button>
-                </span>
-              {/each}
-            </div>
-          </div>
-        {/if}
-        
-      </div>
       
       <!-- Tab Headers - Hidden for Cards UI -->
       <!-- <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3">
@@ -586,18 +353,7 @@
           } {activeTab !== 'cards' ? 'color: #6b7280;' : ''}"
           on:click={() => activeTab = 'cards'}
         >
-          Cards ({selectedTags.length > 0 ? filteredCards.length : cards.length})
-        </button>
-        <button
-          class="px-3 py-1 sm:py-2 font-medium border-b-2 transition-colors"
-          style="{
-            activeTab === 'docs' 
-              ? `border-color: var(--color-accent); color: var(--color-accent); background-color: var(--color-accent-light); font-size: 15px;` 
-              : 'border-color: transparent; font-size: 15px;'
-          } {activeTab !== 'docs' ? 'color: #6b7280;' : ''}"
-          on:click={() => activeTab = 'docs'}
-        >
-          Docs ({selectedTags.length > 0 ? filteredDocs.length : docs.length})
+          Cards ({filteredCards.length})
         </button>
         {#if userIsAdmin}
           <button
@@ -653,27 +409,6 @@
             on:merge={handleCardMerge}
             on:generate-art={handleCardGenerateArt}
             on:pack-complete={handlePackComplete}
-          />
-        {:else if activeTab === 'docs'}
-          <DocsManager
-            docs={filteredDocs}
-            loadingDocs={loadingCards}
-            projectId={current?.id}
-            {user}
-            bind:showAddDocForm
-            bind:docTitle
-            bind:docContent
-            bind:docTags
-            searchTerm={currentSearchTerm}
-            cardsGridSize={userPreferences.cards_grid_size}
-            on:add={handleDocAdd}
-            on:cancel-add={handleDocCancelAdd}
-            on:start-edit={handleDocStartEdit}
-            on:cancel-edit={handleDocCancelEdit}
-            on:save-edit={handleDocSaveEdit}
-            on:delete={handleDocDelete}
-            on:toggle-pin={handleDocTogglePin}
-            on:tag-click={handleTagClick}
           />
         {:else if activeTab === 'entities'}
           <EntityCards 
