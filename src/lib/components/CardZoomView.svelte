@@ -1,9 +1,10 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2 } from 'lucide-svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
+  import MarkdownEditor from './MarkdownEditor.svelte';
 
   export let card = null;
   export let isOpen = false;
@@ -109,6 +110,12 @@
   let tooltipPosition = { x: 0, y: 0 };
   let hoverTimeout = null;
   
+  // Tooltip data cache
+  let tooltipNotes = [];
+  let tooltipBranches = [];
+  let tooltipDecks = [];
+  let tooltipResources = [];
+  
   // Modal states
   let showNotesModal = false;
   let showBranchesModal = false;
@@ -116,6 +123,15 @@
   let showResourcesModal = false;
   let showFeedbackModal = false;
   let feedbackArtUrl = '';
+  
+  // Notes management state
+  let notes = [];
+  let editingNote = null;
+  let newNoteContent = '';
+  let showNoteEditor = false;
+  let isFullScreen = false;
+  let showPreview = false;
+  let showSplitView = false;
 
   // Reactive values
   $: rarity = getRarityConfig(editedCard?.rarity || card?.rarity || 'common');
@@ -358,7 +374,7 @@
   }
 
   // Tooltip functions
-  function showTooltipForType(type, event) {
+  async function showTooltipForType(type, event) {
     // Clear any existing timeout
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
@@ -373,45 +389,31 @@
     tooltipType = type;
     showTooltip = true;
     
-    // Generate mock content based on type
+    // Load real data based on type
     switch (type) {
       case 'notes':
-        tooltipContent = [
-          'Card development notes from brainstorming session',
-          'User feedback: "This idea has potential for expansion"',
-          'Research findings: Similar concepts in other media',
-          'Implementation notes: Consider adding visual elements',
-          'Follow-up: Schedule review with team next week'
-        ];
+        if (tooltipNotes.length === 0) {
+          await loadTooltipNotes();
+        }
+        tooltipContent = tooltipNotes;
         break;
       case 'branches':
-        tooltipContent = [
-          'Character Development Branch',
-          'World Building Branch',
-          'Plot Twist Branch'
-        ];
+        if (tooltipBranches.length === 0) {
+          await loadTooltipBranches();
+        }
+        tooltipContent = tooltipBranches;
         break;
       case 'decks':
-        tooltipContent = [
-          'Main Story Deck',
-          'Character Arcs Deck',
-          'World Building Deck',
-          'Plot Points Deck',
-          'Side Quests Deck',
-          'Romance Subplot Deck',
-          'Action Sequences Deck',
-          'Dialogue Deck'
-        ];
+        if (tooltipDecks.length === 0) {
+          await loadTooltipDecks();
+        }
+        tooltipContent = tooltipDecks;
         break;
       case 'resources':
-        tooltipContent = [
-          { name: 'Character Concept Art', type: 'image', icon: '🎨' },
-          { name: 'Voice Recording Sample', type: 'audio', icon: '🎵' },
-          { name: 'World Map Video', type: 'video', icon: '🎬' },
-          { name: 'Research Document', type: 'text', icon: '📄' },
-          { name: 'Storyboard Sketches', type: 'doodle', icon: '✏️' },
-          { name: 'Reference Links', type: 'link', icon: '🔗' }
-        ];
+        if (tooltipResources.length === 0) {
+          await loadTooltipResources();
+        }
+        tooltipContent = tooltipResources;
         break;
     }
   }
@@ -435,6 +437,7 @@
     switch (type) {
       case 'notes':
         showNotesModal = true;
+        loadNotes();
         break;
       case 'branches':
         showBranchesModal = true;
@@ -453,6 +456,9 @@
     switch (type) {
       case 'notes':
         showNotesModal = false;
+        showNoteEditor = false;
+        editingNote = null;
+        newNoteContent = '';
         break;
       case 'branches':
         showBranchesModal = false;
@@ -464,6 +470,173 @@
         showResourcesModal = false;
         break;
     }
+  }
+
+  // Notes management functions
+  async function loadNotes() {
+    if (!editedCard?.id) return;
+    
+    try {
+      const response = await fetch(`/api/cards/${editedCard.id}/notes`);
+      if (response.ok) {
+        notes = await response.json();
+      } else {
+        console.error('Failed to load notes');
+        notes = [];
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error);
+      notes = [];
+    }
+  }
+
+  function startNewNote() {
+    editingNote = null;
+    newNoteContent = '';
+    showNoteEditor = true;
+  }
+
+  function startEditNote(note) {
+    editingNote = note;
+    newNoteContent = note.content;
+    showNoteEditor = true;
+  }
+
+  function cancelNoteEdit() {
+    editingNote = null;
+    newNoteContent = '';
+    showNoteEditor = false;
+  }
+
+  async function saveNote() {
+    if (!newNoteContent.trim()) return;
+    
+    try {
+      const url = editingNote 
+        ? `/api/cards/${editedCard.id}/notes/${editingNote.id}`
+        : `/api/cards/${editedCard.id}/notes`;
+      
+      const method = editingNote ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newNoteContent.trim() })
+      });
+      
+      if (response.ok) {
+        await loadNotes(); // Reload notes
+        // Clear tooltip cache so it refreshes next time
+        tooltipNotes = [];
+        cancelNoteEdit();
+      } else {
+        console.error('Failed to save note');
+        alert('Failed to save note');
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+      alert('Error saving note');
+    }
+  }
+
+  async function deleteNote(noteId) {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    
+    try {
+      const response = await fetch(`/api/cards/${editedCard.id}/notes/${noteId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await loadNotes(); // Reload notes
+        // Clear tooltip cache so it refreshes next time
+        tooltipNotes = [];
+      } else {
+        console.error('Failed to delete note');
+        alert('Failed to delete note');
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Error deleting note');
+    }
+  }
+
+  // Markdown editor event handlers
+  function handleMarkdownContentChange(event) {
+    newNoteContent = event.detail.content;
+  }
+
+  function handleMarkdownFullscreenToggle(event) {
+    isFullScreen = event.detail.isFullScreen;
+  }
+
+  function handleMarkdownPreviewToggle(event) {
+    showPreview = event.detail.showPreview;
+  }
+
+  function handleMarkdownSplitToggle(event) {
+    showSplitView = event.detail.showSplitView;
+  }
+
+  // Tooltip data loading functions
+  async function loadTooltipNotes() {
+    if (!editedCard?.id) return;
+    
+    try {
+      const response = await fetch(`/api/cards/${editedCard.id}/notes`);
+      if (response.ok) {
+        const notes = await response.json();
+        // Create short excerpts (first 100 characters) for tooltip display
+        tooltipNotes = notes.map(note => {
+          const excerpt = note.content.length > 100 
+            ? note.content.substring(0, 100) + '...'
+            : note.content;
+          return excerpt;
+        });
+      } else {
+        tooltipNotes = [];
+      }
+    } catch (error) {
+      console.error('Error loading tooltip notes:', error);
+      tooltipNotes = [];
+    }
+  }
+
+  async function loadTooltipBranches() {
+    // TODO: Implement when branches system is ready
+    tooltipBranches = ['Character Development Branch', 'World Building Branch', 'Plot Twist Branch'];
+  }
+
+  async function loadTooltipDecks() {
+    // TODO: Implement when decks system is ready
+    tooltipDecks = ['Main Story Deck', 'Character Arcs Deck', 'World Building Deck'];
+  }
+
+  async function loadTooltipResources() {
+    // TODO: Implement when resources system is ready
+    tooltipResources = [
+      { name: 'Character Concept Art', type: 'image', icon: '🎨' },
+      { name: 'Voice Recording Sample', type: 'audio', icon: '🎵' },
+      { name: 'World Map Video', type: 'video', icon: '🎬' }
+    ];
+  }
+
+  // Simple markdown rendering function
+  function renderMarkdown(text) {
+    if (!text) return '';
+    
+    return text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/`(.*?)`/gim, '<code>$1</code>')
+      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+      .replace(/^- (.*$)/gim, '<li>$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\n/gim, '<br>');
   }
 </script>
 
@@ -918,34 +1091,129 @@
 
 <!-- Notes Modal -->
 {#if showNotesModal}
-  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('notes')}>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notes for {editedCard?.title || 'Card'}</h3>
-          <button
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            on:click={() => closeContentModal('notes')}
-          >
-            <X size="20" />
-          </button>
-        </div>
-        <div class="space-y-3">
-          {#each tooltipContent as note, index}
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div class="text-sm font-medium text-gray-900 dark:text-white mb-1">Note {index + 1}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-300">{note}</div>
+  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:mousedown={() => closeContentModal('notes')}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" on:mousedown|stopPropagation>
+      <!-- Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notes for {editedCard?.title || 'Card'}</h3>
+        <button
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          on:click={() => closeContentModal('notes')}
+        >
+          <X size="20" />
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-hidden flex flex-col">
+        {#if showNoteEditor}
+          <!-- Note Editor -->
+          <div class="flex-1 flex flex-col p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-md font-medium text-gray-900 dark:text-white">
+                {editingNote ? 'Edit Note' : 'New Note'}
+              </h4>
+              <div class="flex items-center gap-2">
+                <button
+                  class="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  on:click={cancelNoteEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  class="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  on:click={saveNote}
+                  disabled={!newNoteContent.trim()}
+                >
+                  {editingNote ? 'Update Note' : 'Save Note'}
+                </button>
+              </div>
             </div>
-          {/each}
-        </div>
-        <div class="mt-4 flex justify-end">
-          <button
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            on:click={() => closeContentModal('notes')}
-          >
-            Close
-          </button>
-        </div>
+            
+            <!-- Markdown Editor -->
+            <div class="flex-1 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden" style="min-height: 400px;">
+              <MarkdownEditor
+                content={newNoteContent}
+                placeholder="Enter your note content here... (supports markdown)"
+                bind:isFullScreen
+                bind:showPreview
+                bind:showSplitView
+                on:content-change={handleMarkdownContentChange}
+                on:fullscreen-toggle={handleMarkdownFullscreenToggle}
+                on:preview-toggle={handleMarkdownPreviewToggle}
+                on:split-toggle={handleMarkdownSplitToggle}
+              />
+            </div>
+          </div>
+        {:else}
+          <!-- Notes List -->
+          <div class="flex-1 overflow-y-auto p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-md font-medium text-gray-900 dark:text-white">
+                Notes ({notes.length})
+              </h4>
+              <button
+                class="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                on:click={startNewNote}
+              >
+                <Plus size="16" />
+                Add Note
+              </button>
+            </div>
+            
+            {#if notes.length === 0}
+              <div class="text-center py-12">
+                <div class="text-gray-400 dark:text-gray-500 mb-4">
+                  <Flag size="48" class="mx-auto" />
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">No notes yet</p>
+                <button
+                  class="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  on:click={startNewNote}
+                >
+                  Add your first note
+                </button>
+              </div>
+            {:else}
+              <div class="space-y-4">
+                {#each notes as note (note.id)}
+                  <div 
+                    class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"
+                    on:click={() => startEditNote(note)}
+                    role="button"
+                    tabindex="0"
+                    on:keydown={(e) => e.key === 'Enter' && startEditNote(note)}
+                  >
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(note.created_at).toLocaleDateString()} at {new Date(note.created_at).toLocaleTimeString()}
+                      </div>
+                      <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          on:click|stopPropagation={() => startEditNote(note)}
+                          title="Edit note"
+                        >
+                          <Edit3 size="14" />
+                        </button>
+                        <button
+                          class="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                          on:click|stopPropagation={() => deleteNote(note.id)}
+                          title="Delete note"
+                        >
+                          <Trash2 size="14" />
+                        </button>
+                      </div>
+                    </div>
+                    <div class="prose prose-sm max-w-none dark:prose-invert">
+                      {@html renderMarkdown(note.content)}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
