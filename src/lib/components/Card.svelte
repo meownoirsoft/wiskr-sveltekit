@@ -639,4 +639,12 @@
     overflow: hidden;
     line-clamp: 4;
   }
+  
+  .line-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 6;
+  }
 </style>

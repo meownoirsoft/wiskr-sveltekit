@@ -2,6 +2,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2 } from 'lucide-svelte';
+  import MergeModal from './MergeModal.svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -109,6 +110,7 @@
   let tooltipType = '';
   let tooltipPosition = { x: 0, y: 0 };
   let hoverTimeout = null;
+  let tooltipLoading = false;
   
   // Tooltip data cache
   let tooltipNotes = [];
@@ -123,6 +125,7 @@
   let showResourcesModal = false;
   let showFeedbackModal = false;
   let feedbackArtUrl = '';
+  let showMergeModal = false;
   
   // Notes management state
   let notes = [];
@@ -246,6 +249,13 @@
     dispatch('close');
   }
 
+  function handleBackgroundClick(event) {
+    // Only close modal if not in edit mode
+    if (!isEditing) {
+      closeModal();
+    }
+  }
+
   function handleRarityUpgrade() {
     const rarities = ['common', 'special', 'rare', 'legendary'];
     const currentIndex = rarities.indexOf(editedCard.rarity);
@@ -275,8 +285,17 @@
   }
 
   function addTag() {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      tags = [...tags, newTag.trim()];
+    if (newTag.trim()) {
+      // Split by comma and process each tag
+      const newTags = newTag.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      // Add only tags that don't already exist
+      const uniqueNewTags = newTags.filter(tag => !tags.includes(tag));
+      
+      if (uniqueNewTags.length > 0) {
+        tags = [...tags, ...uniqueNewTags];
+      }
+      
       newTag = '';
     }
   }
@@ -292,7 +311,16 @@
   }
 
   function handleMerge() {
-    dispatch('merge', { card });
+    showMergeModal = true;
+  }
+
+  function closeMergeModal() {
+    showMergeModal = false;
+  }
+
+  function handleSaveCard(event) {
+    // Handle saving a new card from merge operations
+    dispatch('save-card', event.detail);
   }
 
   function handleSplit() {
@@ -382,11 +410,14 @@
     }
     
     const rect = event.currentTarget.getBoundingClientRect();
-    tooltipPosition = {
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    };
+    
+    // Position all tooltips above their buttons
+    const x = rect.left + rect.width / 2;
+    const y = rect.top - 10;
+    
+    tooltipPosition = { x, y };
     tooltipType = type;
+    tooltipLoading = true;
     showTooltip = true;
     
     // Load real data based on type
@@ -416,6 +447,8 @@
         tooltipContent = tooltipResources;
         break;
     }
+    
+    tooltipLoading = false;
   }
 
   function hideTooltip() {
@@ -450,6 +483,14 @@
         break;
     }
     hideTooltip();
+  }
+
+  function openDeckView(deckId, deckName) {
+    // Dispatch event to parent to open deck view
+    dispatch('open-deck', { 
+      deckId, 
+      deckName
+    });
   }
 
   function closeContentModal(type) {
@@ -604,21 +645,29 @@
 
   async function loadTooltipBranches() {
     // TODO: Implement when branches system is ready
-    tooltipBranches = ['Character Development Branch', 'World Building Branch', 'Plot Twist Branch'];
+    tooltipBranches = [];
   }
 
   async function loadTooltipDecks() {
-    // TODO: Implement when decks system is ready
-    tooltipDecks = ['Main Story Deck', 'Character Arcs Deck', 'World Building Deck'];
+    if (!editedCard?.id) return;
+    
+    try {
+      const response = await fetch(`/api/cards/${editedCard.id}/decks`);
+      if (response.ok) {
+        const decks = await response.json();
+        tooltipDecks = decks;
+      } else {
+        tooltipDecks = [];
+      }
+    } catch (error) {
+      console.error('Error loading tooltip decks:', error);
+      tooltipDecks = [];
+    }
   }
 
   async function loadTooltipResources() {
     // TODO: Implement when resources system is ready
-    tooltipResources = [
-      { name: 'Character Concept Art', type: 'image', icon: '🎨' },
-      { name: 'Voice Recording Sample', type: 'audio', icon: '🎵' },
-      { name: 'World Map Video', type: 'video', icon: '🎬' }
-    ];
+    tooltipResources = [];
   }
 
   // Simple markdown rendering function
@@ -642,12 +691,12 @@
 
 {#if isOpen && editedCard}
   <!-- Background -->
-  <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={closeModal}>
+  <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={handleBackgroundClick}>
     
     <!-- Just the Card -->
     <div 
       class="card-container relative transition-all duration-200"
-      style="width: 500px; height: 700px;"
+      style="width: 500px; height: 800px;"
       on:click|stopPropagation
     >
       <!-- Card Frame -->
@@ -771,29 +820,27 @@
         </div>
 
         <!-- Tags -->
-        <div class="px-4 mb-4">
+        <div class="px-4 mb-2">
           {#if isEditing}
-            <div class="space-y-2">
-              <div class="flex flex-wrap gap-1">
-                {#each tags as tag}
-                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
-                    {tag}
-                    <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
-                      ×
-                    </button>
-                  </span>
-                {/each}
-              </div>
-              <div class="flex gap-2">
+            <div class="flex flex-wrap items-center gap-1">
+              {#each tags as tag}
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
+                  {tag}
+                  <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
+                    ×
+                  </button>
+                </span>
+              {/each}
+              <div class="flex items-center gap-1 ml-2">
                 <input
                   id="new-tag"
                   bind:value={newTag}
                   on:keydown={handleKeydown}
-                  class="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
-                  placeholder="Add tag..."
+                  class="w-20 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
+                  placeholder="Add..."
                 />
-                <button on:click={addTag} class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
-                  Add
+                <button on:click={addTag} class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                  +
                 </button>
               </div>
             </div>
@@ -809,25 +856,25 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 px-4 mb-4">
+        <div class="flex-1 px-4 mb-0">
           {#if isEditing}
             <textarea
               bind:value={content}
-              class="w-full h-40 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
+              class="w-full h-48 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
               placeholder="Card content..."
             ></textarea>
           {:else}
-            <div class="text-sm leading-tight" style:color={darkMode ? '#d1d5db' : '#374151'}>
+            <div class="text-sm leading-tight overflow-y-auto max-h-48" style:color={darkMode ? '#d1d5db' : '#374151'}>
               {editedCard.content}
             </div>
           {/if}
         </div>
 
-        <!-- Link Buttons -->
-        <div class="px-4 mb-3">
-          <div class="flex items-center justify-between text-xs">
+        <!-- Content Links - Below Content -->
+        <div class="px-4 mb-4">
+          <div class="flex justify-between text-xs">
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
               style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('notes')}
               on:mouseenter={(e) => showTooltipForType('notes', e)}
@@ -836,7 +883,7 @@
               Notes
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
               style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('branches')}
               on:mouseenter={(e) => showTooltipForType('branches', e)}
@@ -845,7 +892,7 @@
               Branches
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
               style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('decks')}
               on:mouseenter={(e) => showTooltipForType('decks', e)}
@@ -854,7 +901,7 @@
               Decks
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80"
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
               style:color={darkMode ? '#9ca3af' : '#6b7280'}
               on:click={() => openContentModal('resources')}
               on:mouseenter={(e) => showTooltipForType('resources', e)}
@@ -985,19 +1032,19 @@
             {/if}
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
-              on:click={handleSplit}
-              title="Split card"
-              style:color={darkMode ? '#ffffff' : rarity.textColor}
-            >
-              <Split size="20" />
-            </button>
-            <button
-              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleMerge}
               title="Merge cards"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <Merge size="20" />
+            </button>
+            <button
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={handleSplit}
+              title="Split card"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
+            >
+              <Split size="20" />
             </button>
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
@@ -1038,36 +1085,67 @@
       
       {#if tooltipType === 'notes'}
         <div class="space-y-1">
-          {#each tooltipContent as note, index}
-            <div class="text-xs text-gray-300 dark:text-gray-300 truncate">
-              {index + 1}. {note}
-            </div>
-          {/each}
+          {#if tooltipLoading}
+            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
+          {:else if tooltipContent && tooltipContent.length > 0}
+            {#each tooltipContent as note, index}
+              <div class="text-xs text-gray-300 dark:text-gray-300 truncate">
+                {index + 1}. {note}
+              </div>
+            {/each}
+          {:else}
+            <div class="text-xs text-gray-400 dark:text-gray-500">No notes yet</div>
+          {/if}
         </div>
       {:else if tooltipType === 'branches'}
         <div class="space-y-1">
-          {#each tooltipContent as branch}
-            <div class="text-xs text-gray-300 dark:text-gray-300">
-              • {branch}
-            </div>
-          {/each}
+          {#if tooltipLoading}
+            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
+          {:else if tooltipContent && tooltipContent.length > 0}
+            {#each tooltipContent as branch}
+              <div class="text-xs text-gray-300 dark:text-gray-300">
+                • {branch}
+              </div>
+            {/each}
+          {:else}
+            <div class="text-xs text-gray-400 dark:text-gray-500">No branches yet</div>
+          {/if}
         </div>
       {:else if tooltipType === 'decks'}
         <div class="space-y-1 max-h-32 overflow-y-auto">
-          {#each tooltipContent as deck}
-            <div class="text-xs text-gray-300 dark:text-gray-300">
-              • {deck}
-            </div>
-          {/each}
+          {#if tooltipLoading}
+            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
+          {:else if tooltipContent && tooltipContent.length > 0}
+            {#each tooltipContent as deck}
+              <div 
+                class="flex items-center gap-2 text-xs text-blue-300 dark:text-blue-400 hover:text-blue-200 dark:hover:text-blue-300 cursor-pointer underline hover:no-underline transition-colors"
+                on:click={() => openDeckView(deck.id, deck.name)}
+                on:click|stopPropagation
+              >
+                <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span class="truncate">{deck.name}</span>
+              </div>
+            {/each}
+          {:else}
+            <div class="text-xs text-gray-400 dark:text-gray-500">No decks yet</div>
+          {/if}
         </div>
       {:else if tooltipType === 'resources'}
         <div class="space-y-1">
-          {#each tooltipContent as resource}
-            <div class="text-xs text-gray-300 dark:text-gray-300 flex items-center gap-2">
-              <span>{resource.icon}</span>
-              <span>{resource.name}</span>
-            </div>
-          {/each}
+          {#if tooltipLoading}
+            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
+          {:else if tooltipContent && tooltipContent.length > 0}
+            {#each tooltipContent as resource}
+              <div class="text-xs text-gray-300 dark:text-gray-300 flex items-center gap-2">
+                <span>{resource.icon}</span>
+                <span>{resource.name}</span>
+              </div>
+            {/each}
+          {:else}
+            <div class="text-xs text-gray-400 dark:text-gray-500">No resources yet</div>
+          {/if}
         </div>
       {/if}
       
@@ -1271,8 +1349,18 @@
         <div class="space-y-2 max-h-96 overflow-y-auto">
           {#each tooltipContent as deck}
             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
-              <span class="text-sm text-gray-900 dark:text-white">{deck}</span>
-              <button class="text-blue-500 hover:text-blue-600 text-sm">View</button>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span class="text-sm text-gray-900 dark:text-white">{deck.name}</span>
+              </div>
+              <button 
+                class="text-blue-500 hover:text-blue-600 text-sm"
+                on:click={() => openDeckView(deck.id, deck.name)}
+              >
+                View
+              </button>
             </div>
           {/each}
         </div>
@@ -1337,6 +1425,15 @@
   on:close={closeFeedbackModal}
 />
 
+<!-- Merge Modal -->
+<MergeModal
+  bind:isOpen={showMergeModal}
+  sourceCard={card}
+  projectId={card?.project_id}
+  on:close={closeMergeModal}
+  on:save-card={handleSaveCard}
+/>
+
 <style>
   .card-container {
     transform-style: preserve-3d;
@@ -1345,4 +1442,5 @@
   .card-frame {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   }
+  
 </style>

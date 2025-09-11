@@ -264,6 +264,11 @@
     dispatch('card-toggle-pin', event.detail);
   }
 
+  function handleCardSave(event) {
+    console.log('Binder: handleCardSave called with:', event.detail);
+    dispatch('save-card', event.detail);
+  }
+
   // Card-specific event handlers from CardsManager
   function handleCardEdit(event) {
     // This handles both edit modal opening and zoom view saves
@@ -298,6 +303,10 @@
 
   function handleCardGenerateArt(event) {
     dispatch('card-generate-art', event.detail);
+  }
+
+  function handleCardOpenDeck(event) {
+    dispatch('card-open-deck', event.detail);
   }
 
   function handlePackComplete(event) {
@@ -407,7 +416,9 @@
             on:rarity-change={handleCardRarityChange}
             on:split={handleCardSplit}
             on:merge={handleCardMerge}
+            on:save-card={handleCardSave}
             on:generate-art={handleCardGenerateArt}
+            on:open-deck={handleCardOpenDeck}
             on:pack-complete={handlePackComplete}
           />
         {:else if activeTab === 'entities'}

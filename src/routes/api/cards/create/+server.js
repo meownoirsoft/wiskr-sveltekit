@@ -1,17 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 import { createCardChunks } from '$lib/server/utils/cardChunks.js';
-
-const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST({ request, locals }) {
   try {
@@ -22,13 +13,10 @@ export async function POST({ request, locals }) {
     }
 
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
-    if (userError || !user) {
-      return json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const user = await requireAuth(locals);
 
     // Insert new card
-    const { data: card, error: insertError } = await locals.supabase
+    const { data: card, error: insertError } = await supabaseAdmin
       .from('cards')
       .insert({
         project_id,
@@ -57,7 +45,7 @@ export async function POST({ request, locals }) {
 
     // Update card with embedding if generated
     if (embedding) {
-      const { error: updateError } = await locals.supabase
+      const { error: updateError } = await supabaseAdmin
         .from('cards')
         .update({ embedding })
         .eq('id', card.id);

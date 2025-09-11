@@ -1247,6 +1247,35 @@ function handleCardTogglePin(event) {
   }
 }
 
+function handleCardSave(event) {
+  // Handle saving a new card from merge operations
+  console.log('Main page: handleCardSave called with event:', event);
+  
+  if (contextManager) {
+    const cardData = event.detail;
+    console.log('Main page: Saving card from merge operation:', cardData);
+    console.log('Main page: ContextManager available:', !!contextManager);
+    
+    // Add the card using the context manager
+    contextManager.addCardFromMerge(cardData);
+  } else {
+    console.error('Main page: ContextManager not available!');
+  }
+}
+
+function handleCardOpenDeck(event) {
+  const { deckId, deckName } = event.detail;
+  
+  // Find the deck in our decks array
+  const deck = decks.find(d => d.id === deckId);
+  if (deck) {
+    currentDeck = deck;
+    showDeckView = true;
+  } else {
+    console.error('Deck not found:', deckId);
+  }
+}
+
 function handleDocAdd(event) {
   if (contextManager) {
     contextManager.addDoc(event.detail);
@@ -1963,6 +1992,8 @@ function handleTextAddToDocs(event) {
           on:card-save-edit={handleCardSaveEdit}
           on:card-delete={handleCardDelete}
           on:card-toggle-pin={handleCardTogglePin}
+          on:save-card={handleCardSave}
+          on:card-open-deck={handleCardOpenDeck}
           on:doc-add={handleDocAdd}
           on:doc-cancel-add={() => { contextManager?.clearDocForm(); }}
           on:doc-start-edit={handleDocStartEdit}

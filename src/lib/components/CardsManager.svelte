@@ -389,9 +389,22 @@
     dispatch('merge', { card });
   }
 
+  function handleCardSave(event) {
+    console.log('CardsManager: handleCardSave called with:', event.detail);
+    dispatch('save-card', event.detail);
+  }
+
   function handleCardZoomSplit(event) {
     const { card } = event.detail;
     dispatch('split', { card });
+  }
+
+  function handleCardZoomOpenDeck(event) {
+    const { deckId, deckName } = event.detail;
+    // Close the card zoom view first
+    closeCardZoom();
+    // Then dispatch the open-deck event
+    dispatch('open-deck', { deckId, deckName });
   }
 
   async function handleCardZoomGenerateArt(event) {
@@ -970,8 +983,10 @@
   on:progress-change={handleCardZoomProgressChange}
   on:toggle-pin={handleCardZoomTogglePin}
   on:merge={handleCardZoomMerge}
+  on:save-card={handleCardSave}
   on:split={handleCardZoomSplit}
   on:generate-art={handleCardZoomGenerateArt}
+  on:open-deck={handleCardZoomOpenDeck}
 />
 
 <style>

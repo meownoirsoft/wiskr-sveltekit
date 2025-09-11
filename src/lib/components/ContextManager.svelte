@@ -273,6 +273,107 @@
     }
   }
 
+  export async function addCardFromMerge(cardData) {
+    if (!current) {
+      console.error('ContextManager: No current project, cannot add card from merge');
+      return;
+    }
+    
+    console.log('ContextManager: Adding card from merge operation:', cardData);
+    console.log('ContextManager: Current project:', current);
+    
+    // Check if offline - queue the request
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/cards/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: current.id,
+            title: cardData.title?.trim() || 'Untitled Card',
+            content: cardData.content?.trim() || '',
+            tags: cardData.tags || [],
+            pinned: false,
+            rarity: cardData.rarity || 'common',
+            progress: cardData.progress || 1,
+            mana_cost: cardData.mana_cost || 1
+          })
+        });
+        // Reload context after sync
+        await loadContext();
+      }, { type: 'create_card', cardTitle: cardData.title?.trim() || 'Untitled Card' });
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Card will be saved when you come back online.');
+      }
+      return;
+    }
+
+    incrementPendingOperations();
+    
+    try {
+      const { card } = await robustFetchJSON('/api/cards/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: current.id,
+          title: cardData.title?.trim() || 'Untitled Card',
+          content: cardData.content?.trim() || '',
+          tags: cardData.tags || [],
+          pinned: false,
+          rarity: cardData.rarity || 'common',
+          progress: cardData.progress || 1,
+          mana_cost: cardData.mana_cost || 1
+        })
+      }, {
+        timeout: 15000,
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying card creation', attempt, 3);
+          }
+        }
+      });
+      
+      // Dispatch event for context score refresh
+      if (browser) {
+        window.dispatchEvent(new CustomEvent('card:created', {
+          detail: { card, projectId: current.id }
+        }));
+      }
+      
+      // reload lists
+      await loadContext();
+      
+      // Auto-regenerate summary since cards content changed
+      await autoRegenerateSummary();
+      
+      if (browser && window.showNetworkToast && window.showNetworkToast.success) {
+        window.showNetworkToast.success('Card created successfully!');
+      } else if (browser) {
+        console.log('✅ Card created successfully!');
+      }
+      
+    } catch (error) {
+      console.error('ContextManager: Error adding card from merge:', error);
+      addNetworkError(error);
+      
+      const errorMessage = error.message.includes('Network connection failed') ?
+        'Network error. Card will be saved when connection is restored.' :
+        error.message.includes('timeout') ?
+        'Request timed out. Please try again.' :
+        `Failed to save card: ${error.message}`;
+      
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      decrementPendingOperations();
+    }
+  }
+
   export function startEditCard(f, i) {
     cards = cards.map((x, idx) => idx === i ? { ...x, _editing: true, _editTitle: x.title, _editContent: x.content, _editTags: (x.tags || []).join(', ') } : x);
   }
