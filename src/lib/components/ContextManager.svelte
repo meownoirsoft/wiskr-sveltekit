@@ -5,13 +5,35 @@
   import { browser } from '$app/environment';
   import { robustFetch, robustFetchJSON, getNetworkStatus, offlineQueue } from '$lib/utils/networkUtils.js';
   import { incrementPendingOperations, decrementPendingOperations, addNetworkError } from '$lib/stores/networkStore.js';
+  import { markCardAsNew } from '$lib/stores/newCards.js';
   import ConfirmModal from './ConfirmModal.svelte';
 
   const dispatch = createEventDispatcher();
 
   // Props - passed from parent component
   export let current; // current project
+  
+  // Track last load time to detect new cards
+  let lastLoadTime = Date.now();
   export let loadingCards;
+  
+  // Function to detect and mark new cards
+  function detectNewCards(newCards) {
+    const currentTime = Date.now();
+    const timeThreshold = 5000; // 5 seconds - cards created within this time are considered "new"
+    
+    newCards.forEach(card => {
+      const cardCreatedTime = new Date(card.created_at).getTime();
+      const timeDiff = currentTime - cardCreatedTime;
+      
+      // If card was created recently and after our last load, mark it as new
+      if (timeDiff < timeThreshold && cardCreatedTime > lastLoadTime) {
+        markCardAsNew(card.id);
+      }
+    });
+    
+    lastLoadTime = currentTime;
+  }
 
   // State that will be managed by this component
   export let cards = [];
@@ -126,6 +148,9 @@
         art_model: card.art_model || 'Midjourney'
       };
     });
+    
+    // Detect and mark new cards (for pack opening, etc.)
+    detectNewCards(rawCards);
     
     console.log('🎴 ContextManager: Final cards array:', cards.length, 'items');
     if (cards.length > 0) {

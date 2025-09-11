@@ -3,6 +3,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2 } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
+  import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -126,6 +127,7 @@
   let showFeedbackModal = false;
   let feedbackArtUrl = '';
   let showMergeModal = false;
+  let showSplitModal = false;
   
   // Notes management state
   let notes = [];
@@ -324,7 +326,17 @@
   }
 
   function handleSplit() {
-    dispatch('split', { card });
+    showSplitModal = true;
+  }
+
+  function closeSplitModal() {
+    showSplitModal = false;
+  }
+
+  function handleSplitSaveCard(event) {
+    // Handle saving split cards and close the split modal
+    dispatch('save-card', event.detail);
+    showSplitModal = false;
   }
 
   function handleGenerateArt() {
@@ -1432,6 +1444,15 @@
   projectId={card?.project_id}
   on:close={closeMergeModal}
   on:save-card={handleSaveCard}
+/>
+
+<!-- Split Modal -->
+<SplitModal
+  bind:isOpen={showSplitModal}
+  sourceCard={card}
+  projectId={card?.project_id}
+  on:close={closeSplitModal}
+  on:save-card={handleSplitSaveCard}
 />
 
 <style>

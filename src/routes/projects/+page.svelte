@@ -6,6 +6,7 @@
   import { supabase } from '$lib/supabase.js';
   import { loadAvatars } from '$lib/stores/avatars.js';
   import { marked } from 'marked';
+  import { markCardAsNew } from '$lib/stores/newCards.js';
   
 // Import components
 import Binder from '$lib/components/Binder.svelte';
@@ -750,6 +751,14 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       
       // Listen for Mr Wiskr button from header
       window.addEventListener('mrwiskr:open', handleMrWiskrOpen);
+      
+      // Listen for new card creation to mark as new
+      window.addEventListener('card:created', (event) => {
+        const { card } = event.detail;
+        if (card && card.id) {
+          markCardAsNew(card.id);
+        }
+      });
       
       // Listen for mobile menu events
       window.addEventListener('mobile:show-context', handleMobileShowContext);

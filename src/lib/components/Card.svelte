@@ -2,6 +2,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette, X } from 'lucide-svelte';
+  import { newCardIds, markCardAsSeen } from '$lib/stores/newCards.js';
 
   export let card = null;
   export let searchTerm = '';
@@ -9,6 +10,10 @@
   export let showActions = true;
   export let showRemoveButton = false;
   export let xPaddingClass = 'px-2';
+  export let isNew = false;
+  
+  // Check if this card is new
+  $: isNewCard = isNew || (card?.id && $newCardIds.has(card.id));
   
   // Debug card structure
   $: if (card) {
@@ -153,6 +158,11 @@
   }
 
   function handleCardClick() {
+    // Remove new badge when card is clicked
+    if (isNewCard && card?.id) {
+      markCardAsSeen(card.id);
+      dispatch('new-badge-removed', { card });
+    }
     dispatch('card-click', { card });
   }
 
@@ -261,7 +271,7 @@
 </script>
 
 <div 
-  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg {isSelected ? 'ring-2 ring-blue-500' : ''}"
+  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg"
   style="width: 250px; height: 350px;"
   on:click={handleCardClick}
   on:keydown={(e) => e.key === 'Enter' && handleCardClick()}
@@ -278,9 +288,10 @@
     </button>
   {/if}
 
+
   <!-- Card Frame with explicit styling -->
   <div 
-    class="card-frame border-2 rounded-lg {xPaddingClass} pt-4 pb-2 h-full flex flex-col {isSelected ? 'ring-2 ring-blue-500' : ''}"
+    class="card-frame border-2 rounded-lg {xPaddingClass} pt-4 pb-2 h-full flex flex-col"
     style="
       width: 100%; 
       height: 100%;
@@ -402,6 +413,7 @@
         />
       {/if}
     </div>
+
 
     <!-- Tags -->
     {#if card?.tags && card.tags.length > 0}
@@ -579,6 +591,15 @@
 
   </div>
 
+  <!-- NEW! Badge - positioned outside card frame to avoid stacking context issues -->
+  {#if isNewCard}
+    <div class="absolute" style="left: 12px; top: 30px; z-index: 999999 !important; border: none !important;">
+      <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+        NEW!
+      </div>
+    </div>
+  {/if}
+
   <!-- Context Menu - rendered outside card to avoid stacking context issues -->
   {#if showMenu}
     <div 
@@ -628,6 +649,20 @@
       tabindex="-1"
       aria-label="Close menu"
     ></div>
+  {/if}
+
+  <!-- Selection overlay for FannedCardDeck -->
+  {#if isSelected}
+    <!-- Blue overlay over entire card -->
+    <div class="absolute bg-blue-500 rounded-lg" style="z-index: 999999 !important; pointer-events: none; height: 350px; width: 250px; top: 0px; left: 0px; background-color: rgba(59, 130, 246, 0.5) !important; border-radius: 8px !important;"></div>
+    <!-- Checkmark centered on art -->
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" style="z-index: 1000000 !important; pointer-events: none;">
+      <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-xl">
+        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+        </svg>
+      </div>
+    </div>
   {/if}
 </div>
 

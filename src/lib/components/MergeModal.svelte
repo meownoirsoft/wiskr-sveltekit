@@ -3,6 +3,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { X, Sparkles, Layers, Eye, Wand2, BookOpen, Lightbulb } from 'lucide-svelte';
   import Card from './Card.svelte';
+  import FannedCardDeck from './FannedCardDeck.svelte';
 
   export let isOpen = false;
   export let sourceCard = null;
@@ -21,6 +22,10 @@
   let conjureResult = null;
   let weaveResult = null;
   let divineResults = [];
+  let selectedConjureCards = new Set();
+  let selectedWeaveCards = new Set();
+  let selectedDivineCards = new Set();
+  let selectedAvailableCards = new Set();
 
   $: if (isOpen && sourceCard) {
     loadAvailableCards();
@@ -64,6 +69,89 @@
     conjureResult = null;
     weaveResult = null;
     divineResults = [];
+    selectedConjureCards = new Set();
+    selectedWeaveCards = new Set();
+    selectedDivineCards = new Set();
+    selectedAvailableCards = new Set();
+  }
+
+  function toggleConjureCardSelection(index) {
+    if (selectedConjureCards.has(index)) {
+      selectedConjureCards.delete(index);
+    } else {
+      selectedConjureCards.add(index);
+    }
+    selectedConjureCards = selectedConjureCards; // Trigger reactivity
+  }
+
+  function toggleWeaveCardSelection(index) {
+    if (selectedWeaveCards.has(index)) {
+      selectedWeaveCards.delete(index);
+    } else {
+      selectedWeaveCards.add(index);
+    }
+    selectedWeaveCards = selectedWeaveCards; // Trigger reactivity
+  }
+
+  function toggleDivineCardSelection(index) {
+    if (selectedDivineCards.has(index)) {
+      selectedDivineCards.delete(index);
+    } else {
+      selectedDivineCards.add(index);
+    }
+    selectedDivineCards = selectedDivineCards; // Trigger reactivity
+  }
+
+  function selectAllDivineCards() {
+    selectedDivineCards = new Set(divineResults.map((_, index) => index));
+  }
+
+  function deselectAllDivineCards() {
+    selectedDivineCards = new Set();
+  }
+
+  function toggleAvailableCardSelection(index) {
+    if (selectedAvailableCards.has(index)) {
+      selectedAvailableCards.delete(index);
+    } else {
+      selectedAvailableCards.add(index);
+    }
+    selectedAvailableCards = selectedAvailableCards; // Trigger reactivity
+  }
+
+  function selectAllAvailableCards() {
+    selectedAvailableCards = new Set(filteredCards.map((_, index) => index));
+  }
+
+  function deselectAllAvailableCards() {
+    selectedAvailableCards = new Set();
+  }
+
+  function addSelectedCards() {
+    selectedAvailableCards.forEach(index => {
+      const card = filteredCards[index];
+      if (card && !selectedCards.some(selected => selected.id === card.id)) {
+        selectedCards = [...selectedCards, card];
+      }
+    });
+    selectedAvailableCards = new Set();
+  }
+
+  function saveSelectedDivineCards() {
+    divineResults.forEach((card, index) => {
+      if (selectedDivineCards.has(index)) {
+        dispatch('save-card', {
+          title: card.title,
+          content: card.content,
+          tags: card.tags || [],
+          rarity: card.rarity || 'common',
+          progress: card.progress || 0,
+          type: card.type || 'idea',
+          project_id: projectId
+        });
+      }
+    });
+    closeModal();
   }
 
   async function performConjure() {
@@ -221,7 +309,7 @@
 
 {#if isOpen}
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" on:click={closeModal}>
-    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden" on:click|stopPropagation>
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden" on:click|stopPropagation>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
@@ -353,18 +441,44 @@
               {/if}
 
               <!-- Available Cards -->
-              <div class="flex-1 space-y-3 overflow-y-auto max-h-[385px]">
-                <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Available Cards</h5>
-                <div class="flex flex-col items-center space-y-3 pl-4">
-                  {#each filteredCards as card}
-                    <div class="cursor-pointer w-full max-w-[280px]" on:click={() => selectCard(card)}>
-                      <Card 
-                        {card}
-                        showActions={false}
-                        xPaddingClass="px-2"
-                      />
-                    </div>
-                  {/each}
+              <div class="flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={selectAllAvailableCards}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={deselectAllAvailableCards}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+                <div class="flex-1 -mt-4 mt-4">
+                  <FannedCardDeck 
+                    cards={filteredCards}
+                    selectedCards={selectedAvailableCards}
+                    allowSelection={true}
+                    containerHeight="h-[28rem]"
+                    on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
+                  />
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedAvailableCards.size} of {filteredCards.length} selected
+                  </span>
+                  <button
+                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={addSelectedCards}
+                    disabled={selectedAvailableCards.size === 0}
+                  >
+                    Add Selected ({selectedAvailableCards.size})
+                  </button>
                 </div>
               </div>
             </div>
@@ -460,18 +574,44 @@
               {/if}
 
               <!-- Available Cards -->
-              <div class="flex-1 space-y-3 overflow-y-auto max-h-[385px]">
-                <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Available Cards</h5>
-                <div class="flex flex-col items-center space-y-3 pl-4">
-                  {#each filteredCards as card}
-                    <div class="cursor-pointer w-full max-w-[280px]" on:click={() => selectCard(card)}>
-                      <Card 
-                        {card}
-                        showActions={false}
-                        xPaddingClass="px-2"
-                      />
-                    </div>
-                  {/each}
+              <div class="flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={selectAllAvailableCards}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={deselectAllAvailableCards}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+                <div class="flex-1 -mt-4 mt-4">
+                  <FannedCardDeck 
+                    cards={filteredCards}
+                    selectedCards={selectedAvailableCards}
+                    allowSelection={true}
+                    containerHeight="h-[28rem]"
+                    on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
+                  />
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedAvailableCards.size} of {filteredCards.length} selected
+                  </span>
+                  <button
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={addSelectedCards}
+                    disabled={selectedAvailableCards.size === 0}
+                  >
+                    Add Selected ({selectedAvailableCards.size})
+                  </button>
                 </div>
               </div>
             </div>
@@ -567,18 +707,44 @@
               {/if}
 
               <!-- Available Cards -->
-              <div class="flex-1 space-y-3 overflow-y-auto max-h-[385px]">
-                <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Available Cards</h5>
-                <div class="flex flex-col items-center space-y-3 pl-4">
-                  {#each filteredCards as card}
-                    <div class="cursor-pointer w-full max-w-[280px]" on:click={() => selectCard(card)}>
-                      <Card 
-                        {card}
-                        showActions={false}
-                        xPaddingClass="px-2"
-                      />
-                    </div>
-                  {/each}
+              <div class="flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={selectAllAvailableCards}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={deselectAllAvailableCards}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+                <div class="flex-1 -mt-4 mt-4">
+                  <FannedCardDeck 
+                    cards={filteredCards}
+                    selectedCards={selectedAvailableCards}
+                    allowSelection={true}
+                    containerHeight="h-[28rem]"
+                    on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
+                  />
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedAvailableCards.size} of {filteredCards.length} selected
+                  </span>
+                  <button
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={addSelectedCards}
+                    disabled={selectedAvailableCards.size === 0}
+                  >
+                    Add Selected ({selectedAvailableCards.size})
+                  </button>
                 </div>
               </div>
             </div>
@@ -591,7 +757,16 @@
         <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" on:click={closeResult}>
           <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto" on:click|stopPropagation>
             {#if conjureResult}
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">✨ Conjured Card</h4>
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white">✨ Conjured Card</h4>
+                <button
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  on:click={closeResult}
+                  title="Close results"
+                >
+                  <X size="20" />
+                </button>
+              </div>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
@@ -634,7 +809,16 @@
                 </div>
               </div>
             {:else if weaveResult}
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🧵 Woven Card</h4>
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white">🧵 Woven Card</h4>
+                <button
+                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  on:click={closeResult}
+                  title="Close results"
+                >
+                  <X size="20" />
+                </button>
+              </div>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
@@ -677,39 +861,56 @@
                 </div>
               </div>
             {:else if divineResults.length > 0}
-              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔮 Divined Cards</h4>
-              <div class="space-y-4">
-                {#each divineResults as card, index}
-                  <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4">
-                    <div class="flex items-start justify-between mb-3">
-                      <h5 class="font-medium text-gray-900 dark:text-white">Card {index + 1}</h5>
-                      <button
-                        class="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
-                        on:click={() => saveDivineResult(card)}
-                      >
-                        Save
-                      </button>
-                    </div>
-                    <div class="space-y-2">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                        <input
-                          type="text"
-                          bind:value={card.title}
-                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
-                        <textarea
-                          bind:value={card.content}
-                          rows="3"
-                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        ></textarea>
-                      </div>
-                    </div>
+              <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white">🔮 Divined Cards</h4>
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      on:click={closeResult}
+                      title="Close results"
+                    >
+                      <X size="20" />
+                    </button>
                   </div>
-                {/each}
+                </div>
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex gap-2">
+                    <button
+                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={selectAllDivineCards}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      on:click={deselectAllDivineCards}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+                <div class="flex-1 -mt-4 mt-4">
+                  <FannedCardDeck 
+                    cards={divineResults}
+                    selectedCards={selectedDivineCards}
+                    allowSelection={true}
+                    containerHeight="h-[28rem]"
+                    on:selection-change={(e) => selectedDivineCards = e.detail.selectedCards}
+                  />
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedDivineCards.size} of {divineResults.length} selected
+                  </span>
+                  <button
+                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={saveSelectedDivineCards}
+                    disabled={selectedDivineCards.size === 0}
+                  >
+                    Save Selected Cards ({selectedDivineCards.size})
+                  </button>
+                </div>
               </div>
             {/if}
           </div>
