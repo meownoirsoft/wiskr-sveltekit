@@ -428,9 +428,34 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     }
   }
 
-  function handleViewDeck(event) {
+  async function handleViewDeck(event) {
     const { deck } = event.detail;
-    currentDeck = deck;
+    
+    // Reload the deck data to get the latest section order
+    try {
+      const response = await fetch(`/api/projects/${current.id}/decks`);
+      if (response.ok) {
+        const data = await response.json();
+        const updatedDeck = data.decks.find(d => d.id === deck.id);
+        if (updatedDeck) {
+          currentDeck = updatedDeck;
+          // Also update the deck in the main decks array
+          const deckIndex = decks.findIndex(d => d.id === deck.id);
+          if (deckIndex !== -1) {
+            decks[deckIndex] = updatedDeck;
+            decks = [...decks]; // trigger reactivity
+          }
+        } else {
+          currentDeck = deck; // fallback to original deck
+        }
+      } else {
+        currentDeck = deck; // fallback to original deck
+      }
+    } catch (error) {
+      console.error('Error reloading deck data:', error);
+      currentDeck = deck; // fallback to original deck
+    }
+    
     showDeckDrawer = false;
     showDeckView = true;
   }
@@ -490,19 +515,40 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   function handleDeckUpdated(event) {
     console.log('--- handleDeckUpdated received ---');
-    const updatedDeck = event.detail;
-    console.log('Updated deck data:', updatedDeck);
-    currentDeck = updatedDeck;
+    const { deckId, cardCount } = event.detail;
+    console.log('Updated deck data:', { deckId, cardCount });
 
-    // also update the deck in the main decks list
-    const index = decks.findIndex(d => d.id === updatedDeck.id);
+    // Update currentDeck if it's the same deck
+    if (currentDeck && currentDeck.id === deckId) {
+      currentDeck = { ...currentDeck, cardCount };
+      console.log('Current deck card count updated to:', cardCount);
+    }
+
+    // Update the deck in the main decks list
+    const index = decks.findIndex(d => d.id === deckId);
     console.log(`Deck found in main list at index: ${index}`);
     if (index !== -1) {
-      decks[index] = updatedDeck;
+      decks[index] = { ...decks[index], cardCount };
       decks = [...decks]; // trigger reactivity
-      console.log('Main decks array updated.');
+      console.log('Main decks array updated with card count:', cardCount);
     } else {
       console.log('Deck NOT found in main list. State will be stale.');
+    }
+  }
+
+  function handleCardUpdated(event) {
+    console.log('--- handleCardUpdated received ---');
+    const { cardId, updates } = event.detail;
+    console.log('Card updated:', { cardId, updates });
+
+    // Update the card in the main cards array
+    const cardIndex = cards.findIndex(c => c.id === cardId);
+    if (cardIndex !== -1) {
+      cards[cardIndex] = { ...cards[cardIndex], ...updates };
+      cards = [...cards]; // trigger reactivity
+      console.log('Card updated in main cards array:', cards[cardIndex]);
+    } else {
+      console.log('Card not found in main cards array');
     }
   }
 
@@ -1213,8 +1259,15 @@ function handleProjectDelete(event) {
 }
 
 function handleCardAdd(event) {
+  console.log('🎴 Main page: handleCardAdd called with event:', event);
+  console.log('🎴 Main page: contextManager available:', !!contextManager);
+  console.log('🎴 Main page: event.detail:', event.detail);
+  
   if (contextManager) {
-    contextManager.addCard();
+    // Pass the event data to the context manager
+    contextManager.addCard(event.detail);
+  } else {
+    console.error('🎴 Main page: ContextManager not available!');
   }
 }
 
@@ -1968,6 +2021,7 @@ function handleTextAddToDocs(event) {
           userPreferences={userPreferences}
           on:close-deck={closeDeck}
           on:deck-updated={handleDeckUpdated}
+          on:card-updated={handleCardUpdated}
         />
       {:else}
         <Binder

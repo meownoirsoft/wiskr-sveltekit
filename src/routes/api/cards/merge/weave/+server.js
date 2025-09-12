@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { getContextRings } from '$lib/server/context/contextRings.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -37,7 +38,7 @@ export async function POST({ request, locals }) {
     }
 
     // Generate woven card using AI
-    const wovenCard = await generateWovenCard(sourceCard, selectedCards);
+    const wovenCard = await generateWovenCard(sourceCard, selectedCards, projectId);
 
     return json(wovenCard);
 
@@ -60,22 +61,37 @@ function cleanMarkdown(text) {
     .trim();
 }
 
-async function generateWovenCard(sourceCard, selectedCards) {
+// Helper function to convert text to title case
+function toTitleCase(text) {
+  if (!text) return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+async function generateWovenCard(sourceCard, selectedCards, projectId) {
   try {
     const openai = createOpenAIClient();
 
-    // Prepare context for AI
-    const allCards = [sourceCard, ...selectedCards];
-    const cardContext = allCards.map(card => 
-      `Title: ${card.title}\nContent: ${card.content}\nTags: ${(card.tags || []).join(', ')}`
-    ).join('\n\n');
+    // Get context rings for merge operation
+    const context = await getContextRings({
+      supabase: supabaseAdmin,
+      projectId,
+      operation: 'merge',
+      targetCards: [sourceCard, ...selectedCards],
+      userMessage: 'Weave these cards into a unified concept',
+      budget: 'medium'
+    });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are an AI that weaves together multiple concepts into a unified, coherent whole. Create a card that unifies and summarizes the key elements from the provided cards into a cohesive concept.
+          content: context.systemPrompt + `\n\nYou are an AI that weaves together multiple concepts into a unified, coherent whole. Create a card that unifies and summarizes the key elements from the provided cards into a cohesive concept.
 
 Guidelines:
 - Create a title that captures the unified concept
@@ -87,7 +103,7 @@ Guidelines:
         },
         {
           role: 'user',
-          content: `Weave these cards into a unified concept:\n\n${cardContext}`
+          content: context.userContext + `\n\nWeave these cards into a unified concept.`
         }
       ],
       temperature: 0.6,
@@ -107,7 +123,7 @@ Guidelines:
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.startsWith('Title:') || line.startsWith('**Title:**')) {
-        title = cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim());
+        title = toTitleCase(cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim()));
       } else if (line.startsWith('Content:') || line.startsWith('**Content:**')) {
         content = cleanMarkdown(lines.slice(i + 1).join('\n').trim());
         break;
@@ -119,12 +135,12 @@ Guidelines:
 
     // If no clear structure, use the first line as title and rest as content
     if (title === 'Woven Card' && lines.length > 0) {
-      title = cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim());
+      title = toTitleCase(cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim()));
       content = cleanMarkdown(lines.slice(1).join('\n').trim());
     }
 
     return {
-      title: cleanMarkdown(title) || 'Woven Card',
+      title: toTitleCase(cleanMarkdown(title)) || 'Woven Card',
       content: cleanMarkdown(content) || cleanMarkdown(generatedContent),
       tags: tags.length > 0 ? tags : ['woven', 'unified'],
       rarity: 'common',

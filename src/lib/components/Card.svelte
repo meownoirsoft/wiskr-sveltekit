@@ -14,20 +14,7 @@
   
   // Check if this card is new
   $: isNewCard = isNew || (card?.id && $newCardIds.has(card.id));
-  
-  // Debug card structure
-  $: if (card) {
-    // console.log('🎴 Card component received card:', {
-    //   id: card.id,
-    //   title: card.title,
-    //   content: card.content,
-    //   value: card.value,
-    //   rarity: card.rarity,
-    //   art_url: card.art_url,
-    //   hasContent: 'content' in card,
-    //   hasValue: 'value' in card
-    // });
-  }
+
 
   const dispatch = createEventDispatcher();
 
@@ -236,6 +223,11 @@
 
   // Title scrolling functionality
   let titleElement;
+  let titleScrollDuration = 1000; // Default duration in ms
+  
+  // Tooltip state
+  let showProgressTooltip = false;
+  let tooltipElement;
 
   function handleTitleHover() {
     if (!titleElement || !titleElement.parentElement) return;
@@ -248,6 +240,14 @@
       // Only scroll if the title is actually wider than the container
       if (titleWidth > containerWidth && titleWidth > 0 && containerWidth > 0) {
         const scrollDistance = titleWidth - containerWidth;
+        
+        // Calculate duration based on title length - longer titles scroll slower
+        // Base duration of 800ms, add 200ms per 50 characters
+        const titleLength = (card?.title || card?.key || 'Untitled Card').length;
+        titleScrollDuration = Math.max(800, 800 + (titleLength / 50) * 200);
+        
+        // Apply the dynamic duration
+        titleElement.style.transitionDuration = `${titleScrollDuration}ms`;
         
         // Scroll to the left once and stop
         titleElement.style.transform = `translateX(-${scrollDistance}px)`;
@@ -266,6 +266,14 @@
         console.warn('Error in handleTitleLeave:', error);
       }
     }
+  }
+
+  function handleProgressHover() {
+    showProgressTooltip = true;
+  }
+
+  function handleProgressLeave() {
+    showProgressTooltip = false;
   }
 
 </script>
@@ -302,16 +310,16 @@
   >
     
     <!-- Header: Title -->
-    <div class="mb-2 -mt-2">
+    <div class="mb-2 -mt-2 -mx-2">
       <div 
         class="title-container relative overflow-hidden"
-        style="max-width: 100%;"
+        style="max-width: 100%; background: #E1D5C4; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8); padding: 4px 16px 4px 8px;"
         on:mouseenter={handleTitleHover}
         on:mouseleave={handleTitleLeave}
       >
         <h3 
-          class="font-bold text-sm leading-tight whitespace-nowrap transition-transform duration-1000 ease-in-out" 
-          style:color={darkMode ? '#f9fafb' : '#111827'}
+          class="card-title font-bold text-sm leading-tight whitespace-nowrap transition-transform duration-1000 ease-in-out" 
+          style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
           bind:this={titleElement}
         >
           {@html highlightText(card?.title || card?.key || 'Untitled Card', searchTerm)}
@@ -321,7 +329,7 @@
 
     <!-- Art Area -->
     <div 
-      class="art-area relative mb-1 rounded-md flex items-center justify-center" 
+      class="art-area relative mb-1 rounded-md flex items-center justify-center -mt-2 z-20" 
       style="height: 120px;"
     >
       <!-- Pin Indicator - Top Left -->
@@ -338,50 +346,50 @@
       <!-- Mana Cost - Top Corner -->
       {#if card?.rarity === 'common'}
         <!-- Common cards with green gem socket -->
-        <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+        <div class="absolute -top-2 -right-3 z-10 w-12 h-12">
           <img 
             src="/sockets/gem-socket-green.webp" 
             alt="Mana socket" 
             class="w-full h-full object-cover rounded-full"
           />
           <div class="absolute inset-0 flex items-center justify-center">
-            <span class="text-white font-bold text-xs">{manaCost}</span>
+            <span class="text-white font-bold text-sm">{manaCost}</span>
           </div>
         </div>
       {:else if card?.rarity === 'special'}
         <!-- Special cards with blue gem socket -->
-        <div class="absolute -top-3 -right-2 z-10 w-10 h-13">
+        <div class="absolute -top-2 -right-2 z-10 w-10 h-13">
           <img 
             src="/sockets/gem-socket-blue.webp" 
             alt="Mana socket" 
             class="w-full h-full object-cover rounded-full"
           />
           <div class="absolute inset-0 flex items-center justify-center">
-            <span class="text-white font-bold text-xs">{manaCost}</span>
+            <span class="text-white font-bold text-sm">{manaCost}</span>
           </div>
         </div>
       {:else if card?.rarity === 'rare'}
         <!-- Rare cards with purple gem socket -->
-        <div class="absolute -top-3 -right-2 z-10 w-14 h-14">
+        <div class="absolute -top-2 -right-3 z-10 w-14 h-14">
           <img 
             src="/sockets/gem-socket-purple.webp" 
             alt="Mana socket" 
             class="w-full h-full object-cover rounded-full"
           />
           <div class="absolute inset-0 flex items-center justify-center">
-            <span class="text-white font-bold text-xs">{manaCost}</span>
+            <span class="text-white font-bold text-sm">{manaCost}</span>
           </div>
         </div>
       {:else if card?.rarity === 'legendary'}
         <!-- Legendary cards with orange gem socket -->
-        <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+        <div class="absolute -top-2 -right-2 z-10 w-12 h-12">
           <img 
             src="/sockets/gem-socket-orange.webp" 
             alt="Mana socket" 
             class="w-full h-full object-cover rounded-full"
           />
           <div class="absolute inset-0 flex items-center justify-center -mt-0.5">
-            <span class="text-white font-bold text-xs">{manaCost}</span>
+            <span class="text-white font-bold text-sm">{manaCost}</span>
           </div>
         </div>
       {:else}
@@ -400,7 +408,7 @@
           src={card.art_url} 
           alt="Card art" 
           class="object-cover rounded-md" 
-          style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+          style="width: 100%; height: 100%; max-width: 230px; max-height: 120px;"
           draggable="false" 
         />
       {:else}
@@ -408,45 +416,53 @@
           src="/wiskr-art-default.webp" 
           alt="Default card art" 
           class="object-cover rounded-md" 
-          style="width: 100%; height: 100%; max-width: 220px; max-height: 120px;"
+          style="width: 100%; height: 100%; max-width: 230px; max-height: 120px;"
           draggable="false" 
         />
       {/if}
     </div>
 
 
-    <!-- Tags -->
-    {#if card?.tags && card.tags.length > 0}
-      <div class="flex flex-wrap gap-1 mb-1">
-        {#each card.tags.slice(0, 3) as tag}
-          <span 
-            class="text-xs px-1.5 py-0.5 rounded-md"
-            style:background-color={darkMode ? '#4b5563' : '#e5e7eb'} 
-            style:color={darkMode ? '#d1d5db' : '#374151'}
-          >
-            {tag}
-          </span>
-        {/each}
-        {#if card.tags.length > 3}
-          <span 
-            class="text-xs px-1.5 py-0.5 rounded-md"
-            style:background-color={darkMode ? '#4b5563' : '#e5e7eb'} 
-            style:color={darkMode ? '#d1d5db' : '#374151'}
-          >
-            +{card.tags.length - 3}
-          </span>
-        {/if}
-      </div>
-    {/if}
+    <!-- Content Area with Tags -->
+    <div class="mx-0 mb-4 -mt-2">
+        <!-- Main content area -->
+        <div 
+          class="card-content content-area text-sm leading-tight overflow-hidden absolute z-10"
+          style="padding: 8px 4px; margin-left: 5px; height: 200px; bottom: 40px; right: 7px; border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -2px 8px rgba(0,0,0,0.1);"
+        >
+        <!-- Tags -->
+        <div class="h-6 mb-2 mt-11 ml-2 mr-2 flex items-center">
+          {#if card?.tags && card.tags.length > 0}
+            <div class="flex gap-1 overflow-hidden whitespace-nowrap">
+              {#each card.tags.slice(0, 2) as tag}
+                <span 
+                  class="card-tags text-xs px-1.5 py-0 rounded-md flex-shrink-0 whitespace-nowrap"
+                  style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
+                >
+                  {tag}
+                </span>
+              {/each}
+              {#if card.tags.length > 2}
+                <span 
+                  class="card-tags text-xs px-1.5 py-0 rounded-md flex-shrink-0 whitespace-nowrap"
+                  style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
+                >
+                  +{card.tags.length - 1}
+                </span>
+              {/if}
+            </div>
+          {/if}
+        </div>
 
-    <!-- Content -->
-    <div 
-      class="content-area flex-1 mb-3 text-sm leading-tight overflow-hidden"
-      style:color={darkMode ? '#d1d5db' : '#374151'}
-    >
-      <div class="line-clamp-6">
-        {@html highlightText(card?.content || 'No content', searchTerm)}
+        <!-- Content Text -->
+        <div 
+          class="line-clamp-6 px-3 -mt-2"
+          style="color: {rarity.textColor};"
+        >
+          {@html highlightText(card?.content || 'No content', searchTerm)}
+        </div>
       </div>
+      
     </div>
 
     <!-- Flavor Text (if exists) -->
@@ -461,7 +477,7 @@
     {/if}
 
     <!-- Bottom Bar: Rarity and Progress -->
-    <div class="bottom-bar flex items-center flex-wrap gap-y-1">
+    <div class="absolute bottom-2 left-2 right-2 bottom-bar flex items-center flex-wrap gap-y-1">
       <!-- Rarity -->
       <div class="flex items-center gap-0">
         <!-- Left Arrow (Upgrade) -->
@@ -480,7 +496,7 @@
         
         <!-- Rarity Label -->
         <span 
-          class="text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5"
+          class="card-rarity text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5"
           style:color={rarity.textColor}
         >
           {card?.rarity || 'common'}
@@ -505,8 +521,13 @@
 
       <!-- Progress Stars -->
       <div class="flex flex-col items-center gap-1">
-        <!-- Stars -->
-        <div class="flex items-center gap-1">
+        <!-- Stars with tooltip -->
+        <div 
+          class="flex items-center gap-1 relative group"
+          on:mouseenter={handleProgressHover}
+          on:mouseleave={handleProgressLeave}
+          bind:this={tooltipElement}
+        >
           {#each progressLevels as level}
             <button
               class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
@@ -514,14 +535,18 @@
               title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
               style:color={card?.progress >= level.level ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af')}
             >
-              <Star size="14" class="fill-current" />
+              <Star size="16" class="fill-current" />
             </button>
           {/each}
-        </div>
-        
-        <!-- Progress Level Label -->
-        <div class="text-xs font-medium uppercase" style:color={darkMode ? '#ffffff' : '#374151'}>
-          {progressLevels.find(level => level.level === card?.progress)?.name || 'Raw'}
+          
+          <!-- Custom Tooltip -->
+          {#if showProgressTooltip}
+            <div 
+              class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50"
+            >
+              {progressLevels.find(level => level.level === card?.progress)?.name || 'Raw'} ({card?.progress || 1} star{(card?.progress || 1) > 1 ? 's' : ''})
+            </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -682,4 +707,7 @@
     overflow: hidden;
     line-clamp: 6;
   }
+
+
+
 </style>

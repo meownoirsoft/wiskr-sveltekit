@@ -119,6 +119,10 @@
   let tooltipDecks = [];
   let tooltipResources = [];
   
+  // Progress tooltip state
+  let showProgressTooltip = false;
+  let progressTooltipElement = null;
+  
   // Modal states
   let showNotesModal = false;
   let showBranchesModal = false;
@@ -263,7 +267,9 @@
     const currentIndex = rarities.indexOf(editedCard.rarity);
     if (currentIndex < rarities.length - 1) {
       editedCard.rarity = rarities[currentIndex + 1];
-      dispatch('rarity-change', { card, newRarity: editedCard.rarity });
+      // Update the card prop so modals get the updated data
+      card = { ...card, rarity: editedCard.rarity };
+      dispatch('rarity-updated', { card, rarity: editedCard.rarity });
     }
   }
 
@@ -272,13 +278,17 @@
     const currentIndex = rarities.indexOf(editedCard.rarity);
     if (currentIndex > 0) {
       editedCard.rarity = rarities[currentIndex - 1];
-      dispatch('rarity-change', { card, newRarity: editedCard.rarity });
+      // Update the card prop so modals get the updated data
+      card = { ...card, rarity: editedCard.rarity };
+      dispatch('rarity-updated', { card, rarity: editedCard.rarity });
     }
   }
 
   function handleProgressClick(targetLevel) {
     editedCard.progress = targetLevel;
-    dispatch('progress-change', { card, targetLevel });
+    // Update the card prop so modals get the updated data
+    card = { ...card, progress: targetLevel };
+    dispatch('progress-updated', { card, progress: targetLevel });
   }
 
   function togglePin() {
@@ -475,6 +485,17 @@
       clearTimeout(hoverTimeout);
       hoverTimeout = null;
     }
+  }
+
+  // Progress tooltip handlers
+  function handleProgressHover(event) {
+    showProgressTooltip = true;
+    progressTooltipElement = event.currentTarget;
+  }
+
+  function handleProgressLeave() {
+    showProgressTooltip = false;
+    progressTooltipElement = null;
   }
 
   // Content modal functions
@@ -707,7 +728,7 @@
     
     <!-- Just the Card -->
     <div 
-      class="card-container relative transition-all duration-200"
+      class="card-container relative transition-all duration-200 z-[99]"
       style="width: 500px; height: 800px;"
       on:click|stopPropagation
     >
@@ -722,24 +743,33 @@
       >
 
         <!-- Header: Title -->
-        <div class="{isEditing ? 'mb-2' : 'mb-4'} px-4 {isEditing ? 'pt-2' : 'pt-4'}">
-          {#if isEditing}
-            <input
-              bind:value={title}
-              class="w-full text-lg font-bold bg-transparent border-none outline-none"
-              style:color={darkMode ? '#f9fafb' : '#111827'}
-              placeholder="Card title..."
-            />
-          {:else}
-            <h3 class="text-lg font-bold leading-tight" style:color={darkMode ? '#f9fafb' : '#111827'}>
-              {editedCard.title}
-            </h3>
-          {/if}
+        <div class="{isEditing ? 'mb-4' : 'mb-4'} -mx-4 {isEditing ? 'pt-2' : 'pt-4'}">
+          <div 
+            class="title-container relative overflow-hidden mx-4"
+            style="background: #E1D5C4; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2); padding: 4px 16px 4px 8px;"
+          >
+            {#if isEditing}
+              <input
+                bind:value={title}
+                class="card-title w-full text-lg font-bold bg-transparent border-none outline-none truncate"
+                style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                placeholder="Card title..."
+              />
+            {:else}
+              <h3 
+                class="card-title text-lg font-bold leading-tight truncate" 
+                style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                title={editedCard.title}
+              >
+                {editedCard.title}
+              </h3>
+            {/if}
+          </div>
         </div>
 
         <!-- Art Area -->
         <div 
-          class="art-area mb-4 mx-4 rounded-md flex items-center justify-center relative group" 
+          class="art-area mb-4 mx-3 rounded-md flex items-center justify-center relative group -mt-4 z-20" 
           style="height: 256px;"
         >
           <!-- Mana Cost - Top Right -->
@@ -752,43 +782,43 @@
                 class="w-full h-full object-cover rounded-full"
               />
               <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-white font-bold text-xs">{manaCost}</span>
+                <span class="text-white font-bold text-sm">{manaCost}</span>
               </div>
             </div>
           {:else if editedCard?.rarity === 'special'}
             <!-- Special cards with blue gem socket -->
-            <div class="absolute -top-3 -right-2 z-10 w-10 h-13">
+            <div class="absolute -top-2 -right-2 z-10 w-10 h-13">
               <img 
                 src="/sockets/gem-socket-blue.webp" 
                 alt="Mana socket" 
                 class="w-full h-full object-cover rounded-full"
               />
               <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-white font-bold text-xs">{manaCost}</span>
+                <span class="text-white font-bold text-sm">{manaCost}</span>
               </div>
             </div>
           {:else if editedCard?.rarity === 'rare'}
             <!-- Rare cards with purple gem socket -->
-            <div class="absolute -top-4 -right-3 z-10 w-14 h-14">
+            <div class="absolute -top-2 -right-2 z-10 w-14 h-14">
               <img 
                 src="/sockets/gem-socket-purple.webp" 
                 alt="Mana socket" 
                 class="w-full h-full object-cover rounded-full"
               />
               <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-white font-bold text-xs">{manaCost}</span>
+                <span class="text-white font-bold text-sm">{manaCost}</span>
               </div>
             </div>
           {:else if editedCard?.rarity === 'legendary'}
             <!-- Legendary cards with orange gem socket -->
-            <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+            <div class="absolute -top-2 -right-2 z-10 w-12 h-12">
               <img 
                 src="/sockets/gem-socket-orange.webp" 
                 alt="Mana socket" 
                 class="w-full h-full object-cover rounded-full"
               />
               <div class="absolute inset-0 flex items-center justify-center -mt-0.5">
-                <span class="text-white font-bold text-xs">{manaCost}</span>
+                <span class="text-white font-bold text-sm">{manaCost}</span>
               </div>
             </div>
           {:else}
@@ -831,59 +861,87 @@
           {/if}
         </div>
 
-        <!-- Tags -->
-        <div class="px-4 mb-2">
-          {#if isEditing}
-            <div class="flex flex-wrap items-center gap-1">
-              {#each tags as tag}
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
-                  {tag}
-                  <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
-                    ×
-                  </button>
-                </span>
-              {/each}
-              <div class="flex items-center gap-1 ml-2">
-                <input
-                  id="new-tag"
-                  bind:value={newTag}
-                  on:keydown={handleKeydown}
-                  class="w-20 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
-                  placeholder="Add..."
-                />
-                <button on:click={addTag} class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
-                  +
-                </button>
-              </div>
+        <!-- Content Area with Tags -->
+        <div class="mx-0 mb-4 -mt-2 relative">
+          <!-- Main content area -->
+          <div 
+            class="card-content content-area text-sm leading-tight overflow-hidden relative z-10"
+            style="padding: 8px 4px; margin-top: -8px; height: 340px; border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -2px 8px rgba(0,0,0,0.1);"
+          >
+            <!-- Tags -->
+            <div class="h-6 pl-2 mb-2 mt-1 ml-2 mr-2 flex items-center">
+              {#if isEditing}
+                <div class="flex flex-wrap items-center gap-1">
+                  {#each tags as tag}
+                    <span 
+                      class="card-tags inline-flex items-center gap-1 px-1.5 py-0 text-xs rounded-md flex-shrink-0 whitespace-nowrap"
+                      style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
+                    >
+                      {tag}
+                      <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
+                        ×
+                      </button>
+                    </span>
+                  {/each}
+                  <div class="flex items-center gap-1 ml-2">
+                    <input
+                      id="new-tag"
+                      bind:value={newTag}
+                      on:keydown={handleKeydown}
+                      class="w-20 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
+                      placeholder="Add..."
+                    />
+                    <button on:click={addTag} class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                      +
+                    </button>
+                  </div>
+                </div>
+              {:else}
+                {#if editedCard.tags && editedCard.tags.length > 0}
+                  <div class="flex gap-1 overflow-hidden whitespace-nowrap">
+                    {#each editedCard.tags.slice(0, 4) as tag}
+                      <span 
+                        class="card-tags text-xs px-1.5 py-0 rounded-md flex-shrink-0 whitespace-nowrap"
+                        style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
+                      >
+                        {tag}
+                      </span>
+                    {/each}
+                    {#if editedCard.tags.length > 4}
+                      <span 
+                        class="card-tags text-xs px-1.5 py-0 rounded-md flex-shrink-0 whitespace-nowrap"
+                        style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
+                      >
+                        +{editedCard.tags.length - 1}
+                      </span>
+                    {/if}
+                  </div>
+                {/if}
+              {/if}
             </div>
-          {:else}
-            <div class="flex flex-wrap gap-1">
-              {#each editedCard.tags as tag}
-                <span class="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-md">
-                  {tag}
-                </span>
-              {/each}
+
+            <!-- Content Text -->
+            <div 
+              class="line-clamp-12 px-5 -mt-2"
+              style="color: {rarity.textColor};"
+            >
+              {#if isEditing}
+                <textarea
+                  bind:value={content}
+                  class="mt-6 w-full h-56 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
+                  placeholder="Card content..."
+                  style="color: {rarity.textColor} !important;"
+                ></textarea>
+              {:else}
+                {editedCard.content}
+              {/if}
             </div>
-          {/if}
+          </div>
         </div>
 
-        <!-- Content -->
-        <div class="flex-1 px-4 mb-0">
-          {#if isEditing}
-            <textarea
-              bind:value={content}
-              class="w-full h-48 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
-              placeholder="Card content..."
-            ></textarea>
-          {:else}
-            <div class="text-sm leading-tight overflow-y-auto max-h-48" style:color={darkMode ? '#d1d5db' : '#374151'}>
-              {editedCard.content}
-            </div>
-          {/if}
-        </div>
 
         <!-- Content Links - Below Content -->
-        <div class="px-4 mb-4">
+        <div class="px-4 mb-4 -mt-3">
           <div class="flex justify-between text-xs">
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
@@ -925,7 +983,7 @@
         </div>
 
         <!-- Bottom Bar: Rarity and Progress -->
-        <div class="bottom-bar flex items-center justify-between px-4 mb-4">
+        <div class="absolute bottom-16 left-2 right-2 bottom-bar flex items-center justify-between flex-wrap gap-y-1" style="margin-bottom: 20px;">
           <!-- Rarity -->
           <div class="flex items-center">
             <!-- Left Arrow (Upgrade) -->
@@ -944,7 +1002,7 @@
             
             <!-- Rarity Label -->
             <span 
-              class="text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2"
+              class="card-rarity text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2"
               style:color={rarity.textColor}
             >
               {editedCard.rarity}
@@ -966,7 +1024,11 @@
           </div>
 
           <!-- Progress Stars -->
-          <div class="flex flex-col items-center gap-1">
+          <div 
+            class="flex flex-col items-center gap-1 relative"
+            on:mouseenter={handleProgressHover}
+            on:mouseleave={handleProgressLeave}
+          >
             <!-- Stars -->
             <div class="flex items-center gap-1">
               {#each progressLevels as level}
@@ -976,20 +1038,24 @@
                   title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
                   style:color={editedCard.progress >= level.level ? '#ffffff' : (darkMode ? '#4b5563' : '#d1d5db')}
                 >
-                  <Star size="16" class="fill-current" />
+                  <Star size="18" class="fill-current" />
                 </button>
               {/each}
             </div>
             
-            <!-- Progress Level Label -->
-            <div class="text-xs font-medium uppercase" style:color={darkMode ? '#d1d5db' : '#374151'}>
-              {progressLevels.find(level => level.level === editedCard.progress)?.name || 'Raw'}
-            </div>
+            <!-- Custom Tooltip -->
+            {#if showProgressTooltip}
+              <div 
+                class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50"
+              >
+                {progressLevels.find(level => level.level === editedCard.progress)?.name || 'Raw'} ({editedCard.progress || 1} star{(editedCard.progress || 1) > 1 ? 's' : ''})
+              </div>
+            {/if}
           </div>
         </div>
 
         <!-- Action Buttons with Metadata -->
-        <div class="action-buttons flex items-center justify-between pl-4 pr-2 py-2 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
+        <div class="action-buttons absolute bottom-2 left-2 right-2 flex items-center justify-between pl-4 pr-2 py-2 border-t" style:border-color={darkMode ? '#4b5563' : '#e5e7eb'}>
           <!-- Metadata Section -->
           <div class="flex items-center gap-6 text-xs" style:color={darkMode ? '#9ca3af' : '#6b7280'}>
             <!-- Generation info -->
@@ -1185,7 +1251,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" on:mousedown|stopPropagation>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notes for {editedCard?.title || 'Card'}</h3>
+        <h3 class="font-logo text-lg font-semibold text-gray-900 dark:text-white">Notes for {editedCard?.title || 'Card'}</h3>
         <button
           class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           on:click={() => closeContentModal('notes')}
@@ -1200,7 +1266,7 @@
           <!-- Note Editor -->
           <div class="flex-1 flex flex-col p-6">
             <div class="flex items-center justify-between mb-4">
-              <h4 class="text-md font-medium text-gray-900 dark:text-white">
+              <h4 class="font-logo text-md font-medium text-gray-900 dark:text-white">
                 {editingNote ? 'Edit Note' : 'New Note'}
               </h4>
               <div class="flex items-center gap-2">
@@ -1454,6 +1520,7 @@
   on:close={closeSplitModal}
   on:save-card={handleSplitSaveCard}
 />
+
 
 <style>
   .card-container {

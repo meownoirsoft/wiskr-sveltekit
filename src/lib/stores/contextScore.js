@@ -21,14 +21,17 @@ let refreshTimeout = null;
 export async function refreshContextScore(projectId, force = false) {
   if (!projectId || !browser) return 0;
   
+  console.log('🎯 Context score: Starting refresh for project', projectId, 'force:', force);
   contextScoreLoading.set(true);
   
   try {
     // Use the context score utility endpoint (we need to create this)
     let response;
     try {
+      console.log('🎯 Context score: Fetching from /api/context-score/', projectId);
       response = await fetch(`/api/context-score/${projectId}`);
     } catch {
+      console.log('🎯 Context score: Fallback to /api/context/analyze');
       // Fallback to full analysis if dedicated endpoint doesn't exist
       response = await fetch('/api/context/analyze', {
         method: 'POST',
@@ -43,8 +46,11 @@ export async function refreshContextScore(projectId, force = false) {
     if (response.ok) {
       const data = await response.json();
       const score = data.score || data.summary?.contextQualityScore || 0;
+      console.log('🎯 Context score: Got score', score, 'from API');
       contextScore.set(score);
       return score;
+    } else {
+      console.log('🎯 Context score: API response not ok', response.status, response.statusText);
     }
   } catch (error) {
     console.error('Failed to load context quality score:', error);
@@ -98,9 +104,14 @@ function setupEventListeners() {
 function handleCardEvent(event) {
   const { card, projectId } = event.detail || {};
   
+  console.log('🎯 Context score: Card event received', { card: card?.title, projectId, currentProjectId });
+  
   // Only refresh if this event is for our current project
   if (projectId && projectId === currentProjectId) {
+    console.log('🎯 Context score: Scheduling refresh for project', projectId);
     scheduleRefresh(projectId);
+  } else {
+    console.log('🎯 Context score: Event not for current project', { projectId, currentProjectId });
   }
 }
 
@@ -123,6 +134,8 @@ function handleProjectEvent(event) {
 function scheduleRefresh(projectId) {
   if (!browser) return;
   
+  console.log('🎯 Context score: Scheduling refresh for project', projectId);
+  
   // Clear existing timeout to debounce rapid updates
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
@@ -130,6 +143,7 @@ function scheduleRefresh(projectId) {
   
   // Schedule refresh after a brief delay
   refreshTimeout = setTimeout(() => {
+    console.log('🎯 Context score: Executing refresh for project', projectId);
     refreshContextScore(projectId, true);
   }, 1500); // 1.5 second delay to allow server-side score calculation
 }

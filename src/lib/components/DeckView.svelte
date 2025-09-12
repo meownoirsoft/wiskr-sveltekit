@@ -5,6 +5,7 @@
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import DeckContextIndicator from './DeckContextIndicator.svelte';
+  import FannedCardDeck from './FannedCardDeck.svelte';
   import { v4 as uuidv4 } from 'uuid';
 
   export let deck = null;
@@ -32,6 +33,10 @@
   let branchConnections = [];
   let allSectionsCollapsed = false;
   let sectionCollapsedStates = {};
+  let cardAdditionQueue = [];
+  let isProcessingQueue = false;
+  let hasLocalChanges = false;
+  let hasContextChanges = false;
 
   // Set up global drag prevention and cleanup
   onMount(() => {
@@ -53,10 +58,20 @@
   // Cleanup auto-scroll interval when component is destroyed
   onDestroy(() => {
     stopAutoScroll();
+    // Generate context when component is destroyed (user navigated away)
+    // Only if there were actual changes that warrant context generation
+    if (deck?.id && hasContextChanges) {
+      generateContextForDeck();
+    }
   });
 
   // Initialize sections when deck changes
-  $: if (deck) {
+  $: if (deck && !hasLocalChanges) {
+    console.log('🔄 Deck data changed, reloading sections. Current sections:', sections.length, 'New sections:', deck.sections?.length || 0);
+    console.log('🔄 Current sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
+    console.log('🔄 New sections cards:', deck.sections?.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })) || []);
+    console.log('🔄 Has local changes:', hasLocalChanges);
+    
     // Use deck sections from database
     if (deck.sections && deck.sections.length > 0) {
       sections = deck.sections;
@@ -69,6 +84,13 @@
         { id: 'temp-4', name: 'Resolution', cards: [] }
       ];
     }
+    console.log('🔄 Sections updated to:', sections.length, 'sections');
+    console.log('🔄 Final sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
+  }
+  
+  // Log when deck changes but we skip due to local changes
+  $: if (deck && hasLocalChanges) {
+    console.log('🔄 Skipping deck data reload due to local changes');
   }
 
   // Force reactivity for collapse states
@@ -147,7 +169,37 @@
   }
 
   function closeDeck() {
+    // Generate context when deck view is closed
+    if (deck?.id) {
+      generateContextForDeck();
+    }
+    // Reset local changes flag
+    hasLocalChanges = false;
+    hasContextChanges = false;
     dispatch('close-deck');
+  }
+
+  async function generateContextForDeck() {
+    if (!deck?.id) return;
+    
+    try {
+      console.log('🔄 Generating context for deck:', deck.id);
+      
+      // Generate context for the deck and all its sections
+      const sectionIds = sections.map(s => s.id).filter(id => id && !id.startsWith('temp-'));
+      
+      const promises = [
+        fetch(`/api/decks/${deck.id}/context`, { method: 'POST' }),
+        ...sectionIds.map(sectionId => 
+          fetch(`/api/deck-sections/${sectionId}/context`, { method: 'POST' })
+        )
+      ];
+      
+      await Promise.all(promises);
+      console.log('✅ Context generation completed for deck and sections');
+    } catch (error) {
+      console.error('❌ Error generating context:', error);
+    }
   }
 
   function openCardZoom(event) {
@@ -211,6 +263,12 @@
         c.id === card.id ? { ...c, rarity } : c
       )
     }));
+    
+    // Mark that we have local changes to prevent deck data reload
+    hasLocalChanges = true;
+    
+    // Also update the main cards array for the binder view
+    dispatch('card-updated', { cardId: card.id, updates: { rarity } });
   }
 
   function handleCardZoomUpdateProgress(event) {
@@ -223,6 +281,12 @@
         c.id === card.id ? { ...c, progress } : c
       )
     }));
+    
+    // Mark that we have local changes to prevent deck data reload
+    hasLocalChanges = true;
+    
+    // Also update the main cards array for the binder view
+    dispatch('card-updated', { cardId: card.id, updates: { progress } });
   }
 
   async function addNewSection() {
@@ -268,12 +332,11 @@
       content: card.content,
       hasTitle: !!card.title
     });
-    
+    console.log('🔍 Previous draggedCard was:', draggedCard?.id);
     draggedCard = card;
+    console.log('🔍 Set draggedCard to:', draggedCard?.id);
     
-    // Set drag data to prevent browser navigation/tab switching
-    event.dataTransfer.setData('text/plain', card.id);
-    event.dataTransfer.setData('application/json', JSON.stringify({ type: 'card', id: card.id }));
+    // Set drag effect (data is already set by FannedCardDeck)
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.dropEffect = 'move';
     
@@ -284,11 +347,50 @@
   }
 
   function handleDragEnd(event) {
-    console.log('🔍 handleDragEnd called, draggedCard was:', draggedCard?.id);
+    console.log('🔍 handleDragEnd called, draggedCard was:', draggedCard?.id, 'dragOverSection:', dragOverSection, 'dragOverIndex:', dragOverIndex);
     event.target.style.opacity = '1';
-    draggedCard = null;
-    dragOverSection = null;
-    dragOverIndex = -1;
+    
+    // If we have a dragged card and we're over a valid drop zone, try to drop it
+    // This is a fallback for when the drop event doesn't fire (e.g., releasing too quickly)
+    if (draggedCard && dragOverSection && dragOverIndex !== undefined) {
+      console.log('🔍 Attempting fallback drop on dragend, sectionId:', dragOverSection, 'cardIndex:', dragOverIndex);
+      // Create a synthetic drop event
+      const syntheticEvent = {
+        isSynthetic: true,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        dataTransfer: {
+          getData: (type) => {
+            if (type === 'application/json') {
+              return JSON.stringify(draggedCard);
+            }
+            if (type === 'text/plain') {
+              return JSON.stringify(draggedCard);
+            }
+            return '';
+          }
+        }
+      };
+      handleDrop(syntheticEvent, dragOverSection, dragOverIndex);
+    } else {
+      console.log('🔍 No fallback drop - draggedCard:', !!draggedCard, 'dragOverSection:', dragOverSection, 'dragOverIndex:', dragOverIndex);
+    }
+    
+    // Don't reset draggedCard here - let handleDrop do it
+    // But add a timeout to reset it if no drop occurs
+    setTimeout(() => {
+      // Only reset if we're not currently over a valid drop zone
+      if (draggedCard && !dragOverSection) {
+        console.log('🔄 Resetting draggedCard after timeout, was:', draggedCard.id);
+        draggedCard = null;
+      } else if (draggedCard && dragOverSection) {
+        console.log('🔄 Keeping draggedCard due to active drop zone:', dragOverSection);
+      }
+      
+      // Reset drag over state after timeout
+      dragOverSection = null;
+      dragOverIndex = -1;
+    }, 1000);
     
     // Stop auto-scroll when dragging ends
     stopAutoScroll();
@@ -304,7 +406,7 @@
   }
 
   function handleDragLeave(event) {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
+    if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
       dragOverSection = null;
       dragOverIndex = -1;
     }
@@ -322,7 +424,7 @@
     document.addEventListener('dragover', trackMouse);
     document.addEventListener('mousemove', trackMouse);
     
-    autoScrollInterval = setInterval(() => {
+    const intervalId = setInterval(() => {
       const scrollContainer = document.querySelector('.deck-view-container') || document.documentElement;
       const viewportHeight = window.innerHeight;
       
@@ -357,10 +459,13 @@
       }
     }, 20); // 50fps for smoother, less jumpy response
     
-    // Store cleanup function
-    autoScrollInterval.cleanup = () => {
-      document.removeEventListener('dragover', trackMouse);
-      document.removeEventListener('mousemove', trackMouse);
+    // Store interval ID and cleanup function
+    autoScrollInterval = {
+      id: intervalId,
+      cleanup: () => {
+        document.removeEventListener('dragover', trackMouse);
+        document.removeEventListener('mousemove', trackMouse);
+      }
     };
   }
 
@@ -370,7 +475,7 @@
       if (autoScrollInterval.cleanup) {
         autoScrollInterval.cleanup();
       }
-      clearInterval(autoScrollInterval);
+      clearInterval(autoScrollInterval.id);
       autoScrollInterval = null;
     }
   }
@@ -378,15 +483,36 @@
   function handleDrop(event, sectionId, cardIndex) {
     event.preventDefault();
     event.stopPropagation();
-    console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id);
+    console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id, 'isSynthetic:', event.isSynthetic);
     
-    if (draggedCard) {
+    // Try to get card from dataTransfer if draggedCard is null
+    let cardToMove = draggedCard;
+    if (!cardToMove) {
+      try {
+        // Try application/json first (full card object)
+        let cardData = event.dataTransfer.getData('application/json');
+        if (!cardData) {
+          // Fallback to text/plain
+          cardData = event.dataTransfer.getData('text/plain');
+        }
+        if (cardData) {
+          cardToMove = JSON.parse(cardData);
+          console.log('🔍 Retrieved card from dataTransfer:', cardToMove?.id);
+        }
+      } catch (error) {
+        console.error('❌ Error parsing card data from dataTransfer:', error);
+        console.log('🔍 Raw dataTransfer data:', event.dataTransfer.getData('text/plain'));
+      }
+    }
+    
+    if (cardToMove) {
+      
       // Find the source section and remove the card
       let sourceSectionId = null;
       let sourceCardIndex = -1;
       
       sections.forEach(section => {
-        const index = section.cards.findIndex(c => c.id === draggedCard.id);
+        const index = section.cards.findIndex(c => c.id === cardToMove.id);
         if (index !== -1) {
           sourceSectionId = section.id;
           sourceCardIndex = index;
@@ -418,11 +544,11 @@
           sections = newSections;
           
           // Save to database
-          saveCardAddition(movedCard.id, sectionId, newPosition);
+          queueCardAddition(movedCard.id, sectionId, newPosition);
         }
       } else {
         // Card is coming from the library
-        console.log('🔍 Adding card from library:', draggedCard.id, 'to section:', sectionId);
+        console.log('🔍 Adding card from library:', cardToMove.id, 'to section:', sectionId);
         
         // Find the target section
         const targetSection = sections.find(s => s.id === sectionId);
@@ -432,10 +558,10 @@
           // Add card to section directly
           if (cardIndex === -1) {
             // Add to end of section
-            targetSection.cards.push(draggedCard);
+            targetSection.cards.push(cardToMove);
           } else {
             // Insert at specific position
-            targetSection.cards.splice(cardIndex, 0, draggedCard);
+            targetSection.cards.splice(cardIndex, 0, cardToMove);
           }
           
           console.log('🔍 After adding card, section has:', targetSection.cards.length, 'cards');
@@ -447,20 +573,24 @@
           }));
           
           // Remove from available cards
-          availableCards = availableCards.filter(c => c.id !== draggedCard.id);
+          availableCards = availableCards.filter(c => c.id !== cardToMove.id);
           
           console.log('🔍 Available cards after removal:', availableCards.length);
           
+          // Mark that we have local changes
+          hasLocalChanges = true;
+          hasContextChanges = true;
+          
           // Save to database
-          saveCardAddition(draggedCard.id, sectionId, cardIndex === -1 ? targetSection.cards.length - 1 : cardIndex);
+          queueCardAddition(cardToMove.id, sectionId, cardIndex === -1 ? targetSection.cards.length - 1 : cardIndex);
         } else {
           console.error('❌ Target section not found:', sectionId);
         }
       }
     }
     
-    dragOverSection = null;
-    dragOverIndex = -1;
+    // Don't reset drag over state here - let handleDragEnd do it
+    // This allows the fallback mechanism to work properly
   }
 
   function handleKeydown(event) {
@@ -538,8 +668,13 @@
     newSections.splice(index - 1, 0, movedSection);
     sections = newSections;
     
-    // Save section reorder to database
-    saveDeckStructure(sections);
+    // Mark that we have local changes
+    hasLocalChanges = true;
+    hasContextChanges = true;
+    
+    // Save section reorder to database - send the full section objects
+    console.log('🔍 moveSectionUp: Sending sections to save:', newSections.map(s => ({ id: s.id, name: s.name, cards: s.cards?.length || 0, position: newSections.indexOf(s) })));
+    saveDeckStructure(newSections);
   }
 
   function moveSectionDown(index) {
@@ -550,8 +685,13 @@
     newSections.splice(index + 1, 0, movedSection);
     sections = newSections;
     
-    // Save section reorder to database
-    saveDeckStructure(sections);
+    // Mark that we have local changes
+    hasLocalChanges = true;
+    hasContextChanges = true;
+    
+    // Save section reorder to database - send the full section objects
+    console.log('🔍 moveSectionDown: Sending sections to save:', newSections.map(s => ({ id: s.id, name: s.name, cards: s.cards?.length || 0, position: newSections.indexOf(s) })));
+    saveDeckStructure(newSections);
   }
 
 
@@ -573,7 +713,16 @@
   }
 
   function toggleCardLibrary() {
+    const wasOpen = showCardLibrary;
     showCardLibrary = !showCardLibrary;
+    
+    // Generate context when library is closed
+    if (wasOpen && !showCardLibrary && deck?.id) {
+      generateContextForDeck();
+      // Reset local changes flag when library is closed
+      hasLocalChanges = false;
+      hasContextChanges = false;
+    }
   }
 
   function addCardToSection(card, sectionId) {
@@ -604,6 +753,10 @@
       // Add back to available cards
       availableCards = [...availableCards, card];
       
+      // Mark that we have local changes
+      hasLocalChanges = true;
+      hasContextChanges = true;
+      
       // Save to database
       saveCardRemoval(card.id);
     }
@@ -615,7 +768,10 @@
       return;
     }
     
-    console.log('🔍 saveDeckStructure: Saving sections:', sectionsToSave.map(s => s.name));
+    console.log('🔍 saveDeckStructure: Saving sections:', sectionsToSave.map(s => ({ id: s.id, name: s.name, position: sectionsToSave.indexOf(s) })));
+    
+    const requestBody = { sections: sectionsToSave };
+    console.log('🔍 saveDeckStructure: Request body:', JSON.stringify(requestBody, null, 2));
     
     try {
       const response = await fetch(`/api/decks/${deck.id}/structure`, {
@@ -623,20 +779,31 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ sections: sectionsToSave })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ saveDeckStructure failed:', response.status, response.statusText, errorText);
         throw new Error(`Failed to save deck structure: ${response.status} ${response.statusText}`);
       }
       
-      console.log('🔍 saveDeckStructure response:', response.status);
+      console.log('✅ saveDeckStructure response:', response.status);
 
       if (response.ok) {
         const updatedDeck = await response.json();
+        console.log('✅ saveDeckStructure success, updated deck:', updatedDeck);
         console.log('🔍 Fetched updated deck:', updatedDeck);
         sections = updatedDeck.sections || [];
-        dispatch('deck-updated', updatedDeck);
+        
+        // Calculate card count for the deck
+        const cardCount = sections.reduce((total, section) => total + (section.cards?.length || 0), 0);
+        
+        // Dispatch deck-updated event with the expected format
+        dispatch('deck-updated', { 
+          deckId: updatedDeck.id, 
+          cardCount: cardCount 
+        });
       } else {
         const errorText = await response.text();
         console.error('🔍 Error saving deck structure:', `Failed to save deck structure: ${response.status} ${response.statusText}`, errorText);
@@ -651,33 +818,87 @@
   }
 
 
+  function queueCardAddition(cardId, sectionId, position) {
+    console.log('📝 Adding to queue:', { cardId, sectionId, position });
+    cardAdditionQueue.push({ cardId, sectionId, position });
+    console.log('📝 Queue now has:', cardAdditionQueue.length, 'items');
+    processCardAdditionQueue();
+  }
+
+  async function processCardAdditionQueue() {
+    if (isProcessingQueue || cardAdditionQueue.length === 0) {
+      return;
+    }
+
+    isProcessingQueue = true;
+    console.log('🔄 Processing card addition queue:', cardAdditionQueue.length, 'items');
+
+    while (cardAdditionQueue.length > 0) {
+      const { cardId, sectionId, position } = cardAdditionQueue.shift();
+      console.log('🔄 Processing queue item:', { cardId, sectionId, position, remaining: cardAdditionQueue.length });
+      await saveCardAddition(cardId, sectionId, position);
+      
+      // Add a small delay between requests to prevent race conditions
+      if (cardAdditionQueue.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    isProcessingQueue = false;
+    console.log('✅ Card addition queue processing complete');
+    // Reset local changes flag after a delay to prevent deck data refresh from overwriting changes
+    setTimeout(() => {
+      hasLocalChanges = false;
+    }, 100);
+  }
+
   async function saveCardAddition(cardId, sectionId, position) {
-    if (!deck || !deck.id) return;
+    if (!deck || !deck.id) {
+      console.error('❌ No deck ID available for saving card');
+      return;
+    }
     
     try {
+      console.log('💾 Starting save for card:', { cardId, sectionId, position, deckId: deck.id });
+      
+      const requestBody = {
+        card_id: cardId,
+        section_id: sectionId,
+        position
+      };
+      
+      console.log('💾 Request body:', requestBody);
+      
       const response = await fetch(`/api/decks/${deck.id}/cards`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          card_id: cardId,
-          section_id: sectionId,
-          position
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('💾 Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to add card to deck');
+        const errorText = await response.text();
+        console.error('❌ API Error:', response.status, errorText);
+        throw new Error(`Failed to add card to deck: ${response.status} ${errorText}`);
       }
       
-      console.log('Card added to deck successfully');
+      const result = await response.json();
+      console.log('✅ Card added to deck successfully:', result);
+      
+      // Dispatch event to update deck card count in parent
+      dispatch('deck-updated', { 
+        deckId: deck.id, 
+        cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+      });
       
       // Note: Deck data will be refreshed by the parent component
       // No need to refresh here as the local state is already updated
     } catch (error) {
-      console.error('Error adding card to deck:', error);
-      // TODO: Show user-friendly error message
+      console.error('❌ Error adding card to deck:', error);
+      // TODO: Show user-friendly error message and revert local state
     }
   }
 
@@ -700,9 +921,174 @@
       }
       
       console.log('Card removed from deck successfully');
+      
+      // Dispatch event to update deck card count in parent
+      dispatch('deck-updated', { 
+        deckId: deck.id, 
+        cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+      });
     } catch (error) {
       console.error('Error removing card from deck:', error);
       // TODO: Show user-friendly error message
+    }
+  }
+
+  // Card action handlers
+  async function handleProgressChange(event) {
+    console.log('🔍 DeckView: handleProgressChange called with event:', event);
+    const { card, targetLevel } = event.detail;
+    console.log('DeckView: Updating card progress:', card.id, 'from', card.progress, 'to', targetLevel);
+
+    // Update the card in the local sections array
+    console.log('🔍 Before progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
+    sections = sections.map(section => ({
+      ...section,
+      cards: section.cards.map(c => 
+        c.id === card.id ? { ...c, progress: targetLevel } : c
+      )
+    }));
+    console.log('🔍 After progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
+    
+    // Mark that we have local changes to prevent deck data reload
+    hasLocalChanges = true;
+    
+    // Also update the main cards array for the binder view
+    dispatch('card-updated', { cardId: card.id, updates: { progress: targetLevel } });
+
+    try {
+      const response = await fetch('/api/cards/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          newProgress: targetLevel
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update progress');
+      }
+
+      console.log('✅ Progress update successful');
+    } catch (error) {
+      console.error('❌ Error updating progress:', error);
+      // Revert the optimistic update
+      sections = sections.map(section => ({
+        ...section,
+        cards: section.cards.map(c => 
+          c.id === card.id ? { ...c, progress: card.progress } : c
+        )
+      }));
+    }
+  }
+
+  async function handleRarityUpgrade(event) {
+    console.log('🔍 DeckView: handleRarityUpgrade called with event:', event);
+    const { card } = event.detail;
+    const rarityOrder = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarityOrder.indexOf(card.rarity);
+    const newRarity = rarityOrder[Math.min(currentIndex + 1, rarityOrder.length - 1)];
+    
+    console.log('DeckView: Upgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
+
+    // Update the card in the local sections array
+    console.log('🔍 Before rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
+    sections = sections.map(section => ({
+      ...section,
+      cards: section.cards.map(c => 
+        c.id === card.id ? { ...c, rarity: newRarity } : c
+      )
+    }));
+    console.log('🔍 After rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
+    
+    // Mark that we have local changes to prevent deck data reload
+    hasLocalChanges = true;
+    
+    // Also update the main cards array for the binder view
+    dispatch('card-updated', { cardId: card.id, updates: { rarity: newRarity } });
+
+    try {
+      const response = await fetch('/api/cards/rarity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          newRarity: newRarity
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update rarity');
+      }
+
+      console.log('✅ Rarity upgrade successful');
+    } catch (error) {
+      console.error('❌ Error upgrading rarity:', error);
+      // Revert the optimistic update
+      sections = sections.map(section => ({
+        ...section,
+        cards: section.cards.map(c => 
+          c.id === card.id ? { ...c, rarity: card.rarity } : c
+        )
+      }));
+    }
+  }
+
+  async function handleRarityDowngrade(event) {
+    const { card } = event.detail;
+    const rarityOrder = ['common', 'special', 'rare', 'legendary'];
+    const currentIndex = rarityOrder.indexOf(card.rarity);
+    const newRarity = rarityOrder[Math.max(currentIndex - 1, 0)];
+    
+    console.log('DeckView: Downgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
+
+    // Update the card in the local sections array
+    sections = sections.map(section => ({
+      ...section,
+      cards: section.cards.map(c => 
+        c.id === card.id ? { ...c, rarity: newRarity } : c
+      )
+    }));
+    
+    // Mark that we have local changes to prevent deck data reload
+    hasLocalChanges = true;
+    
+    // Also update the main cards array for the binder view
+    dispatch('card-updated', { cardId: card.id, updates: { rarity: newRarity } });
+
+    try {
+      const response = await fetch('/api/cards/rarity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: card.id,
+          newRarity: newRarity
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update rarity');
+      }
+
+      console.log('✅ Rarity downgrade successful');
+    } catch (error) {
+      console.error('❌ Error downgrading rarity:', error);
+      // Revert the optimistic update
+      sections = sections.map(section => ({
+        ...section,
+        cards: section.cards.map(c => 
+          c.id === card.id ? { ...c, rarity: card.rarity } : c
+        )
+      }));
     }
   }
 </script>
@@ -723,7 +1109,7 @@
         </button>
         <div>
           <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">{cards.length} cards • {sections.length} sections</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{sections.reduce((total, section) => total + (section.cards?.length || 0), 0)} cards • {sections.length} sections</p>
           <DeckContextIndicator deckId={deck.id} darkMode={true} />
         </div>
       </div>
@@ -815,8 +1201,8 @@
         
         
         {#each sections as section, sectionIndex}
-        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-all">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 pt-3 pb-2 transition-all">
+          <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
               <div class="flex flex-col gap-1">
                 <button
@@ -920,63 +1306,48 @@
                 </div>
               </div>
             {:else}
-              <!-- Original GRID layout for full drag-and-drop functionality -->
-              <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
-                <!-- Drop zone at beginning of section (for first position) -->
-                {#if section.cards.length === 0}
-                  <div
-                    class="min-h-[350px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === 0 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
-                    on:dragover={(e) => handleDragOver(e, section.id, 0)}
-                    on:dragleave={handleDragLeave}
-                    on:drop={(e) => handleDrop(e, section.id, 0)}
-                    role="button"
-                    tabindex="0"
-                  >
-                    <div class="text-center">
-                      <Layers size="24" class="mx-auto mb-2 opacity-50" />
-                      <p class="text-sm">Drop cards here</p>
-                      <p class="text-xs text-gray-400 mt-1">First position in section</p>
-                    </div>
-                  </div>
-                {/if}
-      
-                {#each section.cards as card, index}
-                  <div
-                    class="relative group w-fit mx-auto"
-                    data-card-id={card.id}
-                    draggable="true"
-                    on:dragstart={(e) => {
-                      if (allSectionsCollapsed) {
-                        e.preventDefault();
-                        return;
-                      }
-                      handleDragStart(e, card);
-                    }}
-                    on:dragend={handleDragEnd}
-                    on:dragover={(e) => handleDragOver(e, section.id, index)}
-                    on:dragleave={handleDragLeave}
-                    on:drop={(e) => handleDrop(e, section.id, index)}
-                    role="button"
-                    tabindex="0"
-                  >
-                    <Card
-                      {card}
-                      showActions={false}
+              <!-- Fanned Card Deck layout with drop zone on the right -->
+              <div class="flex items-start gap-4">
+                <!-- Fanned Card Deck - takes up most of the width -->
+                <div class="flex-1">
+                  {#if section.cards.length > 0}
+                    <FannedCardDeck
+                      cards={section.cards}
+                      cardWidth="w-48"
+                      cardHeight="h-64"
+                      maxRotation={0}
+                      cardSpacing={80}
+                      containerHeight="h-96"
+                      allowSelection={false}
+                      allowDrag={true}
+                      allowReordering={true}
+                      autoFit={true}
+                      smartSpacing={true}
                       on:card-click={openCardZoom}
-                      showRemoveButton={true}
-                      on:remove={() => removeCardFromSection(card, section.id)}
-                      xPaddingClass="px-4"
+                      on:drag-start={(e) => handleDragStart(e.detail.event, e.detail.card)}
+                      on:drag-end={(e) => handleDragEnd(e.detail.event)}
+                      on:card-drag-over={(e) => handleDragOver(e.detail.event, section.id, e.detail.index)}
+                      on:card-drag-leave={handleDragLeave}
+                      on:card-drop={(e) => handleDrop(e.detail.event, section.id, e.detail.index)}
+                      on:progress-change={handleProgressChange}
+                      on:rarity-upgrade={handleRarityUpgrade}
+                      on:rarity-downgrade={handleRarityDowngrade}
                     />
-                    <!-- Drop indicator -->
-                    {#if dragOverSection === section.id && dragOverIndex === index}
-                      <div class="absolute inset-0 border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-lg pointer-events-none"></div>
-                    {/if}
-                  </div>
-                {/each}
-      
-                <!-- Drop zone at end of section -->
+                  {:else}
+                    <!-- Empty state when no cards -->
+                    <div class="h-96 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                      <div class="text-center">
+                        <Layers size="48" class="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                        <p class="text-gray-500 dark:text-gray-400">No cards in this section</p>
+                        <p class="text-sm text-gray-400 mt-1">Drop cards from the library</p>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+                
+                <!-- Drop zone on the right -->
                 <div
-                  class="min-h-[350px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+                  class="min-h-[350px] w-[250px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
                   on:dragover={(e) => handleDragOver(e, section.id, -1)}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
@@ -1028,7 +1399,10 @@
                     class="relative w-fit mx-auto"
                     draggable="true"
                     on:dragstart={(e) => handleDragStart(e, card)}
-                <div on:dragend={handleDragEnd}>
+                    on:dragend={handleDragEnd}
+                    role="button"
+                    tabindex="0"
+                  >
                     <Card
                       {card}
                       showActions={false}

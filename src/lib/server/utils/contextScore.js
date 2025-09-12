@@ -84,7 +84,113 @@ export function calculateDescriptionQualityScore(description) {
 }
 
 /**
- * Calculate the context quality score for a project
+ * Calculate the context quality score for a project using context rings
+ * @param {Object} params
+ * @param {Object} params.rings - Context rings data from getContextRings
+ * @param {Object} params.metadata - Metadata from context rings
+ * @returns {number} Score from 0-100
+ */
+export function calculateContextQualityScoreFromRings({ rings, metadata }) {
+  let score = 0;
+  
+  console.log('🎯 Server: Calculating rings-based score for rings:', {
+    global: rings?.global ? 'exists' : 'missing',
+    local: rings?.local ? 'exists' : 'missing', 
+    neighbors: rings?.neighbors ? 'exists' : 'missing',
+    target: rings?.target ? 'exists' : 'missing'
+  });
+  
+  // Global Ring Quality (0-30 points)
+  const globalRing = rings?.global;
+  if (globalRing?.content) {
+    const globalLength = globalRing.content.length;
+    const globalTokens = globalRing.tokens || 0;
+    
+    console.log('🎯 Server: Global ring - length:', globalLength, 'tokens:', globalTokens);
+    
+    // Length scoring (0-15 points)
+    if (globalLength < 100) {
+      score += 0;
+    } else if (globalLength < 300) {
+      score += 5;
+    } else if (globalLength < 600) {
+      score += 10;
+    } else {
+      score += 15;
+    }
+    
+    // Token efficiency (0-15 points) - more tokens = richer context
+    score += Math.min(globalTokens / 2, 15);
+  } else {
+    console.log('🎯 Server: No global ring content');
+  }
+  
+  // Local Ring Quality (0-25 points)
+  const localRing = rings?.local;
+  if (localRing?.content) {
+    const localTokens = localRing.tokens || 0;
+    const localLength = localRing.content.length;
+    
+    console.log('🎯 Server: Local ring - length:', localLength, 'tokens:', localTokens);
+    
+    // Recent context richness (0-15 points)
+    score += Math.min(localTokens / 1.5, 15);
+    
+    // Content diversity (0-10 points)
+    if (localLength > 200) score += 5;
+    if (localLength > 500) score += 5;
+  } else {
+    console.log('🎯 Server: No local ring content');
+  }
+  
+  // Neighbors Ring Quality (0-25 points)
+  const neighborsRing = rings?.neighbors;
+  if (neighborsRing?.content) {
+    const neighborsTokens = neighborsRing.tokens || 0;
+    const neighborsLength = neighborsRing.content.length;
+    
+    console.log('🎯 Server: Neighbors ring - length:', neighborsLength, 'tokens:', neighborsTokens);
+    
+    // Semantic richness (0-15 points)
+    score += Math.min(neighborsTokens / 1.5, 15);
+    
+    // Related content quality (0-10 points)
+    if (neighborsLength > 150) score += 5;
+    if (neighborsLength > 400) score += 5;
+  } else {
+    console.log('🎯 Server: No neighbors ring content');
+  }
+  
+  // Target Ring Quality (0-20 points)
+  const targetRing = rings?.target;
+  if (targetRing?.content) {
+    const targetTokens = targetRing.tokens || 0;
+    const targetLength = targetRing.content.length;
+    
+    console.log('🎯 Server: Target ring - length:', targetLength, 'tokens:', targetTokens);
+    
+    // Target specificity (0-10 points)
+    score += Math.min(targetTokens, 10);
+    
+    // Target richness (0-10 points)
+    if (targetLength > 100) score += 5;
+    if (targetLength > 300) score += 5;
+  } else {
+    console.log('🎯 Server: No target ring content');
+  }
+  
+  // Overall Token Efficiency Bonus (0-10 points)
+  const totalTokens = metadata?.tokenUsage?.totalTokens || 0;
+  if (totalTokens > 1000) score += 5;
+  if (totalTokens > 2000) score += 5;
+  
+  console.log('🎯 Server: Final calculated score:', score);
+  
+  return Math.min(Math.round(score), 100);
+}
+
+/**
+ * Calculate the context quality score for a project (legacy method)
  * @param {Object} params
  * @param {boolean} params.hasProjectDescription - Whether the project has a meaningful description
  * @param {string} params.projectDescription - The actual project description text
@@ -119,49 +225,57 @@ export function calculateContextQualityScore({ hasProjectDescription, projectDes
  */
 export async function refreshContextScore(supabase, projectId) {
   try {
-    // Get project info
-    const { data: project } = await supabase
-      .from('projects')
-      .select('name, description, brief_text')
-      .eq('id', projectId)
-      .single();
-
-    if (!project) {
-      console.warn(`Project ${projectId} not found for context score refresh`);
-      return 0;
-    }
-
-    // Get pinned cards count
-    const { data: pinnedCards } = await supabase
-      .from('cards')
-      .select('id, title, content')
-      .eq('project_id', projectId)
-      .eq('pinned', true)
-      .limit(50);
-
-    // Calculate total characters from project description and pinned content
-    let totalCharacters = 0;
-    if (project.description?.trim()) {
-      totalCharacters += project.description.trim().length;
-    }
-    if (project.brief_text) {
-      totalCharacters += project.brief_text.length;
-    }
-    if (pinnedCards?.length) {
-      totalCharacters += pinnedCards.reduce((sum, card) => sum + (card.title?.length || 0) + (card.content?.length || 0), 0);
-    }
-
-    // Calculate the score
-    const score = calculateContextQualityScore({
-      hasProjectDescription: !!project?.description?.trim(),
-      projectDescription: project?.description || '',
-      pinnedFactsCount: pinnedCards?.length || 0,
-      entityCardsCount: 0, // No longer using entity cards
-      totalCharacters
+    console.log('🎯 Server: Starting context score refresh for project', projectId);
+    
+    // Import buildContextRings to get raw rings data for scoring
+    const { buildContextRings } = await import('../context/contextRings.js');
+    
+    // Import supabaseAdmin for consistent database access
+    const { supabaseAdmin } = await import('../supabaseClient.js');
+    
+    // Get raw context rings for scoring (not formatted for AI)
+    console.log('🎯 Server: Calling buildContextRings for scoring with params:', {
+      projectId,
+      operation: 'create',
+      targetCards: [],
+      userMessage: 'Assess context quality',
+      budget: 'high'
+    });
+    
+    const contextData = await buildContextRings({
+      supabase: supabaseAdmin,
+      projectId,
+      operation: 'create', // Use 'create' as a general context assessment
+      targetCards: [],
+      userMessage: 'Assess context quality',
+      budget: 'high' // Use high budget to get comprehensive context
     });
 
-    // Cache the score in a project metadata table (we'll create this)
-    // For now, we'll store it as a computed field or return it for UI use
+    console.log('🎯 Server: Raw contextData:', JSON.stringify(contextData, null, 2));
+    console.log('🎯 Server: contextData.rings exists:', !!contextData.rings);
+    console.log('🎯 Server: contextData.totalTokens exists:', !!contextData.totalTokens);
+    console.log('🎯 Server: Context rings data:', {
+      global: contextData.rings?.global?.tokens || 0,
+      local: contextData.rings?.local?.tokens || 0,
+      neighbors: contextData.rings?.neighbors?.tokens || 0,
+      target: contextData.rings?.target?.tokens || 0,
+      totalTokens: contextData.totalTokens || 0
+    });
+
+    // Calculate score using rings-based method
+    console.log('🎯 Server: About to call calculateContextQualityScoreFromRings with:', {
+      rings: contextData.rings,
+      metadata: { tokenUsage: { totalTokens: contextData.totalTokens } }
+    });
+    
+    const score = calculateContextQualityScoreFromRings({
+      rings: contextData.rings,
+      metadata: { tokenUsage: { totalTokens: contextData.totalTokens } }
+    });
+
+    console.log('🎯 Server: Calculated context score:', score);
+
+    // Cache the score
     try {
       await supabase
         .from('projects')
@@ -171,16 +285,70 @@ export async function refreshContextScore(supabase, projectId) {
         })
         .eq('id', projectId);
     } catch (updateError) {
-      // If the columns don't exist yet, we'll still return the score
       console.log('Context score caching not yet available, returning calculated score:', score);
     }
 
-    //console.log(`📊 Context score refreshed for project ${projectId}: ${score}/100`);
     return score;
 
   } catch (error) {
-    console.error('Error refreshing context score:', error);
-    return 0;
+    console.error('Error refreshing context score with rings:', error);
+    
+    // Fallback to legacy method if rings fail
+    try {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('name, description, brief_text')
+        .eq('id', projectId)
+        .single();
+
+      if (!project) {
+        console.warn(`Project ${projectId} not found for context score refresh`);
+        return 0;
+      }
+
+      const { data: pinnedCards } = await supabase
+        .from('cards')
+        .select('id, title, content')
+        .eq('project_id', projectId)
+        .eq('pinned', true)
+        .limit(50);
+
+      let totalCharacters = 0;
+      if (project.description?.trim()) {
+        totalCharacters += project.description.trim().length;
+      }
+      if (project.brief_text) {
+        totalCharacters += project.brief_text.length;
+      }
+      if (pinnedCards?.length) {
+        totalCharacters += pinnedCards.reduce((sum, card) => sum + (card.title?.length || 0) + (card.content?.length || 0), 0);
+      }
+
+      const score = calculateContextQualityScore({
+        hasProjectDescription: !!project?.description?.trim(),
+        projectDescription: project?.description || '',
+        pinnedFactsCount: pinnedCards?.length || 0,
+        entityCardsCount: 0,
+        totalCharacters
+      });
+
+      try {
+        await supabase
+          .from('projects')
+          .update({ 
+            context_score: score,
+            context_score_updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId);
+      } catch (updateError) {
+        console.log('Context score caching not yet available, returning calculated score:', score);
+      }
+
+      return score;
+    } catch (fallbackError) {
+      console.error('Error with fallback context score calculation:', fallbackError);
+      return 0;
+    }
   }
 }
 

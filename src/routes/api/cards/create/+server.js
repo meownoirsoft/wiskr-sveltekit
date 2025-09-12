@@ -8,6 +8,8 @@ export async function POST({ request, locals }) {
   try {
     const { project_id, title, content, tags, rarity, progress, mana_cost, art_url, generation_model, art_model, pinned } = await request.json();
     
+    console.log('🎴 Card Creation API: Creating card:', { title, project_id, content: content?.substring(0, 50) + '...' });
+    
     if (!project_id || !title) {
       return json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -40,6 +42,8 @@ export async function POST({ request, locals }) {
       return json({ error: insertError.message }, { status: 500 });
     }
 
+    console.log('🎴 Card Creation API: Card created successfully:', { id: card.id, title: card.title });
+
     // Generate embedding for the card content
     const embedding = await generateCardEmbedding(title, content);
 
@@ -63,7 +67,7 @@ export async function POST({ request, locals }) {
     }
 
     // Update world context in background (don't await to avoid blocking)
-    generateWorldContext(project_id).catch(error => {
+    generateWorldContext(project_id, supabaseAdmin).catch(error => {
       console.error('Error updating world context:', error);
     });
 

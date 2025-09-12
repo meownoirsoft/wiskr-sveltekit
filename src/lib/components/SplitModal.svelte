@@ -129,6 +129,8 @@
   }
 
   function saveSplitResult(type) {
+    console.log('🎴 SplitModal: saveSplitResult called for type:', type);
+    
     let result;
     let selectedCards;
     
@@ -147,10 +149,14 @@
         break;
     }
 
+    console.log('🎴 SplitModal: result:', result, 'selectedCards.size:', selectedCards?.size);
+
     if (result && result.cards && selectedCards.size > 0) {
+      console.log('🎴 SplitModal: Dispatching save-card events for', selectedCards.size, 'cards');
       // Dispatch only selected cards as save events
       result.cards.forEach((card, index) => {
         if (selectedCards.has(index)) {
+          console.log('🎴 SplitModal: Dispatching save-card event for:', card.title);
           dispatch('save-card', {
             title: card.title,
             content: card.content,
@@ -165,6 +171,8 @@
       
       // Close the modal after saving
       closeModal();
+    } else {
+      console.error('🎴 SplitModal: No result or no selected cards to save!');
     }
   }
 
@@ -183,7 +191,7 @@
             <Scissors size="24" class="text-white" />
           </div>
           <div>
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Split Card</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Split Cards to Create</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">Break down your card into multiple focused pieces</p>
           </div>
         </div>
@@ -235,6 +243,9 @@
                     on:selection-change={(e) => selectedDismantleCards = e.detail.selectedCards}
                   />
                 </div>
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Hold shift and hover for full card view
+                </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedDismantleCards.size} of {dismantleResult.cards.length} selected
@@ -272,6 +283,9 @@
                     allowSelection={true}
                     on:selection-change={(e) => selectedRefractCards = e.detail.selectedCards}
                   />
+                </div>
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -311,6 +325,9 @@
                     on:selection-change={(e) => selectedUnfoldCards = e.detail.selectedCards}
                   />
                 </div>
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Hold shift and hover for full card view
+                </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedUnfoldCards.size} of {unfoldResult.cards.length} selected
@@ -329,6 +346,7 @@
                     <Scissors size="48" class="mx-auto" />
                   </div>
                   <p class="text-gray-500 dark:text-gray-400">Choose a split type and cast your spell to see results</p>
+                  <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Your original card will not be affected</p>
                 </div>
               {/if}
             </div>

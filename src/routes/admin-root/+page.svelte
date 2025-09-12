@@ -10,7 +10,7 @@
 
 <div class="flex items-center justify-center min-h-screen">
   <div class="text-center">
-    <h1 class="text-2xl font-bold mb-4">Wiskr Admin Server</h1>
+    <h1 class="font-logo text-2xl font-bold mb-4">Wiskr Admin Server</h1>
     <p class="text-gray-600">Redirecting to admin dashboard...</p>
   </div>
 </div>

@@ -197,12 +197,31 @@
 
   // CARDS MANAGEMENT FUNCTIONS
 
-  export async function addCard() {
-    if (!current) return;
-    if (!cardTitle?.trim() || !cardContent?.trim()) return;
+  export async function addCard(cardData = null) {
+    console.log('🎴 ContextManager: addCard called with data:', cardData);
+    console.log('🎴 ContextManager: current project:', current?.id);
+    
+    if (!current) {
+      console.error('🎴 ContextManager: No current project!');
+      return;
+    }
 
-    // Parse tags
-    const tags = cardTags ? cardTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    // Use provided data or fall back to form variables
+    const title = cardData?.title || cardTitle;
+    const content = cardData?.content || cardContent;
+    const tags = cardData?.tags || (cardTags ? cardTags.split(',').map(t => t.trim()).filter(Boolean) : []);
+    const rarity = cardData?.rarity || 'common';
+    const progress = cardData?.progress || 1;
+    const manaCost = cardData?.mana_cost || 1;
+
+    console.log('🎴 ContextManager: Using title:', title);
+    console.log('🎴 ContextManager: Using content:', content?.substring(0, 50) + '...');
+    console.log('🎴 ContextManager: Using tags:', tags);
+    
+    if (!title?.trim() || !content?.trim()) {
+      console.error('🎴 ContextManager: Missing title or content!');
+      return;
+    }
 
     // Check if offline - queue the request
     if (!getNetworkStatus()) {
@@ -212,18 +231,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             project_id: current.id,
-            title: cardTitle.trim(),
-            content: cardContent.trim(),
+            title: title.trim(),
+            content: content.trim(),
             tags: tags,
             pinned: false,
-            rarity: 'common',
-            progress: 1,
-            mana_cost: 1
+            rarity: rarity,
+            progress: progress,
+            mana_cost: manaCost
           })
         });
         // Reload context after sync
         await loadContext();
-      }, { type: 'create_card', cardTitle: cardTitle.trim() });
+      }, { type: 'create_card', cardTitle: title.trim() });
       
       if (browser && window.showNetworkToast) {
         window.showNetworkToast.offline('Card will be saved when you come back online.');
@@ -243,13 +262,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: current.id,
-          title: cardTitle.trim(),
-          content: cardContent.trim(),
+          title: title.trim(),
+          content: content.trim(),
           tags: tags,
           pinned: false,
-          rarity: 'common',
-          progress: 1,
-          mana_cost: 1
+          rarity: rarity,
+          progress: progress,
+          mana_cost: manaCost
         })
       }, {
         timeout: 15000,

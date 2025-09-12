@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { getContextRings } from '$lib/server/context/contextRings.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -37,7 +38,7 @@ export async function POST({ request, locals }) {
     }
 
     // Generate divine cards using AI
-    const divineCards = await generateDivineCards(sourceCard, selectedCards);
+    const divineCards = await generateDivineCards(sourceCard, selectedCards, projectId);
 
     return json({ cards: divineCards });
 
@@ -60,22 +61,37 @@ function cleanMarkdown(text) {
     .trim();
 }
 
-async function generateDivineCards(sourceCard, selectedCards) {
+// Helper function to convert text to title case
+function toTitleCase(text) {
+  if (!text) return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+async function generateDivineCards(sourceCard, selectedCards, projectId) {
   try {
     const openai = createOpenAIClient();
 
-    // Prepare context for AI
-    const allCards = [sourceCard, ...selectedCards];
-    const cardContext = allCards.map(card => 
-      `Title: ${card.title}\nContent: ${card.content}\nTags: ${(card.tags || []).join(', ')}`
-    ).join('\n\n');
+    // Get context rings for merge operation
+    const context = await getContextRings({
+      supabase: supabaseAdmin,
+      projectId,
+      operation: 'merge',
+      targetCards: [sourceCard, ...selectedCards],
+      userMessage: 'Divine 3 new derivative cards from these concepts',
+      budget: 'high'
+    });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are an AI that divines new insights and derivative concepts from existing cards. Generate exactly 3 new cards that explore different aspects, variations, or extensions of the provided concepts.
+          content: context.systemPrompt + `\n\nYou are an AI that divines new insights and derivative concepts from existing cards. Generate exactly 3 new cards that explore different aspects, variations, or extensions of the provided concepts.
 
 Guidelines:
 - Create 3 distinct cards that each explore a different angle or aspect
@@ -92,7 +108,7 @@ Card 3: [Title] - [Content] - Tags: [tag1, tag2]`
         },
         {
           role: 'user',
-          content: `Divine 3 new derivative cards from these concepts:\n\n${cardContext}`
+          content: context.userContext + `\n\nDivine 3 new derivative cards from these concepts.`
         }
       ],
       temperature: 0.7,
@@ -132,7 +148,7 @@ function parseDivineCards(content) {
       const cardMatch = trimmedLine.match(/^Card \d+:\s*(.+?)\s*-\s*(.+?)\s*-\s*Tags?:\s*(.+)$/i);
       if (cardMatch) {
         currentCard = {
-          title: cleanMarkdown(cardMatch[1].trim()),
+          title: toTitleCase(cleanMarkdown(cardMatch[1].trim())),
           content: cleanMarkdown(cardMatch[2].trim()),
           tags: cardMatch[3].split(',').map(tag => cleanMarkdown(tag.trim())).filter(tag => tag),
           rarity: 'common',
@@ -146,7 +162,7 @@ function parseDivineCards(content) {
         const parts = trimmedLine.split(' - ');
         if (parts.length >= 2) {
           currentCard = {
-            title: cleanMarkdown(parts[0].replace(/^Card \d+:\s*/i, '').trim()),
+            title: toTitleCase(cleanMarkdown(parts[0].replace(/^Card \d+:\s*/i, '').trim())),
             content: cleanMarkdown(parts[1].trim()),
             tags: ['divined'],
             rarity: 'common',

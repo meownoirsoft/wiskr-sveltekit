@@ -74,7 +74,7 @@
 <div id="features" class="py-20 bg-white dark:bg-gray-800">
 	<div class="container mx-auto px-4">
 		<div class="text-center mb-16">
-			<h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">How Wiskr Helps Your AI</h2>
+			<h2 class="font-logo text-4xl font-bold text-gray-900 dark:text-white mb-4">How Wiskr Helps Your AI</h2>
 			<p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
 				We give your AI the tools it needs to be more helpful, organized, and effective
 			</p>

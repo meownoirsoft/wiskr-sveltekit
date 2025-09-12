@@ -7,7 +7,8 @@
     TrendingUp,
     AlertCircle,
     CheckCircle,
-    Activity
+    Activity,
+    Brain
   } from 'lucide-svelte';
 
   export let data;
@@ -41,6 +42,13 @@
       icon: Database,
       href: '/admin/templates',
       color: 'orange'
+    },
+    {
+      title: 'Context Rings',
+      description: 'Test and manage context allocation across operations',
+      icon: Brain,
+      href: '/admin/context-rings',
+      color: 'purple'
     }
   ];
 

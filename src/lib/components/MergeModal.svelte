@@ -138,8 +138,10 @@
   }
 
   function saveSelectedDivineCards() {
+    console.log('🎴 MergeModal: Saving selected divine cards:', selectedDivineCards.size);
     divineResults.forEach((card, index) => {
       if (selectedDivineCards.has(index)) {
+        console.log('🎴 MergeModal: Dispatching save-card event for:', card.title);
         dispatch('save-card', {
           title: card.title,
           content: card.content,
@@ -283,6 +285,9 @@
   }
 
   function saveWeaveResult() {
+    console.log('🎴 MergeModal: saveWeaveResult called');
+    console.log('🎴 MergeModal: weaveResult:', weaveResult);
+    
     if (weaveResult) {
       // Convert tags string back to array
       const cardData = {
@@ -291,8 +296,12 @@
           ? weaveResult.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
           : weaveResult.tags || []
       };
+      
+      console.log('🎴 MergeModal: Dispatching save-card event with:', cardData);
       dispatch('save-card', cardData);
       closeModal();
+    } else {
+      console.error('🎴 MergeModal: No weaveResult to save!');
     }
   }
 
@@ -314,7 +323,7 @@
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
           <Wand2 size="24" class="text-purple-500" />
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Magical Merge</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Merge Cards to Create</h2>
         </div>
         <button
           class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -324,30 +333,6 @@
         </button>
       </div>
 
-      <!-- Tab Navigation -->
-      <div class="flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          class="flex-1 flex items-center justify-center gap-2 py-4 px-6 text-sm font-medium transition-colors {activeTab === 'conjure' ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
-          on:click={() => activeTab = 'conjure'}
-        >
-          <Sparkles size="16" />
-          Conjure
-        </button>
-        <button
-          class="flex-1 flex items-center justify-center gap-2 py-4 px-6 text-sm font-medium transition-colors {activeTab === 'weave' ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
-          on:click={() => activeTab = 'weave'}
-        >
-          <Layers size="16" />
-          Weave
-        </button>
-        <button
-          class="flex-1 flex items-center justify-center gap-2 py-4 px-6 text-sm font-medium transition-colors {activeTab === 'divine' ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
-          on:click={() => activeTab = 'divine'}
-        >
-          <Eye size="16" />
-          Divine
-        </button>
-      </div>
 
       <!-- Tab Content -->
       <div class="flex-1 overflow-hidden">
@@ -357,7 +342,7 @@
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Source Card</h4>
-              <div class="flex justify-center">
+              <div class="flex justify-center mt-8">
                 {#if sourceCard}
                   <Card 
                     card={sourceCard}
@@ -376,6 +361,31 @@
 
             <!-- Middle: Action Area -->
             <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+              <!-- Tab Navigation -->
+              <div class="flex gap-2 mb-6">
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'conjure'}
+                >
+                  <Sparkles size="16" />
+                  Conjure
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'weave'}
+                >
+                  <Layers size="16" />
+                  Weave
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'divine'}
+                >
+                  <Eye size="16" />
+                  Divine
+                </button>
+              </div>
+
               <div class="text-center mb-6">
                 <Sparkles size="48" class="mx-auto text-purple-500 mb-4" />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Conjure</h3>
@@ -409,6 +419,10 @@
               {:else}
                 <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
                   Select a card to combine
+                </div>
+
+                <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
+                  Your original card will not be affected.
                 </div>
               {/if}
             </div>
@@ -468,7 +482,10 @@
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
                 </div>
-                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Hold shift and hover for full card view
+                </div>
+                <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
@@ -490,7 +507,7 @@
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Source Card</h4>
-              <div class="flex justify-center">
+              <div class="flex justify-center mt-8">
                 {#if sourceCard}
                   <Card 
                     card={sourceCard}
@@ -509,6 +526,31 @@
 
             <!-- Middle: Action Area -->
             <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+              <!-- Tab Navigation -->
+              <div class="flex gap-2 mb-6">
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'conjure'}
+                >
+                  <Sparkles size="16" />
+                  Conjure
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'weave'}
+                >
+                  <Layers size="16" />
+                  Weave
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'divine'}
+                >
+                  <Eye size="16" />
+                  Divine
+                </button>
+              </div>
+
               <div class="text-center mb-6">
                 <Layers size="48" class="mx-auto text-blue-500 mb-4" />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Weave</h3>
@@ -601,7 +643,10 @@
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
                 </div>
-                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Hold shift and hover for full card view
+                </div>
+                <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
@@ -623,7 +668,7 @@
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Source Card</h4>
-              <div class="flex justify-center">
+              <div class="flex justify-center mt-8">
                 {#if sourceCard}
                   <Card 
                     card={sourceCard}
@@ -642,6 +687,31 @@
 
             <!-- Middle: Action Area -->
             <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+              <!-- Tab Navigation -->
+              <div class="flex gap-2 mb-6">
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'conjure'}
+                >
+                  <Sparkles size="16" />
+                  Conjure
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'weave'}
+                >
+                  <Layers size="16" />
+                  Weave
+                </button>
+                <button
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  on:click={() => activeTab = 'divine'}
+                >
+                  <Eye size="16" />
+                  Divine
+                </button>
+              </div>
+
               <div class="text-center mb-6">
                 <Eye size="48" class="mx-auto text-green-500 mb-4" />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Divine</h3>
@@ -734,7 +804,10 @@
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
                 </div>
-                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Hold shift and hover for full card view
+                </div>
+                <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
@@ -899,7 +972,10 @@
                     on:selection-change={(e) => selectedDivineCards = e.detail.selectedCards}
                   />
                 </div>
-                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Hold shift and hover for full card view
+                </div>
+                <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedDivineCards.size} of {divineResults.length} selected
                   </span>

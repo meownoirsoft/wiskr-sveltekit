@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
+import { getContextRings } from '$lib/server/context/contextRings.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -22,24 +23,27 @@ export async function POST({ request, locals }) {
       return json({ error: 'Card not found' }, { status: 404 });
     }
 
-    // Get project context for better AI responses
-    const { data: project } = await supabaseAdmin
-      .from('projects')
-      .select('name, description')
-      .eq('id', projectId)
-      .single();
-
-    const projectContext = project ? `\nProject: ${project.name} - ${project.description}` : '';
+    // Get context rings for split operation
+    const context = await getContextRings({
+      supabase: supabaseAdmin,
+      projectId,
+      operation: 'split',
+      targetCards: [card],
+      userMessage: 'Break this card down into different perspectives or viewpoints',
+      budget: 'medium'
+    });
 
     // AI prompt for refracting perspectives
     const prompt = `You are a creative writing assistant helping to analyze a card through different narrative perspectives.
 
-${projectContext}
+${context.systemPrompt}
 
 Source Card:
 Title: ${card.title}
 Content: ${card.content}
 Tags: ${card.tags?.join(', ') || 'None'}
+
+${context.userContext}
 
 Task: Break this card down into 2-4 different narrative perspectives. Each perspective should focus on a different aspect:
 - Characters: Who are the people involved? What are their motivations, relationships, conflicts?
@@ -91,7 +95,7 @@ Tags: [tag1, tag2, tag3]
     // Clean markdown from the results
     const cleanedPerspectives = perspectives.map(perspective => ({
       ...perspective,
-      title: cleanMarkdown(perspective.title),
+      title: toTitleCase(cleanMarkdown(perspective.title)),
       content: cleanMarkdown(perspective.content),
       tags: perspective.tags.map(tag => cleanMarkdown(tag))
     }));
@@ -148,4 +152,15 @@ function cleanMarkdown(text) {
     .replace(/^\s*[-*+]\s*/gm, '')   // Remove list markers
     .replace(/^\s*\d+\.\s*/gm, '')   // Remove numbered list markers
     .trim();
+}
+
+// Helper function to convert text to title case
+function toTitleCase(text) {
+  if (!text) return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }

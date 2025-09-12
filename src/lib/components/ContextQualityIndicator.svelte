@@ -151,13 +151,29 @@
     }
 
     // General quality suggestions based on score
-    if (score < 40) {
-      suggestions.push({
-        icon: FileText,
-        text: 'Add more content to improve quality',
-        points: 'Higher quality score',
-        action: () => dispatch('navigate-cards')
-      });
+    if (score < 80) {
+      if (score < 40) {
+        suggestions.push({
+          icon: FileText,
+          text: 'Add more content to improve quality',
+          points: 'Higher quality score',
+          action: () => dispatch('navigate-cards')
+        });
+      } else if (score < 60) {
+        suggestions.push({
+          icon: TrendingUp,
+          text: 'Add more detailed content',
+          points: 'Reach good quality',
+          action: () => dispatch('navigate-cards')
+        });
+      } else {
+        suggestions.push({
+          icon: Sparkles,
+          text: 'Refine and expand your content',
+          points: 'Reach excellent quality',
+          action: () => dispatch('navigate-cards')
+        });
+      }
     }
 
     return suggestions.slice(0, 3); // Show max 3 suggestions
@@ -340,7 +356,7 @@
               <div class="text-center py-4">
                 <div class="text-green-500 mb-2">🎉</div>
                 <p class="text-sm font-medium text-gray-900 dark:text-white">Great job!</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Your project quality is excellent</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Your project quality is {scoreLabel.toLowerCase()}</p>
               </div>
             {/if}
           {/if}
@@ -514,7 +530,7 @@
               <div class="text-center py-3">
                 <div class="text-green-500 mb-2">🎉</div>
                 <p class="text-sm font-medium text-gray-900 dark:text-white">Great job!</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Your project quality is excellent</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Your project quality is {scoreLabel.toLowerCase()}</p>
               </div>
             {/if}
             

@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { supabaseAdmin } from '$lib/server/supabaseClient.js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 import { updateCardChunks } from '$lib/server/utils/cardChunks.js';
@@ -78,7 +79,7 @@ export async function POST({ params, request, locals }) {
 
     // Update world context in background if content changed
     if (content !== undefined || title !== undefined) {
-      generateWorldContext(card.project_id).catch(error => {
+      generateWorldContext(card.project_id, supabaseAdmin).catch(error => {
         console.error('Error updating world context:', error);
       });
     }

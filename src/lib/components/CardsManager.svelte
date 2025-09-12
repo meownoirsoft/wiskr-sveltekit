@@ -97,6 +97,7 @@
     // console.log('🔍 CardsManager received cards:', cards.map(c => ({ id: c.id, title: c.title, art_url: c.art_url, hasArtUrl: !!c.art_url })));
   }
 
+
   // Filter cards based on search, rarity, and progress
   $: filteredCards = cards.filter(card => {
     const matchesSearch = !searchTerm || 

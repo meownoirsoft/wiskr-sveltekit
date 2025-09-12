@@ -6,12 +6,28 @@ import { v4 as uuidv4 } from 'uuid';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function PUT({ params, request }) {
+  console.log('🔍 saveDeckStructure API: Endpoint called');
   try {
     const { deckId } = params;
     const { sections } = await request.json();
 
+    console.log('🔍 saveDeckStructure API: Received sections:', sections.map(s => ({ id: s.id, name: s.name, position: sections.indexOf(s) })));
+
+    // Test if position column exists by querying current sections
+    const { data: currentSections, error: queryError } = await supabase
+      .from('deck_sections')
+      .select('id, name, position')
+      .eq('deck_id', deckId);
+    
+    if (queryError) {
+      console.error('❌ Error querying current sections:', queryError);
+    } else {
+      console.log('🔍 Current sections in DB:', currentSections);
+    }
+
     // Process sections: update existing and create new ones
     for (const [index, section] of sections.entries()) {
+      console.log(`🔍 Processing section ${index}: ${section.id} - ${section.name}`);
       if (section.id && section.id.startsWith('section-')) {
         // New section with temporary ID
         const newDbSection = {
@@ -33,13 +49,17 @@ export async function PUT({ params, request }) {
 
       } else {
         // Existing section
+        console.log(`🔍 Updating section ${section.id} to position ${index}`);
         const { error } = await supabase
           .from('deck_sections')
           .update({ position: index, name: section.name })
           .eq('id', section.id);
         
         if (error) {
+          console.error(`❌ Error updating section ${section.id}:`, error);
           throw error;
+        } else {
+          console.log(`✅ Successfully updated section ${section.id} to position ${index}`);
         }
       }
     }

@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { getContextRings } from '$lib/server/context/contextRings.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -40,7 +41,7 @@ export async function POST({ request, locals }) {
 
     // Generate conjured card using AI
     console.log('Generating conjured card...');
-    const conjuredCard = await generateConjuredCard(sourceCard, selectedCards);
+    const conjuredCard = await generateConjuredCard(sourceCard, selectedCards, projectId);
     console.log('Generated conjured card:', conjuredCard);
 
     return json(conjuredCard);
@@ -65,22 +66,37 @@ function cleanMarkdown(text) {
     .trim();
 }
 
-async function generateConjuredCard(sourceCard, selectedCards) {
+// Helper function to convert text to title case
+function toTitleCase(text) {
+  if (!text) return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+async function generateConjuredCard(sourceCard, selectedCards, projectId) {
   try {
     const openai = createOpenAIClient();
 
-    // Prepare context for AI
-    const allCards = [sourceCard, ...selectedCards];
-    const cardContext = allCards.map(card => 
-      `Title: ${card.title}\nContent: ${card.content}\nTags: ${(card.tags || []).join(', ')}`
-    ).join('\n\n');
+    // Get context rings for merge operation
+    const context = await getContextRings({
+      supabase: supabaseAdmin,
+      projectId,
+      operation: 'merge',
+      targetCards: [sourceCard, ...selectedCards],
+      userMessage: 'Conjure a new creative card by combining these cards',
+      budget: 'medium'
+    });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are a creative AI that conjures new ideas by combining existing concepts. Create a completely new card that creatively combines elements from the provided cards. The result should be innovative, coherent, and add new value beyond just merging the content.
+          content: context.systemPrompt + `\n\nYou are a creative AI that conjures new ideas by combining existing concepts. Create a completely new card that creatively combines elements from the provided cards. The result should be innovative, coherent, and add new value beyond just merging the content.
 
 Guidelines:
 - Create a unique title that captures the essence of the combined concept
@@ -91,7 +107,7 @@ Guidelines:
         },
         {
           role: 'user',
-          content: `Conjure a new creative card by combining these cards:\n\n${cardContext}`
+          content: context.userContext + `\n\nConjure a new creative card by combining these cards.`
         }
       ],
       temperature: 0.8,
@@ -111,7 +127,7 @@ Guidelines:
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.startsWith('Title:') || line.startsWith('**Title:**')) {
-        title = cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim());
+        title = toTitleCase(cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim()));
       } else if (line.startsWith('Content:') || line.startsWith('**Content:**')) {
         content = cleanMarkdown(lines.slice(i + 1).join('\n').trim());
         break;
@@ -123,12 +139,12 @@ Guidelines:
 
     // If no clear structure, use the first line as title and rest as content
     if (title === 'Conjured Card' && lines.length > 0) {
-      title = cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim());
+      title = toTitleCase(cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim()));
       content = cleanMarkdown(lines.slice(1).join('\n').trim());
     }
 
     return {
-      title: cleanMarkdown(title) || 'Conjured Card',
+      title: toTitleCase(cleanMarkdown(title)) || 'Conjured Card',
       content: cleanMarkdown(content) || cleanMarkdown(generatedContent),
       tags: tags.length > 0 ? tags : ['conjured', 'creative'],
       rarity: 'special',

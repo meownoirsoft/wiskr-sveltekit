@@ -16,6 +16,7 @@
   let type = '';
   let flavorText = '';
   let isSubmitting = false;
+  let isClosing = false;
 
   // Progress levels
   const progressLevels = [
@@ -35,8 +36,24 @@
   ];
 
   function closeModal() {
-    if (!isSubmitting) {
-      dispatch('cancel');
+    if (!isSubmitting && !isClosing) {
+      // Check if there's unsaved content
+      if (title.trim() || content.trim() || tags.trim() || flavorText.trim()) {
+        if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+          isClosing = true;
+          dispatch('cancel');
+        }
+      } else {
+        isClosing = true;
+        dispatch('cancel');
+      }
+    }
+  }
+
+  function handleBackdropMouseDown(event) {
+    // Only close if mousedown directly on the backdrop, not on child elements
+    if (event.target === event.currentTarget && !isSubmitting && !isClosing) {
+      closeModal();
     }
   }
 
@@ -75,7 +92,7 @@
   <div 
     class="fixed inset-0 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
     style="background-color: rgba(0, 0, 0, 0.25);"
-    on:click={(e) => e.target === e.currentTarget && closeModal()}
+    on:mousedown={handleBackdropMouseDown}
     on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"

@@ -64,20 +64,20 @@ export async function POST({ request, locals }) {
 
     console.log('✅ API: Successfully updated card progress in database:', {
       id: updatedCard.id,
-      newValue: updatedCard.value
+      newProgress: updatedCard.progress
     });
 
     // Parse the updated card data for response
     const responseCard = {
       id: updatedCard.id,
-      title: updatedCard.key,
-      content: cardData.content,
-      tags: cardData.tags || [],
-      type: cardData.type || 'other',
-      rarity: cardData.rarity,
-      progress: cardData.progress,
-      mana_cost: cardData.mana_cost || 0,
-      art_url: cardData.art_url,
+      title: updatedCard.title,
+      content: updatedCard.content,
+      tags: updatedCard.tags || [],
+      type: updatedCard.type || 'other',
+      rarity: updatedCard.rarity,
+      progress: updatedCard.progress,
+      mana_cost: updatedCard.mana_cost || 0,
+      art_url: updatedCard.art_url,
       pinned: updatedCard.pinned,
       created_at: updatedCard.created_at,
       project_id: updatedCard.project_id

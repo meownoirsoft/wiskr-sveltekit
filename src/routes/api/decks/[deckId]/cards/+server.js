@@ -42,13 +42,8 @@ export async function POST({ params, request }) {
       return json({ error: 'Failed to add card to deck' }, { status: 500 });
     }
 
-    // Generate context for deck and section in background
-    Promise.all([
-      generateDeckContext(deckId, supabase),
-      generateSectionContext(section_id, supabase)
-    ]).catch(error => {
-      console.error('Error generating context after card addition:', error);
-    });
+    // Context generation is now handled when deck view is closed or library is closed
+    // to avoid interfering with active deck building
 
     return json({ success: true, deckCard });
 
@@ -79,10 +74,8 @@ export async function DELETE({ params, request }) {
       return json({ error: 'Failed to remove card from deck' }, { status: 500 });
     }
 
-    // Generate context for deck in background after card removal
-    generateDeckContext(deckId, supabase).catch(error => {
-      console.error('Error generating context after card removal:', error);
-    });
+    // Context generation is now handled when deck view is closed or library is closed
+    // to avoid interfering with active deck building
 
     return json({ success: true });
 

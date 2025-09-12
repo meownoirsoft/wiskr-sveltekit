@@ -21,8 +21,10 @@ export async function GET({ params }) {
         deck_sections (
           id,
           name,
+          position,
           deck_cards (
             id,
+            position,
             cards (
               id,
               title,
@@ -45,36 +47,49 @@ export async function GET({ params }) {
     }
 
     // Transform the data to match the expected format
-    const transformedDecks = decks.map(deck => ({
-      id: deck.id,
-      name: deck.name,
-      description: deck.description,
-      isPinned: deck.is_pinned || false,
-      cardCount: deck.deck_sections?.reduce((total, section) => 
-        total + (section.deck_cards?.length || 0), 0) || 0,
-      sections: deck.deck_sections?.map(section => ({
-        id: section.id,
-        name: section.name,
-        cards: section.deck_cards?.map(deckCard => {
-          // Use the card data directly from the cards table
-          const card = deckCard.cards;
+    const transformedDecks = decks.map(deck => {
+      // Sort sections by position
+      const sortedSections = deck.deck_sections?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
+      
+      console.log(`🔍 Loading deck ${deck.id} - Raw sections:`, deck.deck_sections?.map(s => ({ id: s.id, name: s.name, position: s.position })));
+      console.log(`🔍 Loading deck ${deck.id} - Sorted sections:`, sortedSections.map(s => ({ id: s.id, name: s.name, position: s.position })));
+      
+      return {
+        id: deck.id,
+        name: deck.name,
+        description: deck.description,
+        isPinned: deck.is_pinned || false,
+        cardCount: sortedSections.reduce((total, section) => 
+          total + (section.deck_cards?.length || 0), 0),
+        sections: sortedSections.map(section => {
+          // Sort cards by position within each section
+          const sortedCards = section.deck_cards?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
           
           return {
-            id: card.id,
-            title: card.title,
-            content: card.content,
-            tags: card.tags || [],
-            rarity: card.rarity || 'common',
-            progress: card.progress || 1,
-            mana_cost: card.mana_cost || 1,
-            art_url: card.art_url,
-            generation_model: card.generation_model || 'GPT-4o',
-            art_model: card.art_model || 'Midjourney',
-            created_at: card.created_at
+            id: section.id,
+            name: section.name,
+            cards: sortedCards.map(deckCard => {
+              // Use the card data directly from the cards table
+              const card = deckCard.cards;
+              
+              return {
+                id: card.id,
+                title: card.title,
+                content: card.content,
+                tags: card.tags || [],
+                rarity: card.rarity || 'common',
+                progress: card.progress || 1,
+                mana_cost: card.mana_cost || 1,
+                art_url: card.art_url,
+                generation_model: card.generation_model || 'GPT-4o',
+                art_model: card.art_model || 'Midjourney',
+                created_at: card.created_at
+              };
+            })
           };
-        }) || []
-      })) || []
-    }));
+        })
+      };
+    });
 
     return json({ decks: transformedDecks });
 
