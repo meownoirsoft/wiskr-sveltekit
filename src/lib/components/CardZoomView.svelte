@@ -1,7 +1,7 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2 } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
   import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
@@ -90,7 +90,7 @@
       borderColor: '#f59e0b',
       bgColor: '#fffbeb',
       bgColorDark: '#92400e',
-      textColor: '#d97706',
+      textColor: '#CA4A11',
       textColorDark: '#fbbf24'
     }
   };
@@ -113,6 +113,7 @@
   let hoverTimeout = null;
   let tooltipLoading = false;
   
+  
   // Tooltip data cache
   let tooltipNotes = [];
   let tooltipBranches = [];
@@ -122,6 +123,9 @@
   // Progress tooltip state
   let showProgressTooltip = false;
   let progressTooltipElement = null;
+  
+  // Markdown editor state
+  let isFullScreen = false;
   
   // Modal states
   let showNotesModal = false;
@@ -135,10 +139,13 @@
   
   // Notes management state
   let notes = [];
+  let notesCount = 0;
+  let branchesCount = 0;
+  let decksCount = 0;
+  let resourcesCount = 0;
   let editingNote = null;
   let newNoteContent = '';
   let showNoteEditor = false;
-  let isFullScreen = false;
   let showPreview = false;
   let showSplitView = false;
 
@@ -178,6 +185,8 @@
     tags = [];
     artUrl = '';
     initializeEditedCard();
+    // Load counts for the card after editedCard is set
+    loadCounts();
   }
 
   function initializeEditedCard() {
@@ -229,6 +238,8 @@
   function saveCard() {
     if (!editedCard) return;
 
+    console.log('Saving content:', content);
+
     // Increment mana cost by 1 for each edit
     const newManaCost = (editedCard.mana_cost || 0) + 1;
 
@@ -241,6 +252,7 @@
       mana_cost: newManaCost
     };
 
+    console.log('Updated card:', updatedCard);
     dispatch('save', { card: updatedCard });
     isEditing = false;
   }
@@ -498,6 +510,25 @@
     progressTooltipElement = null;
   }
 
+
+  // Markdown rendering function
+  function renderMarkdown(text) {
+    if (!text) return '';
+    // Simple markdown rendering
+    return text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/`(.*)`/gim, '<code>$1</code>')
+      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+      .replace(/^\* (.*$)/gim, '<li>$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
+      .replace(/\n/gim, '<br>');
+  }
+
   // Content modal functions
   function openContentModal(type) {
     switch (type) {
@@ -554,13 +585,16 @@
       const response = await fetch(`/api/cards/${editedCard.id}/notes`);
       if (response.ok) {
         notes = await response.json();
+        notesCount = notes.length;
       } else {
         console.error('Failed to load notes');
         notes = [];
+        notesCount = 0;
       }
     } catch (error) {
       console.error('Error loading notes:', error);
       notes = [];
+      notesCount = 0;
     }
   }
 
@@ -703,23 +737,39 @@
     tooltipResources = [];
   }
 
-  // Simple markdown rendering function
-  function renderMarkdown(text) {
-    if (!text) return '';
+  // Load counts for all content types
+  async function loadCounts() {
+    if (!editedCard?.id) return;
     
-    return text
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-      .replace(/`(.*?)`/gim, '<code>$1</code>')
-      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-      .replace(/^- (.*$)/gim, '<li>$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/\n/gim, '<br>');
+    // Load notes count
+    try {
+      const notesResponse = await fetch(`/api/cards/${editedCard.id}/notes`);
+      if (notesResponse.ok) {
+        const notesData = await notesResponse.json();
+        notesCount = notesData.length;
+      }
+    } catch (error) {
+      console.error('Error loading notes count:', error);
+      notesCount = 0;
+    }
+    
+    // Load decks count
+    try {
+      const decksResponse = await fetch(`/api/cards/${editedCard.id}/decks`);
+      if (decksResponse.ok) {
+        const decksData = await decksResponse.json();
+        decksCount = decksData.length;
+      }
+    } catch (error) {
+      console.error('Error loading decks count:', error);
+      decksCount = 0;
+    }
+    
+    // TODO: Load branches and resources counts when their APIs are ready
+    branchesCount = 0;
+    resourcesCount = 0;
   }
+
 </script>
 
 {#if isOpen && editedCard}
@@ -775,7 +825,7 @@
           <!-- Mana Cost - Top Right -->
           {#if editedCard?.rarity === 'common'}
             <!-- Common cards with green gem socket -->
-            <div class="absolute -top-3 -right-2 z-10 w-12 h-12">
+            <div class="absolute -top-3 -right-4 z-10 w-12 h-12">
               <img 
                 src="/sockets/gem-socket-green.webp" 
                 alt="Mana socket" 
@@ -787,7 +837,7 @@
             </div>
           {:else if editedCard?.rarity === 'special'}
             <!-- Special cards with blue gem socket -->
-            <div class="absolute -top-2 -right-2 z-10 w-10 h-13">
+            <div class="absolute -top-2 -right-3 z-10 w-10 h-13">
               <img 
                 src="/sockets/gem-socket-blue.webp" 
                 alt="Mana socket" 
@@ -799,7 +849,7 @@
             </div>
           {:else if editedCard?.rarity === 'rare'}
             <!-- Rare cards with purple gem socket -->
-            <div class="absolute -top-2 -right-2 z-10 w-14 h-14">
+            <div class="absolute -top-2 -right-3 z-10 w-14 h-14">
               <img 
                 src="/sockets/gem-socket-purple.webp" 
                 alt="Mana socket" 
@@ -888,7 +938,7 @@
                       id="new-tag"
                       bind:value={newTag}
                       on:keydown={handleKeydown}
-                      class="w-20 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
+                      class="w-30 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
                       placeholder="Add..."
                     />
                     <button on:click={addTag} class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
@@ -922,18 +972,27 @@
 
             <!-- Content Text -->
             <div 
-              class="line-clamp-12 px-5 -mt-2"
+              class="line-clamp-12 px-5 mt-1"
               style="color: {rarity.textColor};"
             >
               {#if isEditing}
-                <textarea
-                  bind:value={content}
-                  class="mt-6 w-full h-56 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded resize-none"
-                  placeholder="Card content..."
-                  style="color: {rarity.textColor} !important;"
-                ></textarea>
+                <!-- Markdown Editor -->
+                <div class="overflow-hidden" style="height: 280px; padding-top: 5px;">
+                  <MarkdownEditor
+                    content={content}
+                    placeholder="Enter your markdown content here..."
+                    isFullScreen={false}
+                    showPreview={false}
+                    showSplitView={false}
+                    forceLightMode={true}
+                    on:content-change={(e) => {
+                      console.log('Content changed:', e.detail);
+                      content = e.detail.content;
+                    }}
+                  />
+                </div>
               {:else}
-                {editedCard.content}
+                {@html renderMarkdown(editedCard.content)}
               {/if}
             </div>
           </div>
@@ -942,67 +1001,66 @@
 
         <!-- Content Links - Below Content -->
         <div class="px-4 mb-4 -mt-3">
-          <div class="flex justify-between text-xs">
+          <div class="flex justify-between text-sm">
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
-              style:color={darkMode ? '#9ca3af' : '#6b7280'}
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
+              style="color: #e1d5c4;"
               on:click={() => openContentModal('notes')}
               on:mouseenter={(e) => showTooltipForType('notes', e)}
               on:mouseleave={hideTooltip}
             >
-              Notes
+              Notes {notesCount > 0 ? `(${notesCount})` : ''}
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
-              style:color={darkMode ? '#9ca3af' : '#6b7280'}
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
+              style="color: #e1d5c4;"
               on:click={() => openContentModal('branches')}
               on:mouseenter={(e) => showTooltipForType('branches', e)}
               on:mouseleave={hideTooltip}
             >
-              Branches
+              Branches {branchesCount > 0 ? `(${branchesCount})` : ''}
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
-              style:color={darkMode ? '#9ca3af' : '#6b7280'}
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
+              style="color: #e1d5c4;"
               on:click={() => openContentModal('decks')}
               on:mouseenter={(e) => showTooltipForType('decks', e)}
               on:mouseleave={hideTooltip}
             >
-              Decks
+              Decks {decksCount > 0 ? `(${decksCount})` : ''}
             </button>
             <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1"
-              style:color={darkMode ? '#9ca3af' : '#6b7280'}
+              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
+              style="color: #e1d5c4;"
               on:click={() => openContentModal('resources')}
               on:mouseenter={(e) => showTooltipForType('resources', e)}
               on:mouseleave={hideTooltip}
             >
-              Resources
+              Resources {resourcesCount > 0 ? `(${resourcesCount})` : ''}
             </button>
           </div>
         </div>
 
         <!-- Bottom Bar: Rarity and Progress -->
-        <div class="absolute bottom-16 left-2 right-2 bottom-bar flex items-center justify-between flex-wrap gap-y-1" style="margin-bottom: 20px;">
+        <div class="absolute bottom-12 left-2 right-2 bottom-bar flex items-center justify-between flex-wrap gap-y-1" style="margin-bottom: 20px; padding-right: 8px;">
           <!-- Rarity -->
           <div class="flex items-center">
             <!-- Left Arrow (Upgrade) -->
             <div class="w-6 flex justify-center">
               {#if editedCard.rarity !== 'legendary'}
                 <button 
-                  class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                  class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityUpgrade}
                   title="Upgrade rarity"
-                  style:color={darkMode ? '#ffffff' : '#000000'}
                 >
-                  ↑
+                  <ChevronsUp size={24} color={darkMode ? '#ffffff' : '#000000'} />
                 </button>
               {/if}
             </div>
             
             <!-- Rarity Label -->
             <span 
-              class="card-rarity text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2"
+              class="card-rarity text-sm font-bold uppercase bg-white dark:bg-white rounded px-2 py-1 mx-2 font-serif"
               style:color={rarity.textColor}
             >
               {editedCard.rarity}
@@ -1012,12 +1070,11 @@
             <div class="w-6 flex justify-center">
               {#if editedCard.rarity !== 'common'}
                 <button 
-                  class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                  class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityDowngrade}
                   title="Downgrade rarity"
-                  style:color={darkMode ? '#ffffff' : '#000000'}
                 >
-                  ↓
+                  <ChevronsDown size={24} color={darkMode ? '#ffffff' : '#000000'} />
                 </button>
               {/if}
             </div>

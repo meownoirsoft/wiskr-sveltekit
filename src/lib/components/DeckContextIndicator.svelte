@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Brain, FileText, Users, ChevronDown, X, Sparkles, Tag, Zap, User } from 'lucide-svelte';
+  import { Brain, FileText, Users, ChevronsDown, X, Sparkles, Tag, Zap, User } from 'lucide-svelte';
 
   export let deckId = null;
   export let sectionId = null;
@@ -137,7 +137,7 @@
              class:text-yellow-800={!context?.isReady}>
           {context?.isReady ? 'Active' : 'Building'}
         </div>
-        <ChevronDown size="14" class="transition-transform {showDetails ? 'rotate-180' : ''}" />
+        <ChevronsDown size="14" class="transition-transform {showDetails ? 'rotate-180' : ''}" />
       </button>
 
       <!-- Dropdown Details -->

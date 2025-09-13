@@ -1043,7 +1043,7 @@ code {
 }
 
 .card-container:hover {
-  transform: translateY(-2px);
+  transform: translateY(-6px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -1077,7 +1077,7 @@ code {
 }
 
 .card-rarity {
-  font-family: var(--font-ui);
+  font-family: var(--font-card-title);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;

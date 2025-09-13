@@ -5,7 +5,15 @@
   import { markdown } from '@codemirror/lang-markdown';
   import { oneDark } from '@codemirror/theme-one-dark';
   import { EditorState } from '@codemirror/state';
-  import { placeholder as cmPlaceholder } from '@codemirror/view';
+  import { placeholder as cmPlaceholder, lineNumbers } from '@codemirror/view';
+  import { keymap } from '@codemirror/view';
+  import { history, historyKeymap } from '@codemirror/commands';
+  import { foldGutter, indentOnInput, bracketMatching, foldKeymap } from '@codemirror/language';
+  import { indentWithTab } from '@codemirror/commands';
+  import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+  import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
+  import { lintKeymap } from '@codemirror/lint';
+  import { defaultKeymap } from '@codemirror/commands';
   import { 
     Bold, 
     Italic, 
@@ -19,7 +27,6 @@
     Heading3,
     Maximize2,
     Minimize2,
-    Eye,
     Edit3,
     Split
   } from 'lucide-svelte';
@@ -29,6 +36,7 @@
   export let isFullScreen = false;
   export let showPreview = false;
   export let showSplitView = false;
+  export let forceLightMode = false;
 
   const dispatch = createEventDispatcher();
 
@@ -37,8 +45,29 @@
   let editorView;
   let isDarkMode = false;
 
+  // Custom basic setup without line numbers
+  const customBasicSetup = [
+    history(),
+    foldGutter(),
+    indentOnInput(),
+    bracketMatching(),
+    closeBrackets(),
+    autocompletion(),
+    highlightSelectionMatches(),
+    keymap.of([
+      ...closeBracketsKeymap,
+      ...defaultKeymap,
+      ...searchKeymap,
+      ...historyKeymap,
+      ...foldKeymap,
+      ...completionKeymap,
+      ...lintKeymap,
+      indentWithTab
+    ])
+  ];
+
   // Check for dark mode
-  $: isDarkMode = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
+  $: isDarkMode = forceLightMode ? false : (typeof window !== 'undefined' && document.documentElement.classList.contains('dark'));
 
   // Update editor content when prop changes
   $: if (editorView && content !== editorView.state.doc.toString()) {
@@ -131,24 +160,38 @@
     editorView = new EditorView({
       doc: content,
       extensions: [
-        basicSetup,
+        ...customBasicSetup,
         markdown(),
         isDarkMode ? oneDark : [],
+        EditorView.lineWrapping,
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            const newContent = editorView.state.doc.toString();
+            dispatch('content-change', { content: newContent });
+          }
+        }),
         EditorView.theme({
           '&': {
             height: '100%',
-            fontSize: '14px',
+            fontSize: '0.875rem',
+            lineHeight: '1.3',
             maxWidth: '100%',
             width: '100%',
             overflow: 'hidden'
           },
+          '.markdown-editor-container.flex > div::after': {
+            background: '1px solid blue'
+          },
           '.cm-editor': {
             height: '100%',
             maxWidth: '100%',
-            width: '100%'
+            width: '100%',
+            fontFamily: 'var(--font-card-content)',
+            backgroundColor: '#e1d5c4',
+            border: 'none'
           },
           '.cm-scroller': {
-            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontFamily: 'var(--font-card-content)',
             overflow: 'auto',
             overflowX: 'hidden',
             maxWidth: '100%',
@@ -172,6 +215,18 @@
           '.cm-placeholder': {
             color: 'var(--tw-placeholder-opacity, 1)',
             opacity: 'var(--tw-placeholder-opacity, 0.5)'
+          },
+          '.cm-gutter': {
+            backgroundColor: '#e1d5c4'
+          },
+          '.cm-gutters-before':{
+            border: '#e1d5c4'
+          },
+          '.cm-gutterElement': {
+            backgroundColor: '#e1d5c4'
+          },
+          '.cm-focused': {
+            outline: 'none'
           }
         }),
         cmPlaceholder(placeholder)
@@ -184,20 +239,6 @@
       editorView.focus();
     }, 100);
 
-    // Add manual content change detection
-    if (editorElement) {
-      const handleInput = () => {
-        if (editorView) {
-          const newContent = editorView.state.doc.toString();
-          dispatch('content-change', { content: newContent });
-        }
-      };
-      
-      editorElement.addEventListener('input', handleInput);
-      
-      // Store the handler for cleanup
-      editorView._inputHandler = handleInput;
-    }
   }
 
   function togglePreview() {
@@ -291,81 +332,81 @@
 
   <div class="markdown-editor-container flex flex-col h-full min-h-0 w-full max-w-full" class:fullscreen={isFullScreen}>
   <!-- Toolbar -->
-  <div class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+  <div class="flex items-center justify-between p-2 border-gray-200" style="background-color: #e1d5c4;">
     <div class="flex items-center gap-1 flex-wrap">
       <!-- Formatting buttons -->
       <button
         on:click={() => insertMarkdown('bold')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Bold (Ctrl+B)"
       >
         <Bold size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('italic')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Italic (Ctrl+I)"
       >
         <Italic size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('code')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Code"
       >
         <Code size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('link')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Link"
       >
         <Link size="16" />
       </button>
       
-      <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+      <div class="w-px h-6 bg-gray-300 mx-1"></div>
       
       <button
         on:click={() => insertMarkdown('h1')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Heading 1"
       >
         <Heading1 size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('h2')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Heading 2"
       >
         <Heading2 size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('h3')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Heading 3"
       >
         <Heading3 size="16" />
       </button>
       
-      <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+      <div class="w-px h-6 bg-gray-300 mx-1"></div>
       
       <button
         on:click={() => insertMarkdown('quote')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Quote"
       >
         <Quote size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('ul')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Unordered List"
       >
         <List size="16" />
       </button>
       <button
         on:click={() => insertMarkdown('ol')}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title="Ordered List"
       >
         <ListOrdered size="16" />
@@ -374,31 +415,29 @@
 
     <div class="flex items-center gap-1 flex-wrap">
       <!-- View mode buttons -->
-      <button
+      <!-- <button
         on:click={togglePreview}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         class:bg-blue-100={showPreview}
-        class:dark:bg-blue-900={showPreview}
         title="Toggle Preview"
       >
         <Eye size="16" />
-      </button>
+      </button> -->
       
       {#if !isFullScreen}
         <button
           on:click={toggleSplitView}
-          class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+          class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
           class:bg-blue-100={showSplitView}
-          class:dark:bg-blue-900={showSplitView}
           title="Split View"
         >
           <Split size="16" />
         </button>
       {/if}
       
-      <button
+      <!-- <button
         on:click={toggleFullScreen}
-        class="p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
         title={isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
       >
         {#if isFullScreen}
@@ -406,7 +445,7 @@
         {:else}
           <Maximize2 size="16" />
         {/if}
-      </button>
+      </button> -->
     </div>
   </div>
 
@@ -426,13 +465,13 @@
     <!-- Preview -->
     {#if showPreview || (showSplitView && !isFullScreen)}
       <div 
-        class="flex-1 {showSplitView && !isFullScreen ? 'w-1/2 border-l border-gray-200 dark:border-gray-700' : ''} p-4 overflow-y-auto prose prose-sm max-w-none dark:prose-invert"
+        class="flex-1 {showSplitView && !isFullScreen ? 'w-1/2 border-l border-gray-200' : ''} p-4 overflow-y-auto prose prose-sm max-w-none"
         bind:this={previewElement}
       >
         {#if content.trim()}
           {@html renderMarkdown(content)}
         {:else}
-          <p class="text-gray-500 dark:text-gray-400 italic">Preview will appear here...</p>
+          <p class="text-gray-500 italic">Preview will appear here...</p>
         {/if}
       </div>
     {/if}

@@ -228,9 +228,9 @@
               <MessageSquare size="16" />
               <span class="text-sm font-medium">{showMobileForm ? "Hide Prompt" : "New Prompt"}</span>
               {#if showMobileForm}
-                <ChevronDown size="16" />
+                <ChevronsDown size="16" />
               {:else}
-                <ChevronUp size="16" />
+                <ChevronsUp size="16" />
               {/if}
             </button>
           </div>

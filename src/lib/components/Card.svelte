@@ -1,7 +1,7 @@
 <!-- Card.svelte - Clean MTG-style idea card component -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette, X } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette, X, ChevronsUp, ChevronsDown } from 'lucide-svelte';
   import { newCardIds, markCardAsSeen } from '$lib/stores/newCards.js';
 
   export let card = null;
@@ -171,6 +171,7 @@
     dispatch('rarity-downgrade', { card });
   }
 
+
   function handlePinClick(event) {
     event.stopPropagation();
     dispatch('pin-toggle', { card });
@@ -239,7 +240,8 @@
       
       // Only scroll if the title is actually wider than the container
       if (titleWidth > containerWidth && titleWidth > 0 && containerWidth > 0) {
-        const scrollDistance = titleWidth - containerWidth;
+        // Add extra scroll distance to account for right padding and ensure full text visibility
+        const scrollDistance = titleWidth - containerWidth + 20;
         
         // Calculate duration based on title length - longer titles scroll slower
         // Base duration of 800ms, add 200ms per 50 characters
@@ -274,6 +276,24 @@
 
   function handleProgressLeave() {
     showProgressTooltip = false;
+  }
+
+  // Markdown rendering function
+  function renderMarkdown(text) {
+    if (!text) return '';
+    // Simple markdown rendering
+    return text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/`(.*?)`/gim, '<code>$1</code>')
+      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+      .replace(/^- (.*$)/gim, '<li>$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\n/gim, '<br>');
   }
 
 </script>
@@ -313,7 +333,7 @@
     <div class="mb-2 -mt-2 -mx-2">
       <div 
         class="title-container relative overflow-hidden"
-        style="max-width: 100%; background: #E1D5C4; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8); padding: 4px 16px 4px 8px;"
+        style="max-width: 100%; background: #E1D5C4; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8); padding: 4px 24px 4px 8px;"
         on:mouseenter={handleTitleHover}
         on:mouseleave={handleTitleLeave}
       >
@@ -382,7 +402,7 @@
         </div>
       {:else if card?.rarity === 'legendary'}
         <!-- Legendary cards with orange gem socket -->
-        <div class="absolute -top-2 -right-2 z-10 w-12 h-12">
+        <div class="absolute -top-2 -right-3 z-10 w-12 h-12">
           <img 
             src="/sockets/gem-socket-orange.webp" 
             alt="Mana socket" 
@@ -459,7 +479,7 @@
           class="line-clamp-6 px-3 -mt-2"
           style="color: {rarity.textColor};"
         >
-          {@html highlightText(card?.content || 'No content', searchTerm)}
+          {@html highlightText(renderMarkdown(card?.content || 'No content'), searchTerm)}
         </div>
       </div>
       
@@ -484,34 +504,35 @@
         <div class="flex justify-start" class:w-6={(card?.rarity || 'common') !== 'legendary'}>
           {#if (card?.rarity || 'common') !== 'legendary'}
             <button 
-              class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+              class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
               on:click={handleRarityUpgrade}
               title="Upgrade rarity"
-              style:color={darkMode ? '#ffffff' : '#000000'}
             >
-              ↑
+              <ChevronsUp size={24} color={darkMode ? '#ffffff' : '#000000'} />
             </button>
           {/if}
         </div>
         
-        <!-- Rarity Label -->
-        <span 
-          class="card-rarity text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5"
-          style:color={rarity.textColor}
-        >
-          {card?.rarity || 'common'}
-        </span>
+        <!-- Rarity Label with Tooltip -->
+        <div class="relative">
+          <span 
+            class="card-rarity text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5 font-serif"
+            style:color={rarity.textColor}
+          >
+            {card?.rarity || 'common'}
+          </span>
+          
+        </div>
         
         <!-- Right Arrow (Downgrade) -->
         <div class="w-6 flex justify-center">
           {#if (card?.rarity || 'common') !== 'common'}
             <button 
-              class="text-lg font-bold opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+              class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
               on:click={handleRarityDowngrade}
               title="Downgrade rarity"
-              style:color={darkMode ? '#ffffff' : '#000000'}
             >
-              ↓
+              <ChevronsDown size={24} color={darkMode ? '#ffffff' : '#000000'} />
             </button>
           {/if}
         </div>
@@ -689,6 +710,7 @@
       </div>
     </div>
   {/if}
+
 </div>
 
 <style>

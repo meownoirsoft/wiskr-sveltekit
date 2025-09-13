@@ -1,7 +1,7 @@
 <!-- DeckView.svelte - Shows cards organized in deck sections -->
 <script>
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-  import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2 } from 'lucide-svelte';
+  import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2, ChevronsUp, ChevronsDown } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import DeckContextIndicator from './DeckContextIndicator.svelte';
@@ -1110,7 +1110,7 @@
         <div>
           <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">{sections.reduce((total, section) => total + (section.cards?.length || 0), 0)} cards • {sections.length} sections</p>
-          <DeckContextIndicator deckId={deck.id} darkMode={true} />
+          <!-- <DeckContextIndicator deckId={deck.id} darkMode={true} /> -->
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -1204,14 +1204,14 @@
         <div class="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 pt-3 pb-2 transition-all">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
-              <div class="flex flex-col gap-1">
+              <div class="flex gap-1">
                 <button
                   class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Move section up"
                   disabled={sectionIndex === 0}
                   on:click={() => moveSectionUp(sectionIndex)}
                 >
-                  <ChevronUp size="16" />
+                  <ChevronsUp size="16" />
                 </button>
                 <button
                   class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1219,7 +1219,7 @@
                   disabled={sectionIndex === sections.length - 1}
                   on:click={() => moveSectionDown(sectionIndex)}
                 >
-                  <ChevronDown size="16" />
+                  <ChevronsDown size="16" />
                 </button>
               </div>
               {#if editingSection === section.id}
@@ -1258,7 +1258,7 @@
               </button>
       
               <span class="text-sm text-gray-500 dark:text-gray-400">{section.cards.length} cards</span>
-              <DeckContextIndicator sectionId={section.id} darkMode={true} isMobile={false} />
+              <!-- <DeckContextIndicator sectionId={section.id} darkMode={true} isMobile={false} /> -->
               {#if sectionIndex > 0}
                 <button
                   class="p-1 text-gray-400 hover:text-red-500 transition-colors"
