@@ -1,9 +1,12 @@
 import { json } from '@sveltejs/kit';
 import { OPENAI_API_KEY, BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE } from '$env/static/private';
+import { requireAuth } from '$lib/server/supabaseClient.js';
+import { trackUsage } from '$lib/server/utils/usageTracker.js';
 
-export async function POST({ request }) {
+export async function POST({ request, locals }) {
   try {
-    const { cardTitle, cardContent, cardTags, rarity } = await request.json();
+    const user = await requireAuth(locals);
+    const { cardTitle, cardContent, cardTags, rarity, projectId } = await request.json();
 
     if (!OPENAI_API_KEY) {
       return json({ error: 'OpenAI API key not configured' }, { status: 500 });
@@ -66,6 +69,18 @@ The art should be a pure illustration that represents the concept described in t
     const dallEUrl = data.data[0].url;
     
     console.log('🔍 DALL-E generated image URL:', dallEUrl);
+    
+    // Track usage for DALL-E generation
+    await trackUsage({
+      userId: user.id,
+      projectId: projectId || null,
+      model: 'dall-e-3',
+      tokensIn: 0, // DALL-E doesn't use tokens, but we track the generation
+      tokensOut: 1, // Count as 1 generation
+      costUsd: 0.04, // DALL-E 3 standard quality cost
+      supabase: locals.supabase,
+      operation: 'art-generation'
+    });
     
     // Download the DALL-E image and upload to BunnyCDN for permanent storage
     try {

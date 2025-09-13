@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { getContextRings } from '$lib/server/context/contextRings.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -88,6 +89,21 @@ Tags: [tag1, tag2, tag3]
     });
 
     const response = completion.choices[0]?.message?.content || '';
+    
+    // Track usage
+    const inputText = JSON.stringify([
+      { role: 'system', content: 'You are a creative writing assistant specializing in breaking down complex ideas into focused, distinct elements.' },
+      { role: 'user', content: prompt }
+    ]);
+    await trackAIUsage({
+      userId: user.id,
+      projectId,
+      model: 'gpt-4o-mini',
+      inputText,
+      outputText: response,
+      supabase: locals.supabase,
+      operation: 'split-dismantle'
+    });
     
     // Parse the response
     const elements = parseDismantleResponse(response);

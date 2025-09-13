@@ -1,6 +1,7 @@
 // src/routes/api/brief/regenerate/+server.js
 import { json } from '@sveltejs/kit';
 import { getModelConfig } from '$lib/server/openrouter.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export const POST = async ({ request, locals }) => {
   const { data: { user } } = await locals.supabase.auth.getUser();
@@ -79,6 +80,22 @@ Remember: Prioritize the 🚨 pinned items - they represent the user's most impo
   });
 
   const brief = completion.choices?.[0]?.message?.content?.trim() || '';
+  
+  // Track usage
+  const inputText = JSON.stringify([
+    { role: 'system', content: 'You compress project knowledge crisply.' },
+    { role: 'user', content: prompt }
+  ]);
+  await trackAIUsage({
+    userId: user.id,
+    projectId,
+    model: modelConf.name,
+    inputText,
+    outputText: brief,
+    supabase: locals.supabase,
+    operation: 'brief-regenerate'
+  });
+  
   await sb.from('projects').update({ brief_text: brief, brief_updated_at: new Date().toISOString() }).eq('id', projectId);
 
   return json({ ok: true });

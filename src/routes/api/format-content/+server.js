@@ -1,6 +1,7 @@
 // src/routes/api/format-content/+server.js
 import { json } from '@sveltejs/kit';
 import { getModelConfig } from '$lib/server/openrouter.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 // Platform-specific formatting rules
 const PLATFORM_RULES = {
@@ -187,9 +188,12 @@ const PLATFORM_RULES = {
   }
 };
 
-export async function POST({ request }) {
+export async function POST({ request, locals }) {
   try {
-    const { content, platform } = await request.json();
+    const { data: { user } } = await locals.supabase.auth.getUser();
+    if (!user) return new Response('Unauthorized', { status: 401 });
+    
+    const { content, platform, projectId } = await request.json();
     
     if (!content || !platform) {
       return json({ error: 'Content and platform are required' }, { status: 400 });
@@ -234,6 +238,21 @@ Format the content to be ready to post on ${platformConfig.name}.`;
 
     const formatted = completion.choices[0]?.message?.content?.trim() || '';
     
+    // Track usage for first formatting attempt
+    const inputText = JSON.stringify([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Please format this content for ${platformConfig.name}:\n\n${content}` }
+    ]);
+    await trackAIUsage({
+      userId: user.id,
+      projectId: projectId || null,
+      model: modelConf.name,
+      inputText,
+      outputText: formatted,
+      supabase: locals.supabase,
+      operation: 'format-content'
+    });
+    
     // Check if formatted content exceeds platform limits
     if (formatted.length > platformConfig.maxLength) {
       // Try to get a shorter version
@@ -248,6 +267,22 @@ Format the content to be ready to post on ${platformConfig.name}.`;
       });
       
       const shorterFormatted = shortenCompletion.choices[0]?.message?.content?.trim() || '';
+      
+      // Track usage for shortening attempt
+      const shortenInputText = JSON.stringify([
+        { role: 'system', content: systemPrompt + `\n\nIMPORTANT: The content MUST be under ${platformConfig.maxLength} characters. The previous attempt was too long.` },
+        { role: 'user', content: `Please format this content for ${platformConfig.name}, keeping it under ${platformConfig.maxLength} characters:\n\n${content}` }
+      ]);
+      await trackAIUsage({
+        userId: user.id,
+        projectId: projectId || null,
+        model: modelConf.name,
+        inputText: shortenInputText,
+        outputText: shorterFormatted,
+        supabase: locals.supabase,
+        operation: 'format-content-shorten'
+      });
+      
       return json({ formatted: shorterFormatted });
     }
     

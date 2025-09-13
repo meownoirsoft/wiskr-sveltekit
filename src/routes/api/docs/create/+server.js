@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export const POST = async ({ request, locals }) => {
   const { data: { user } } = await locals.supabase.auth.getUser();
@@ -30,6 +31,20 @@ export const POST = async ({ request, locals }) => {
       input: text
     });
     embedding = emb.data[0]?.embedding || null;
+    
+    // Track usage for embedding generation
+    const tokens = Math.round(text.length / 4); // Rough token estimate
+    const costUsd = tokens * 0.00002; // text-embedding-3-small cost per token
+    
+    await trackAIUsage({
+      userId: user.id,
+      projectId: project_id,
+      model: 'text-embedding-3-small',
+      inputText: text,
+      outputText: '', // Embeddings don't have output text
+      supabase: locals.supabase,
+      operation: 'docs-create-embedding'
+    });
   } catch (e) {
     console.error('Embedding error (doc):', e?.message || e);
   }

@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 /**
  * Generate or update entity cards for a project
@@ -135,6 +136,24 @@ Summary:`;
           console.error('❌ EntityCards: No summary generated for', entityData.entityName);
           continue;
         }
+        
+        // Track usage for entity summary generation
+        const inputText = JSON.stringify([
+          { 
+            role: 'system', 
+            content: 'You write concise, informative entity summaries. Keep them factual and useful for both AI and human readers.' 
+          },
+          { role: 'user', content: summaryPrompt }
+        ]);
+        await trackAIUsage({
+          userId: user.id,
+          projectId,
+          model: modelConf.name,
+          inputText,
+          outputText: rawSummary,
+          supabase: locals.supabase,
+          operation: 'entity-cards-generate'
+        });
         
         // Process the summary to replace any AI self-identifications
         const summary = processAIResponse(rawSummary, 'micro');

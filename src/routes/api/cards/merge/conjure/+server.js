@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
 import { getContextRings } from '$lib/server/context/contextRings.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -41,7 +42,7 @@ export async function POST({ request, locals }) {
 
     // Generate conjured card using AI
     console.log('Generating conjured card...');
-    const conjuredCard = await generateConjuredCard(sourceCard, selectedCards, projectId);
+    const conjuredCard = await generateConjuredCard(sourceCard, selectedCards, projectId, user.id, locals.supabase);
     console.log('Generated conjured card:', conjuredCard);
 
     return json(conjuredCard);
@@ -77,7 +78,7 @@ function toTitleCase(text) {
     .join(' ');
 }
 
-async function generateConjuredCard(sourceCard, selectedCards, projectId) {
+async function generateConjuredCard(sourceCard, selectedCards, projectId, userId, supabase) {
   try {
     const openai = createOpenAIClient();
 
@@ -115,6 +116,18 @@ Guidelines:
     });
 
     const generatedContent = response.choices[0].message.content;
+    
+    // Track usage
+    const inputText = JSON.stringify(messages);
+    await trackAIUsage({
+      userId,
+      projectId,
+      model: 'gpt-4o-mini',
+      inputText,
+      outputText: generatedContent,
+      supabase,
+      operation: 'conjure'
+    });
     
     // Parse the generated content
     const lines = generatedContent.split('\n').filter(line => line.trim());

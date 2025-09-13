@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
 import { getContextRings } from '$lib/server/context/contextRings.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -38,7 +39,7 @@ export async function POST({ request, locals }) {
     }
 
     // Generate woven card using AI
-    const wovenCard = await generateWovenCard(sourceCard, selectedCards, projectId);
+    const wovenCard = await generateWovenCard(sourceCard, selectedCards, projectId, user.id, locals.supabase);
 
     return json(wovenCard);
 
@@ -72,7 +73,7 @@ function toTitleCase(text) {
     .join(' ');
 }
 
-async function generateWovenCard(sourceCard, selectedCards, projectId) {
+async function generateWovenCard(sourceCard, selectedCards, projectId, userId, supabase) {
   try {
     const openai = createOpenAIClient();
 
@@ -111,6 +112,18 @@ Guidelines:
     });
 
     const generatedContent = response.choices[0].message.content;
+    
+    // Track usage
+    const inputText = JSON.stringify(messages);
+    await trackAIUsage({
+      userId,
+      projectId,
+      model: 'gpt-4o-mini',
+      inputText,
+      outputText: generatedContent,
+      supabase,
+      operation: 'weave'
+    });
     
     // Parse the generated content
     const lines = generatedContent.split('\n').filter(line => line.trim());

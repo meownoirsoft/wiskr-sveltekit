@@ -7,6 +7,7 @@ import JSZip from 'jszip';
 import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityDetection.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -101,6 +102,24 @@ Summary:`;
           console.error('❌ Import: No summary generated for', entityData.entityName);
           continue;
         }
+        
+        // Track usage for entity summary generation during admin import
+        const inputText = JSON.stringify([
+          { 
+            role: 'system', 
+            content: 'You write concise, informative entity summaries. Keep them factual and useful for both AI and human readers.' 
+          },
+          { role: 'user', content: summaryPrompt }
+        ]);
+        await trackAIUsage({
+          userId: 'admin', // Admin operations use 'admin' as userId
+          projectId,
+          model: modelConf.name,
+          inputText,
+          outputText: rawSummary,
+          supabase: supabaseAdmin,
+          operation: 'admin-import-entity'
+        });
         
         // Process the summary to replace any AI self-identifications
         const summary = processAIResponse(rawSummary, 'micro');

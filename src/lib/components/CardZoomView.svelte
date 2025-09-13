@@ -1297,6 +1297,7 @@
 <ArtManager 
   bind:isOpen={showArtManager}
   {card}
+  projectId={card?.project_id}
   currentArtUrl={artUrl}
   on:art-selected={handleArtSelected}
   on:close={closeArtManager}

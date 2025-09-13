@@ -3,6 +3,7 @@ import { detectEntities, mapEntitiesToCards } from '$lib/server/services/entityD
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { processAIResponse } from '$lib/server/responseProcessor.js';
 import { refreshContextScore } from '$lib/server/utils/contextScore.js';
+import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 /**
  * Import a complete project from an exported JSON file
@@ -367,6 +368,24 @@ Summary:`;
                   console.warn('⚠️ Import: No summary generated for', entityData.entityName);
                   continue;
                 }
+                
+                // Track usage for entity summary generation during import
+                const inputText = JSON.stringify([
+                  { 
+                    role: 'system', 
+                    content: 'You write concise, informative entity summaries. Keep them factual and useful for both AI and human readers.' 
+                  },
+                  { role: 'user', content: summaryPrompt }
+                ]);
+                await trackAIUsage({
+                  userId: user.id,
+                  projectId: newProject.id,
+                  model: modelConf.name,
+                  inputText,
+                  outputText: rawSummary,
+                  supabase: locals.supabase,
+                  operation: 'projects-import-entity'
+                });
                 
                 // Process the summary
                 const summary = processAIResponse(rawSummary, 'micro');

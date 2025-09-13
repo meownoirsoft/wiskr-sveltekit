@@ -7,6 +7,7 @@
   export let isOpen = false;
   export let card = null;
   export let currentArtUrl = '';
+  export let projectId = null;
 
   const dispatch = createEventDispatcher();
 
@@ -125,7 +126,8 @@
           cardTitle: card.title,
           cardContent: card.content,
           cardTags: card.tags || [],
-          rarity: card.rarity
+          rarity: card.rarity,
+          projectId: projectId
         })
       });
 
