@@ -79,7 +79,7 @@
   function highlightText(text, term) {
     if (!term || !text) return text;
     const regex = new RegExp(`(${term})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
+    return text.replace(regex, '<span class="search-highlight" style="display: inline;">$1</span>');
   }
 
   // Helper function to generate a title from content

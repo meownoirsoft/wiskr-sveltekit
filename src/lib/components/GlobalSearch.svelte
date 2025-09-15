@@ -95,25 +95,26 @@
       // Activate the cards tab by default when searching
       dispatch('activate-tab', 'cards');
       
-      // Always update highlighting when user types - treat as new search
-      highlightedTerm = searchTerm;
-      
-      // Clear any existing highlight timeout
-      if (highlightTimeout) {
-        clearTimeout(highlightTimeout);
-      }
-      
-      // Set new timeout for highlighting with 1 second delay
-      highlightTimeout = setTimeout(() => {
-        if (searchTerm.length >= 3 && highlightedTerm === searchTerm) {
-          applyHighlighting();
+        // Always update highlighting when user types - treat as new search
+        highlightedTerm = searchTerm;
+        
+        // Clear any existing highlight timeout
+        if (highlightTimeout) {
+          clearTimeout(highlightTimeout);
         }
-      }, 1000);
+        
+        // Set new timeout for highlighting with 1 second delay
+        highlightTimeout = setTimeout(() => {
+          if (searchTerm.length >= 3 && highlightedTerm === searchTerm) {
+            applyHighlighting();
+          }
+        }, 1000);
     } else if (searchTerm.length < 3) {
       // Clear filters when search is less than 3 characters
       dispatch('clear');
-      // NEVER remove highlights when user is typing - only when explicitly clearing search
-      // This prevents highlights from disappearing while user is searching
+      // Remove highlights when search is cleared
+      removeHighlights();
+      highlightedTerm = '';
     }
      
      // Only search backend if 3+ characters AND dropdown is not disabled
@@ -176,18 +177,18 @@
         // Update session navigation state
         updateSessionNavigation();
         
-        showDropdown = !dropdownDisabled && hasResults();
-        
-        // Calculate dropdown position when showing
-        if (showDropdown) {
-          calculateDropdownPosition();
-        }
-        
-        // Apply highlighting now that we have search results
-        if (highlightedTerm && highlightedTerm === searchTerm) {
-          // Apply highlighting immediately - don't auto-switch sessions
-          applyHighlighting();
-        }
+          showDropdown = !dropdownDisabled && hasResults();
+          
+          // Calculate dropdown position when showing
+          if (showDropdown) {
+            calculateDropdownPosition();
+          }
+          
+          // Apply highlighting now that we have search results
+          if (highlightedTerm && highlightedTerm === searchTerm) {
+            // Apply highlighting immediately - don't auto-switch sessions
+            applyHighlighting();
+          }
       } else {
         console.error('Search failed:', await response.text());
         showDropdown = false;
@@ -293,9 +294,6 @@
     if (!browser) return;
     
     
-    // Remove the body class for duplicate hiding
-    document.body.classList.remove('search-highlight-active');
-    
     // More aggressive cleanup - find all highlights and completely remove them
     let cleanupAttempts = 0;
     const maxAttempts = 3;
@@ -340,18 +338,6 @@
       
       cleanupAttempts++;
     }
-    
-    // Remove container highlights and processed classes
-    const containerHighlights = document.querySelectorAll('.search-highlight-container');
-    containerHighlights.forEach(container => {
-      container.classList.remove('search-highlight-container', 'current', 'search-highlight-container-processed');
-    });
-    
-    // Also remove processed classes from any elements that might have them
-    const processedElements = document.querySelectorAll('.search-highlight-container-processed');
-    processedElements.forEach(element => {
-      element.classList.remove('search-highlight-container-processed');
-    });
     
     // Clear any highlight-related flags
     totalHighlights = 0;
@@ -481,9 +467,6 @@
     
     // Add a small delay to ensure DOM cleanup is complete
     setTimeout(() => {
-      // Add class to body to enable CSS hiding of duplicates
-      document.body.classList.add('search-highlight-active');
-      
       // Highlight what's currently visible
       highlightCurrentContent();
       
@@ -519,49 +502,11 @@
       highlightedContainers.push(...containers);
     });
     
-    // Filter containers to only highlight the most immediate ones (remove nested highlighting)
-    const immediateContainers = highlightedContainers.filter(container => {
-      // Check if this container is nested inside another container in our list
-      return !highlightedContainers.some(otherContainer => {
-        return otherContainer !== container && otherContainer.contains(container);
-      });
-    });
-    
-    // Apply container highlighting only to immediate containers, but word highlighting to all
-    immediateContainers.forEach(container => {
-      container.classList.add('search-highlight-container');
-    });
-    
-      // Apply word highlighting to all containers (even nested ones), but skip if already highlighted
-      highlightedContainers.forEach(container => {
-        // Skip if this container already has highlights or if it's a fact card that's already been processed
-        if (!container.querySelector('.search-highlight') && 
-            !container.classList.contains('search-highlight-container-processed')) {
-          
-          // For fact cards, be more careful about highlighting to prevent duplication
-          const isFactCard = container.classList.contains('border-') || 
-                            container.classList.contains('bg-') || 
-                            container.classList.contains('rounded') ||
-                            container.querySelector('[class*="border-"], [class*="bg-"], [class*="rounded"]');
-          
-          if (isFactCard) {
-            // Mark fact card as processed FIRST to prevent any nested highlighting
-            container.classList.add('search-highlight-container-processed');
-            // Also mark all child fact cards as processed to prevent nested processing
-            const childFactCards = container.querySelectorAll('[class*="border-"], [class*="bg-"], [class*="rounded"]');
-            childFactCards.forEach(childCard => {
-              if (childCard !== container) {
-                childCard.classList.add('search-highlight-container-processed');
-              }
-            });
-          }
-          
+    // Apply word highlighting to all containers, but skip if already highlighted
+    highlightedContainers.forEach(container => {
+        // Skip if this container already has highlights
+        if (!container.querySelector('.search-highlight')) {
           highlightTextInElement(container, highlightedTerm);
-          
-          // Mark this container as processed to prevent re-highlighting
-          if (!isFactCard) {
-            container.classList.add('search-highlight-container-processed');
-          }
         }
       });
   }
@@ -658,52 +603,9 @@
   
   // Scroll to first highlight in current view
   function scrollToFirstHighlight() {
-    const highlightedContainers = document.querySelectorAll('.search-highlight-container');
-    
-    if (highlightedContainers.length > 0) {
-      // Find the first highlight in a visible panel
-      let firstVisibleHighlight = null;
-      
-      // Check left panel first (cards)
-      const leftPanel = document.querySelector('.mobile-sidebar');
-      if (leftPanel && !leftPanel.classList.contains('w-0')) {
-        const leftHighlights = leftPanel.querySelectorAll('.search-highlight-container');
-        if (leftHighlights.length > 0) {
-          firstVisibleHighlight = leftHighlights[0];
-        }
-      }
-      
-      // If no highlight in left panel, check right panel (chat)
-      if (!firstVisibleHighlight) {
-        const rightPanel = document.querySelector('.mobile-ideas-column');
-        if (rightPanel && !rightPanel.classList.contains('w-0')) {
-          const rightHighlights = rightPanel.querySelectorAll('.search-highlight-container');
-          if (rightHighlights.length > 0) {
-            firstVisibleHighlight = rightHighlights[0];
-          }
-        }
-      }
-      
-      // If no highlight in panels, check chat
-      if (!firstVisibleHighlight) {
-        const chatArea = document.querySelector('.mobile-chat, .searchable-chat-area');
-        if (chatArea) {
-          const chatHighlights = chatArea.querySelectorAll('.search-highlight-container');
-          if (chatHighlights.length > 0) {
-            firstVisibleHighlight = chatHighlights[0];
-          }
-        }
-      }
-      
-      // Fallback to first highlight found anywhere
-      if (!firstVisibleHighlight) {
-        firstVisibleHighlight = highlightedContainers[0];
-      }
-      
-      if (firstVisibleHighlight) {
-        firstVisibleHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        firstVisibleHighlight.classList.add('current');
-      }
+    const highlights = document.querySelectorAll('.search-highlight');
+    if (highlights.length > 0) {
+      highlights[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
   
@@ -880,17 +782,6 @@
       }
     });
     
-    // Remove container highlights and processed classes
-    const containerHighlights = document.querySelectorAll('.search-highlight-container');
-    containerHighlights.forEach(container => {
-      container.classList.remove('search-highlight-container', 'current', 'search-highlight-container-processed');
-    });
-    
-    // Also remove processed classes from any elements that might have them
-    const processedElements = document.querySelectorAll('.search-highlight-container-processed');
-    processedElements.forEach(element => {
-      element.classList.remove('search-highlight-container-processed');
-    });
     
     totalHighlights = 0;
     currentHighlightIndex = 0;
@@ -1084,16 +975,13 @@
   // Helper function to navigate to the current highlight in the visible content
   function navigateToCurrentHighlight() {
     const wordHighlights = document.querySelectorAll('.search-highlight');
-    const containerHighlights = document.querySelectorAll('.search-highlight-container');
     
     // Remove current class from all highlights
     wordHighlights.forEach(h => h.classList.remove('current'));
-    containerHighlights.forEach(h => h.classList.remove('current'));
     
     // console.log('🎯 Navigating to current highlight:', {
     //   currentHighlightIndex,
-    //   totalWordHighlights: wordHighlights.length,
-    //   totalContainerHighlights: containerHighlights.length
+    //   totalWordHighlights: wordHighlights.length
     // });
     
     // Try to find the specific highlight based on our index
@@ -1117,11 +1005,6 @@
       
       flashCurrentHighlight(targetHighlight);
       
-      // Also highlight the container that contains this word
-      const parentContainer = targetHighlight.closest('.search-highlight-container');
-      if (parentContainer) {
-        parentContainer.classList.add('current');
-      }
     } else if (wordHighlights.length > 0) {
       // Fallback: navigate to first visible highlight
       //console.log('⚠️ Fallback to first visible highlight');
@@ -1130,10 +1013,6 @@
       firstVisibleHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
       flashCurrentHighlight(firstVisibleHighlight);
       
-      const parentContainer = firstVisibleHighlight.closest('.search-highlight-container');
-      if (parentContainer) {
-        parentContainer.classList.add('current');
-      }
     }
   }
   
@@ -1551,8 +1430,8 @@
      </div>
    </div>
 
-  <!-- Search Results Dropdown -->
-  {#if showDropdown && hasResults()}
+  <!-- Search Results Dropdown - DISABLED (might reuse later) -->
+  {#if false && showDropdown && hasResults()}
     {#if browser}
       <div use:createPortal>
         <div class="fixed z-[999999] w-full max-w-xl border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto" style="background-color: var(--bg-modal); left: var(--search-dropdown-left, 0px); top: var(--search-dropdown-top, 0px);" on:click|stopPropagation on:keydown|stopPropagation role="dialog" aria-label="Search results" tabindex="0">
@@ -1590,7 +1469,6 @@
               {/each}
             </div>
           {/if}
-          
           
           <!-- Chat Messages Results (Middle Column) with Session Grouping -->
           {#if searchResults.chatMessages.length > 0}
@@ -1638,7 +1516,6 @@
               {/if}
             </div>
           {/if}
-          
         </div>
       </div>
     {/if}
@@ -1648,57 +1525,20 @@
  <style>
    /* Search highlighting styles for individual words - pink to match container borders */
    :global(.search-highlight) {
-     background-color: rgba(219, 39, 119, 0.8);
-     color: white;
+     display: inline !important;
+     background-color: rgba(219, 39, 119, 0.8) !important;
+     color: white !important;
      padding: 1px 2px;
      border-radius: 2px;
    }
    
    :global(.search-highlight.current) {
-     background-color: rgba(190, 24, 93, 0.9);
+     background-color: rgba(190, 24, 93, 0.9) !important;
      box-shadow: 0 0 0 1px rgba(190, 24, 93, 0.9);
    }
    
-   /* Container highlighting styles - scoped to search component */
-   :global(.search-highlight-container) {
-     background-color: rgba(219, 39, 119, 0.1);
-     border: 1px solid rgba(219, 39, 119, 0.3);
-     border-radius: 4px;
-     transition: all 0.2s ease-in-out;
-   }
    
-   :global(.search-highlight-container.current) {
-     background-color: rgba(190, 24, 93, 0.15);
-     border-color: rgba(190, 24, 93, 0.5);
-     box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.2);
-   }
    
-   /* Dark mode container highlighting with increased opacity */
-   :global(.dark .search-highlight-container) {
-     background-color: rgba(219, 39, 119, 0.7);
-     border: 1px solid rgba(219, 39, 119, 0.8);
-   }
-   
-   :global(.dark .search-highlight-container.current) {
-     background-color: rgba(190, 24, 93, 0.7);
-     border-color: rgba(190, 24, 93, 0.8);
-     box-shadow: 0 0 0 2px rgba(190, 24, 93, 0.8);
-   }
-   
-   /* Hide duplicate fact cards when highlighting is active */
-   :global(body:has(.search-highlight) .fact-card:not(.search-highlight-container)) {
-     display: none !important;
-   }
-   
-   /* Alternative approach for browsers that don't support :has() */
-   :global(.search-highlight-active .fact-card:not(.search-highlight-container)) {
-     display: none !important;
-   }
-   
-   /* Flashing animation for current highlight containers */
-   :global(.search-highlight-container.flash-highlight) {
-     animation: flash-container 1s ease-in-out;
-   }
    
    :global(.search-highlight.flash-highlight) {
      animation: flash-pink 1s ease-in-out;

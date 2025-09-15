@@ -31,6 +31,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   // Theme state
   let darkMode = false;
   
+  
   // Apply theme when darkMode changes
   $: {
     if (browser && darkMode !== undefined) {
@@ -325,6 +326,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         }
       }
     });
+    
     
     // Listen for project updates
     window.addEventListener('projects:refresh', async (e) => {
@@ -936,8 +938,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
   <!-- Center: Global Search (Desktop) - Absolutely positioned to center on viewport -->
   {#if isProjectsPage && !isPublicPage}
-    <div class="{isDesktop ? 'fixed' : 'hidden'} z-[200]" style="left: 50%; transform: translateX(-50%); top: 8px; height: 48px; width: 576px;">
-      <div class="flex items-center justify-center h-full">
+    <div class="{isDesktop ? 'fixed' : 'hidden'} z-[200]" style="left: 50%; transform: translateX(-50%); top: 8px; height: 48px; width: 640px;">
+      <div class="flex items-center justify-center h-full gap-2">
         <GlobalSearch 
           projectId={currentProject?.id}
           on:activate-tab={(e) => {

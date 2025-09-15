@@ -910,16 +910,17 @@ code {
 
 /* Search Highlighting */
 .search-highlight {
-  background-color: #fef3c7;
-  color: #92400e;
+  display: inline !important;
+  background-color: rgba(219, 39, 119, 0.8) !important;
+  color: white !important;
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-weight: 600;
 }
 
 .dark .search-highlight {
-  background-color: rgba(219, 39, 119, 0.9);
-  color: white;
+  background-color: rgba(219, 39, 119, 0.9) !important;
+  color: white !important;
 }
 
 .search-highlight-scroll {

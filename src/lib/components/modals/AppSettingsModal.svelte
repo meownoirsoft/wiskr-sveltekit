@@ -13,7 +13,7 @@
   // Props
   export let isOpen = false;
   export let userData = null;
-  export let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null, facts_grid_size: 3 };
+  export let userPreferences = { max_related_ideas: 8, accent_color: '#155DFC', display_name: null, avatar_type: 'default', avatar_value: null };
   export let savingPreferences = false;
   export let darkMode = false;
   export let userTier = 0;
@@ -39,8 +39,6 @@
     handleClose();
   });
   
-  // Reactive variable for facts grid size (converted to string for select element)
-  $: factsGridSizeString = userPreferences.facts_grid_size?.toString() || '3';
   
   // Portal action to render dropdown at document body
   function createPortal(node) {
@@ -229,19 +227,9 @@
   }
   
   function handleSavePreferences() {
-    // Convert facts_grid_size to number if it exists
-    const preferencesToSave = {
-      ...userPreferences,
-      facts_grid_size: userPreferences.facts_grid_size ? parseInt(userPreferences.facts_grid_size) : 3
-    };
-    dispatch('save-preferences', preferencesToSave);
+    dispatch('save-preferences', userPreferences);
   }
   
-  function handleFactsGridSizeChange() {
-    // Update userPreferences with the new number value
-    userPreferences.facts_grid_size = parseInt(factsGridSizeString);
-    handleSavePreferences();
-  }
   
   function handleAccentColorChange() {
     applyAccentColor(userPreferences.accent_color);
@@ -492,43 +480,19 @@
                         </div>
                       </div>
                       <div class="space-y-6">
-                        <!-- Preferred Name and Facts Grid Size Row -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <!-- Preferred Name -->
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="preferred-name">Preferred Name</label>
-                            <input 
-                              type="text" 
-                              maxlength="50" 
-                              placeholder="Your name (e.g., Sym)"
-                              bind:value={userPreferences.display_name}
-                              on:change={handleSavePreferences}
-                              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
-                              style="--tw-ring-color: var(--color-accent);"
-                            />
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This name will appear in your chat messages</p>
-                          </div>
-                          
-                          <!-- Cards Grid Size -->
-                          <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="facts-grid-size">Cards Grid Size</label>
-                            <select 
-                              id="facts-grid-size"
-                              bind:value={factsGridSizeString}
-                              on:change={handleFactsGridSizeChange}
-                              class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
-                              style="--tw-ring-color: var(--color-accent);"
-                            >
-                              <option value="1">1 card per row</option>
-                              <option value="2">2 cards per row</option>
-                              <option value="3">3 cards per row</option>
-                              <option value="4">4 cards per row</option>
-                              <option value="5">5 cards per row</option>
-                              <option value="6">6 cards per row</option>
-                              <option value="7">7 cards per row</option>
-                            </select>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How many idea cards to display horizontally</p>
-                          </div>
+                        <!-- Preferred Name -->
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" for="preferred-name">Preferred Name</label>
+                          <input 
+                            type="text" 
+                            maxlength="50" 
+                            placeholder="Your name (e.g., Sym)"
+                            bind:value={userPreferences.display_name}
+                            on:change={handleSavePreferences}
+                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2" 
+                            style="--tw-ring-color: var(--color-accent);"
+                          />
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This name will appear in your chat messages</p>
                         </div>
                                                  <!-- Max Related Ideas - Hidden -->
                          <!-- <div>

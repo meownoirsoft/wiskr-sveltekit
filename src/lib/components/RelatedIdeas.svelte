@@ -153,7 +153,6 @@ import { browser } from '$app/environment';
       ideaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       // Add highlight effect
-      ideaElement.classList.add('search-highlight-container');
       
       // Highlight search terms within the text content
       if (searchTerm && searchTerm.trim()) {
@@ -162,7 +161,6 @@ import { browser } from '$app/environment';
       
       // Remove highlight after a longer delay
       setTimeout(() => {
-        ideaElement.classList.remove('search-highlight-container');
         // Remove text highlighting
         removeSearchTermHighlights(ideaElement);
       }, 10000); // Increased to 10 seconds
@@ -191,7 +189,7 @@ import { browser } from '$app/environment';
       if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
         const highlightedText = text.replace(
           new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-          '<mark class="search-highlight px-1 rounded">$1</mark>'
+          '<span class="search-highlight px-1 rounded" style="display: inline;">$1</span>'
         );
         
         if (highlightedText !== text) {

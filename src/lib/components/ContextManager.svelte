@@ -17,6 +17,16 @@
   let lastLoadTime = Date.now();
   export let loadingCards;
   
+  // Track last loaded project to prevent unnecessary reloads
+  let lastLoadedProjectId = null;
+  let isLoading = false;
+  
+  // Function to clear cache and force reload
+  export function clearCache() {
+    lastLoadedProjectId = null;
+    console.log('🔍 ContextManager: Cache cleared, next load will be forced');
+  }
+  
   // Function to detect and mark new cards
   function detectNewCards(newCards) {
     const currentTime = Date.now();
@@ -61,12 +71,25 @@
     s.split(',').map(t => t.trim()).filter(Boolean);
 
   // Context loading function
-  export async function loadContext() {
+  export async function loadContext(force = false) {
     if (!current) return;
+    
+    // Prevent unnecessary reloads if we're already loading or if it's the same project
+    if (isLoading) {
+      console.log('🔍 ContextManager: Already loading, skipping duplicate request');
+      return;
+    }
+    
+    if (!force && lastLoadedProjectId === current.id) {
+      console.log('🔍 ContextManager: Same project already loaded, skipping reload');
+      return;
+    }
+    
+    isLoading = true;
     loadingCards = true;
     
-    // Add cache-busting to ensure fresh data
-    const timestamp = Date.now();
+    console.log('🔍 ContextManager: Loading context for project:', current.id, force ? '(forced)' : '', 'lastLoaded:', lastLoadedProjectId);
+    
     const [{ data: c }, { data: d }, { data: p }] = await Promise.all([
       supabase.from('cards').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
       supabase.from('docs').select('*').eq('project_id', current.id).order('created_at', { ascending: false }).limit(10),
@@ -167,6 +190,10 @@
       // Update current project with fresh brief_text
       dispatch('project-updated', p);
     }
+    
+    // Update tracking variables
+    lastLoadedProjectId = current.id;
+    isLoading = false;
     loadingCards = false;
   }
 
@@ -187,7 +214,7 @@
         });
         
         // Reload context to refresh the UI with the new summary
-        await loadContext();
+        await loadContext(true);
       }
     } catch (error) {
       console.log('Auto-regeneration failed (not critical):', error);
@@ -241,7 +268,7 @@
           })
         });
         // Reload context after sync
-        await loadContext();
+        await loadContext(true);
       }, { type: 'create_card', cardTitle: title.trim() });
       
       if (browser && window.showNetworkToast) {
@@ -292,7 +319,7 @@
       showAddCardForm = false;
 
       // reload lists
-      await loadContext();
+      await loadContext(true);
       
       // Auto-regenerate summary since cards content changed
       await autoRegenerateSummary();
@@ -344,7 +371,7 @@
           })
         });
         // Reload context after sync
-        await loadContext();
+        await loadContext(true);
       }, { type: 'create_card', cardTitle: cardData.title?.trim() || 'Untitled Card' });
       
       if (browser && window.showNetworkToast) {
@@ -387,7 +414,7 @@
       }
       
       // reload lists
-      await loadContext();
+      await loadContext(true);
       
       // Auto-regenerate summary since cards content changed
       await autoRegenerateSummary();
@@ -447,7 +474,7 @@
       return;
     }
     // Refresh lists
-    await loadContext();
+    await loadContext(true);
     
     // Auto-regenerate summary since card content changed
     await autoRegenerateSummary();
@@ -531,7 +558,7 @@
       }));
     }
     
-    await loadContext();
+    await loadContext(true);
   }
 
   // DOCS MANAGEMENT FUNCTIONS
@@ -563,7 +590,7 @@
             pinned: false
           })
         });
-        await loadContext();
+        await loadContext(true);
       }, { type: 'create_doc', docTitle: title.trim() });
       
       if (browser && window.showNetworkToast) {
@@ -603,7 +630,7 @@
       docTitle = ''; docContent = ''; docTags = '';
       showAddDocForm = false;
 
-      await loadContext();
+      await loadContext(true);
       
       // Auto-regenerate summary since docs content changed
       await autoRegenerateSummary();
@@ -652,7 +679,7 @@
       alert('Failed to update doc');
       return;
     }
-    await loadContext();
+    await loadContext(true);
     
     // Auto-regenerate summary since doc content changed
     await autoRegenerateSummary();
@@ -679,7 +706,7 @@
       alert('Failed to toggle pin');
       return;
     }
-    await loadContext();
+    await loadContext(true);
   }
 
   // HELPER FUNCTIONS FOR PARENT COMPONENT
@@ -706,7 +733,7 @@
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ projectId: current.id })
     });
-    await loadContext();
+    await loadContext(true);
   }
 </script>
 

@@ -82,7 +82,7 @@ import LoadingSpinner from './LoadingSpinner.svelte';
   function highlightText(text, term) {
     if (!term || !text) return text;
     const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
+    return text.replace(regex, '<span class="search-highlight" style="display: inline;">$1</span>');
   }
 </script>
 
