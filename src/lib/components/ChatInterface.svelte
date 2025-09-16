@@ -35,6 +35,8 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   export let user = null; // User object with tier info for feature gating
   export let userTier = 0; // User tier from server
   export let effectiveTier = 0; // Effective tier from server
+  export let hideModelDropdown = false; // Whether to hide the model dropdown
+  export let hideInfoPopup = false; // Whether to hide the info popup
   
     // Scroll position state
   let isAtBottom = true;
@@ -1113,6 +1115,8 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     {isAtBottom}
     {hasMessages}
     isSearchMode={!!highlightedMessageId}
+    {hideModelDropdown}
+    {hideInfoPopup}
     bind:showMobileForm
     on:submit={send}
     on:reask={reAskLastQuestion}

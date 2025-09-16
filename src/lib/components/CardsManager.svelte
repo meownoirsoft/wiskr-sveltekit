@@ -56,6 +56,8 @@
   export let showAddCardForm = false;
   export let worldId = null;
   export let user = null;
+  export let userTier = 0; // User tier level
+  export let effectiveTier = 0; // Effective tier level
   export let searchTerm = '';
   export let cardsGridSize = 3;
   export let userPreferences = { display_name: null }; // User preferences
@@ -641,6 +643,14 @@
   function getProgressCount(progress) {
     return cards.filter(card => card.progress === progress).length;
   }
+
+  function handleWizardSelected(event) {
+    const { wizard } = event.detail;
+    console.log('🧙‍♂️ CardsManager: Wizard selected:', wizard);
+    
+    // Dispatch event to parent to handle wizard selection and chat opening
+    dispatch('wizard-selected', { wizard });
+  }
 </script>
 
 <div class="cards-manager h-full flex flex-col">
@@ -976,6 +986,10 @@
 <CardZoomView 
   card={zoomedCard}
   bind:isOpen={showCardZoom}
+  {user}
+  {userTier}
+  {effectiveTier}
+  {worldId}
   userPreferences={userPreferences}
   on:close={closeCardZoom}
   on:save={handleCardZoomSave}
@@ -988,6 +1002,7 @@
   on:split={handleCardZoomSplit}
   on:generate-art={handleCardZoomGenerateArt}
   on:open-deck={handleCardZoomOpenDeck}
+  on:wizard-selected={handleWizardSelected}
 />
 
 <style>

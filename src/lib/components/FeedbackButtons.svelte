@@ -88,6 +88,10 @@
         if (messageId && globalFeedbackCache.has(messageId)) {
           currentFeedback = globalFeedbackCache.get(messageId);
         }
+      } else {
+        console.error('FeedbackButtons: Batch API error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('FeedbackButtons: Error response:', errorText);
       }
     } catch (error) {
       console.error('Error loading batch feedback:', error);

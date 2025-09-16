@@ -11,91 +11,91 @@ export const AI_AVATARS = {
     name: 'Ember',
     avatar: 'ember.png',
     description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
-    bestFor: 'Quick questions & simple tasks',
+    bestFor: 'snappy, lightweight, and great for quick conversations',
     company: 'anthropic'
   },
   'quality': {
     name: 'Verse',
     avatar: 'verse.png',
     description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
-    bestFor: 'Most conversations & analysis',
+    bestFor: 'creative, careful, and highly context-aware',
     company: 'anthropic'
   },
   'gpt4': {
     name: 'Aurora',
     avatar: 'aurora.png',
     description: 'Advanced multimodal wiskr from the innovative minds at OpenAI',
-    bestFor: 'Complex reasoning & creativity',
+    bestFor: 'balanced blend of speed and intelligence',
     company: 'openai'
   },
   'micro': {
     name: 'Spark',
     avatar: 'spark.png',
     description: 'Lightning-fast wiskr from the search experts at Google',
-    bestFor: 'Lightning-fast micro tasks',
+    bestFor: 'perfect for real-time and creative tasks',
     company: 'google'
   },
   'gpt-oss': {
     name: 'Prism',
     avatar: 'prism.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
-    bestFor: 'Cost-effective quick help',
+    bestFor: 'reliable baseline for everyday Q&A and coding',
     company: 'openai'
   },
   'gpt4-turbo': {
     name: 'Dash',
     avatar: 'dash.png',
     description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
-    bestFor: 'Fast complex problem solving',
+    bestFor: 'optimized for practical, high-volume use',
     company: 'openai'
   },
   'claude-opus': {
     name: 'Opal',
     avatar: 'opal.png',
     description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
-    bestFor: 'Deep research & writing',
+    bestFor: 'thoughtful, nuanced, and best for longform reasoning',
     company: 'anthropic'
   },
   'gemini-pro': {
     name: 'Gem',
     avatar: 'gem.png',
     description: 'Professional wiskr from the brilliant team at Google AI Research',
-    bestFor: 'Structured analysis & data',
+    bestFor: 'solid for reasoning, text, and multimodal tasks',
     company: 'google'
   },
   'llama-70b': {
     name: 'Tina',
     avatar: 'tina.png',
     description: 'Open-source wiskr from the social researchers at Meta',
-    bestFor: 'Open-source conversations',
+    bestFor: 'strong, versatile, and widely adopted for general tasks',
     company: 'meta'
   },
   'llama-405b': {
     name: 'Titan',
     avatar: 'titan.png',
     description: 'Powerful large-scale wiskr from the open-source advocates at Meta',
-    bestFor: 'Heavyweight reasoning tasks',
+    bestFor: 'massive reasoning depth, research-grade output',
     company: 'meta'
   },
   'mistral-large': {
     name: 'Gale',
     avatar: 'gale.png',
     description: 'European wiskr from the innovative minds at Mistral',
-    bestFor: 'European perspective & coding',
+    bestFor: 'sharp reasoning, concise answers, and strong coding support',
     company: 'mistral'
   },
   'qwen-72b': {
     name: 'Quest',
     avatar: 'quest.png',
     description: 'Knowledgeable wiskr from the research innovators at Alibaba',
-    bestFor: 'Research & knowledge tasks',
+    bestFor: 'excels at coding and structured reasoning',
     company: 'alibaba'
   },
   'deepseek-v3': {
     name: 'Sage',
     avatar: 'sage.png',
     description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
-    bestFor: 'Math(s) logic & code',
+    bestFor: 'Lean, efficient, and highly capable for coding & reasoning',
     company: 'deepseek'
   },
   // Full model names (for backward compatibility)
@@ -103,21 +103,21 @@ export const AI_AVATARS = {
     name: 'Ember',
     avatar: 'ember.png',
     description: 'Fast and efficient wiskr from the Constitutional AI Foundation',
-    bestFor: 'Quick questions & simple tasks',
+    bestFor: 'snappy, lightweight, and great for quick conversations',
     company: 'anthropic'
   },
   'claude-3-5-sonnet': {
     name: 'Verse',
     avatar: 'verse.png',
     description: 'Balanced wiskr with great reasoning from the thoughtful researchers at Anthropic',
-    bestFor: 'Most conversations & analysis',
+    bestFor: 'creative, careful, and highly context-aware',
     company: 'anthropic'
   },
   'gpt-4o': {
     name: 'Aurora',
     avatar: 'aurora.png',
     description: 'Advanced multimodal wiskr from the innovative minds at OpenAI',
-    bestFor: 'Complex reasoning & creativity',
+    bestFor: 'balanced blend of speed and intelligence',
     company: 'openai'
   },
   'gemini-flash-1.5': {
@@ -131,35 +131,35 @@ export const AI_AVATARS = {
     name: 'Prism',
     avatar: 'prism.png',
     description: 'Compact but capable wiskr from the creative minds at OpenAI Labs',
-    bestFor: 'Cost-effective quick help',
+    bestFor: 'Quick help',
     company: 'openai'
   },
   'gpt-4-turbo': {
     name: 'Dash',
     avatar: 'dash.png',
     description: 'High-performance wiskr from the forward-thinking researchers at OpenAI',
-    bestFor: 'Fast complex problem solving',
+    bestFor: 'optimized for practical, high-volume use',
     company: 'openai'
   },
   'claude-3-opus': {
     name: 'Opal',
     avatar: 'opal.png',
     description: 'Thoughtful and comprehensive wiskr from the safety-focused team at Constitutional AI Research',
-    bestFor: 'Deep research & writing',
+    bestFor: 'thoughtful, nuanced, and best for longform reasoning',
     company: 'anthropic'
   },
   'gemini-pro-1.5': {
     name: 'Gem',
     avatar: 'gem.png',
     description: 'Professional wiskr from the brilliant team at Google AI Research',
-    bestFor: 'Structured analysis & data',
+    bestFor: 'solid for reasoning, text, and multimodal tasks',
     company: 'google'
   },
   'llama-3.1-70b-instruct': {
     name: 'Tina',
     avatar: 'tina.png',
     description: 'Open-source wiskr from the social researchers at Meta',
-    bestFor: 'Open-source conversations',
+    bestFor: 'Most conversations',
     company: 'meta'
   },
   'llama-3.1-405b-instruct': {
@@ -173,7 +173,7 @@ export const AI_AVATARS = {
     name: 'Gale',
     avatar: 'gale.png',
     description: 'European wiskr from the innovative minds at Mistral',
-    bestFor: 'European perspective & coding',
+    bestFor: 'sharp reasoning, concise answers, and strong coding support',
     company: 'mistral'
   },
   'qwen-2.5-72b-instruct': {
@@ -187,16 +187,16 @@ export const AI_AVATARS = {
     name: 'Sage',
     avatar: 'sage.png',
     description: 'Deep thinking wiskr from the reasoning specialists at DeepSeek',
-    bestFor: 'Math(s) logic & code',
+    bestFor: 'Lean, efficient, and highly capable for coding & reasoning',
     company: 'deepseek'
   },
   'gpt-5': {
     name: 'Vega',
     avatar: 'vega.png',
     description: 'Next-generation wiskr from OpenAI',
-    bestFor: 'Advanced reasoning & future tasks',
+    bestFor: 'deep reasoning, problem-solving, and creativity',
     company: 'openai'
-  }
+  },
 };
 
 /**

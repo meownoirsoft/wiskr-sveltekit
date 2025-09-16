@@ -19,6 +19,8 @@
   export let isAtBottom = true; // Whether user is at bottom of chat
   export let hasMessages = false; // Whether there are messages in chat
   export let isSearchMode = false; // Whether we're in search result mode
+  export let hideModelDropdown = false; // Whether to hide the model dropdown
+  export let hideInfoPopup = false; // Whether to hide the info popup
   
   const dispatch = createEventDispatcher();
   
@@ -92,15 +94,17 @@
         <!-- First row: Model selector -->
         <div class="flex items-center justify-between pb-1">
           <div class="{isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-1 sm:gap-2'} min-w-0">
-            <div class="{isMobile ? 'w-full' : 'flex-1'}">
-              <ModelDropdown
-                bind:modelKey
-                {availableModels}
-                disabled={!current}
-                on:change={(e) => { modelKey = e.detail.value; }}
-              />
-            </div>
-            {#if !isMobile}
+            {#if !hideModelDropdown}
+              <div class="{isMobile ? 'w-full' : 'flex-1'}">
+                <ModelDropdown
+                  bind:modelKey
+                  {availableModels}
+                  disabled={!current}
+                  on:change={(e) => { modelKey = e.detail.value; }}
+                />
+              </div>
+            {/if}
+            {#if !isMobile && !hideInfoPopup}
               <InfoPopup
                 title="Da heck is a Wiskr?"
                 content={`<p>Smart friends who get rewarded to do various tasks for you:</p><br />

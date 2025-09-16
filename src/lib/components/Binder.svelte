@@ -19,6 +19,8 @@
   export let search = ''; // Filter content by this search string
   export let isDesktop = false;
   export let user = null; // User object with tier info
+  export let userTier = 0; // User tier level
+  export let effectiveTier = 0; // Effective tier level
   export let userPreferences = { cards_grid_size: 3 }; // User preferences including grid size
   // Desktop collapse button props
   export let showCollapseButton = false;
@@ -343,6 +345,14 @@
     dispatch('doc-toggle-pin', event.detail);
   }
 
+  function handleWizardSelected(event) {
+    const { wizard } = event.detail;
+    console.log('🧙‍♂️ Binder: Wizard selected:', wizard);
+    
+    // Dispatch event to parent to handle wizard selection and chat opening
+    dispatch('wizard-selected', { wizard });
+  }
+
 </script>
 
 <section class="h-full border-r border-gray-200 dark:border-gray-700 p-2 sm:p-3 flex flex-col mobile-sidebar">
@@ -404,6 +414,8 @@
             loadingCards={loadingCards}
             worldId={current?.id}
             {user}
+            {userTier}
+            {effectiveTier}
             {userPreferences}
             bind:showAddCardForm={showAddCardForm}
             searchTerm={currentSearchTerm}
@@ -420,6 +432,7 @@
             on:generate-art={handleCardGenerateArt}
             on:open-deck={handleCardOpenDeck}
             on:pack-complete={handlePackComplete}
+            on:wizard-selected={handleWizardSelected}
           />
         {:else if activeTab === 'entities'}
           <EntityCards 

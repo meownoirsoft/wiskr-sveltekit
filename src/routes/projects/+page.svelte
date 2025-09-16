@@ -2601,6 +2601,15 @@ function handleTextAddToDocs(event) {
     showSessionNavigator = !showSessionNavigator;
   }
 
+  function handleWizardSelected(event) {
+    const { wizard } = event.detail;
+    console.log('🧙‍♂️ Projects page: Wizard selected:', wizard);
+    
+    // TODO: Implement chat interface opening with selected wizard
+    // For now, just log the selection
+    alert(`Wizard ${wizard.name} selected! Chat interface coming soon...`);
+  }
+
 </script>
 
   <!-- Layout -->
@@ -2630,6 +2639,8 @@ function handleTextAddToDocs(event) {
           {search}
           {isDesktop}
           user={data?.user}
+          userTier={data?.userTier}
+          effectiveTier={data?.effectiveTier}
           userPreferences={userPreferences}
           showCollapseButton={isDesktop}
           isCollapsed={leftPanelCollapsed}
@@ -2662,6 +2673,7 @@ function handleTextAddToDocs(event) {
           on:doc-delete={handleDocDelete}
           on:doc-toggle-pin={handleDocTogglePin}
           on:reload-context={handleReloadContext}
+          on:wizard-selected={handleWizardSelected}
         />
       {/if}
     {/if}

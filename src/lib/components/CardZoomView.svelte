@@ -1,16 +1,22 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
   import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
+  import WizardsCouncilModal from './WizardsCouncilModal.svelte';
 
   export let card = null;
   export let isOpen = false;
   export let userPreferences = { display_name: null };
+  export let availableModels = [];
+  export let userTier = 0;
+  export let effectiveTier = 0;
+  export let user = null;
+  export let worldId = null;
 
   const dispatch = createEventDispatcher();
   
@@ -136,6 +142,7 @@
   let feedbackArtUrl = '';
   let showMergeModal = false;
   let showSplitModal = false;
+  let showWizardsCouncil = false;
   
   // Notes management state
   let notes = [];
@@ -686,6 +693,14 @@
     showSplitView = event.detail.showSplitView;
   }
 
+  function handleWizardSelected(event) {
+    const { wizard } = event.detail;
+    console.log('🧙‍♂️ Wizard selected:', wizard);
+    
+    // Dispatch event to parent to handle wizard selection and chat opening
+    dispatch('wizard-selected', { wizard });
+  }
+
   // Tooltip data loading functions
   async function loadTooltipNotes() {
     if (!editedCard?.id) return;
@@ -1195,6 +1210,14 @@
             </button>
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
+              on:click={() => showWizardsCouncil = true}
+              title="Summon The Wizard's Council"
+              style:color={darkMode ? '#ffffff' : rarity.textColor}
+            >
+              <Users size="20" />
+            </button>
+            <button
+              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={closeModal}
               title="Close card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
@@ -1578,6 +1601,17 @@
   on:close={closeSplitModal}
   on:save-card={handleSplitSaveCard}
 />
+
+        <!-- Wizard's Council Modal -->
+        <WizardsCouncilModal
+          bind:isVisible={showWizardsCouncil}
+          {effectiveTier}
+          {user}
+          {userTier}
+          {worldId}
+          on:wizard-selected={handleWizardSelected}
+          on:close={() => showWizardsCouncil = false}
+        />
 
 
 <style>
