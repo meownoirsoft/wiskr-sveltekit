@@ -238,8 +238,8 @@
             </div>
           </div>
 
-          <!-- Flavor Text -->
-          <div>
+          <!-- Flavor Text (Hidden) -->
+          <div style="display: none;">
             <label for="card-flavor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Flavor Text (Optional)
             </label>
@@ -252,6 +252,7 @@
               placeholder="Additional context or flavor text..."
             ></textarea>
           </div>
+
         </div>
       </div>
 

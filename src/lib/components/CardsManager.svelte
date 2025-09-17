@@ -410,6 +410,13 @@
     dispatch('open-deck', { deckId, deckName });
   }
 
+  function handleCardZoomFromWizard(event) {
+    const { card } = event.detail;
+    // Open zoom view with the card from Wizard's Council
+    zoomedCard = card;
+    showCardZoom = true;
+  }
+
   async function handleCardZoomGenerateArt(event) {
     const { card, artUrl, source, model } = event.detail;
     console.log('🔍 CardsManager received art update:', { cardId: card.id, artUrl, source, model });
@@ -691,8 +698,8 @@
             </select>
           </div>
 
-          <!-- Pin Filter -->
-          <div class="flex items-center gap-2">
+          <!-- Pin Filter (Hidden) -->
+          <div class="flex items-center gap-2" style="display: none;">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Pin:</label>
             <select 
               bind:value={pinFilter}
@@ -741,6 +748,18 @@
           {/if}
         </div>
         
+      </div>
+
+      <!-- Embeddings Status -->
+      {#if embeddingsStatus}
+        <div class="mt-2 p-2 text-sm rounded-lg {embeddingsStatus.startsWith('✅') ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}">
+          {embeddingsStatus}
+        </div>
+      {/if}
+
+      <!-- Action Buttons and View Mode Toggle -->
+      <div class="flex items-center gap-2">
+        <!-- Action Buttons -->
         <div class="flex items-center gap-2">
           <button
             class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium"
@@ -766,23 +785,14 @@
             on:click={generateEmbeddings}
             disabled={generatingEmbeddings}
             title="Generate AI embeddings for semantic search"
+            style="display: none;"
           >
             <Brain size="16" />
             <span>{generatingEmbeddings ? 'Generating...' : 'Generate Embeddings'}</span>
           </button>
-          
         </div>
-      </div>
-
-      <!-- Embeddings Status -->
-      {#if embeddingsStatus}
-        <div class="mt-2 p-2 text-sm rounded-lg {embeddingsStatus.startsWith('✅') ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}">
-          {embeddingsStatus}
-        </div>
-      {/if}
-
-      <!-- View Mode Toggle -->
-      <div class="flex items-center gap-2">
+        
+        <!-- Decks Button -->
         <button
           id="toggle-decks"
           class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -1003,6 +1013,7 @@
   on:generate-art={handleCardZoomGenerateArt}
   on:open-deck={handleCardZoomOpenDeck}
   on:wizard-selected={handleWizardSelected}
+  on:zoom-card={handleCardZoomFromWizard}
 />
 
 <style>

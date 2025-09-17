@@ -87,26 +87,30 @@ async function generateWovenCard(sourceCard, selectedCards, projectId, userId, s
       budget: 'medium'
     });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: context.systemPrompt + `\n\nYou are an AI that weaves together multiple concepts into a unified, coherent whole. Create a card that unifies and summarizes the key elements from the provided cards into a cohesive concept.
+    const messages = [
+      {
+        role: 'system',
+        content: context.systemPrompt + `\n\nYou are a world chronicler who documents how different elements naturally come together in this world. When given multiple concepts, you reveal the underlying unity that has always connected them. Write as if you're documenting established lore, not creating something new.
 
 Guidelines:
-- Create a title that captures the unified concept
-- Write content that synthesizes and summarizes the key points from all cards
-- Identify common themes and create a coherent narrative
-- Use tags that represent the unified concept
-- Make it feel like a natural summary that brings everything together
-- Keep it concise but comprehensive (2-3 paragraphs max)`
-        },
-        {
-          role: 'user',
-          content: context.userContext + `\n\nWeave these cards into a unified concept.`
-        }
-      ],
+- Write as if this unified concept has always existed in the world
+- Never mention "cards", "weaving", "unifying", or "synthesizing" - this is just how things naturally are
+- Create a title that feels like it belongs in this world
+- Write content that flows naturally and feels like established lore
+- Use tags that describe the actual content, themes, or concepts - avoid generic words like "conjured", "creative", "unified", "woven"
+- Focus on meaningful descriptors like character types, locations, themes, objects, or concepts from the content
+- Keep it concise but comprehensive (2-3 paragraphs max)
+- Format as: Title: [title] - Content: [content] - Tags: [tag1, tag2, tag3]`
+      },
+      {
+        role: 'user',
+        content: context.userContext + `\n\nReveal how these concepts naturally connect in this world.`
+      }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
       temperature: 0.6,
       max_tokens: 500
     });
@@ -132,30 +136,49 @@ Guidelines:
     let content = generatedContent;
     let tags = [];
 
-    // Try to extract title and content
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line.startsWith('Title:') || line.startsWith('**Title:**')) {
-        title = toTitleCase(cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim()));
-      } else if (line.startsWith('Content:') || line.startsWith('**Content:**')) {
-        content = cleanMarkdown(lines.slice(i + 1).join('\n').trim());
-        break;
-      } else if (line.startsWith('Tags:') || line.startsWith('**Tags:**')) {
-        const tagString = cleanMarkdown(line.replace(/^(Tags:|\*\*Tags:\*\*)\s*/, '').trim());
-        tags = tagString.split(',').map(tag => tag.trim()).filter(tag => tag);
+    // Simple array split approach
+    const parts = generatedContent.split(' - Content: ');
+    if (parts.length >= 2) {
+      // Remove "Title:" prefix if present
+      let titlePart = parts[0].trim();
+      if (titlePart.startsWith('Title:')) {
+        titlePart = titlePart.replace(/^Title:\s*/, '');
+      }
+      title = toTitleCase(cleanMarkdown(titlePart));
+      
+      const contentAndTags = parts[1].split(' - Tags: ');
+      if (contentAndTags.length >= 2) {
+        content = cleanMarkdown(contentAndTags[0].trim());
+        tags = contentAndTags[1].split(',').map(tag => cleanMarkdown(tag.trim())).filter(tag => tag);
+      } else {
+        content = cleanMarkdown(contentAndTags[0].trim());
+      }
+    } else {
+      // Fallback - use first line as title, rest as content
+      if (lines.length > 0) {
+        let firstLine = lines[0].replace(/^#+\s*/, '').trim();
+        if (firstLine.startsWith('Title:')) {
+          firstLine = firstLine.replace(/^Title:\s*/, '');
+        }
+        title = toTitleCase(cleanMarkdown(firstLine));
+        content = cleanMarkdown(lines.slice(1).join('\n').trim());
       }
     }
 
-    // If no clear structure, use the first line as title and rest as content
-    if (title === 'Woven Card' && lines.length > 0) {
-      title = toTitleCase(cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim()));
-      content = cleanMarkdown(lines.slice(1).join('\n').trim());
-    }
+    // Final cleanup - remove any remaining labels from content
+    content = content
+      .replace(/^Title:\s*/gm, '')
+      .replace(/^Content:\s*/gm, '')
+      .replace(/^Tags:\s*/gm, '')
+      .replace(/^\*\*Title:\*\*\s*/gm, '')
+      .replace(/^\*\*Content:\*\*\s*/gm, '')
+      .replace(/^\*\*Tags:\*\*\s*/gm, '')
+      .trim();
 
     return {
       title: toTitleCase(cleanMarkdown(title)) || 'Woven Card',
       content: cleanMarkdown(content) || cleanMarkdown(generatedContent),
-      tags: tags.length > 0 ? tags : ['woven', 'unified'],
+      tags: tags.length > 0 ? tags : [],
       rarity: 'common',
       progress: 2,
       mana_cost: 1,

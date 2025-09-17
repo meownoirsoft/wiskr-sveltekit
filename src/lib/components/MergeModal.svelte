@@ -1,4 +1,4 @@
-<!-- MergeModal.svelte - Magical card merging interface -->
+<!-- MergeModal.svelte - Magical card combining interface -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { X, Sparkles, Layers, Eye, Wand2, BookOpen, Lightbulb } from 'lucide-svelte';
@@ -18,7 +18,7 @@
   let searchQuery = '';
   let filteredCards = [];
 
-  // Merge feature states
+  // Combine feature states
   let conjureResult = null;
   let weaveResult = null;
   let divineResults = [];
@@ -323,7 +323,7 @@
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
           <Wand2 size="24" class="text-purple-500" />
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Merge Cards to Create</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Combine Cards to Create</h2>
         </div>
         <button
           class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

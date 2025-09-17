@@ -1,7 +1,7 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Split, Merge, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Ungroup, Combine, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
   import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
@@ -122,7 +122,6 @@
   
   // Tooltip data cache
   let tooltipNotes = [];
-  let tooltipBranches = [];
   let tooltipDecks = [];
   let tooltipResources = [];
   
@@ -135,7 +134,6 @@
   
   // Modal states
   let showNotesModal = false;
-  let showBranchesModal = false;
   let showDecksModal = false;
   let showResourcesModal = false;
   let showFeedbackModal = false;
@@ -147,7 +145,6 @@
   // Notes management state
   let notes = [];
   let notesCount = 0;
-  let branchesCount = 0;
   let decksCount = 0;
   let resourcesCount = 0;
   let editingNote = null;
@@ -350,7 +347,7 @@
   }
 
   function handleSaveCard(event) {
-    // Handle saving a new card from merge operations
+    // Handle saving a new card from combine operations
     dispatch('save-card', event.detail);
   }
 
@@ -363,9 +360,11 @@
   }
 
   function handleSplitSaveCard(event) {
-    // Handle saving split cards and close the split modal
+    // Handle saving distilled cards and close the distill modal
     dispatch('save-card', event.detail);
     showSplitModal = false;
+    // Close the zoom view after successful split operation to show the reload effect
+    dispatch('close');
   }
 
   function handleGenerateArt() {
@@ -469,12 +468,6 @@
         }
         tooltipContent = tooltipNotes;
         break;
-      case 'branches':
-        if (tooltipBranches.length === 0) {
-          await loadTooltipBranches();
-        }
-        tooltipContent = tooltipBranches;
-        break;
       case 'decks':
         if (tooltipDecks.length === 0) {
           await loadTooltipDecks();
@@ -543,9 +536,6 @@
         showNotesModal = true;
         loadNotes();
         break;
-      case 'branches':
-        showBranchesModal = true;
-        break;
       case 'decks':
         showDecksModal = true;
         break;
@@ -571,9 +561,6 @@
         showNoteEditor = false;
         editingNote = null;
         newNoteContent = '';
-        break;
-      case 'branches':
-        showBranchesModal = false;
         break;
       case 'decks':
         showDecksModal = false;
@@ -701,6 +688,17 @@
     dispatch('wizard-selected', { wizard });
   }
 
+  function handleCardZoom(event) {
+    // Open zoom view with the selected card from Wizard's Council
+    const selectedCard = event.detail.card;
+    if (selectedCard) {
+      // Close the Wizard's Council modal first
+      showWizardsCouncil = false;
+      // Dispatch event to parent to open zoom view with the selected card
+      dispatch('zoom-card', { card: selectedCard });
+    }
+  }
+
   // Tooltip data loading functions
   async function loadTooltipNotes() {
     if (!editedCard?.id) return;
@@ -725,10 +723,6 @@
     }
   }
 
-  async function loadTooltipBranches() {
-    // TODO: Implement when branches system is ready
-    tooltipBranches = [];
-  }
 
   async function loadTooltipDecks() {
     if (!editedCard?.id) return;
@@ -780,8 +774,7 @@
       decksCount = 0;
     }
     
-    // TODO: Load branches and resources counts when their APIs are ready
-    branchesCount = 0;
+    // TODO: Load resources counts when their APIs are ready
     resourcesCount = 0;
   }
 
@@ -1029,15 +1022,6 @@
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
               style="color: #e1d5c4;"
-              on:click={() => openContentModal('branches')}
-              on:mouseenter={(e) => showTooltipForType('branches', e)}
-              on:mouseleave={hideTooltip}
-            >
-              Branches {branchesCount > 0 ? `(${branchesCount})` : ''}
-            </button>
-            <button
-              class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
-              style="color: #e1d5c4;"
               on:click={() => openContentModal('decks')}
               on:mouseenter={(e) => showTooltipForType('decks', e)}
               on:mouseleave={hideTooltip}
@@ -1183,36 +1167,30 @@
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleMerge}
-              title="Merge cards"
+              title="Combine cards"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
-              <Merge size="20" />
+              <Combine size="20" />
             </button>
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleSplit}
-              title="Split card"
+              title="Distill card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
-              <Split size="20" />
+              <Ungroup size="20" />
             </button>
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
-              on:click={togglePin}
-              title="Pin card"
-              style:color={darkMode ? '#ffffff' : rarity.textColor}
-            >
-              {#if editedCard.pinned}
-                <PinOff size="20" />
-              {:else}
-                <Pin size="20" class="fill-current" />
-              {/if}
-            </button>
-            <button
-              class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
-              on:click={() => showWizardsCouncil = true}
+              on:click={() => {
+                // Open Wizard's Council with current card data
+                showWizardsCouncil = true;
+                // Close the zoom view when opening Wizard's Council
+                dispatch('close');
+              }}
               title="Summon The Wizard's Council"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
+              style="display: none;"
             >
               <Users size="20" />
             </button>
@@ -1253,20 +1231,6 @@
             {/each}
           {:else}
             <div class="text-xs text-gray-400 dark:text-gray-500">No notes yet</div>
-          {/if}
-        </div>
-      {:else if tooltipType === 'branches'}
-        <div class="space-y-1">
-          {#if tooltipLoading}
-            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
-          {:else if tooltipContent && tooltipContent.length > 0}
-            {#each tooltipContent as branch}
-              <div class="text-xs text-gray-300 dark:text-gray-300">
-                • {branch}
-              </div>
-            {/each}
-          {:else}
-            <div class="text-xs text-gray-400 dark:text-gray-500">No branches yet</div>
           {/if}
         </div>
       {:else if tooltipType === 'decks'}
@@ -1456,40 +1420,6 @@
   </div>
 {/if}
 
-<!-- Branches Modal -->
-{#if showBranchesModal}
-  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('branches')}>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Branches for {editedCard?.title || 'Card'}</h3>
-          <button
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            on:click={() => closeContentModal('branches')}
-          >
-            <X size="20" />
-          </button>
-        </div>
-        <div class="space-y-2">
-          {#each tooltipContent as branch}
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
-              <span class="text-sm text-gray-900 dark:text-white">{branch}</span>
-              <button class="text-blue-500 hover:text-blue-600 text-sm">View</button>
-            </div>
-          {/each}
-        </div>
-        <div class="mt-4 flex justify-end">
-          <button
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            on:click={() => closeContentModal('branches')}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
 
 <!-- Decks Modal -->
 {#if showDecksModal}
@@ -1609,7 +1539,9 @@
           {user}
           {userTier}
           {worldId}
+          {card}
           on:wizard-selected={handleWizardSelected}
+          on:card-zoom={handleCardZoom}
           on:close={() => showWizardsCouncil = false}
         />
 

@@ -1,7 +1,7 @@
 <!-- Card.svelte - Clean MTG-style idea card component -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Split, Merge, Palette, X, ChevronsUp, ChevronsDown } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, MoreHorizontal, Star, Ungroup, Combine, Palette, X, ChevronsUp, ChevronsDown } from 'lucide-svelte';
   import { newCardIds, markCardAsSeen } from '$lib/stores/newCards.js';
 
   export let card = null;
@@ -587,18 +587,18 @@
           <button
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleSplitClick}
-            title="Split card"
+            title="Distill card"
             style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
-            <Split size="14" />
+            <Ungroup size="14" />
           </button>
           <button
             class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
             on:click={handleMergeClick}
-            title="Merge cards"
+            title="Combine cards"
             style:color={darkMode ? '#ffffff' : rarity.textColor}
           >
-            <Merge size="14" />
+            <Combine size="14" />
           </button>
         </div>
         

@@ -1,7 +1,7 @@
 <!-- DeckView.svelte - Shows cards organized in deck sections -->
 <script>
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-  import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2, ChevronsUp, ChevronsDown } from 'lucide-svelte';
+  import { X, Plus, Layers, ArrowLeft, Trash2, ChevronDown, ChevronUp, ChevronRight, Minimize2, Maximize2, ChevronsUp, ChevronsDown, Edit3, Check, X as XIcon } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import DeckContextIndicator from './DeckContextIndicator.svelte';
@@ -37,6 +37,8 @@
   let isProcessingQueue = false;
   let hasLocalChanges = false;
   let hasContextChanges = false;
+  let isEditingDeckName = false;
+  let editingDeckName = '';
 
   // Set up global drag prevention and cleanup
   onMount(() => {
@@ -78,10 +80,7 @@
     } else {
       // If no sections exist, create default ones
       sections = [
-        { id: 'temp-1', name: 'Opening', cards: [] },
-        { id: 'temp-2', name: 'Development', cards: [] },
-        { id: 'temp-3', name: 'Climax', cards: [] },
-        { id: 'temp-4', name: 'Resolution', cards: [] }
+        { id: 'temp-1', name: 'New Section', cards: [] }
       ];
     }
     console.log('🔄 Sections updated to:', sections.length, 'sections');
@@ -289,6 +288,68 @@
     dispatch('card-updated', { cardId: card.id, updates: { progress } });
   }
 
+  function handleCardZoomFromWizard(event) {
+    const { card } = event.detail;
+    // Open zoom view with the card from Wizard's Council
+    zoomedCard = card;
+    showCardZoom = true;
+  }
+
+  function startEditingDeckName() {
+    isEditingDeckName = true;
+    editingDeckName = deck.name;
+  }
+
+  function cancelEditingDeckName() {
+    isEditingDeckName = false;
+    editingDeckName = '';
+  }
+
+  async function saveDeckName() {
+    if (!editingDeckName.trim() || editingDeckName.trim() === deck.name) {
+      cancelEditingDeckName();
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/decks/${deck.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editingDeckName.trim()
+        })
+      });
+
+      if (response.ok) {
+        // Update local deck object
+        deck = { ...deck, name: editingDeckName.trim() };
+        isEditingDeckName = false;
+        editingDeckName = '';
+        
+        // Dispatch event to parent to update the deck
+        dispatch('deck-updated', { deck });
+      } else {
+        console.error('Failed to rename deck:', response.status);
+        alert('Failed to rename deck. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error renaming deck:', error);
+      alert('Error renaming deck. Please try again.');
+    }
+  }
+
+  function handleDeckNameKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      saveDeckName();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelEditingDeckName();
+    }
+  }
+
   async function addNewSection() {
     const newSection = {
       id: `section-${uuidv4()}`,
@@ -483,7 +544,7 @@
   function handleDrop(event, sectionId, cardIndex) {
     event.preventDefault();
     event.stopPropagation();
-    console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id, 'isSynthetic:', event.isSynthetic);
+    console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id, 'isSynthetic:', event.isSynthetic, 'showCardLibrary:', showCardLibrary);
     
     // Try to get card from dataTransfer if draggedCard is null
     let cardToMove = draggedCard;
@@ -506,6 +567,12 @@
     }
     
     if (cardToMove) {
+      // Check if we're dropping on trash zone (when library is closed)
+      if (!showCardLibrary && cardIndex === -1) {
+        console.log('🗑️ Dropping card on trash zone - removing from deck');
+        removeCardFromSection(cardToMove, sectionId);
+        return;
+      }
       
       // Find the source section and remove the card
       let sourceSectionId = null;
@@ -707,7 +774,16 @@
         firstSection.cards = [...firstSection.cards, ...sectionToDelete.cards];
         
         // Remove the section
-        sections = sections.filter(s => s.id !== sectionId);
+        const newSections = sections.filter(s => s.id !== sectionId);
+        sections = newSections;
+        
+        // Mark that we have local changes
+        hasLocalChanges = true;
+        hasContextChanges = true;
+        
+        // Save section deletion to database
+        console.log('🔍 deleteSection: Sending sections to save:', newSections.map(s => ({ id: s.id, name: s.name, cards: s.cards?.length || 0, position: newSections.indexOf(s) })));
+        saveDeckStructure(newSections);
       }
     }
   }
@@ -799,10 +875,15 @@
         // Calculate card count for the deck
         const cardCount = sections.reduce((total, section) => total + (section.cards?.length || 0), 0);
         
-        // Dispatch deck-updated event with the expected format
+        // Dispatch deck-updated event with the full deck object
         dispatch('deck-updated', { 
-          deckId: updatedDeck.id, 
-          cardCount: cardCount 
+          deck: {
+            id: updatedDeck.id,
+            name: updatedDeck.name,
+            description: updatedDeck.description,
+            isPinned: updatedDeck.is_pinned,
+            cardCount: cardCount
+          }
         });
       } else {
         const errorText = await response.text();
@@ -890,8 +971,13 @@
       
       // Dispatch event to update deck card count in parent
       dispatch('deck-updated', { 
-        deckId: deck.id, 
-        cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+        deck: {
+          id: deck.id,
+          name: deck.name,
+          description: deck.description,
+          isPinned: deck.isPinned,
+          cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+        }
       });
       
       // Note: Deck data will be refreshed by the parent component
@@ -924,8 +1010,13 @@
       
       // Dispatch event to update deck card count in parent
       dispatch('deck-updated', { 
-        deckId: deck.id, 
-        cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+        deck: {
+          id: deck.id,
+          name: deck.name,
+          description: deck.description,
+          isPinned: deck.isPinned,
+          cardCount: sections.reduce((total, section) => total + (section.cards?.length || 0), 0)
+        }
       });
     } catch (error) {
       console.error('Error removing card from deck:', error);
@@ -1107,8 +1198,42 @@
         >
           <ArrowLeft size="20" />
         </button>
-        <div>
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
+        <div class="flex items-center gap-2">
+          {#if isEditingDeckName}
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                bind:value={editingDeckName}
+                on:keydown={handleDeckNameKeydown}
+                class="text-xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-blue-500 focus:outline-none px-1 py-0.5"
+                style="min-width: 200px;"
+                autofocus
+              />
+              <button
+                on:click={saveDeckName}
+                class="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                title="Save name"
+              >
+                <Check size="16" />
+              </button>
+              <button
+                on:click={cancelEditingDeckName}
+                class="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                title="Cancel"
+              >
+                <XIcon size="16" />
+              </button>
+            </div>
+          {:else}
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
+            <button
+              on:click={startEditingDeckName}
+              class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              title="Rename deck"
+            >
+              <Edit3 size="16" />
+            </button>
+          {/if}
           <p class="text-sm text-gray-500 dark:text-gray-400">{sections.reduce((total, section) => total + (section.cards?.length || 0), 0)} cards • {sections.length} sections</p>
           <!-- <DeckContextIndicator deckId={deck.id} darkMode={true} /> -->
         </div>
@@ -1223,24 +1348,48 @@
                 </button>
               </div>
               {#if editingSection === section.id}
-                <input
-                  bind:value={editingSectionName}
-                  class="text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none"
-                  on:blur={saveSectionName}
-                  on:keydown={(e) => {
-                    if (e.key === 'Enter') saveSectionName();
-                    if (e.key === 'Escape') cancelEditSection();
-                  }}
-                  autofocus
-                />
+                <div class="flex items-center gap-2">
+                  <input
+                    bind:value={editingSectionName}
+                    class="text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none px-1 py-0.5"
+                    on:keydown={(e) => {
+                      if (e.key === 'Enter') saveSectionName();
+                      if (e.key === 'Escape') cancelEditSection();
+                    }}
+                    autofocus
+                  />
+                  <button
+                    on:click={saveSectionName}
+                    class="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                    title="Save name"
+                  >
+                    <Check size="16" />
+                  </button>
+                  <button
+                    on:click={cancelEditSection}
+                    class="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                    title="Cancel"
+                  >
+                    <XIcon size="16" />
+                  </button>
+                </div>
               {:else}
-                <h3
-                  class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  on:click={() => startEditSection(section)}
-                  title="Click to edit section name"
-                >
-                  {section.name}
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3
+                    class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    on:click={() => startEditSection(section)}
+                    title="Click to edit section name"
+                  >
+                    {section.name}
+                  </h3>
+                  <button
+                    class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    on:click={() => startEditSection(section)}
+                    title="Edit section name"
+                  >
+                    <Edit3 size="14" />
+                  </button>
+                </div>
               {/if}
             </div>
             <div class="flex items-center gap-2">
@@ -1292,7 +1441,7 @@
       
                 <!-- Drop zone for library view -->
                 <div
-                  class="min-h-[350px] w-[250px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
                   on:dragover={(e) => handleDragOver(e, section.id, -1)}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
@@ -1347,7 +1496,7 @@
                 
                 <!-- Drop zone on the right -->
                 <div
-                  class="min-h-[350px] w-[250px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-red-400 dark:hover:border-red-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}"
                   on:dragover={(e) => handleDragOver(e, section.id, -1)}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
@@ -1355,9 +1504,9 @@
                   tabindex="0"
                 >
                   <div class="text-center">
-                    <Layers size="24" class="mx-auto mb-2 opacity-50" />
-                    <p class="text-sm">Drop cards here</p>
-                    <p class="text-xs text-gray-400 mt-1">From library or other sections</p>
+                    <Trash2 size="32" class="mx-auto mb-2 opacity-50" />
+                    <p class="text-sm">Drop to remove</p>
+                    <p class="text-xs text-gray-400 mt-1">From the deck</p>
                   </div>
                 </div>
               </div>
@@ -1428,4 +1577,5 @@
         on:art-selected={handleCardZoomGenerateArt}
         on:rarity-updated={handleCardZoomUpdateRarity}
         on:progress-updated={handleCardZoomUpdateProgress}
+        on:zoom-card={handleCardZoomFromWizard}
       />

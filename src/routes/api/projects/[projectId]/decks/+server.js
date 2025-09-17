@@ -39,7 +39,8 @@ export async function GET({ params }) {
         )
       `)
       .eq('project_id', projectId)
-      .order('created_at');
+      .order('position', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: true });
 
     if (decksError) {
       console.error('Error fetching decks:', decksError);
@@ -108,13 +109,25 @@ export async function POST({ params, request }) {
       return json({ error: 'Project ID and name are required' }, { status: 400 });
     }
 
-    // Create the deck (without position column for now)
+    // Get the next position for this project
+    const { data: maxPosition } = await supabase
+      .from('decks')
+      .select('position')
+      .eq('project_id', projectId)
+      .order('position', { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextPosition = (maxPosition?.position ?? -1) + 1;
+
+    // Create the deck with proper position
     const { data: deck, error: deckError } = await supabase
       .from('decks')
       .insert({
         project_id: projectId,
         name,
-        description: description || ''
+        description: description || '',
+        position: nextPosition
       })
       .select()
       .single();
@@ -126,10 +139,7 @@ export async function POST({ params, request }) {
 
     // Create default sections for the deck
     const defaultSections = [
-      { name: 'Opening' },
-      { name: 'Development' },
-      { name: 'Climax' },
-      { name: 'Resolution' }
+      { name: 'New Section' }
     ];
 
     const { data: sections, error: sectionsError } = await supabase

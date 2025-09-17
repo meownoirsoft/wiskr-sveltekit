@@ -208,7 +208,7 @@
               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
             />
             <div class="ml-3">
-              <span class="text-sm font-medium text-gray-900 dark:text-white">Merge</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">Combine</span>
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 Keep existing data, add new contexts only
               </p>

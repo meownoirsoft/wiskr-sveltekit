@@ -1,4 +1,4 @@
-<!-- MarkdownEditor.svelte - A markdown editor with toggle/split view and full-screen support -->
+<!-- MarkdownEditor.svelte - A markdown editor with toggle/distill view and full-screen support -->
 <script>
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { EditorView, basicSetup } from 'codemirror';
@@ -28,7 +28,7 @@
     Maximize2,
     Minimize2,
     Edit3,
-    Split
+    Ungroup
   } from 'lucide-svelte';
 
   export let content = '';
@@ -429,9 +429,9 @@
           on:click={toggleSplitView}
           class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
           class:bg-blue-100={showSplitView}
-          title="Split View"
+          title="Distill View"
         >
-          <Split size="16" />
+          <Ungroup size="16" />
         </button>
       {/if}
       

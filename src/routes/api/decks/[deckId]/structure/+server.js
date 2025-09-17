@@ -25,6 +25,28 @@ export async function PUT({ params, request }) {
       console.log('🔍 Current sections in DB:', currentSections);
     }
 
+    // Get current section IDs from the request
+    const currentSectionIds = sections.map(s => s.id).filter(id => id && !id.startsWith('section-'));
+    
+    // Delete sections that are no longer in the request
+    if (currentSections && currentSections.length > 0) {
+      const sectionsToDelete = currentSections.filter(s => !currentSectionIds.includes(s.id));
+      if (sectionsToDelete.length > 0) {
+        console.log('🔍 Deleting sections:', sectionsToDelete.map(s => s.id));
+        const { error: deleteError } = await supabase
+          .from('deck_sections')
+          .delete()
+          .in('id', sectionsToDelete.map(s => s.id));
+        
+        if (deleteError) {
+          console.error('❌ Error deleting sections:', deleteError);
+          throw deleteError;
+        } else {
+          console.log('✅ Successfully deleted sections');
+        }
+      }
+    }
+
     // Process sections: update existing and create new ones
     for (const [index, section] of sections.entries()) {
       console.log(`🔍 Processing section ${index}: ${section.id} - ${section.name}`);

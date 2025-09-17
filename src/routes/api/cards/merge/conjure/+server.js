@@ -92,30 +92,36 @@ async function generateConjuredCard(sourceCard, selectedCards, projectId, userId
       budget: 'medium'
     });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: context.systemPrompt + `\n\nYou are a creative AI that conjures new ideas by combining existing concepts. Create a completely new card that creatively combines elements from the provided cards. The result should be innovative, coherent, and add new value beyond just merging the content.
+    const messages = [
+      {
+        role: 'system',
+        content: context.systemPrompt + `\n\nYou are a creative storyteller who discovers new elements within an existing world. When given multiple concepts, you naturally discover how they connect and reveal something that has always existed in this world. Write as if you're documenting something that was always there, not creating something new.
 
 Guidelines:
-- Create a unique title that captures the essence of the combined concept
-- Write content that synthesizes ideas from the source cards into something new
-- Use tags that reflect the new combined concept
-- Make it feel like a natural evolution or creative leap from the source material
-- Keep it concise but meaningful (2-3 paragraphs max)`
-        },
-        {
-          role: 'user',
-          content: context.userContext + `\n\nConjure a new creative card by combining these cards.`
-        }
-      ],
+- Write as if this concept has always existed in the world
+- Never mention "cards", "evolution", "combining", or "merging" - this is just how things naturally are
+- Create a title that feels like it belongs in this world
+- Write content that flows naturally and feels like established lore
+- Use tags that describe the actual content, themes, or concepts - avoid generic words like "conjured", "creative", "unified", "woven"
+- Focus on meaningful descriptors like character types, locations, themes, objects, or concepts from the content
+- Keep it concise but meaningful (2-3 paragraphs max)
+- Format as: Title: [title] - Content: [content] - Tags: [tag1, tag2, tag3]`
+      },
+      {
+        role: 'user',
+        content: context.userContext + `\n\nDiscover how these concepts naturally connect in this world.`
+      }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
       temperature: 0.8,
       max_tokens: 500
     });
 
     const generatedContent = response.choices[0].message.content;
+    console.log('🔍 Generated content:', generatedContent);
     
     // Track usage
     const inputText = JSON.stringify(messages);
@@ -136,30 +142,51 @@ Guidelines:
     let content = generatedContent;
     let tags = [];
 
-    // Try to extract title and content
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line.startsWith('Title:') || line.startsWith('**Title:**')) {
-        title = toTitleCase(cleanMarkdown(line.replace(/^(Title:|\*\*Title:\*\*)\s*/, '').trim()));
-      } else if (line.startsWith('Content:') || line.startsWith('**Content:**')) {
-        content = cleanMarkdown(lines.slice(i + 1).join('\n').trim());
-        break;
-      } else if (line.startsWith('Tags:') || line.startsWith('**Tags:**')) {
-        const tagString = cleanMarkdown(line.replace(/^(Tags:|\*\*Tags:\*\*)\s*/, '').trim());
-        tags = tagString.split(',').map(tag => tag.trim()).filter(tag => tag);
+    // Simple array split approach
+    const parts = generatedContent.split(' - Content: ');
+    
+    if (parts.length >= 2) {
+      // Remove "Title:" prefix if present
+      let titlePart = parts[0].trim();
+      if (titlePart.startsWith('Title:')) {
+        titlePart = titlePart.replace(/^Title:\s*/, '');
+      }
+      title = toTitleCase(cleanMarkdown(titlePart));
+      
+      const contentAndTags = parts[1].split(' - Tags: ');
+      
+      if (contentAndTags.length >= 2) {
+        content = cleanMarkdown(contentAndTags[0].trim());
+        tags = contentAndTags[1].split(',').map(tag => cleanMarkdown(tag.trim())).filter(tag => tag);
+      } else {
+        content = cleanMarkdown(contentAndTags[0].trim());
+      }
+    } else {
+      // Fallback - use first line as title, rest as content
+      if (lines.length > 0) {
+        let firstLine = lines[0].replace(/^#+\s*/, '').trim();
+        if (firstLine.startsWith('Title:')) {
+          firstLine = firstLine.replace(/^Title:\s*/, '');
+        }
+        title = toTitleCase(cleanMarkdown(firstLine));
+        content = cleanMarkdown(lines.slice(1).join('\n').trim());
       }
     }
 
-    // If no clear structure, use the first line as title and rest as content
-    if (title === 'Conjured Card' && lines.length > 0) {
-      title = toTitleCase(cleanMarkdown(lines[0].replace(/^#+\s*/, '').trim()));
-      content = cleanMarkdown(lines.slice(1).join('\n').trim());
-    }
+    // Final cleanup - remove any remaining labels from content
+    content = content
+      .replace(/^Title:\s*/gm, '')
+      .replace(/^Content:\s*/gm, '')
+      .replace(/^Tags:\s*/gm, '')
+      .replace(/^\*\*Title:\*\*\s*/gm, '')
+      .replace(/^\*\*Content:\*\*\s*/gm, '')
+      .replace(/^\*\*Tags:\*\*\s*/gm, '')
+      .trim();
 
     return {
       title: toTitleCase(cleanMarkdown(title)) || 'Conjured Card',
       content: cleanMarkdown(content) || cleanMarkdown(generatedContent),
-      tags: tags.length > 0 ? tags : ['conjured', 'creative'],
+      tags: tags.length > 0 ? tags : [],
       rarity: 'special',
       progress: 1,
       mana_cost: 1,

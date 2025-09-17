@@ -257,14 +257,14 @@
               <button
                 on:click={generatePack}
                 disabled={isGenerating || (!prompt.trim() && !selectedCard)}
-                class="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                class="flex items-center px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
               >
                 {#if isGenerating}
                   <LoadingSpinner size="sm" class="mr-2" />
                   Mr. Wiskr is summoning...
                 {:else}
                   <Sparkles size="20" class="mr-2" />
-                  Ask Mr. Wiskr for a Pack
+                  Summon Pack
                 {/if}
               </button>
             </div>

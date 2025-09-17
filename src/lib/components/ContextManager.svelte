@@ -344,13 +344,13 @@
     }
   }
 
-  export async function addCardFromMerge(cardData) {
+  export async function addCardFromCombine(cardData) {
     if (!current) {
-      console.error('ContextManager: No current project, cannot add card from merge');
+      console.error('ContextManager: No current project, cannot add card from combine');
       return;
     }
     
-    console.log('ContextManager: Adding card from merge operation:', cardData);
+    console.log('ContextManager: Adding card from combine operation:', cardData);
     console.log('ContextManager: Current project:', current);
     
     // Check if offline - queue the request
@@ -426,7 +426,7 @@
       }
       
     } catch (error) {
-      console.error('ContextManager: Error adding card from merge:', error);
+      console.error('ContextManager: Error adding card from combine:', error);
       addNetworkError(error);
       
       const errorMessage = error.message.includes('Network connection failed') ?

@@ -87,31 +87,36 @@ async function generateDivineCards(sourceCard, selectedCards, projectId, userId,
       budget: 'high'
     });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: context.systemPrompt + `\n\nYou are an AI that divines new insights and derivative concepts from existing cards. Generate exactly 3 new cards that explore different aspects, variations, or extensions of the provided concepts.
+    const messages = [
+      {
+        role: 'system',
+        content: context.systemPrompt + `\n\nYou are a world explorer who discovers different aspects of existing concepts. When given a concept, you naturally uncover three different facets or variations that have always existed in this world. Write as if you're documenting discoveries, not creating new things.
 
 Guidelines:
-- Create 3 distinct cards that each explore a different angle or aspect
-- Each card should be a meaningful derivative, not just a copy
-- Make them feel like natural extensions or variations of the source material
-- Each card should have a unique title, content, and relevant tags
-- Keep each card concise but meaningful (1-2 paragraphs max)
-- Format as: "Card 1: [Title] - [Content] - Tags: [tag1, tag2]"
+- Write as if these three aspects have always existed in the world
+- Never mention "cards", "derivatives", "variations", or "extensions" - these are just different aspects of what already exists
+- Each aspect should feel like a natural part of the world
+- Create titles that feel like they belong in this world
+- Write content that flows naturally and feels like established lore
+- Use tags that describe the actual content, themes, or concepts - avoid generic words like "conjured", "creative", "unified", "woven", "discovered"
+- Focus on meaningful descriptors like character types, locations, themes, objects, or concepts from the content
+- Keep each aspect concise but meaningful (1-2 paragraphs max)
+- Format as: "Aspect 1: [Title] - [Content] - Tags: [tag1, tag2]"
 
 Example format:
-Card 1: [Title] - [Content] - Tags: [tag1, tag2]
-Card 2: [Title] - [Content] - Tags: [tag1, tag2]  
-Card 3: [Title] - [Content] - Tags: [tag1, tag2]`
-        },
-        {
-          role: 'user',
-          content: context.userContext + `\n\nDivine 3 new derivative cards from these concepts.`
-        }
-      ],
+Aspect 1: [Title] - [Content] - Tags: [tag1, tag2]
+Aspect 2: [Title] - [Content] - Tags: [tag1, tag2]  
+Aspect 3: [Title] - [Content] - Tags: [tag1, tag2]`
+      },
+      {
+        role: 'user',
+        content: context.userContext + `\n\nDiscover three different aspects of these concepts in this world.`
+      }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
       temperature: 0.7,
       max_tokens: 800
     });
@@ -150,34 +155,62 @@ function parseDivineCards(content) {
   for (const line of lines) {
     const trimmedLine = line.trim();
     
-    // Look for card patterns
-    if (trimmedLine.match(/^Card \d+:/i)) {
+    // Look for aspect patterns
+    if (trimmedLine.match(/^Aspect \d+:/i)) {
       // Save previous card if exists
       if (currentCard) {
         cards.push(currentCard);
       }
       
-      // Start new card
-      const cardMatch = trimmedLine.match(/^Card \d+:\s*(.+?)\s*-\s*(.+?)\s*-\s*Tags?:\s*(.+)$/i);
-      if (cardMatch) {
-        currentCard = {
-          title: toTitleCase(cleanMarkdown(cardMatch[1].trim())),
-          content: cleanMarkdown(cardMatch[2].trim()),
-          tags: cardMatch[3].split(',').map(tag => cleanMarkdown(tag.trim())).filter(tag => tag),
-          rarity: 'common',
-          progress: 1,
-          mana_cost: 1,
-          generation_model: 'GPT-4o',
-          art_model: 'Midjourney'
-        };
+      // Simple array split approach for each aspect
+      const parts = trimmedLine.split(' - Content: ');
+      if (parts.length >= 2) {
+        // Remove "Aspect X:" prefix and any "Title:" prefix
+        let titlePart = parts[0].replace(/^Aspect \d+:\s*/i, '').trim();
+        if (titlePart.startsWith('Title:')) {
+          titlePart = titlePart.replace(/^Title:\s*/, '');
+        }
+        const title = toTitleCase(cleanMarkdown(titlePart));
+        
+        const contentAndTags = parts[1].split(' - Tags: ');
+        if (contentAndTags.length >= 2) {
+          const content = cleanMarkdown(contentAndTags[0].trim());
+          const tags = contentAndTags[1].split(',').map(tag => cleanMarkdown(tag.trim())).filter(tag => tag);
+          
+          currentCard = {
+            title,
+            content,
+            tags,
+            rarity: 'common',
+            progress: 1,
+            mana_cost: 1,
+            generation_model: 'GPT-4o',
+            art_model: 'Midjourney'
+          };
+        } else {
+          currentCard = {
+            title,
+            content: cleanMarkdown(contentAndTags[0].trim()),
+            tags: [],
+            rarity: 'common',
+            progress: 1,
+            mana_cost: 1,
+            generation_model: 'GPT-4o',
+            art_model: 'Midjourney'
+          };
+        }
       } else {
         // Fallback parsing
         const parts = trimmedLine.split(' - ');
         if (parts.length >= 2) {
+          let titlePart = parts[0].replace(/^Aspect \d+:\s*/i, '').trim();
+          if (titlePart.startsWith('Title:')) {
+            titlePart = titlePart.replace(/^Title:\s*/, '');
+          }
           currentCard = {
-            title: toTitleCase(cleanMarkdown(parts[0].replace(/^Card \d+:\s*/i, '').trim())),
+            title: toTitleCase(cleanMarkdown(titlePart)),
             content: cleanMarkdown(parts[1].trim()),
-            tags: ['divined'],
+            tags: [],
             rarity: 'common',
             progress: 1,
             mana_cost: 1,

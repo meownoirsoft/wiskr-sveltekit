@@ -1,17 +1,61 @@
 <script>
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
   import { X, Users, Lock, Crown, Star } from 'lucide-svelte';
   import { getAIInfo, getAllAIModels } from '$lib/config/aiAvatars.js';
   import { robustStreamingFetch } from '$lib/utils/networkUtils.js';
   import ProBadge from './ProBadge.svelte';
   import ChatInterface from './ChatInterface.svelte';
   import VirtualMessageList from './VirtualMessageList.svelte';
+  import Card from './Card.svelte';
+  import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
+
+  // Custom avatar function for wizard council
+  function getWizardAvatar(modelKey) {
+    // Map model keys to wizard names
+    const modelToWizardMap = {
+      'qwen-72b': 'quest',
+      'llama-70b': 'tina', 
+      'gpt-4o-mini-2024-07-18': 'spark',
+      'gpt-4o-mini': 'prism',
+      'llama-3.1-70b-instruct': 'sage',
+      'claude-3-opus': 'titan',
+      'claude-3-haiku': 'ember',
+      'claude-3-5-sonnet': 'gem',
+      'claude-3-5-haiku': 'gale',
+      'gpt-4o': 'aurora',
+      'gpt-4-turbo': 'vega',
+      'claude-3-5-sonnet-20241022': 'verse',
+      'gpt-4-turbo-2024-04-09': 'dash',
+      'claude-3-5-sonnet-20240620': 'opal'
+    };
+    
+    const wizardName = modelToWizardMap[modelKey] || 'quest';
+    return `/avatars/wizard-${wizardName}.png`;
+  }
 
   export let isVisible = false;
   export let effectiveTier = 0;
   export let user = null;
   export let userTier = 0;
   export let worldId = null;
+  export let card = null; // The card data to display in the left column
+  
+  // Store the card data when modal becomes visible
+  let storedCard = null;
+
+  // Store card data when modal becomes visible
+  $: if (isVisible && card) {
+    console.log('🧙‍♂️ Storing card data when modal opens:', card);
+    console.log('🧙‍♂️ Selected wizard when modal opens:', selectedWizard);
+    storedCard = card;
+  }
+  
+  // Also store card data when card prop changes
+  $: if (card) {
+    console.log('🧙‍♂️ Storing card data when card prop changes:', card);
+    storedCard = card;
+  }
 
   const dispatch = createEventDispatcher();
   
@@ -33,6 +77,7 @@
   let sessions = [];
   let currentSession = null;
   let isMobile = false;
+  let sessionId = null; // Session ID for persisting messages
 
   // Wizard tier mapping (based on the model dropdown logic)
   const WIZARD_TIERS = {
@@ -75,7 +120,8 @@
       const wizardData = {
         ...aiInfo, // Spread all aiInfo properties first
         key: modelKey,
-        avatarPath: `/avatars/wizard-${name}.png`, // Override with wizard avatar images
+        avatarPath: getWizardAvatar(modelKey), // Use custom wizard avatar function
+        avatar: `wizard-${name}.png`, // Also override the avatar property
         tier: getWizardTier(modelKey),
         isAvailable: isWizardAvailable(getWizardTier(modelKey))
       };
@@ -263,28 +309,190 @@
   function selectWizard(wizard) {
     if (!wizard.isAvailable) return;
     
+    console.log('🧙‍♂️ Selecting wizard:', wizard.name, 'Key:', wizard.key);
     selectedWizard = wizard;
     initializeChat(wizard);
   }
 
-  function initializeChat(wizard) {
+  async function initializeChat(wizard) {
     // Initialize chat state for the selected wizard
     hasInit = true;
+    
+    // Create a card-specific session ID for this card's wizard conversations
+    // This ensures each card has its own isolated chat context with ALL wizards
+    // Use UUID v5 to generate a consistent UUID based on project and card (not wizard)
+    const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // DNS namespace
+    const cardId = storedCard?.id || card?.id || 'no-card';
+    const name = `card-${cardId}-${worldId || 'council'}`;
+    sessionId = uuidv5(name, namespace);
+    
+    console.log('🧙‍♂️ Initializing chat for wizard:', wizard.name);
+    console.log('🧙‍♂️ Stored card:', storedCard);
+    console.log('🧙‍♂️ Card ID:', cardId);
+    console.log('🧙‍♂️ Session name:', name);
+    console.log('🧙‍♂️ Generated session ID:', sessionId);
+    console.log('🧙‍♂️ World ID:', worldId);
+    console.log('🧙‍♂️ Project ID for branches:', worldId || 'wizards-council');
+    
     current = {
       id: worldId || 'wizards-council', // Use the current project ID or fallback
       name: 'Wizard\'s Council',
       model: wizard.key,
+      created_at: new Date().toISOString(),
+      project_id: worldId || 'wizards-council' // Add project_id for compatibility
+    };
+    
+    // Create a session object
+    const cardTitle = storedCard?.title || card?.title || 'Untitled Card';
+    currentSession = {
+      id: sessionId,
+      session_name: `${cardTitle} - Wizard's Council`,
       created_at: new Date().toISOString()
     };
     
-    // Initialize with a welcome message from the wizard
+    // Create or get a branch for this specific card (shared across all wizards)
+    const branchName = `${cardTitle} - Council Chat`;
+    let branchId = `card-${cardId}-main`; // Default to card-specific main branch
+    
+    try {
+      // First, try to find an existing branch for this card (shared across all wizards)
+      const findBranchResponse = await fetch('/api/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'list',
+          projectId: worldId || 'wizards-council',
+          sessionId: sessionId
+        })
+      });
+      
+      if (findBranchResponse.ok) {
+        const findData = await findBranchResponse.json();
+        const existingBranch = findData.branches?.find(b => b.branch_name === branchName);
+        if (existingBranch) {
+          branchId = existingBranch.branch_id;
+        } else {
+          // Create a new branch for this card (shared across all wizards)
+          const branchData = {
+            action: 'create',
+            projectId: worldId || 'wizards-council',
+            sessionId: sessionId,
+            messageId: null, // No parent message for card-specific branches
+            branchName: branchName
+          };
+          
+          console.log('🧙‍♂️ Creating branch with data:', branchData);
+          
+          const createBranchResponse = await fetch('/api/branches', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(branchData)
+          });
+          
+          if (createBranchResponse.ok) {
+            const createData = await createBranchResponse.json();
+            branchId = createData.branch?.branch_id || 'main';
+          } else {
+            const errorText = await createBranchResponse.text();
+            console.error('Failed to create branch:', createBranchResponse.status, errorText);
+            // Create a unique branch ID even if API fails
+            branchId = `card-${cardId}-${Date.now()}`;
+            console.log('🧙‍♂️ Using fallback branch ID:', branchId);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error managing branch:', error);
+      // Create a unique branch ID as fallback
+      const cardId = storedCard?.id || card?.id || 'no-card';
+      branchId = `card-${cardId}-${Date.now()}`;
+      console.log('🧙‍♂️ Using catch fallback branch ID:', branchId);
+    }
+    
+    // Update branch state
+    currentBranchId = branchId;
+    currentBranch = {
+      branch_id: branchId,
+      branch_name: branchName,
+      colorClass: 'bg-white border-gray-200',
+      color_index: 0 // Default to main branch color
+    };
+    
+    // Load all branches for this session
+    try {
+      const listBranchesResponse = await fetch('/api/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'list',
+          projectId: worldId || 'wizards-council',
+          sessionId: sessionId
+        })
+      });
+      
+      if (listBranchesResponse.ok) {
+        const listData = await listBranchesResponse.json();
+        branches = listData.branches || [];
+      } else {
+        console.error('Failed to load branches:', listBranchesResponse.status, await listBranchesResponse.text());
+        branches = [];
+      }
+    } catch (error) {
+      console.error('Error loading branches:', error);
+      branches = [];
+    }
+    
+    // Try to load existing messages for this wizard and card
+    try {
+      const response = await fetch('/api/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'switch',
+          projectId: worldId || 'wizards-council',
+          sessionId: sessionId,
+          branchId: branchId
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && data.messages.length > 0) {
+          // Load existing messages
+          messages = data.messages.map(msg => ({
+            ...msg,
+            avatar: selectedWizard.avatar,
+            avatarPath: selectedWizard.avatarPath
+          }));
+          return; // Don't add welcome message if we have existing messages
+        }
+      } else {
+        console.error('Failed to load messages:', response.status, await response.text());
+      }
+    } catch (error) {
+      console.error('Error loading existing messages:', error);
+    }
+    
+    // Initialize with a welcome message from the wizard (only if no existing messages)
     const welcomeMessage = {
-      id: `welcome-${Date.now()}`,
+      id: uuidv4(), // Use proper UUID
       role: 'assistant',
-      content: `Greetings! I am ${wizard.name} from the ${getCompanyDisplayName(wizard.company)} Order. ${wizard.description} I'm here to help you with ${wizard.bestFor}. How may I assist you today?`,
+      content: `Greetings! I am ${wizard.name} from the ${getCompanyDisplayName(wizard.company)} Order. ${wizard.description} I'm here to help you with ${wizard.bestFor}.
+
+How may I assist you with your creative endeavors today?`,
       created_at: new Date().toISOString(),
       model: wizard.key,
-      model_key: wizard.key  // This is what MessageItem uses for getAIAvatar
+      model_key: wizard.key,  // This is what MessageItem uses for getAIAvatar
+      avatar: wizard.avatar,  // Use the wizard's avatar
+      avatarPath: wizard.avatarPath  // Use the wizard's avatar path
     };
     
     messages = [welcomeMessage];
@@ -313,24 +521,47 @@
 
   // Send message function for Wizard's Council
   async function send(event) {
-    if (!selectedWizard || !current || !event.detail.message.trim()) return;
+    console.log('🧙‍♂️ Send function called:', { 
+      event, 
+      selectedWizard: !!selectedWizard, 
+      current: !!current, 
+      message: event.detail?.message,
+      hasEventDetail: !!event.detail,
+      eventType: event.type,
+      eventDetail: event.detail
+    });
+    
+    if (!selectedWizard || !current || !event.detail?.message?.trim()) {
+      console.log('🧙‍♂️ Send function early return:', { 
+        selectedWizard: !!selectedWizard, 
+        current: !!current, 
+        message: event.detail?.message,
+        messageTrimmed: event.detail?.message?.trim()
+      });
+      return;
+    }
     
     const userMsg = event.detail.message;
     input = '';
     
+    // Don't add card context to user message - AI will have it from system context
+    const userMessageWithContext = userMsg;
+    
     // Optimistic UI - show user message immediately
-    const tempUserMsgId = 'temp_user_' + Date.now();
-    const tempAssistantMsgId = 'temp_assistant_' + Date.now();
+    const userMsgId = uuidv4();
+    const assistantMsgId = uuidv4();
     
     messages = [
       ...messages, 
-      { id: tempUserMsgId, role: 'user', content: userMsg, created_at: new Date().toISOString() }, 
+      { id: userMsgId, role: 'user', content: userMsg, created_at: new Date().toISOString() }, 
       { 
-        id: tempAssistantMsgId, 
+        id: assistantMsgId, 
         role: 'assistant', 
         content: '', 
         model_key: selectedWizard.key, 
         created_at: new Date().toISOString(),
+        avatar: selectedWizard.avatar,  // Use the wizard's avatar
+        avatarPath: selectedWizard.avatarPath,  // Use the wizard's avatar path
         isLoading: true // Add loading indicator
       }
     ];
@@ -350,17 +581,30 @@
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       let assistantText = '';
       
+      // Prepare card context for AI (included in message but formatted as system context)
+      const currentCard = storedCard || card;
+      const cardContext = currentCard ? `
+
+[SYSTEM: You are helping with this specific card. Do not repeat this information to the user unless they ask about it directly.]
+Card: ${currentCard.title || 'Untitled Card'}
+Type: ${currentCard.type || 'Unknown'} | Rarity: ${currentCard.rarity || 'common'}
+${currentCard.content ? `Content: ${currentCard.content}` : ''}
+${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.join(', ')}` : ''}
+[/SYSTEM]` : '';
+
+      const messageWithContext = userMsg + cardContext;
+
       // Use the same streaming API as regular chat
       await robustStreamingFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           projectId: current.id, 
-          sessionId: 'wizards-council-session', // Use a fixed session for Wizard's Council
-          message: userMsg, 
+          sessionId: sessionId, // Use the dynamic session ID
+          message: messageWithContext, // User message with hidden card context
           modelKey: selectedWizard.key, 
           tz, 
-          branchId: 'main' // Use main branch for Wizard's Council
+          branchId: currentBranchId // Use the card-specific branch ID
         })
       }, (chunk) => {
         if (chunk === '[DONE]') return;
@@ -474,24 +718,146 @@
             </p>
           </div>
         </div>
-        <button
-          on:click={closeModal}
-          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-          title="Close"
-        >
-          <X size={20} class="text-gray-500 dark:text-gray-400" />
-        </button>
+        
+        <!-- Surprise Me Button -->
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <p class="text-sm font-medium text-purple-600 dark:text-purple-400 italic">
+              Let the winds of fate<br />wiskr you away!
+            </p>
+          </div>
+          <button
+            on:click={surpriseMe}
+            class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105"
+            title="Let the winds of fate wiskr you away!"
+          >
+            ✨ Surprise me
+          </button>
+          <button
+            on:click={closeModal}
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            title="Close"
+          >
+            <X size={20} class="text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
       </div>
 
       <!-- Content -->
       <div class="flex h-[calc(90vh-120px)]">
-        <!-- Left Side: Wizards List -->
-        <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-          <!-- Instructions -->
+        <!-- Left Side: Card View -->
+        <div class="w-1/4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
-              Select a wizard to begin your magical consultation
-            </p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Card Context</h3>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4">
+            {#if storedCard}
+              <!-- Card Display - Using Card component like merge/split modals -->
+              <div class="flex justify-center">
+                <div 
+                  class="cursor-pointer"
+                  on:click={() => dispatch('card-zoom', { card: storedCard })}
+                  role="button"
+                  tabindex="0"
+                  on:keydown={(e) => e.key === 'Enter' && dispatch('card-zoom', { card: storedCard })}
+                  aria-label="Zoom card: {storedCard.title || 'Untitled Card'}"
+                >
+                  <Card 
+                    card={storedCard}
+                    searchTerm=""
+                    showActions={false}
+                    xPaddingClass="px-2"
+                    key={storedCard?.id || 'no-id'}
+                  />
+                </div>
+              </div>
+            {:else}
+              <div class="text-center text-gray-500 dark:text-gray-400">
+                <p class="text-sm">No card selected</p>
+              </div>
+            {/if}
+          </div>
+        </div>
+        
+        <!-- Middle: Chat Interface -->
+        <div class="w-1/2 flex flex-col overflow-hidden">
+          {#if selectedWizard}
+            <!-- Chat Header -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full overflow-hidden border-2 {getPortraitBorderClass(selectedWizard.tier)}">
+                  <img 
+                    src={selectedWizard.avatarPath} 
+                    alt={selectedWizard.name}
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white">
+                    {selectedWizard.name}
+                  </h3>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                    {getCompanyDisplayName(selectedWizard.company)} Order • {selectedWizard.bestFor}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div class="flex-1 overflow-hidden">
+              <ChatInterface 
+                {current}
+                {hasInit}
+                {messages}
+                {loadingMessages}
+                bind:input={input}
+                modelKey={selectedWizard.key}
+                availableModels={wizardModels}
+                {branches}
+                {currentBranch}
+                {currentBranchId}
+                {usage}
+                {showUsageStats}
+                {showSessionNavigator}
+                {sessions}
+                {currentSession}
+                {isMobile}
+                {user}
+                {userTier}
+                {effectiveTier}
+                hideModelDropdown={true}
+                hideInfoPopup={true}
+                hideSessions={true}
+                on:send={send}
+                on:message-sent={handleMessageSent}
+                on:input-change={handleInputChange}
+                on:branch-change={handleBranchChange}
+                on:session-change={handleSessionChange}
+              />
+            </div>
+          {:else}
+            <!-- No Wizard Selected State -->
+            <div class="flex-1 flex items-center justify-center p-8">
+              <div class="text-center">
+                <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users size={32} class="text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Choose Your Wizard
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Select a wizard from the right to begin your magical consultation
+                </p>
+              </div>
+            </div>
+          {/if}
+        </div>
+        
+        <!-- Right Side: Wizards List -->
+        <div class="w-1/4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <!-- Select a wizard text -->
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 text-center">Select a wizard...</h3>
           </div>
           
           <!-- Wizards Scrollable List -->
@@ -503,6 +869,8 @@
                   class="w-full group relative rounded-xl border transition-all duration-200 min-h-[100px] {wizard.isAvailable 
                     ? getWizardCardClasses(wizard.tier, selectedWizard?.key === wizard.key) 
                     : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'}"
+                  data-wizard-key={wizard.key}
+                  data-selected={selectedWizard?.key === wizard.key}
                   title={wizard.description}
                   disabled={!wizard.isAvailable}
                 >
@@ -544,97 +912,8 @@
             </div>
           </div>
         </div>
-        
-        <!-- Right Side: Chat Interface -->
-        <div class="w-2/3 flex flex-col">
-          {#if selectedWizard}
-            <!-- Chat Header -->
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full overflow-hidden border-2 {getPortraitBorderClass(selectedWizard.tier)}">
-                  <img 
-                    src={selectedWizard.avatarPath} 
-                    alt={selectedWizard.name}
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 dark:text-white">
-                    {selectedWizard.name}
-                  </h3>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
-                    {getCompanyDisplayName(selectedWizard.company)} Order • {selectedWizard.bestFor}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Chat Interface -->
-            <div class="flex-1 overflow-hidden">
-              <ChatInterface 
-                {current}
-                {hasInit}
-                {messages}
-                {loadingMessages}
-                bind:input={input}
-                modelKey={selectedWizard.key}
-                {branches}
-                {currentBranch}
-                {currentBranchId}
-                {usage}
-                {showUsageStats}
-                {showSessionNavigator}
-                {sessions}
-                {currentSession}
-                {isMobile}
-                {user}
-                {userTier}
-                {effectiveTier}
-                hideModelDropdown={true}
-                hideInfoPopup={true}
-                on:submit={send}
-                on:message-sent={handleMessageSent}
-                on:input-change={handleInputChange}
-                on:branch-change={handleBranchChange}
-                on:session-change={handleSessionChange}
-              />
-            </div>
-          {:else}
-            <!-- No Wizard Selected State -->
-            <div class="flex-1 flex items-center justify-center p-8">
-              <div class="text-center">
-                <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users size={32} class="text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Choose Your Wizard
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Select a wizard from the left to begin your magical consultation
-                </p>
-              </div>
-            </div>
-          {/if}
-        </div>
       </div>
 
-      <!-- Footer -->
-      <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <div class="flex items-center justify-center">
-          <div class="flex items-center gap-3">
-            <p class="text-sm font-medium text-purple-600 dark:text-purple-400 italic">
-              Let the winds of fate wiskr you away!
-            </p>
-            <button
-              on:click={surpriseMe}
-              class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105"
-              title="Let the winds of fate wiskr you away!"
-            >
-              ✨ Surprise me
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 {/if}

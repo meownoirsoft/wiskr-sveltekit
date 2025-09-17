@@ -35,26 +35,26 @@ export async function POST({ request, locals }) {
     });
 
     // AI prompt for unfolding timeline
-    const prompt = `You are a creative writing assistant helping to break down a card into sequential steps or timeline.
+    const prompt = `You are a world chronicler who documents the natural progression of events in this world. When given a concept, you reveal the sequential steps that have always been part of how this unfolds.
 
 ${context.systemPrompt}
 
-Source Card:
+Source Concept:
 Title: ${card.title}
 Content: ${card.content}
 Tags: ${card.tags?.join(', ') || 'None'}
 
 ${context.userContext}
 
-Task: Break this card down into 2-4 sequential steps or timeline events. Each step should be:
-- A logical progression in the sequence
-- A complete, actionable step
-- Building toward the original goal or outcome
+Task: Document 2-4 sequential steps that naturally unfold from this concept. Each step should be:
+- A natural progression that has always existed in this world
+- A complete, meaningful part of the sequence
+- Building toward the natural outcome
 - Clear and specific
 
 For each step, provide:
 Title: [A clear, descriptive title for this step]
-Content: [2-3 sentences explaining what happens in this step]
+Content: [2-3 sentences explaining what naturally happens in this step]
 Tags: [3-5 relevant tags, comma-separated]
 
 Format your response as:

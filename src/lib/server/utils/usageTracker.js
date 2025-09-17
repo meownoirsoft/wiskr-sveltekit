@@ -49,9 +49,27 @@ export async function trackUsage({ userId, projectId, model, tokensIn, tokensOut
  * @returns {Object} Token counts and cost
  */
 export function calculateUsage(model, inputText, outputText) {
-  // Get model configuration
-  const openai = createOpenAIClient();
-  const modelConf = openai.models.get(model) || {
+  // Model pricing configuration
+  const modelPricing = {
+    'gpt-4o-mini': {
+      name: 'gpt-4o-mini',
+      inPerTok: 0.00015,
+      outPerTok: 0.0006
+    },
+    'gpt-4o': {
+      name: 'gpt-4o',
+      inPerTok: 0.005,
+      outPerTok: 0.015
+    },
+    'gpt-3.5-turbo': {
+      name: 'gpt-3.5-turbo',
+      inPerTok: 0.0005,
+      outPerTok: 0.0015
+    }
+  };
+
+  // Get model configuration or use default
+  const modelConf = modelPricing[model] || {
     name: model,
     inPerTok: 0.00015, // Default GPT-4o-mini rates
     outPerTok: 0.0006

@@ -22,6 +22,7 @@
   export let userTier = 0; // User tier level
   export let effectiveTier = 0; // Effective tier level
   export let userPreferences = { cards_grid_size: 3 }; // User preferences including grid size
+  export let worldId = null; // Project ID for wizard council
   // Desktop collapse button props
   export let showCollapseButton = false;
   export let isCollapsed = false;
@@ -412,7 +413,7 @@
             bind:this={cardsManagerComponent}
             cards={sortedCards}
             loadingCards={loadingCards}
-            worldId={current?.id}
+            {worldId}
             {user}
             {userTier}
             {effectiveTier}

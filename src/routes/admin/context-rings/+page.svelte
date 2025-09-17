@@ -38,18 +38,18 @@
       sectionId: ''
     },
     {
-      name: 'Merge Multiple Cards',
+      name: 'Combine Multiple Cards',
       operation: 'merge',
       budget: 'high',
-      userMessage: 'Merge these cards into a powerful new concept',
+      userMessage: 'Combine these cards into a powerful new concept',
       deckId: '',
       sectionId: ''
     },
     {
-      name: 'Split Complex Card',
+      name: 'Distill Complex Card',
       operation: 'split',
       budget: 'medium',
-      userMessage: 'Split this card into multiple focused components',
+      userMessage: 'Distill this card into multiple focused components',
       deckId: '',
       sectionId: ''
     },

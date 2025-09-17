@@ -381,7 +381,7 @@
                   />
                   <div class="ml-2">
                     <span class="text-sm text-gray-900 dark:text-gray-300 font-medium">
-                      Merge with existing project
+                      Combine with existing project
                     </span>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Add to an existing project (advanced)

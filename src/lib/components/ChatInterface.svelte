@@ -37,6 +37,8 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   export let effectiveTier = 0; // Effective tier from server
   export let hideModelDropdown = false; // Whether to hide the model dropdown
   export let hideInfoPopup = false; // Whether to hide the info popup
+  export let hideSessions = false; // Whether to hide the sessions section entirely
+  export let disableBranches = false; // Whether to disable branch functionality entirely
   
     // Scroll position state
   let isAtBottom = true;
@@ -296,7 +298,7 @@ import VirtualMessageList from './VirtualMessageList.svelte';
 
   // Load branch counts for all messages in a single efficient API call
   async function loadMessageBranchCounts() {
-    if (!current || !currentSession) {
+    if (!current || !currentSession || disableBranches) {
       messageBranchCounts = {};
       return;
     }
@@ -935,37 +937,39 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
   {#if current && !isMobile}
     <div id="chat-header-desktop" class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
       <!-- Two Column Layout with padding for collapse buttons -->
-      <div class="grid grid-cols-2 gap-4" style="padding-left: 3rem; padding-right: 3rem;">
+      <div class="grid {hideSessions ? 'grid-cols-1' : 'grid-cols-2'} gap-4" style="padding-left: 3rem; padding-right: 3rem;">
         <!-- Sessions Column -->
-        <div class="flex flex-col gap-1">
-          <!-- Sessions Label -->
-          <div class="flex items-center gap-1">
-            <span class="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Chat:</span>
-            <!-- Hide InfoPopup on mobile -->
-            <div class="hidden md:block">
-              <InfoPopup
-                title="Chats"
-                content="<p><strong>Chats</strong> help you organize different conversation flows within a project.</p><p>Each chat maintains its own conversation history, allowing you to:</p><ul><li><strong>Separate topics</strong> - Keep different discussion threads organized</li><li><strong>Switch contexts</strong> - Jump between different aspects of your project</li><li><strong>Preserve history</strong> - Each chat remembers its own conversation</li></ul><p>Use the Chats button to toggle the chat navigator and easily switch between conversations.</p>"
-                buttonTitle="Learn about Chats"
-              />
+        {#if !hideSessions}
+          <div class="flex flex-col gap-1">
+            <!-- Sessions Label -->
+            <div class="flex items-center gap-1">
+              <span class="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Chat:</span>
+              <!-- Hide InfoPopup on mobile -->
+              <div class="hidden md:block">
+                <InfoPopup
+                  title="Chats"
+                  content="<p><strong>Chats</strong> help you organize different conversation flows within a project.</p><p>Each chat maintains its own conversation history, allowing you to:</p><ul><li><strong>Separate topics</strong> - Keep different discussion threads organized</li><li><strong>Switch contexts</strong> - Jump between different aspects of your project</li><li><strong>Preserve history</strong> - Each chat remembers its own conversation</li></ul><p>Use the Chats button to toggle the chat navigator and easily switch between conversations.</p>"
+                  buttonTitle="Learn about Chats"
+                />
+              </div>
             </div>
+            <!-- Sessions Button -->
+            <button 
+              data-sessions-button
+              class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 text-sm w-full {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" 
+              style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-sessions-button)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''}; touch-action: manipulation;"
+              title="{showSessionNavigator ? 'Hide Chats' : 'Show Chats'}"
+              on:click={toggleSessionNavigator}
+            >
+              <MessageSquare size="16" class="flex-shrink-0" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};" />
+              <div class="flex flex-col items-start min-w-0 flex-1">
+                {#if currentSession}
+                  <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-100'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">{currentSession.session_name}</span>
+                {/if}
+              </div>
+            </button>
           </div>
-          <!-- Sessions Button -->
-          <button 
-            data-sessions-button
-            class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 text-sm w-full {showSessionNavigator ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}" 
-            style="background-color: {showSessionNavigator ? 'var(--color-accent-light)' : 'var(--bg-sessions-button)'}; border-color: {showSessionNavigator ? 'var(--color-accent-border)' : ''}; touch-action: manipulation;"
-            title="{showSessionNavigator ? 'Hide Chats' : 'Show Chats'}"
-            on:click={toggleSessionNavigator}
-          >
-            <MessageSquare size="16" class="flex-shrink-0" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};" />
-            <div class="flex flex-col items-start min-w-0 flex-1">
-              {#if currentSession}
-                <span class="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-left {showSessionNavigator ? '' : 'text-gray-700 dark:text-gray-100'}" style="color: {showSessionNavigator ? 'var(--color-accent)' : ''};">{currentSession.session_name}</span>
-              {/if}
-            </div>
-          </button>
-        </div>
+        {/if}
 
         <!-- Branch Controls Column (only show if branches exist) -->
         {#if branches.length > 0}

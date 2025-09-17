@@ -277,14 +277,30 @@
 
       if (data.error) {
         console.error('Error creating portal session:', data.error);
-        // You could dispatch an error event here if needed
+        
+        // Handle specific error cases
+        if (data.code === 'NO_SUBSCRIPTION') {
+          if (data.profileCreated) {
+            alert('Profile created successfully! You can now subscribe to a plan from the Plans page.');
+          } else {
+            alert('You don\'t have an active subscription. Please subscribe to a plan first from the Plans page.');
+          }
+        } else if (data.code === 'NO_PROFILE') {
+          alert('Profile not found. Please try logging out and back in.');
+        } else if (data.code === 'STRIPE_PORTAL_NOT_CONFIGURED') {
+          alert('Stripe Customer Portal is not configured yet.\n\nPlease visit the Stripe dashboard to set it up:\nhttps://dashboard.stripe.com/test/settings/billing/portal\n\nThis is a one-time setup required for subscription management.');
+        } else if (data.code === 'STRIPE_ERROR') {
+          alert(`Stripe Error: ${data.error}\n\nDetails: ${data.details}`);
+        } else {
+          alert(`Error: ${data.error}${data.details ? '\n\nDetails: ' + data.details : ''}`);
+        }
       } else if (data.url) {
         // Redirect to Stripe customer portal
         window.location.href = data.url;
       }
     } catch (err) {
       console.error('Failed to open customer portal:', err);
-      // You could dispatch an error event here if needed
+      alert('Failed to open subscription management. Please try again.');
     } finally {
       managingSubscription = false;
     }
@@ -656,7 +672,7 @@
                       </p> -->
                     </div>
                     
-                    <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <!-- <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                        <h6 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Features</h6>
                        <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         <li><b>Context Control</b> – Prevent context pollution and keep conversations focused.</li>
@@ -669,7 +685,7 @@
                         
                         <li><b>One-Click Export</b> – Format and save outputs as clean docs, posts, or code.</li>
                        </ul>
-                    </div>
+                    </div> -->
                     
                     <!-- Legal Links -->
                     <div class="flex items-center justify-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-600">

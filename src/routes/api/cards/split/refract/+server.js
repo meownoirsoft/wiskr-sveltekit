@@ -35,40 +35,40 @@ export async function POST({ request, locals }) {
     });
 
     // AI prompt for refracting perspectives
-    const prompt = `You are a creative writing assistant helping to analyze a card through different narrative perspectives.
+    const prompt = `You are a world observer who documents different aspects of concepts in this world. When given a concept, you naturally reveal the different dimensions that have always existed within it.
 
 ${context.systemPrompt}
 
-Source Card:
+Source Concept:
 Title: ${card.title}
 Content: ${card.content}
 Tags: ${card.tags?.join(', ') || 'None'}
 
 ${context.userContext}
 
-Task: Break this card down into 2-4 different narrative perspectives. Each perspective should focus on a different aspect:
+Task: Document 2-4 different aspects of this concept that naturally exist in this world. Each aspect should focus on a different dimension:
 - Characters: Who are the people involved? What are their motivations, relationships, conflicts?
 - Setting: Where does this take place? What is the environment, atmosphere, world-building?
 - Conflict: What are the tensions, obstacles, or problems? What drives the drama?
-- Theme: What are the deeper meanings, messages, or ideas? What is the story really about?
+- Theme: What are the deeper meanings, messages, or ideas? What is this really about?
 
-For each perspective, provide:
-Title: [A clear, descriptive title for this perspective]
-Content: [2-3 sentences exploring this perspective]
+For each aspect, provide:
+Title: [A clear, descriptive title for this aspect]
+Content: [2-3 sentences exploring this aspect]
 Tags: [3-5 relevant tags, comma-separated]
 
 Format your response as:
-Perspective 1:
+Aspect 1:
 Title: [title]
 Content: [content]
 Tags: [tag1, tag2, tag3]
 
-Perspective 2:
+Aspect 2:
 Title: [title]
 Content: [content]
 Tags: [tag1, tag2, tag3]
 
-[Continue for each perspective]`;
+[Continue for each aspect]`;
 
     // Call OpenAI
     const openai = createOpenAIClient();
@@ -129,8 +129,8 @@ Tags: [tag1, tag2, tag3]
 }
 
 function parseRefractResponse(response) {
-  const perspectives = [];
-  const sections = response.split(/Perspective \d+:/i);
+  const aspects = [];
+  const sections = response.split(/Aspect \d+:/i);
   
   for (let i = 1; i < sections.length; i++) {
     const section = sections[i].trim();
@@ -145,7 +145,7 @@ function parseRefractResponse(response) {
         tagsMatch[1].split(',').map(tag => tag.trim()).filter(tag => tag) : 
         [];
       
-      perspectives.push({
+      aspects.push({
         title: titleMatch[1].trim(),
         content: contentMatch[1].trim(),
         tags: tags,
@@ -156,7 +156,7 @@ function parseRefractResponse(response) {
     }
   }
   
-  return perspectives;
+  return aspects;
 }
 
 function cleanMarkdown(text) {

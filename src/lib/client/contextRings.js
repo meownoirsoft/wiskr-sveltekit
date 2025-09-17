@@ -223,13 +223,13 @@ export const OPERATION_TYPES = {
     priorities: { global: 0.2, local: 0.3, target: 0.4, neighbors: 0.1 }
   },
   merge: {
-    name: 'Merge',
-    description: 'Merging cards - balanced context with focus on target cards',
+    name: 'Combine',
+    description: 'Combining cards - balanced context with focus on target cards',
     priorities: { global: 0.25, local: 0.25, target: 0.35, neighbors: 0.15 }
   },
   split: {
-    name: 'Split',
-    description: 'Splitting cards - balanced context with focus on target card',
+    name: 'Distill',
+    description: 'Distilling cards - balanced context with focus on target card',
     priorities: { global: 0.25, local: 0.25, target: 0.35, neighbors: 0.15 }
   },
   search: {

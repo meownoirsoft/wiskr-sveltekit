@@ -380,12 +380,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let showDeckDrawer = false;
   let currentDeck = null;
   let decks = [];
-  let pinnedDecks = [];
   let showDeckView = false;
 
 
   // Load decks from database when project changes
   $: if (current?.id && projects.length > 0) {
+    console.log('🔄 Loading decks for project:', current.id);
     loadDecks(current.id);
   }
 
@@ -395,16 +395,14 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       if (response.ok) {
         const data = await response.json();
         decks = data.decks || [];
-        pinnedDecks = decks.filter(deck => deck.isPinned);
+        console.log('🔄 Decks loaded:', decks.length, decks.map(d => d.name));
       } else {
         console.error('Failed to load decks:', response.status);
         decks = [];
-        pinnedDecks = [];
       }
     } catch (error) {
       console.error('Error loading decks:', error);
       decks = [];
-      pinnedDecks = [];
     }
   }
 
@@ -488,45 +486,57 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     if (deckIndex !== -1) {
       decks[deckIndex].isPinned = !decks[deckIndex].isPinned;
       decks = [...decks]; // Trigger reactivity
-      pinnedDecks = decks.filter(d => d.isPinned);
     }
   }
 
   function handleReorderDeck(event) {
-    const { deckId, fromIndex, toIndex, section } = event.detail;
-    console.log('Reorder deck:', deckId, 'from index:', fromIndex, 'to index:', toIndex, 'in section:', section);
+    const { deckId, fromIndex, toIndex } = event.detail;
+    console.log('🔄 REORDER RECEIVED:', { deckId, fromIndex, toIndex });
+    console.log('🔄 BEFORE REORDER:', decks.map((d, i) => ({ index: i, name: d.name, id: d.id })));
     
-    // Reorder the decks array
+    // Simple reorder - just move the deck in the array
     if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
-      if (section === 'pinned') {
-        // Reorder within pinned decks
-        const newPinnedDecks = [...pinnedDecks];
-        const [movedDeck] = newPinnedDecks.splice(fromIndex, 1);
-        newPinnedDecks.splice(toIndex, 0, movedDeck);
-        pinnedDecks = newPinnedDecks;
-        
-        // Update main decks array
-        const unpinnedDecks = decks.filter(d => !d.isPinned);
-        decks = [...newPinnedDecks, ...unpinnedDecks];
-      } else if (section === 'unpinned') {
-        // Reorder within unpinned decks
-        const unpinnedDecks = decks.filter(d => !d.isPinned);
-        const [movedDeck] = unpinnedDecks.splice(fromIndex, 1);
-        unpinnedDecks.splice(toIndex, 0, movedDeck);
-        
-        // Update main decks array
-        decks = [...pinnedDecks, ...unpinnedDecks];
-      } else {
-        // Fallback to original logic
-        const newDecks = [...decks];
-        const [movedDeck] = newDecks.splice(fromIndex, 1);
-        newDecks.splice(toIndex, 0, movedDeck);
-        decks = newDecks;
-        pinnedDecks = decks.filter(d => d.isPinned);
-      }
+      const newDecks = [...decks];
+      const [movedDeck] = newDecks.splice(fromIndex, 1);
+      newDecks.splice(toIndex, 0, movedDeck);
+      decks = newDecks;
+      console.log('🔄 AFTER REORDER:', decks.map((d, i) => ({ index: i, name: d.name, id: d.id })));
       
-      // TODO: Save reorder to database
+      // Save reorder to database
+      saveDeckOrder();
       console.log('Deck reordered successfully');
+    }
+  }
+
+  async function saveDeckOrder() {
+    if (!current?.id) return;
+    
+    try {
+      // Create deck orders array with current positions
+      const deckOrders = decks.map((deck, index) => ({
+        deckId: deck.id,
+        position: index
+      }));
+      
+      const response = await fetch('/api/decks/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: current.id,
+          deckOrders
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error saving deck order:', error);
+      } else {
+        console.log('Deck order saved successfully');
+      }
+    } catch (error) {
+      console.error('Error saving deck order:', error);
     }
   }
 
@@ -537,22 +547,22 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   function handleDeckUpdated(event) {
     console.log('--- handleDeckUpdated received ---');
-    const { deckId, cardCount } = event.detail;
-    console.log('Updated deck data:', { deckId, cardCount });
+    const { deck } = event.detail;
+    console.log('Updated deck data:', deck);
 
     // Update currentDeck if it's the same deck
-    if (currentDeck && currentDeck.id === deckId) {
-      currentDeck = { ...currentDeck, cardCount };
-      console.log('Current deck card count updated to:', cardCount);
+    if (currentDeck && currentDeck.id === deck.id) {
+      currentDeck = { ...currentDeck, ...deck };
+      console.log('Current deck updated:', currentDeck);
     }
 
     // Update the deck in the main decks list
-    const index = decks.findIndex(d => d.id === deckId);
+    const index = decks.findIndex(d => d.id === deck.id);
     console.log(`Deck found in main list at index: ${index}`);
     if (index !== -1) {
-      decks[index] = { ...decks[index], cardCount };
+      decks[index] = { ...decks[index], ...deck };
       decks = [...decks]; // trigger reactivity
-      console.log('Main decks array updated with card count:', cardCount);
+      console.log('Main decks array updated:', deck);
     } else {
       console.log('Deck NOT found in main list. State will be stale.');
     }
@@ -1332,16 +1342,16 @@ function handleCardTogglePin(event) {
 }
 
 function handleCardSave(event) {
-  // Handle saving a new card from merge operations
+  // Handle saving a new card from combine operations
   console.log('Main page: handleCardSave called with event:', event);
   
   if (contextManager) {
     const cardData = event.detail;
-    console.log('Main page: Saving card from merge operation:', cardData);
+    console.log('Main page: Saving card from combine operation:', cardData);
     console.log('Main page: ContextManager available:', !!contextManager);
     
     // Add the card using the context manager
-    contextManager.addCardFromMerge(cardData);
+    contextManager.addCardFromCombine(cardData);
   } else {
     console.error('Main page: ContextManager not available!');
   }
@@ -2647,6 +2657,7 @@ function handleTextAddToDocs(event) {
           onToggleCollapse={toggleLeftPanelCollapse}
           bind:showAddCardForm
           bind:cardType
+          worldId={current?.id}
           bind:cardTitle
           bind:cardContent
           bind:cardTags
@@ -3195,7 +3206,6 @@ function handleTextAddToDocs(event) {
   bind:isOpen={showDeckDrawer}
   currentWorld={current?.name || 'Current World'}
   {decks}
-  {pinnedDecks}
   on:toggle={handleDeckDrawerToggle}
   on:create-deck={handleCreateDeck}
   on:view-deck={handleViewDeck}

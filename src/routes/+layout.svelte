@@ -634,7 +634,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
 <!-- App shell: full height -->
 <div id="app-container" class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
-
+  <div class="fantasy-particles"></div>
   <!-- Header -->
      <header id="main-header" class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center sticky top-0 z-[150] transition-colors" style="background-color: var(--bg-header);">
      <div class="w-full {isPublicPage ? 'px-4 md:px-6' : 'px-4 md:px-6 lg:px-8'} flex items-center gap-2 md:gap-4 relative">

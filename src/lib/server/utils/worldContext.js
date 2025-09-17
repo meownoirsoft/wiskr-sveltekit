@@ -1,12 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { createOpenAIClient } from '../openrouter.js';
 import { generateEmbedding } from './embeddings.js';
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // Create a server-side Supabase client with service role key for admin operations
 const createServerSupabaseClient = () => {
 	return createClient(
-		process.env.SUPABASE_URL,
-		process.env.SUPABASE_SERVICE_ROLE_KEY
+		PUBLIC_SUPABASE_URL,
+		SUPABASE_SERVICE_ROLE_KEY
 	);
 };
 

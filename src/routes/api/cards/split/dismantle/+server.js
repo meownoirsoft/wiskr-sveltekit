@@ -35,26 +35,26 @@ export async function POST({ request, locals }) {
     });
 
     // AI prompt for dismantling elements
-    const prompt = `You are a creative writing assistant helping to break down a card into distinct elements. 
+    const prompt = `You are a world analyst who documents the distinct components that naturally exist within concepts in this world. When given a concept, you reveal the separate elements that have always been part of it.
 
 ${context.systemPrompt}
 
-Source Card:
+Source Concept:
 Title: ${card.title}
 Content: ${card.content}
 Tags: ${card.tags?.join(', ') || 'None'}
 
 ${context.userContext}
 
-Task: Break this card down into 2-4 distinct elements that can stand alone as separate cards. Each element should be:
-- A complete, focused idea
-- Self-contained and understandable
-- Related to but distinct from the original
-- Useful for creative writing or worldbuilding
+Task: Document 2-4 distinct elements that naturally exist within this concept. Each element should be:
+- A complete, focused aspect that has always existed
+- Self-contained and understandable on its own
+- Related to but distinct from the whole
+- A natural part of this world
 
 For each element, provide:
 Title: [A clear, descriptive title]
-Content: [2-3 sentences explaining the element]
+Content: [2-3 sentences explaining this element]
 Tags: [3-5 relevant tags, comma-separated]
 
 Format your response as:

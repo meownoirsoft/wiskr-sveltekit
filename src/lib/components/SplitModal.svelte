@@ -1,4 +1,4 @@
-<!-- SplitModal.svelte - Magical card splitting interface -->
+<!-- SplitModal.svelte - Magical card distilling interface -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { X, Sparkles, Layers, Eye, Wand2, BookOpen, Lightbulb, Scissors, Compass, Clock } from 'lucide-svelte';
@@ -16,7 +16,7 @@
   let activeTab = 'dismantle';
   let searchQuery = '';
 
-  // Split feature states
+  // Distill feature states
   let dismantleResult = null;
   let refractResult = null;
   let unfoldResult = null;
@@ -38,21 +38,21 @@
     {
       id: 'dismantle',
       name: 'Dismantle',
-      description: 'Extract distinct elements from the card',
+      description: 'Extract distinct elements',
       icon: Scissors,
       color: 'from-purple-500 to-pink-500'
     },
     {
       id: 'refract',
       name: 'Refract', 
-      description: 'Split by perspective: characters, setting, conflict, theme',
+      description: 'By characters, setting, theme',
       icon: Compass,
       color: 'from-blue-500 to-cyan-500'
     },
     {
       id: 'unfold',
       name: 'Unfold',
-      description: 'Break down into timeline or sequential steps',
+      description: 'Break down into steps',
       icon: Clock,
       color: 'from-green-500 to-emerald-500'
     }
@@ -191,7 +191,7 @@
             <Scissors size="24" class="text-white" />
           </div>
           <div>
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Split Cards to Create</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Distill Cards to Create</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">Break down your card into multiple focused pieces</p>
           </div>
         </div>
@@ -345,7 +345,7 @@
                   <div class="text-gray-400 dark:text-gray-500 mb-4">
                     <Scissors size="48" class="mx-auto" />
                   </div>
-                  <p class="text-gray-500 dark:text-gray-400">Choose a split type and cast your spell to see results</p>
+                  <p class="text-gray-500 dark:text-gray-400">Choose a distill type and cast your spell to see results</p>
                   <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Your original card will not be affected</p>
                 </div>
               {/if}
@@ -354,7 +354,7 @@
         </div>
       {/if}
 
-      <!-- Split Types Tabs -->
+      <!-- Distill Types Tabs -->
       <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {#each splitTypes as splitType}
@@ -373,7 +373,7 @@
           {/each}
         </div>
 
-        <!-- Split Action -->
+        <!-- Distill Action -->
         <div class="flex justify-center mb-6">
           <button
             class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all hover:scale-105 font-medium flex items-center gap-2"
