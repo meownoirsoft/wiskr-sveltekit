@@ -9,16 +9,21 @@
   const dispatch = createEventDispatcher();
   
   let exportOptions = {
-    includeMessages: true,
-    includeFacts: true,
-    includeQuestions: true,
+    includeMessages: false,
+    includeFacts: false,
+    includeQuestions: false,
+    includeDocs: false,
+    includeSessions: false,
+    includeBranches: false,
+    includeDecks: true,
+    includeCards: true,
     format: 'json'
   };
 
-  // On mobile, always include facts and questions to reduce modal height
+  // On mobile, always include decks and cards to reduce modal height
   $: if (typeof window !== 'undefined' && window.innerWidth < 768) {
-    exportOptions.includeFacts = true;
-    exportOptions.includeQuestions = true;
+    exportOptions.includeDecks = true;
+    exportOptions.includeCards = true;
   }
   
   let isLoading = false;
@@ -48,7 +53,12 @@
       const params = new URLSearchParams({
         includeMessages: exportOptions.includeMessages,
         includeFacts: exportOptions.includeFacts,
-        includeQuestions: exportOptions.includeQuestions
+        includeQuestions: exportOptions.includeQuestions,
+        includeDocs: exportOptions.includeDocs,
+        includeSessions: exportOptions.includeSessions,
+        includeBranches: exportOptions.includeBranches,
+        includeDecks: exportOptions.includeDecks,
+        includeCards: exportOptions.includeCards
       });
       
       console.log('📡 Making API call to:', `/api/projects/${project.id}/export?${params}`);
@@ -64,13 +74,14 @@
       
       console.log('✅ Export preview data:', data);
       
-      // Create preview summary
+      // Create preview summary (only show items we actually export)
       exportPreview = {
         project_name: data.project?.name || 'Untitled Project',
-        sessions_count: data.sessions?.length || 0,
-        messages_count: data.messages?.length || 0,
-        facts_count: data.facts?.length || 0,
-        questions_count: data.questions?.length || 0,
+        personas_count: data.personas?.length || 0,
+        decks_count: data.decks?.length || 0,
+        deck_sections_count: data.deck_sections?.length || 0,
+        deck_cards_count: data.deck_cards?.length || 0,
+        cards_count: data.cards?.length || 0,
         estimated_size: calculateSize(data),
         date_range: calculateDateRange(data)
       };
@@ -92,11 +103,11 @@
   function calculateDateRange(data) {
     const dates = [];
     
-    if (data.sessions) {
-      dates.push(...data.sessions.map(s => s.created_at).filter(Boolean));
+    if (data.decks) {
+      dates.push(...data.decks.map(d => d.created_at).filter(Boolean));
     }
-    if (data.messages) {
-      dates.push(...data.messages.map(m => m.created_at).filter(Boolean));
+    if (data.cards) {
+      dates.push(...data.cards.map(c => c.created_at).filter(Boolean));
     }
     
     if (dates.length === 0) return 'No dates available';
@@ -121,7 +132,12 @@
         format: exportOptions.format,
         includeMessages: exportOptions.includeMessages,
         includeFacts: exportOptions.includeFacts,
-        includeQuestions: exportOptions.includeQuestions
+        includeQuestions: exportOptions.includeQuestions,
+        includeDocs: exportOptions.includeDocs,
+        includeSessions: exportOptions.includeSessions,
+        includeBranches: exportOptions.includeBranches,
+        includeDecks: exportOptions.includeDecks,
+        includeCards: exportOptions.includeCards
       });
       
       console.log('📡 Making download API call to:', `/api/projects/${project.id}/export?${params}`);
@@ -182,7 +198,7 @@
     fetchPreview();
   }
   
-  $: if (exportOptions.includeMessages || exportOptions.includeFacts || exportOptions.includeQuestions) {
+  $: if (exportOptions.includeDecks || exportOptions.includeCards) {
     if (isOpen && project) {
       fetchPreview();
     }
@@ -230,36 +246,27 @@
             <h4 class="font-medium text-gray-900 dark:text-white">Export Options</h4>
             
             <div class="space-y-3">
+              
+              
               <label class="flex items-center">
                 <input
                   type="checkbox"
-                  bind:checked={exportOptions.includeMessages}
+                  bind:checked={exportOptions.includeDecks}
                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                 />
                 <span class="ml-2 text-sm text-gray-900 dark:text-gray-300">
-                  Include conversation messages
+                  Include decks and sections
                 </span>
               </label>
               
-              <label class="hidden md:flex items-center">
+              <label class="flex items-center">
                 <input
                   type="checkbox"
-                  bind:checked={exportOptions.includeFacts}
+                  bind:checked={exportOptions.includeCards}
                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                 />
                 <span class="ml-2 text-sm text-gray-900 dark:text-gray-300">
-                  Include facts and fact types
-                </span>
-              </label>
-              
-              <label class="hidden md:flex items-center">
-                <input
-                  type="checkbox"
-                  bind:checked={exportOptions.includeQuestions}
-                  class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
-                />
-                <span class="ml-2 text-sm text-gray-900 dark:text-gray-300">
-                  Include saved questions
+                  Include cards
                 </span>
               </label>
             </div>
@@ -325,30 +332,37 @@
                <!-- Preview Content -->
                <div class="grid grid-cols-2 gap-4 text-sm">
                  <div>
-                   <span class="text-gray-600 dark:text-gray-400">Sessions:</span>
+                   <span class="text-gray-600 dark:text-gray-400">Personas:</span>
                    <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                     {exportPreview.sessions_count}
+                     {exportPreview.personas_count}
                    </span>
                  </div>
                  
                  <div>
-                   <span class="text-gray-600 dark:text-gray-400">Messages:</span>
+                   <span class="text-gray-600 dark:text-gray-400">Decks:</span>
                    <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                     {exportPreview.messages_count}
+                     {exportPreview.decks_count}
                    </span>
                  </div>
                  
                  <div>
-                   <span class="text-gray-600 dark:text-gray-400">Facts:</span>
+                   <span class="text-gray-600 dark:text-gray-400">Sections:</span>
                    <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                     {exportPreview.facts_count}
+                     {exportPreview.deck_sections_count}
                    </span>
                  </div>
                  
                  <div>
-                   <span class="text-gray-600 dark:text-gray-400">Questions:</span>
+                   <span class="text-gray-600 dark:text-gray-400">Cards:</span>
                    <span class="ml-2 font-medium text-gray-900 dark:text-white">
-                     {exportPreview.questions_count}
+                     {exportPreview.cards_count}
+                   </span>
+                 </div>
+                 
+                 <div>
+                   <span class="text-gray-600 dark:text-gray-400">Deck Cards:</span>
+                   <span class="ml-2 font-medium text-gray-900 dark:text-white">
+                     {exportPreview.deck_cards_count}
                    </span>
                  </div>
                  

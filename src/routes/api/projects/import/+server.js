@@ -106,196 +106,348 @@ export async function POST({ request, locals }) {
       facts_imported: 0,
       docs_imported: 0,
       questions_imported: 0,
-      fact_types_imported: 0
+      fact_types_imported: 0,
+      decks_imported: 0,
+      deck_sections_imported: 0,
+      deck_cards_imported: 0,
+      cards_imported: 0
     };
 
     // ID mapping for references between imported records
     const sessionIdMapping = new Map(); // old_id -> new_id
     const branchIdMapping = new Map(); // old_branch_id -> new_branch_id
     const factTypeMapping = new Map(); // old_type -> new_type
+    const deckIdMapping = new Map(); // old_deck_id -> new_deck_id
+    const sectionIdMapping = new Map(); // old_section_id -> new_section_id
+    const cardIdMapping = new Map(); // old_card_id -> new_card_id
 
-    // Import sessions first (they're referenced by messages and branches)
-    if (importData.sessions && importData.sessions.length > 0) {
-      for (const session of importData.sessions) {
-        const { data: newSession, error } = await locals.supabase
-          .from('conversation_sessions')
-          .insert({
-            project_id: targetProjectId,
-            session_name: session.session_name,
-            created_at: session.created_at,
-            updated_at: session.updated_at
-          })
-          .select()
-          .single();
+    // Import sessions first (they're referenced by messages and branches) - DISABLED
+    // if (importData.sessions && importData.sessions.length > 0) {
+    //   for (const session of importData.sessions) {
+    //     const { data: newSession, error } = await locals.supabase
+    //       .from('conversation_sessions')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         session_name: session.session_name,
+    //         created_at: session.created_at,
+    //         updated_at: session.updated_at
+    //       })
+    //       .select()
+    //       .single();
 
-        if (error) {
-          console.error('Error importing session:', error);
-          continue;
-        }
+    //     if (error) {
+    //       console.error('Error importing session:', error);
+    //       continue;
+    //     }
 
-        sessionIdMapping.set(session.id, newSession.id);
-        stats.sessions_imported++;
-      }
-    }
+    //     sessionIdMapping.set(session.id, newSession.id);
+    //     stats.sessions_imported++;
+    //   }
+    // }
 
-    // Import fact types before facts (they're referenced by facts)
-    if (importData.fact_types && importData.fact_types.length > 0) {
-      for (const factType of importData.fact_types) {
-        const { data: newFactType, error } = await locals.supabase
-          .from('project_fact_types')
-          .insert({
-            project_id: targetProjectId,
-            type_key: factType.type_key,
-            display_name: factType.display_name,
-            color_class: factType.color_class,
-            sort_order: factType.sort_order,
-            created_at: factType.created_at
-          })
-          .select()
-          .single();
+    // Import fact types before facts (they're referenced by facts) - DISABLED
+    // if (importData.fact_types && importData.fact_types.length > 0) {
+    //   for (const factType of importData.fact_types) {
+    //     const { data: newFactType, error } = await locals.supabase
+    //       .from('project_fact_types')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         type_key: factType.type_key,
+    //         display_name: factType.display_name,
+    //         color_class: factType.color_class,
+    //         sort_order: factType.sort_order,
+    //         created_at: factType.created_at
+    //       })
+    //       .select()
+    //       .single();
 
-        if (error) {
-          console.error('Error importing fact type:', error);
-          continue;
-        }
+    //     if (error) {
+    //       console.error('Error importing fact type:', error);
+    //       continue;
+    //     }
 
-        factTypeMapping.set(factType.type_key, factType.type_key); // Keep same type_key
-        stats.fact_types_imported++;
-      }
-    }
+    //     factTypeMapping.set(factType.type_key, factType.type_key); // Keep same type_key
+    //     stats.fact_types_imported++;
+    //   }
+    // }
 
-    // Import branches (they may reference sessions)
-    if (importData.branches && importData.branches.length > 0) {
-      for (const branch of importData.branches) {
-        const sessionId = sessionIdMapping.get(branch.session_id) || null;
+    // Import branches (they may reference sessions) - DISABLED
+    // if (importData.branches && importData.branches.length > 0) {
+    //   for (const branch of importData.branches) {
+    //     const sessionId = sessionIdMapping.get(branch.session_id) || null;
 
-        const { data: newBranch, error } = await locals.supabase
-          .from('conversation_branches')
-          .insert({
-            project_id: targetProjectId,
-            session_id: sessionId,
-            branch_id: branch.branch_id,
-            branch_name: branch.branch_name,
-            color_index: branch.color_index,
-            created_at: branch.created_at
-          })
-          .select()
-          .single();
+    //     const { data: newBranch, error } = await locals.supabase
+    //       .from('conversation_branches')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         session_id: sessionId,
+    //         branch_id: branch.branch_id,
+    //         branch_name: branch.branch_name,
+    //         color_index: branch.color_index,
+    //         created_at: branch.created_at
+    //       })
+    //       .select()
+    //       .single();
 
-        if (error) {
-          console.error('Error importing branch:', error);
-          continue;
-        }
+    //     if (error) {
+    //       console.error('Error importing branch:', error);
+    //       continue;
+    //     }
 
-        branchIdMapping.set(branch.branch_id, branch.branch_id); // Keep same branch_id
-        stats.branches_imported++;
-      }
-    }
+    //     branchIdMapping.set(branch.branch_id, branch.branch_id); // Keep same branch_id
+    //     stats.branches_imported++;
+    //   }
+    // }
 
-    // Import facts
-    if (importData.facts && importData.facts.length > 0) {
-      for (const fact of importData.facts) {
-        const { data: newFact, error } = await locals.supabase
+    // Import facts - DISABLED
+    // if (importData.facts && importData.facts.length > 0) {
+    //   for (const fact of importData.facts) {
+    //     const { data: newFact, error } = await locals.supabase
+    //       .from('cards')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         type: fact.type,
+    //         key: fact.key,
+    //         value: fact.value,
+    //         tags: fact.tags,
+    //         pinned: fact.pinned || false,
+    //         created_at: fact.created_at,
+    //         updated_at: fact.updated_at
+    //       })
+    //       .select()
+    //       .single();
+
+    //     if (error) {
+    //       console.error('Error importing fact:', error);
+    //       continue;
+    //     }
+
+    //     stats.facts_imported++;
+    //   }
+    // }
+
+    // Import docs - DISABLED
+    // if (importData.docs && importData.docs.length > 0) {
+    //   for (const doc of importData.docs) {
+    //     const { data: newDoc, error } = await locals.supabase
+    //       .from('docs')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         title: doc.title,
+    //         content: doc.content,
+    //         tags: doc.tags,
+    //         pinned: doc.pinned || false,
+    //         created_at: doc.created_at,
+    //         updated_at: doc.updated_at
+    //       })
+    //       .select()
+    //       .single();
+
+    //     if (error) {
+    //       console.error('Error importing doc:', error);
+    //       continue;
+    //     }
+
+    //     stats.docs_imported++;
+    //   }
+    // }
+
+    // Import questions - DISABLED
+    // if (importData.questions && importData.questions.length > 0) {
+    //   for (const question of importData.questions) {
+    //     const { data: newQuestion, error } = await locals.supabase
+    //       .from('project_questions')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         question: question.question,
+    //         category: question.category,
+    //         created_at: question.created_at
+    //       })
+    //       .select()
+    //       .single();
+
+    //     if (error) {
+    //       console.error('Error importing question:', error);
+    //       continue;
+    //     }
+
+    //     stats.questions_imported++;
+    //   }
+    // }
+
+    // Import cards first (they're referenced by deck_cards)
+    if (importData.cards && importData.cards.length > 0) {
+      console.log(`🔄 Starting import of ${importData.cards.length} cards`);
+      for (const card of importData.cards) {
+        console.log(`🔄 Importing card: "${card.title}" (ID: ${card.id})`);
+        
+        const { data: newCard, error } = await locals.supabase
           .from('cards')
           .insert({
             project_id: targetProjectId,
-            type: fact.type,
-            key: fact.key,
-            value: fact.value,
-            tags: fact.tags,
-            pinned: fact.pinned || false,
-            created_at: fact.created_at,
-            updated_at: fact.updated_at
+            user_id: user.id,
+            title: card.title,
+            content: card.content,
+            tags: card.tags || [],
+            rarity: card.rarity || 'common',
+            progress: card.progress || 1,
+            mana_cost: card.mana_cost || 1,
+            art_url: card.art_url,
+            generation_model: card.generation_model || 'GPT-4o',
+            art_model: card.art_model || 'Midjourney',
+            created_at: card.created_at,
+            updated_at: card.updated_at
           })
           .select()
           .single();
 
         if (error) {
-          console.error('Error importing fact:', error);
+          console.error('❌ Error importing card:', {
+            title: card.title,
+            error: error,
+            cardData: {
+              title: card.title,
+              content: card.content?.substring(0, 50) + '...',
+              tags: card.tags,
+              rarity: card.rarity
+            }
+          });
           continue;
         }
 
-        stats.facts_imported++;
+        console.log(`✅ Successfully imported card: "${newCard.title}" (New ID: ${newCard.id})`);
+        cardIdMapping.set(card.id, newCard.id);
+        stats.cards_imported++;
       }
+      console.log(`✅ Card import complete: ${stats.cards_imported}/${importData.cards.length} cards imported`);
     }
 
-    // Import docs
-    if (importData.docs && importData.docs.length > 0) {
-      for (const doc of importData.docs) {
-        const { data: newDoc, error } = await locals.supabase
-          .from('docs')
+    // Import decks
+    if (importData.decks && importData.decks.length > 0) {
+      for (const deck of importData.decks) {
+        const { data: newDeck, error } = await locals.supabase
+          .from('decks')
           .insert({
             project_id: targetProjectId,
-            title: doc.title,
-            content: doc.content,
-            tags: doc.tags,
-            pinned: doc.pinned || false,
-            created_at: doc.created_at,
-            updated_at: doc.updated_at
+            name: deck.name,
+            description: deck.description,
+            is_pinned: deck.is_pinned || false,
+            position: deck.position || 0,
+            created_at: deck.created_at,
+            updated_at: deck.updated_at
           })
           .select()
           .single();
 
         if (error) {
-          console.error('Error importing doc:', error);
+          console.error('Error importing deck:', error);
           continue;
         }
 
-        stats.docs_imported++;
+        deckIdMapping.set(deck.id, newDeck.id);
+        stats.decks_imported++;
       }
     }
 
-    // Import questions
-    if (importData.questions && importData.questions.length > 0) {
-      for (const question of importData.questions) {
-        const { data: newQuestion, error } = await locals.supabase
-          .from('project_questions')
+    // Import deck sections
+    if (importData.deck_sections && importData.deck_sections.length > 0) {
+      for (const section of importData.deck_sections) {
+        const deckId = deckIdMapping.get(section.deck_id);
+        if (!deckId) {
+          console.warn('Skipping section - deck not found:', section.deck_id);
+          continue;
+        }
+
+        const { data: newSection, error } = await locals.supabase
+          .from('deck_sections')
           .insert({
-            project_id: targetProjectId,
-            question: question.question,
-            category: question.category,
-            created_at: question.created_at
+            deck_id: deckId,
+            name: section.name,
+            position: section.position || 0,
+            created_at: section.created_at,
+            updated_at: section.updated_at
           })
           .select()
           .single();
 
         if (error) {
-          console.error('Error importing question:', error);
+          console.error('Error importing deck section:', error);
           continue;
         }
 
-        stats.questions_imported++;
+        sectionIdMapping.set(section.id, newSection.id);
+        stats.deck_sections_imported++;
       }
     }
 
-    // Import messages last (they reference sessions and branches)
-    if (importData.messages && importData.messages.length > 0) {
-      for (const message of importData.messages) {
-        const sessionId = sessionIdMapping.get(message.session_id) || null;
-        const branchId = message.branch_id || 'main'; // Default to main branch
+    // Import deck cards (relationships between cards and deck sections)
+    if (importData.deck_cards && importData.deck_cards.length > 0) {
+      console.log(`🔄 Starting import of ${importData.deck_cards.length} deck cards`);
+      for (const deckCard of importData.deck_cards) {
+        const sectionId = sectionIdMapping.get(deckCard.section_id);
+        const cardId = cardIdMapping.get(deckCard.card_id);
+        
+        if (!sectionId || !cardId) {
+          console.warn('⚠️ Skipping deck card - missing dependencies:', { 
+            originalSectionId: deckCard.section_id,
+            originalCardId: deckCard.card_id,
+            mappedSectionId: sectionId,
+            mappedCardId: cardId
+          });
+          continue;
+        }
 
-        const { data: newMessage, error } = await locals.supabase
-          .from('messages')
+        const { data: newDeckCard, error } = await locals.supabase
+          .from('deck_cards')
           .insert({
-            project_id: targetProjectId,
-            session_id: sessionId,
-            branch_id: branchId,
-            role: message.role,
-            content: message.content,
-            model_key: message.model_key,
-            created_at: message.created_at
+            deck_id: deckCard.deck_id ? deckIdMapping.get(deckCard.deck_id) : null,
+            section_id: sectionId,
+            card_id: cardId,
+            position: deckCard.position || 0,
+            created_at: deckCard.created_at
           })
           .select()
           .single();
 
         if (error) {
-          console.error('Error importing message:', error);
+          console.error('❌ Error importing deck card:', error);
           continue;
         }
 
-        stats.messages_imported++;
+        console.log(`✅ Successfully imported deck card: section=${sectionId}, card=${cardId}`);
+        stats.deck_cards_imported++;
       }
+      console.log(`✅ Deck cards import complete: ${stats.deck_cards_imported}/${importData.deck_cards.length} deck cards imported`);
     }
+
+    // Import messages last (they reference sessions and branches) - DISABLED
+    // if (importData.messages && importData.messages.length > 0) {
+    //   for (const message of importData.messages) {
+    //     const sessionId = sessionIdMapping.get(message.session_id) || null;
+    //     const branchId = message.branch_id || 'main'; // Default to main branch
+
+    //     const { data: newMessage, error } = await locals.supabase
+    //       .from('messages')
+    //       .insert({
+    //         project_id: targetProjectId,
+    //         session_id: sessionId,
+    //         branch_id: branchId,
+    //         role: message.role,
+    //         content: message.content,
+    //         model_key: message.model_key,
+    //         created_at: message.created_at
+    //       })
+    //       .select()
+    //       .single();
+
+    //     if (error) {
+    //       console.error('Error importing message:', error);
+    //       continue;
+    //     }
+
+    //     stats.messages_imported++;
+    //   }
+    // }
 
     // Auto-generate entity cards if facts were imported
     let entityCardsGenerated = 0;
@@ -482,7 +634,7 @@ Summary:`;
     }
 
     // Return success response with statistics
-    return json({
+    const response = {
       success: true,
       project: {
         id: targetProject.id,
@@ -494,7 +646,9 @@ Summary:`;
         total_imported: Object.values(stats).reduce((sum, count) => sum + count, 0)
       },
       import_mode: options.createNewProject ? 'new_project' : 'merge_existing'
-    });
+    };
+    
+    return json(response);
 
   } catch (error) {
     console.error('Import error:', error);

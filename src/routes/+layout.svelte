@@ -56,8 +56,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       if (savedTheme) {
         darkMode = savedTheme === 'dark';
       } else {
-        // Use detected state or check system preference
-        darkMode = isDark || window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Default to dark mode
+        darkMode = true;
       }
       
       // Ensure theme is applied (in case HTML script didn't run)
@@ -436,6 +436,47 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     }
   }
   
+  // Shooting stars background effect
+  function initShootingStars() {
+    const particlesContainer = document.querySelector('.fantasy-particles');
+    
+    if (!particlesContainer) {
+      return;
+    }
+    
+    function createShootingStar() {
+      const star = document.createElement('div');
+      star.className = 'shooting-star';
+      
+      // Random starting position - container now starts at top of content area
+      const startX = Math.random() * window.innerWidth;
+      const startY = Math.random() * (window.innerHeight - 64) * 0.5; // Start in top half of content area
+      
+      star.style.left = `${startX}px`;
+      star.style.top = `${startY}px`;
+      
+      // Random delay for variety
+      star.style.animationDelay = `${Math.random() * 2}s`;
+      
+      particlesContainer.appendChild(star);
+      
+      // Remove star after animation completes
+      setTimeout(() => {
+        if (star.parentNode) {
+          star.parentNode.removeChild(star);
+        }
+      }, 3000);
+    }
+    
+    // Create shooting stars periodically
+    const interval = setInterval(createShootingStar, 2000 + Math.random() * 3000);
+    
+    // Clean up interval on destroy
+    onDestroy(() => {
+      clearInterval(interval);
+    });
+  }
+  
   // Load preferences on mount
   onMount(() => {
     loadUserPreferences();
@@ -444,6 +485,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     if (browser) {
       checkScreenSize();
       window.addEventListener('resize', checkScreenSize);
+      
+      // Initialize shooting stars background effect
+      initShootingStars();
     }
   });
   
@@ -633,7 +677,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 </script>
 
 <!-- App shell: full height -->
-<div id="app-container" class="flex flex-col min-h-screen bg-zinc-50 dark:bg-gray-900 text-zinc-900 dark:text-gray-100 transition-colors">
+<div id="app-container" class="flex flex-col min-h-screen text-zinc-900 dark:text-gray-100 transition-colors relative z-10" style="background: rgba(255, 255, 255, 0.05);">
   <div class="fantasy-particles"></div>
   <!-- Header -->
      <header id="main-header" class="h-16 border-b border-gray-200 dark:border-gray-700 backdrop-blur flex items-center sticky top-0 z-[150] transition-colors" style="background-color: var(--bg-header);">
@@ -755,6 +799,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
             />
             
             <!-- Context Quality Indicator - Right after project selector -->
+            <!-- Temporarily hidden
             {#if currentProject?.id}
               <ContextQualityIndicator 
                 score={contextQualityScore}
@@ -771,6 +816,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                 }}
               />
             {/if}
+            -->
             
           </div>
         {/if}

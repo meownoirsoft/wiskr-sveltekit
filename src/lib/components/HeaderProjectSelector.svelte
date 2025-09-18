@@ -9,6 +9,7 @@
 
   const dispatch = createEventDispatcher();
 
+
   let showDropdown = false;
   let dropdownEl;
   let buttonEl;
@@ -21,6 +22,12 @@
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     (p.brief_text ?? '').toLowerCase().includes(search.toLowerCase())
   );
+
+  // Debug: Log when projects change
+  $: if (projects.length > 0) {
+    console.log('🔄 HeaderProjectSelector projects updated:', projects.length, 'projects');
+    console.log('🔄 Current project:', current?.id, current?.name);
+  }
 
   // Portal action to render dropdown at document body
   function createPortal(node) {
@@ -172,7 +179,8 @@
   });
 </script>
 
-<div id="project-selector" class="relative" bind:this={dropdownEl} data-tutorial="project-selector">
+<div id="project-selector" class="relative flex items-center gap-2" bind:this={dropdownEl} data-tutorial="project-selector">
+  <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">World:</label>
   {#if isMobile}
     <!-- Mobile: Direct search and project list -->
     <div class="space-y-3">
@@ -200,18 +208,23 @@
       <!-- Project list -->
               <div class="border rounded-lg overflow-hidden max-h-48 overflow-y-auto" style="background-color: var(--bg-header-input); border-color: var(--border-header-input);">
         {#each filtered as project}
-          <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-500 dark:bg-blue-800' : ''} transition-colors border-b last:border-b-0" style="border-color: var(--border-header-input);">
+          <div 
+            class="flex items-center hover:opacity-80 transition-colors border-b last:border-b-0" 
+            style="border-color: var(--border-header-input); background-color: {current?.id === project.id ? '#1d4ed8' : 'transparent'};"
+            data-active={current?.id === project.id}
+          >
             <button
               class="flex items-center gap-2 flex-1 p-3 text-left"
+              style="background-color: {current?.id === project.id ? '#1d4ed8' : 'transparent'};"
               on:click={() => selectProject(project)}
             >
-              <span class="text-sm">{project.icon ?? '📁'}</span>
+              <span class="text-sm">{project.icon ?? '🌐'}</span>
               <span class="font-medium text-sm truncate" style="color: #f8fafc !important;">{project.name}</span>
             </button>
             <div class="flex items-center gap-1 px-2">
               <button
                 class="p-1 transition-colors"
-                style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
+                style="background-color: {current?.id === project.id ? '#1d4ed8' : 'transparent'}; color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'};"
                 title="Project Settings"
                 on:click={(e) => openSettings(project, e)}
               >
@@ -219,7 +232,7 @@
               </button>
               <button
                 class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-                style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
+                style="background-color: {current?.id === project.id ? '#1d4ed8' : 'transparent'}; color: {typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'};"
                 title="Delete"
                 on:click={(e) => deleteProject(project, e)}
               >
@@ -244,7 +257,7 @@
       on:click={toggleDropdown}
     >
       {#if current}
-        <span class="text-xs md:text-sm flex-shrink-0">{current.icon ?? '📁'}</span>
+        <span class="text-xs md:text-sm flex-shrink-0">{current.icon ?? '🌐'}</span>
         <span class="font-medium text-xs md:text-sm truncate flex-1 text-left" style="color: var(--text-header);">{current.name}</span>
       {:else}
         <span class="text-xs md:text-sm flex-1 text-left" style="color: var(--text-header-secondary);">Select world...</span>
@@ -306,21 +319,25 @@
     <!-- Project list -->
     <div class="max-h-64 overflow-y-auto">
       {#each filtered as project}
-        <div class="flex items-center hover:opacity-80 {current?.id === project.id ? 'bg-blue-700' : ''} transition-colors" 
-             style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')} 
-             style:background-color={current?.id === project.id ? '#1d4ed8' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#1e293b' : '#e0f2fe')}>
+        <div class="flex items-center hover:opacity-80 transition-colors" 
+             data-active={current?.id === project.id}
+             style:color={current?.id === project.id ? '#f8fafc' : '#f8fafc'} 
+             style:background-color={current?.id === project.id ? '#1d4ed8' : '#1e293b'}>
           <button
             class="flex items-center gap-2 flex-1 p-3 text-left"
-            style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')}
+            style:color={current?.id === project.id ? '#f8fafc' : '#f8fafc'}
+            style:background-color={current?.id === project.id ? '#1d4ed8' : 'transparent'}
             on:click={() => selectProject(project)}
           >
-            <span class="text-sm">{project.icon ?? '📁'}</span>
-            <span class="font-medium text-sm truncate" style:color={current?.id === project.id ? '#f8fafc' : (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black')}>{project.name}</span>
+            <span class="text-sm" style:background-color={current?.id === project.id ? '#1d4ed8' : 'transparent'}>{project.icon ?? '🌐'}</span>
+            <span class="font-medium text-sm truncate" style:color={current?.id === project.id ? '#f8fafc' : '#f8fafc'}>{project.name}</span>
           </button>
-          <div class="flex items-center gap-1 px-2">
+          <div class="flex items-center gap-1 px-2" 
+               style:background-color={current?.id === project.id ? '#1d4ed8' : 'transparent'}>
             <button
               class="p-1 transition-colors"
-              style:color={current?.id === project.id ? '#f8fafc' : 'black'}
+              style:color={current?.id === project.id ? '#f8fafc' : '#f8fafc'}
+              style:background-color={current?.id === project.id ? '#1d4ed8' : 'transparent'}
               title="Project Settings"
               on:click={(e) => openSettings(project, e)}
             >
@@ -328,7 +345,8 @@
             </button>
             <button
               class="p-1 transition-colors {current?.id === project.id ? 'hover:text-red-200' : 'hover:text-red-400'}"
-              style:color={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#f8fafc' : 'black'}
+              style:color={current?.id === project.id ? '#f8fafc' : '#f8fafc'}
+              style:background-color={current?.id === project.id ? '#1d4ed8' : 'transparent'}
               title="Delete"
               on:click={(e) => deleteProject(project, e)}
             >

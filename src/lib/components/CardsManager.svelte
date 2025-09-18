@@ -674,11 +674,11 @@
               bind:value={rarityFilter}
               class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="all">All ({cards.length})</option>
-              <option value="common">Common ({getRarityCount('common')})</option>
-              <option value="special">Special ({getRarityCount('special')})</option>
-              <option value="rare">Rare ({getRarityCount('rare')})</option>
-              <option value="legendary">Legendary ({getRarityCount('legendary')})</option>
+              <option value="all">All ({loadingCards ? '...' : cards.length})</option>
+              <option value="common">Common ({loadingCards ? '...' : getRarityCount('common')})</option>
+              <option value="special">Special ({loadingCards ? '...' : getRarityCount('special')})</option>
+              <option value="rare">Rare ({loadingCards ? '...' : getRarityCount('rare')})</option>
+              <option value="legendary">Legendary ({loadingCards ? '...' : getRarityCount('legendary')})</option>
             </select>
           </div>
 
@@ -690,11 +690,11 @@
               class="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="all">All</option>
-              <option value="raw">Raw ({getProgressCount(1)})</option>
-              <option value="rough">Rough ({getProgressCount(2)})</option>
-              <option value="crystal">Crystal ({getProgressCount(3)})</option>
-              <option value="cut">Cut ({getProgressCount(4)})</option>
-              <option value="shimmer">Shimmer ({getProgressCount(5)})</option>
+              <option value="raw">Raw ({loadingCards ? '...' : getProgressCount(1)})</option>
+              <option value="rough">Rough ({loadingCards ? '...' : getProgressCount(2)})</option>
+              <option value="crystal">Crystal ({loadingCards ? '...' : getProgressCount(3)})</option>
+              <option value="cut">Cut ({loadingCards ? '...' : getProgressCount(4)})</option>
+              <option value="shimmer">Shimmer ({loadingCards ? '...' : getProgressCount(5)})</option>
             </select>
           </div>
 

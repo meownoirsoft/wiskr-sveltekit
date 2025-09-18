@@ -8,6 +8,7 @@
 
   const dispatch = createEventDispatcher();
 
+
   // Filtered projects based on search
   $: filtered = projects.filter(p =>
     !search.trim() ||
@@ -79,7 +80,7 @@
           class="flex items-center gap-2 flex-1 text-left text-sm"
           on:click={() => pickProject(project)}
         >
-          <span class="text-sm">{project.icon ?? '📁'}</span>
+          <span class="text-sm">{project.icon ?? '🌐'}</span>
           <span class="font-medium truncate">{project.name}</span>
         </button>
         <div class="shrink-0 flex items-center gap-1">

@@ -7,7 +7,7 @@ export const POST = async ({ request, locals }) => {
     const { data: { user } } = await locals.supabase.auth.getUser();
     if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
-    const { name, icon = '📁', color = '#6366f1', brief_text = '', description = '' } = await request.json();
+    const { name, icon = '🌐', color = '#6366f1', brief_text = '', description = '' } = await request.json();
     if (!name?.trim()) return json({ message: 'Name required' }, { status: 400 });
 
     // Get user tier info from locals (set in hooks.server.js)

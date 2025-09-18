@@ -52,9 +52,6 @@ export async function GET({ params }) {
       // Sort sections by position
       const sortedSections = deck.deck_sections?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
       
-      console.log(`🔍 Loading deck ${deck.id} - Raw sections:`, deck.deck_sections?.map(s => ({ id: s.id, name: s.name, position: s.position })));
-      console.log(`🔍 Loading deck ${deck.id} - Sorted sections:`, sortedSections.map(s => ({ id: s.id, name: s.name, position: s.position })));
-      
       return {
         id: deck.id,
         name: deck.name,

@@ -14,10 +14,14 @@ export async function GET({ params, locals, url }) {
 
     const projectId = params.id;
     const format = url.searchParams.get('format') || 'json';
-    const includeMessages = url.searchParams.get('includeMessages') !== 'false';
-    const includeFacts = url.searchParams.get('includeFacts') !== 'false';
-    const includeQuestions = url.searchParams.get('includeQuestions') !== 'false';
-    const includeDocs = url.searchParams.get('includeDocs') !== 'false';
+    const includeMessages = url.searchParams.get('includeMessages') === 'true';
+    const includeFacts = url.searchParams.get('includeFacts') === 'true';
+    const includeQuestions = url.searchParams.get('includeQuestions') === 'true';
+    const includeDocs = url.searchParams.get('includeDocs') === 'true';
+    const includeSessions = url.searchParams.get('includeSessions') === 'true';
+    const includeBranches = url.searchParams.get('includeBranches') === 'true';
+    const includeDecks = url.searchParams.get('includeDecks') !== 'false';
+    const includeCards = url.searchParams.get('includeCards') !== 'false';
 
     // Verify user has access to this project
     const { data: project, error: projectError } = await locals.supabase
@@ -52,7 +56,11 @@ export async function GET({ params, locals, url }) {
       docs: [],
       questions: [],
       personas: [],
-      fact_types: []
+      fact_types: [],
+      decks: [],
+      deck_sections: [],
+      deck_cards: [],
+      cards: []
     };
 
     // Get project persona
@@ -73,31 +81,35 @@ export async function GET({ params, locals, url }) {
     }
 
     // Get all sessions for this project
-    const { data: sessions } = await locals.supabase
-      .from('conversation_sessions')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
+    if (includeSessions) {
+      const { data: sessions } = await locals.supabase
+        .from('conversation_sessions')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
 
-    if (sessions) {
-      exportData.sessions = sessions.map(session => ({
-        ...session,
-        project_id: undefined // Remove foreign key references
-      }));
+      if (sessions) {
+        exportData.sessions = sessions.map(session => ({
+          ...session,
+          project_id: undefined // Remove foreign key references
+        }));
+      }
     }
 
     // Get all branches for this project
-    const { data: branches } = await locals.supabase
-      .from('conversation_branches')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
+    if (includeBranches) {
+      const { data: branches } = await locals.supabase
+        .from('conversation_branches')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
 
-    if (branches) {
-      exportData.branches = branches.map(branch => ({
-        ...branch,
-        project_id: undefined
-      }));
+      if (branches) {
+        exportData.branches = branches.map(branch => ({
+          ...branch,
+          project_id: undefined
+        }));
+      }
     }
 
     // Get messages if requested
@@ -179,6 +191,83 @@ export async function GET({ params, locals, url }) {
       }
     }
 
+    // Get decks if requested
+    if (includeDecks) {
+      const { data: decks } = await locals.supabase
+        .from('decks')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('position', { ascending: true, nullsFirst: true })
+        .order('created_at', { ascending: true });
+
+      if (decks) {
+        exportData.decks = decks.map(deck => ({
+          ...deck,
+          project_id: undefined
+        }));
+      }
+    }
+
+    // Get deck sections if requested
+    if (includeDecks) {
+      const { data: deckSections } = await locals.supabase
+        .from('deck_sections')
+        .select(`
+          *,
+          decks!inner(project_id)
+        `)
+        .eq('decks.project_id', projectId)
+        .order('position', { ascending: true, nullsFirst: true })
+        .order('created_at', { ascending: true });
+
+      if (deckSections) {
+        exportData.deck_sections = deckSections.map(section => ({
+          ...section,
+          deck_id: section.deck_id,
+          project_id: undefined
+        }));
+      }
+    }
+
+    // Get deck cards if requested
+    if (includeDecks) {
+      const { data: deckCards } = await locals.supabase
+        .from('deck_cards')
+        .select(`
+          *,
+          deck_sections!inner(
+            decks!inner(project_id)
+          )
+        `)
+        .eq('deck_sections.decks.project_id', projectId)
+        .order('position', { ascending: true, nullsFirst: true });
+
+      if (deckCards) {
+        exportData.deck_cards = deckCards.map(deckCard => ({
+          ...deckCard,
+          deck_id: deckCard.deck_id,
+          section_id: deckCard.section_id,
+          card_id: deckCard.card_id
+        }));
+      }
+    }
+
+    // Get cards if requested
+    if (includeCards) {
+      const { data: cards } = await locals.supabase
+        .from('cards')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
+
+      if (cards) {
+        exportData.cards = cards.map(card => ({
+          ...card,
+          project_id: undefined
+        }));
+      }
+    }
+
     // Calculate export statistics
     exportData.meta.statistics = {
       sessions_count: exportData.sessions.length,
@@ -188,7 +277,11 @@ export async function GET({ params, locals, url }) {
       docs_count: exportData.docs.length,
       questions_count: exportData.questions.length,
       personas_count: exportData.personas.length,
-      fact_types_count: exportData.fact_types.length
+      fact_types_count: exportData.fact_types.length,
+      decks_count: exportData.decks.length,
+      deck_sections_count: exportData.deck_sections.length,
+      deck_cards_count: exportData.deck_cards.length,
+      cards_count: exportData.cards.length
     };
 
     // Handle different export formats

@@ -26,7 +26,7 @@
   
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
-    { id: 'card-types', label: 'Card Types', icon: Settings },
+    // { id: 'card-types', label: 'Card Types', icon: Settings }, // Hidden for now
     { id: 'sharing', label: 'Sharing', icon: Share2 },
     // Future tabs can be added here
   ];

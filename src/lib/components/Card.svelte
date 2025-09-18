@@ -448,7 +448,7 @@
         <!-- Main content area -->
         <div 
           class="card-content content-area text-sm leading-tight overflow-hidden absolute z-10"
-          style="padding: 8px 4px; margin-left: 5px; height: 200px; bottom: 40px; right: 7px; border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -2px 8px rgba(0,0,0,0.1);"
+          style="padding: 8px 4px; margin-left: 5px; width: 235px; height: 200px; bottom: 40px; right: 7px; border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -2px 8px rgba(0,0,0,0.1);"
         >
         <!-- Tags -->
         <div class="h-6 mb-2 mt-11 ml-2 mr-2 flex items-center">
@@ -471,6 +471,12 @@
                 </span>
               {/if}
             </div>
+          {:else}
+            <span 
+              class="text-sm text-gray-400 dark:text-gray-500 italic ml-1"
+            >
+              No tags yet. Click to add.
+            </span>
           {/if}
         </div>
 
@@ -542,16 +548,14 @@
 
       <!-- Progress Stars -->
       <div class="flex flex-col items-center gap-1">
-        <!-- Stars with tooltip -->
+        <!-- Stars -->
         <div 
-          class="flex items-center gap-1 relative group"
-          on:mouseenter={handleProgressHover}
-          on:mouseleave={handleProgressLeave}
-          bind:this={tooltipElement}
+          class="flex items-center gap-1"
+          style="height: 24px; flex-shrink: 0;"
         >
           {#each progressLevels as level}
             <button
-              class="transition-colors hover:scale-110 cursor-pointer !p-0 !min-w-0 !min-h-0"
+              class="transition-colors cursor-pointer !p-0 !min-w-0 !min-h-0"
               on:click={(e) => handleProgressClick(e, level.level)}
               title="Set to {level.name} ({level.level > 1 ? 's' : ''})"
               style:color={card?.progress >= level.level ? '#ffffff' : (darkMode ? '#6b7280' : '#9ca3af')}
@@ -559,15 +563,6 @@
               <Star size="16" class="fill-current" />
             </button>
           {/each}
-          
-          <!-- Custom Tooltip -->
-          {#if showProgressTooltip}
-            <div 
-              class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50"
-            >
-              {progressLevels.find(level => level.level === card?.progress)?.name || 'Raw'} ({card?.progress || 1} star{(card?.progress || 1) > 1 ? 's' : ''})
-            </div>
-          {/if}
         </div>
       </div>
     </div>

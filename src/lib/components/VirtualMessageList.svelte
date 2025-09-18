@@ -626,7 +626,7 @@
       center={true} 
     />
   {:else if !current && hasInit}
-    <p class="text-gray-600 dark:text-gray-400">Select a project to start chatting.</p>
+    <p class="text-gray-600 dark:text-gray-400">Loading...</p>
   {:else if loadingMessages}
     <LoadingSpinner 
       size="md" 

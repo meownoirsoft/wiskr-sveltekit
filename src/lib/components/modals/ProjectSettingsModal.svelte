@@ -45,7 +45,7 @@
   
      const tabs = [
      { id: 'general', label: 'General', icon: Settings },
-     { id: 'card-types', label: 'Card Types', icon: Settings },
+     // { id: 'card-types', label: 'Card Types', icon: Settings }, // Hidden for now
      { id: 'data', label: 'Import/Export', icon: Database },
      // Future tabs can be added here
    ];
@@ -459,6 +459,10 @@
   on:import-success={() => {
     // Handle successful import - maybe refresh the current project data or navigate
     console.log('Import completed successfully');
+  }}
+  on:refresh-projects={(event) => {
+    // Dispatch refresh event to parent to update project selector
+    dispatch('refresh-projects', { projectId: event.detail?.projectId });
   }}
 />
 

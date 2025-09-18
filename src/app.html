@@ -72,13 +72,13 @@
 				try {
 					// Check localStorage first
 					const savedTheme = localStorage.getItem('wiskr_theme');
-					let isDark = false;
+					let isDark = true; // Default to dark mode
 					
 					if (savedTheme) {
 						isDark = savedTheme === 'dark';
 					} else {
-						// Check system preference
-						isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+						// Default to dark mode instead of system preference
+						isDark = true;
 					}
 					
 					// Apply theme immediately

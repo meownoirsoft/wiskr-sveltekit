@@ -447,6 +447,6 @@
       </div>
     </div>
   {:else}
-    <p class="text-gray-600 dark:text-gray-400">Select a project</p>
+    <p class="text-gray-600 dark:text-gray-400">Loading...</p>
   {/if}
 </section>

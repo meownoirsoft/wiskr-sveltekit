@@ -189,14 +189,30 @@ body {
   display: flex;
   flex-direction: column;
 }
+
 .fantasy-particles {
   position: fixed;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 64px); /* Full height minus header height */
+  top: 64px; /* Start below header */
+  left: 0;
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a0a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+  overflow: hidden;
+  z-index: 1; /* Above body but below content */
+}
+
+.fantasy-particles::before {
+  content: '';
+  position: absolute;
   top: 0;
   left: 0;
-  background: #100b21; /* Dark space background */
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  animation: gradient-shift 8s ease-in-out infinite;
 }
 
 .fantasy-particles::after {
@@ -206,18 +222,47 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  animation: starry-night 60s linear infinite;
-  background:
-    radial-gradient(
-      ellipse at 20% 20%,
-      rgba(255, 255, 255, 0.2),
-      transparent 80%
-    ),
-    radial-gradient(
-      ellipse at 70% 80%,
-      rgba(255, 255, 255, 0.15),
-      transparent 80%
-    );
+  background: 
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 160px 30px, #ddd, transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: starry-night 20s linear infinite;
+}
+
+/* Shooting stars */
+.fantasy-particles .shooting-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: linear-gradient(45deg, #fff, transparent);
+  border-radius: 50%;
+  animation: shooting-star 3s linear infinite;
+}
+
+.fantasy-particles .shooting-star::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 1px;
+  background: linear-gradient(90deg, #fff, transparent);
+  transform: translateX(-100px);
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-20px, -20px) scale(1.1);
+    opacity: 1;
+  }
 }
 
 @keyframes starry-night {
@@ -227,6 +272,188 @@ body {
   100% {
     transform: translate(0, -100%);
   }
+}
+
+@keyframes shooting-star {
+  0% {
+    transform: translateX(100vw) translateY(100vh);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100px) translateY(-100px);
+    opacity: 0;
+  }
+}
+
+/* Ensure interactive elements are clickable over background */
+button:not(.card button), input, select, textarea, a, [role="button"] {
+  position: relative;
+  z-index: 10;
+  background-color: var(--bg-input, #ffffff);
+}
+
+/* Exception for project selector buttons - preserve their original styling */
+#main-header button,
+header button,
+#project-selector-dropdown button {
+  background-color: inherit !important;
+}
+
+/* Specific styling for project selector dropdown */
+#project-selector-dropdown {
+  z-index: 999999 !important;
+}
+
+#project-selector-dropdown .flex.items-center {
+  /* Let inline styles take precedence */
+}
+
+#project-selector-dropdown button:not([style*="background-color: #1d4ed8"]) {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#project-selector-dropdown button[style*="background-color: #1d4ed8"] {
+  background-color: #1d4ed8 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Force project selector highlighting with maximum specificity */
+#project-selector-dropdown .flex.items-center[style*="background-color: #1d4ed8"] {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown .flex.items-center[style*="background-color: #1e293b"] {
+  background-color: #1e293b !important;
+}
+
+#project-selector-dropdown .flex.items-center[style*="background-color: transparent"] {
+  background-color: transparent !important;
+}
+
+
+/* Force icon background for active projects */
+#project-selector-dropdown button[style*="background-color: #1d4ed8"] span {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown button[style*="background-color: transparent"] span {
+  background-color: transparent !important;
+}
+
+/* Force settings and trash button backgrounds */
+#project-selector-dropdown button[style*="background-color: #1d4ed8"][title="Project Settings"] {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown button[style*="background-color: #1d4ed8"][title="Delete"] {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown button[style*="background-color: transparent"][title="Project Settings"] {
+  background-color: transparent !important;
+}
+
+#project-selector-dropdown button[style*="background-color: transparent"][title="Delete"] {
+  background-color: transparent !important;
+}
+
+
+/* ULTRA HIGH SPECIFICITY - Force project highlighting */
+#project-selector-dropdown div[data-active="true"] {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown div[data-active="true"] button {
+  background-color: #1d4ed8 !important;
+}
+
+#project-selector-dropdown div[data-active="false"] {
+  background-color: transparent !important;
+}
+
+#project-selector-dropdown div[data-active="false"] button {
+  background-color: transparent !important;
+}
+
+/* Ensure cards and panels are above background */
+.card, .panel, .modal, .dropdown {
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure filter labels and form elements are above background */
+label, .filter, .filter-label, .form-label, .text-sm, .text-xs {
+  position: relative;
+  z-index: 10;
+}
+
+/* Make progress stars and rarity arrows transparent background but keep icons white */
+.card button[title*="rarity"], 
+.card button[title*="progress"], 
+.card button[title*="star"],
+.card button[title*="Upgrade"],
+.card button[title*="Downgrade"],
+.card button[title*="Set to"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Override the general button background rule for card buttons - more specific selector */
+.card-container .card button,
+.card-container .card button[title*="rarity"], 
+.card-container .card button[title*="progress"], 
+.card-container .card button[title*="star"],
+.card-container .card button[title*="Upgrade"],
+.card-container .card button[title*="Downgrade"],
+.card-container .card button[title*="Set to"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Even more specific - target the exact button elements */
+.card-frame button,
+.card-frame button[title*="rarity"], 
+.card-frame button[title*="progress"], 
+.card-frame button[title*="star"],
+.card-frame button[title*="Upgrade"],
+.card-frame button[title*="Downgrade"],
+.card-frame button[title*="Set to"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Exception for Replace Art button - keep its background and positioning */
+button[title="Replace art"] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 8px !important;
+}
+
+/* Ensure card frame has proper border styling */
+.card-frame {
+  border-style: solid !important;
+  border-width: 2px !important;
 }
 
 /* Fix for backwards text in inputs */

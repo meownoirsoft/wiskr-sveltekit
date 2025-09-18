@@ -67,6 +67,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   }
 
   async function reloadProjects(selectId) {
+    console.log('🔄 reloadProjects called with selectId:', selectId);
     const { data: p, error } = await supabase
       .from('projects')
       .select('id, name, icon, color, brief_text, description, created_at')
@@ -76,12 +77,26 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       return;
     }
     projects = p ?? [];
+    console.log('🔄 reloadProjects loaded projects:', projects.length, 'projects');
 
     const nextId =
       (selectId && projects.find(x => x.id === selectId)?.id) ||
       (selectedId && projects.find(x => x.id === selectedId)?.id) ||
       projects[0]?.id;
 
+    console.log('🔄 reloadProjects will select project:', nextId);
+    
+    // Notify layout about updated projects (same as initial load)
+    if (browser && projects.length > 0) {
+      console.log('🔄 Notifying layout of updated projects');
+      window.dispatchEvent(new CustomEvent('layout:update-projects', {
+        detail: {
+          projects: projects,
+          currentProjectId: nextId
+        }
+      }));
+    }
+    
     if (nextId) await selectProjectById(nextId);
   }
 
@@ -385,7 +400,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
 
   // Load decks from database when project changes
   $: if (current?.id && projects.length > 0) {
-    console.log('🔄 Loading decks for project:', current.id);
     loadDecks(current.id);
   }
 
@@ -1466,6 +1480,12 @@ function handleProjectSettingsModalClose() {
   if (binderComponent && activeTab === 'cards') {
     binderComponent.refreshCardTypes();
   }
+}
+
+function handleRefreshProjects(event) {
+  // Reload projects to refresh the project selector
+  const projectId = event.detail?.projectId;
+  reloadProjects(projectId);
 }
 
 async function handleBranchRenamed(event) {
@@ -3140,6 +3160,7 @@ function handleTextAddToDocs(event) {
   userTier={data?.userTier}
   effectiveTier={data?.effectiveTier}
   on:close={handleProjectSettingsModalClose}
+  on:refresh-projects={handleRefreshProjects}
 />
 
 <!-- Project State Manager (handles project CRUD, selection, usage) -->

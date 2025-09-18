@@ -84,7 +84,7 @@ export const load = async ({ locals }) => {
           user_id: user.id,
           persona_id: persona[0].id,
           name: 'My First Project',
-          icon: '📁',
+          icon: '🌐',
           color: '#6366f1',
           description: 'Welcome to Wiskr! This is your first project to get you started.'
         })

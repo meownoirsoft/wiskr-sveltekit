@@ -792,11 +792,11 @@
     >
       <!-- Card Frame -->
       <div 
-        class="card-frame border-2 rounded-lg h-full flex flex-col"
+        class="card-frame rounded-lg h-full flex flex-col"
         style="
-          border-color: {rarity.borderColor};
           background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};
           color: {darkMode ? rarity.textColorDark : rarity.textColor};
+          border: 2px solid {darkMode ? rarity.textColorDark : rarity.textColor};
         "
       >
 
@@ -908,6 +908,7 @@
           </button>
           
           <!-- Art Feedback Button - Bottom Left Corner (only show if custom art) -->
+          <!-- Temporarily hidden
           {#if artUrl || editedCard.art_url}
             <button
               class="absolute bottom-2 left-2 p-2 rounded-full bg-orange-500/50 hover:bg-orange-500/70 transition-all cursor-pointer"
@@ -917,6 +918,7 @@
               <Flag size="16" class="text-white" />
             </button>
           {/if}
+          -->
         </div>
 
         <!-- Content Area with Tags -->
@@ -974,6 +976,12 @@
                       </span>
                     {/if}
                   </div>
+                {:else}
+                  <span 
+                    class="text-sm text-gray-400 dark:text-gray-500 italic ml-1"
+                  >
+                    No tags yet. Click pencil icon below to add.
+                  </span>
                 {/if}
               {/if}
             </div>
@@ -1481,6 +1489,11 @@
           </button>
         </div>
         <div class="space-y-2">
+          <!-- Coming Soon message -->
+          <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center">
+            <p class="text-gray-600 dark:text-gray-300 text-sm italic">Coming Soon...</p>
+          </div>
+          
           {#each tooltipContent as resource}
             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
               <div class="flex items-center gap-3">

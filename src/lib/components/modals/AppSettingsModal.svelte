@@ -607,28 +607,7 @@
             <!-- Theme & Accent Tab -->
             {:else if activeTab === 'appearance'}
               <div class="space-y-6">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3" for="theme">Theme</label>
-                      <div class="grid grid-cols-2 gap-3">
-                        <button
-                          class="flex items-center justify-center gap-2 p-4 border-2 rounded-lg transition-all {!darkMode ? 'border-2' : 'border-gray-200 dark:border-gray-600'}"
-                          style={!darkMode ? 'border-color: var(--color-accent); background-color: var(--color-accent-light);' : ''}
-                          on:click={() => handleThemeChange(false)}
-                        >
-                          <Sun size="20" style={!darkMode ? 'color: var(--color-accent);' : ''} />
-                          <span class="text-sm font-medium">Light Mode</span>
-                        </button>
-                        
-                        <button
-                          class="flex items-center justify-center gap-2 p-4 border-2 rounded-lg transition-all {darkMode ? 'border-2' : 'border-gray-200 dark:border-gray-600'}"
-                          style={darkMode ? 'border-color: var(--color-accent); background-color: var(--color-accent-light);' : ''}
-                          on:click={() => handleThemeChange(true)}
-                        >
-                          <Moon size="20" style={darkMode ? 'color: var(--color-accent);' : ''} />
-                          <span class="text-sm font-medium">Dark Mode</span>
-                        </button>
-                      </div>
-                    </div>
+                    <!-- Theme section hidden for now -->
                     
                     <div>
                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3" for="accent-color">Accent Color</label>

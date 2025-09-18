@@ -21,6 +21,7 @@
   let uploadedFile = null;
   let fileInput = null;
   let existingProjects = [];
+  let isDragOver = false;
 
   // Close modal function
   function closeModal() {
@@ -72,6 +73,45 @@
     }
   }
 
+  // Handle drag and drop events
+  function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleDragEnter(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = true;
+  }
+
+  function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = false;
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = false;
+    
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        uploadedFile = file;
+        analyzeFile(file);
+        // Clear the file input to show the dropped file
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      } else {
+        error = 'Please drop a JSON file exported from Wiskr';
+      }
+    }
+  }
+
   // Analyze uploaded file to show preview
   async function analyzeFile(file) {
     if (!file) return;
@@ -94,17 +134,14 @@
         throw new Error('This doesn\'t appear to be a valid Wiskr export file');
       }
       
-      // Create preview
+      // Create preview (only show items we actually import)
       importPreview = {
         project_name: data.project.name || 'Untitled Project',
-        sessions_count: data.sessions?.length || 0,
-        branches_count: data.branches?.length || 0,
-        messages_count: data.messages?.length || 0,
-        facts_count: data.facts?.length || 0,
-        docs_count: data.docs?.length || 0,
-        questions_count: data.questions?.length || 0,
-        fact_types_count: data.fact_types?.length || 0,
         personas_count: data.personas?.length || 0,
+        decks_count: data.decks?.length || 0,
+        deck_sections_count: data.deck_sections?.length || 0,
+        deck_cards_count: data.deck_cards?.length || 0,
+        cards_count: data.cards?.length || 0,
         export_date: data.meta.export_date,
         file_size: formatFileSize(file.size)
       };
@@ -180,10 +217,15 @@
         statistics: result.statistics
       });
       
-      // Close modal after success
+      // Close modal first, then refresh projects
       setTimeout(() => {
         closeModal();
-      }, 2000);
+        
+        // Dispatch refresh event after modal closes
+        setTimeout(() => {
+          dispatch('refresh-projects', { projectId: result.project.id });
+        }, 100);
+      }, 1000);
       
     } catch (err) {
       console.error('Import error:', err);
@@ -256,15 +298,23 @@
               Select Wiskr Export File
             </label>
             <div class="flex items-center justify-center w-full">
-              <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500">
+              <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 {isDragOver ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500' : 'border-gray-300 bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500'}"
+                     on:dragover={handleDragOver}
+                     on:dragenter={handleDragEnter}
+                     on:dragleave={handleDragLeave}
+                     on:drop={handleDrop}>
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
                   <svg class="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span class="font-semibold">Click to upload</span> or drag and drop
+                  <p class="mb-2 text-sm {isDragOver ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">
+                    {#if isDragOver}
+                      <span class="font-semibold">Drop the file here</span>
+                    {:else}
+                      <span class="font-semibold">Click to upload</span> or drag and drop
+                    {/if}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">JSON files only</p>
+                  <p class="text-xs {isDragOver ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">JSON files only</p>
                 </div>
                 <input 
                   bind:this={fileInput}
@@ -296,38 +346,32 @@
                   </span>
                 </div>
                 
+                
                 <div>
-                  <span class="text-blue-700 dark:text-blue-300">Sessions:</span>
+                  <span class="text-blue-700 dark:text-blue-300">Decks:</span>
                   <span class="ml-2 font-medium text-blue-900 dark:text-blue-100">
-                    {importPreview.sessions_count}
+                    {importPreview.decks_count}
                   </span>
                 </div>
                 
                 <div>
-                  <span class="text-blue-700 dark:text-blue-300">Messages:</span>
+                  <span class="text-blue-700 dark:text-blue-300">Sections:</span>
                   <span class="ml-2 font-medium text-blue-900 dark:text-blue-100">
-                    {importPreview.messages_count}
+                    {importPreview.deck_sections_count}
                   </span>
                 </div>
                 
                 <div>
-                  <span class="text-blue-700 dark:text-blue-300">Facts:</span>
+                  <span class="text-blue-700 dark:text-blue-300">Cards:</span>
                   <span class="ml-2 font-medium text-blue-900 dark:text-blue-100">
-                    {importPreview.facts_count}
+                    {importPreview.cards_count}
                   </span>
                 </div>
                 
                 <div>
-                  <span class="text-blue-700 dark:text-blue-300">Docs:</span>
+                  <span class="text-blue-700 dark:text-blue-300">Deck Cards:</span>
                   <span class="ml-2 font-medium text-blue-900 dark:text-blue-100">
-                    {importPreview.docs_count}
-                  </span>
-                </div>
-                
-                <div>
-                  <span class="text-blue-700 dark:text-blue-300">Questions:</span>
-                  <span class="ml-2 font-medium text-blue-900 dark:text-blue-100">
-                    {importPreview.questions_count}
+                    {importPreview.deck_cards_count}
                   </span>
                 </div>
                 

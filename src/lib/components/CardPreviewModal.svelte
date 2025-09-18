@@ -122,9 +122,8 @@
 
       <!-- Card Frame -->
       <div 
-        class="card-frame border-2 rounded-lg h-full flex flex-col"
+        class="card-frame rounded-lg h-full flex flex-col"
         style="
-          border-color: {rarity.borderColor};
           background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};
           color: {darkMode ? rarity.textColorDark : rarity.textColor};
         "
