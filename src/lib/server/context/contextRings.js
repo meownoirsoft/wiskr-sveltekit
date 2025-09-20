@@ -107,7 +107,7 @@ export async function buildContextRings({
       total: context.totalTokens
     });
     
-    console.log('🔍 getContextRings returning context:', JSON.stringify(context, null, 2));
+    console.log('🔍 Context rings calculated successfully');
     
     return context;
   } catch (error) {

@@ -251,7 +251,7 @@ export async function refreshContextScore(supabase, projectId) {
       budget: 'high' // Use high budget to get comprehensive context
     });
 
-    console.log('🎯 Server: Raw contextData:', JSON.stringify(contextData, null, 2));
+    console.log('🎯 Server: Context data retrieved for scoring');
     console.log('🎯 Server: contextData.rings exists:', !!contextData.rings);
     console.log('🎯 Server: contextData.totalTokens exists:', !!contextData.totalTokens);
     console.log('🎯 Server: Context rings data:', {

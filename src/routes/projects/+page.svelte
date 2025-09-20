@@ -67,7 +67,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   }
 
   async function reloadProjects(selectId) {
-    console.log('🔄 reloadProjects called with selectId:', selectId);
     const { data: p, error } = await supabase
       .from('projects')
       .select('id, name, icon, color, brief_text, description, created_at')
@@ -77,18 +76,14 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       return;
     }
     projects = p ?? [];
-    console.log('🔄 reloadProjects loaded projects:', projects.length, 'projects');
 
     const nextId =
       (selectId && projects.find(x => x.id === selectId)?.id) ||
       (selectedId && projects.find(x => x.id === selectedId)?.id) ||
       projects[0]?.id;
-
-    console.log('🔄 reloadProjects will select project:', nextId);
     
     // Notify layout about updated projects (same as initial load)
     if (browser && projects.length > 0) {
-      console.log('🔄 Notifying layout of updated projects');
       window.dispatchEvent(new CustomEvent('layout:update-projects', {
         detail: {
           projects: projects,
@@ -966,6 +961,17 @@ async function deleteProject(p) {
   // remove locally
   const wasSelected = current?.id === p.id;
   projects = projects.filter(x => x.id !== p.id);
+
+  // Notify layout about updated projects (same as reloadProjects)
+  if (browser && projects.length > 0) {
+    const nextId = projects[0]?.id;
+    window.dispatchEvent(new CustomEvent('layout:update-projects', {
+      detail: {
+        projects: projects,
+        currentProjectId: nextId
+      }
+    }));
+  }
 
   // if we deleted the selected project, pick another
   if (wasSelected) {

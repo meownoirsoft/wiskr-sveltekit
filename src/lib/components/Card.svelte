@@ -324,7 +324,7 @@
       width: 100%; 
       height: 100%;
       border-color: {rarity.borderColor};
-      background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};
+      background-color: transparent;
       color: {darkMode ? rarity.textColorDark : rarity.textColor};
     "
   >

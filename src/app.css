@@ -292,7 +292,7 @@ body {
 }
 
 /* Ensure interactive elements are clickable over background */
-button:not(.card button), input, select, textarea, a, [role="button"] {
+button:not(.card button), input, select, textarea, a, [role="button"]:not(.card-container) {
   position: relative;
   z-index: 10;
   background-color: var(--bg-input, #ffffff);

@@ -23,11 +23,6 @@
     (p.brief_text ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Debug: Log when projects change
-  $: if (projects.length > 0) {
-    console.log('🔄 HeaderProjectSelector projects updated:', projects.length, 'projects');
-    console.log('🔄 Current project:', current?.id, current?.name);
-  }
 
   // Portal action to render dropdown at document body
   function createPortal(node) {
