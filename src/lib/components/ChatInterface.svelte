@@ -296,35 +296,9 @@ import VirtualMessageList from './VirtualMessageList.svelte';
     }
   }
 
-  // Load branch counts for all messages in a single efficient API call
+  // Branch counts disabled - no longer needed
   async function loadMessageBranchCounts() {
-    if (!current || !currentSession || disableBranches) {
-      messageBranchCounts = {};
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/branches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'getBranchCounts', 
-          projectId: current.id,
-          sessionId: currentSession.id
-        })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        messageBranchCounts = data.counts || {};
-      } else {
-        console.error('Failed to load branch counts');
-        messageBranchCounts = {};
-      }
-    } catch (error) {
-      console.error('Error loading branch counts:', error);
-      messageBranchCounts = {};
-    }
+    messageBranchCounts = {};
   }
   
   // Load branch counts when messages or current project change
@@ -479,16 +453,8 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   }
 
   // Text selection handlers
-  function handleAddToFacts(event) {
-    dispatch('add-to-facts', event.detail);
-  }
-
-  function handleAddToDocs(event) {
-    dispatch('add-to-docs', event.detail);
-  }
-
-  function handleAddToQuestions(event) {
-    dispatch('add-to-questions', event.detail);
+  function handleAddAsCard(event) {
+    dispatch('add-as-card', event.detail);
   }
 
   function handleFormatText(event) {
@@ -934,7 +900,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
 
 <main class="flex flex-col h-full overflow-x-hidden mobile-chat" style="background-color: var(--bg-chat);">
   <!-- Chat Header (Desktop Only) -->
-  {#if current && !isMobile}
+  {#if current && !isMobile && !disableBranches}
     <div id="chat-header-desktop" class="border-gray-200 dark:border-gray-700 border-b px-3 md:px-4 py-2 md:py-3 flex-shrink-0" style="background-color: var(--bg-chat-header);">
       <!-- Two Column Layout with padding for collapse buttons -->
       <div class="grid {hideSessions ? 'grid-cols-1' : 'grid-cols-2'} gap-4" style="padding-left: 3rem; padding-right: 3rem;">
@@ -971,8 +937,8 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
           </div>
         {/if}
 
-        <!-- Branch Controls Column (only show if branches exist) -->
-        {#if branches.length > 0}
+        <!-- Branch Controls Column (only show if branches exist and not disabled) -->
+        {#if branches.length > 0 && !disableBranches}
           <div class="flex flex-col gap-1">
             <!-- Branch Label -->
             <div class="flex items-center gap-1">
@@ -1069,7 +1035,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
               </div>
             {/if}
           </div>
-        {:else}
+        {:else if !disableBranches}
           <!-- Empty column when no branches -->
           <div></div>
         {/if}
@@ -1131,11 +1097,8 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
 <!-- Text Selection Menu -->
   <TextSelectionMenu 
     projectId={current?.id}
-    on:add-to-facts={handleAddToFacts}
-    on:add-to-docs={handleAddToDocs}
-    on:add-to-questions={handleAddToQuestions}
+    on:add-as-card={handleAddAsCard}
     on:format-text={handleFormatText}
-    on:simplify-this={handleSimplifyThis}
   />
   
   <!-- Mr Wiskr Popup -->

@@ -77,7 +77,23 @@
   }
 
   function selectAllMessage(index) {
-    dispatch('select-all', index);
+    // Find the message content element and select all its text
+    const messageElement = document.querySelector(`[data-message-index="${index}"] .message-content`);
+    if (messageElement) {
+      const range = document.createRange();
+      range.selectNodeContents(messageElement);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      
+      // Trigger the text selection menu by dispatching a mouseup event
+      const mouseUpEvent = new MouseEvent('mouseup', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      messageElement.dispatchEvent(mouseUpEvent);
+    }
   }
 
   function openBranchModal(index) {
@@ -140,6 +156,7 @@
   class="{message.role === 'user' ? `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : 'mr-2 sm:mr-4'} ml-auto mt-16 mb-3` : `w-full ${isWideChat ? 'max-w-[80%] mx-[5%]' : ''} group mb-3 mt-16`} relative" 
   bind:this={messageElement}
   data-message-id={message.id}
+  data-message-index={index}
 >
   
   <!-- Message Bubble -->
@@ -163,7 +180,7 @@
           <img src={message.avatarPath || getAIAvatar(message.model_key)} alt="Wiskr Avatar" class="w-full h-full rounded-md" fetchpriority="high" />
         </div>
         <!-- Name positioned absolutely -->
-        <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{getAIName(message.model_key)}</div>
+        <div id="wiskr-name" class="absolute -top-8 sm:-top-8 left-20 sm:left-20 text-base sm:text-base font-bold text-zinc-700 dark:text-zinc-300">{message.wizard_name || getAIName(message.model_key)}</div>
       {:else}
         <div id="ai-avatar" class="absolute -top-3 sm:-top-12 left-2 sm:left-3 w-16 h-16 sm:w-[56px] sm:h-[56px] z-10 rounded-lg bg-white shadow-sm border-4 flex items-center justify-center p-px sm:p-px flex-shrink-0" style="border-color: #5D60DD;">
           <img src="/avatars/default-ai.png" alt="Wiskr Avatar" class="w-full h-full rounded-md" fetchpriority="high" />
@@ -179,28 +196,13 @@
           <LoadingSpinner size="sm" text="AI is thinking..." showText={true} center={false} />
         </div>
       {:else}
-        <div class="prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
+        <div class="message-content prose prose-sm sm:prose-base max-w-none prose-gray dark:prose-invert leading-relaxed">
           {@html highlightText(renderMarkdown(cleanedContent), searchTerm)}
         </div>
       {/if}
       
-      <!-- Select All button for assistant messages (bottom right) - only show when not loading -->
-      {#if !message.isLoading}
-        <button
-          class="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity border border-gray-300 dark:border-gray-600 rounded px-1.5 sm:px-2 py-1 sm:py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm touch-action-manipulation h-8 sm:h-6" 
-          style="background-color: var(--bg-button-secondary); touch-action: manipulation;" 
-          on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'} 
-          on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
-          on:click={() => dispatch('select-all', index)}
-          title="Select all and format for socials"
-        >
-          <MousePointer2 size="10" class="inline mr-0.5 sm:mr-1" />
-          <span class="hidden xs:inline">Select All</span>
-          <span class="xs:hidden">Select</span>
-        </button>
-      {/if}
     {:else}
-      <div class="text-sm sm:text-base -mt-2 leading-normal">
+      <div class="message-content text-sm sm:text-base -mt-2 leading-normal">
         {@html highlightText(cleanedContent, searchTerm)}
       </div>
     {/if}
@@ -217,20 +219,6 @@
     {/if}
     
     <div class="flex flex-wrap gap-1 sm:gap-2 justify-end sm:justify-end ml-auto sm:ml-auto">
-      {#if message.role === 'assistant' && cleanedContent.trim() && !message.isLoading}
-        <!-- Feedback Buttons -->  
-        {#if current?.id}
-          <div class="">
-            <FeedbackButtons
-              messageId={message.id}
-              projectId={current.id}
-              messageContent={cleanedContent}
-              aiName={message.model_key ? getAIName(message.model_key) : 'Wiskr'}
-              size="sm"
-            />
-          </div>
-        {/if}
-      {/if}
       
       {#if message.role === 'assistant' && message.content.trim() && currentBranchId === 'main' && !message.isLoading}
         <div class="z-10">
@@ -254,6 +242,22 @@
       {/if}
       
       {#if message.role === 'assistant' && cleanedContent.trim() && !message.isLoading}
+        <!-- Select All button -->
+        <div class="z-10">
+          <button
+            class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 shadow-sm h-10 sm:h-8 touch-action-manipulation"
+            style="background-color: var(--bg-button-secondary); border-color: var(--border-color); touch-action: manipulation;"
+            on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary-hover)'}
+            on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--bg-button-secondary)'}
+            on:click={() => selectAllMessage(index)}
+            title="Select all and format for socials"
+          >
+            <MousePointer2 size="10" class="flex-shrink-0" />
+            <span>Select All</span>
+          </button>
+        </div>
+        
+        <!-- HALP button -->
         <div class="z-10">
           <button
             class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors text-white font-medium shadow-sm hover:shadow-md h-10 sm:h-8 touch-action-manipulation overflow-hidden"

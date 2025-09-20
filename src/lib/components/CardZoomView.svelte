@@ -790,6 +790,28 @@
       style="width: 500px; height: 800px;"
       on:click|stopPropagation
     >
+      <!-- Wizards Council Invite Button -->
+      <button
+        class="absolute w-[200px] h-[89px] transition-all duration-200 hover:scale-105 cursor-pointer flex flex-col justify-center"
+        style="
+          background-image: url('/council-invite.webp'); 
+          background-size: cover; 
+          background-position: center;
+          position: absolute;
+          right: 16px;
+          bottom: 110px;
+          z-index: 9999;
+        "
+        on:click={() => showWizardsCouncil = true}
+        title="Open Wizards Council"
+      >
+        <div class="text-white font-bold text-lg drop-shadow-lg" style="margin-left: 60px; font-family: var(--font-logo); line-height: 1.1;">
+          <div>Summon</div>
+          <div>Wizard's</div>
+          <div>Council</div>
+        </div>
+      </button>
+
       <!-- Card Frame -->
       <div 
         class="card-frame rounded-lg h-full flex flex-col"
@@ -929,7 +951,7 @@
             style="padding: 8px 4px; margin-top: -8px; height: 340px; border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -2px 8px rgba(0,0,0,0.1);"
           >
             <!-- Tags -->
-            <div class="h-6 pl-2 mb-2 mt-1 ml-2 mr-2 flex items-center">
+            <div class="h-6 pl-4 mb-2 mt-1 ml-2 mr-2 flex items-center">
               {#if isEditing}
                 <div class="flex flex-wrap items-center gap-1">
                   {#each tags as tag}
@@ -1017,7 +1039,7 @@
 
         <!-- Content Links - Below Content -->
         <div class="px-4 mb-4 -mt-3">
-          <div class="flex justify-between text-sm">
+          <div class="flex justify-start gap-6 text-sm">
             <button
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
               style="color: #e1d5c4;"

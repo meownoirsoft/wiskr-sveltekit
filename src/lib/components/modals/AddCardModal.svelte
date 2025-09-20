@@ -5,18 +5,28 @@
 
   export let projectFactTypes = [];
   export let show = true;
+  export let initialTitle = '';
+  export let initialContent = '';
+  export let initialTags = '';
+  export let initialType = '';
 
   const dispatch = createEventDispatcher();
 
-  let title = '';
-  let content = '';
-  let tags = '';
+  let title = initialTitle;
+  let content = initialContent;
+  let tags = initialTags;
   let rarity = 'common';
   let progress = 1;
-  let type = '';
+  let type = initialType || '';
   let flavorText = '';
   let isSubmitting = false;
   let isClosing = false;
+
+  // Update internal state when initial values change
+  $: if (initialTitle) title = initialTitle;
+  $: if (initialContent) content = initialContent;
+  $: if (initialTags) tags = initialTags;
+  $: if (initialType) type = initialType;
 
   // Progress levels
   const progressLevels = [

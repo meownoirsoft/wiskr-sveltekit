@@ -34,8 +34,6 @@ export async function POST({ request, locals }) {
         return await renameBranch(locals.supabase, projectId, sessionId, branchId, newName);
       case 'delete':
         return await deleteBranch(locals.supabase, projectId, sessionId, branchId);
-      case 'getBranchCounts':
-        return await getBranchCounts(locals.supabase, projectId, sessionId);
       default:
         return json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -52,7 +50,6 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
       .from('conversation_branches')
       .select('branch_name')
       .eq('project_id', projectId)
-      .eq('session_id', sessionId)
       .eq('parent_message_id', parentMessageId)
       .eq('branch_name', branchName.trim())
       .single();
@@ -71,8 +68,7 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
   const { data: existingBranches } = await supabase
     .from('conversation_branches')
     .select('color_index')
-    .eq('project_id', projectId)
-    .eq('session_id', sessionId);
+    .eq('project_id', projectId);
   
   const colorIndex = existingBranches?.length % RAINBOW_COLORS.length || 0;
   
@@ -145,7 +141,6 @@ async function listBranches(supabase, projectId, sessionId) {
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .order('created_at');
     
   if (error) {
@@ -171,7 +166,6 @@ async function listBranchesForMessage(supabase, projectId, sessionId, messageId)
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .eq('parent_message_id', messageId)
     .order('created_at');
     
@@ -226,7 +220,6 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
       .from('conversation_branches')
       .select('*')
       .eq('project_id', projectId)
-      .eq('session_id', sessionId)
       .eq('branch_id', branchId)
       .single();
       
@@ -277,7 +270,6 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .eq('branch_id', branchId)
     .single();
     
@@ -291,7 +283,6 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
       .from('conversation_branches')
       .select('branch_id')
       .eq('project_id', projectId)
-      .eq('session_id', sessionId)
       .eq('parent_message_id', existingBranch.parent_message_id)
       .eq('branch_name', newName.trim())
       .neq('branch_id', branchId)
@@ -309,7 +300,6 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
     .from('conversation_branches')
     .update({ branch_name: newName.trim() })
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .eq('branch_id', branchId);
     
   if (updateError) {
@@ -331,7 +321,6 @@ async function deleteBranch(supabase, projectId, sessionId, branchId) {
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .eq('branch_id', branchId)
     .single();
     
@@ -356,7 +345,6 @@ async function deleteBranch(supabase, projectId, sessionId, branchId) {
     .from('conversation_branches')
     .delete()
     .eq('project_id', projectId)
-    .eq('session_id', sessionId)
     .eq('branch_id', branchId);
     
   if (branchError) {
@@ -367,26 +355,3 @@ async function deleteBranch(supabase, projectId, sessionId, branchId) {
   return json({ success: true });
 }
 
-async function getBranchCounts(supabase, projectId, sessionId) {
-  // Get count of branches for each message in a single query
-  const { data: branchCounts, error } = await supabase
-    .from('conversation_branches')
-    .select('parent_message_id')
-    .eq('project_id', projectId)
-    .eq('session_id', sessionId)
-    .not('parent_message_id', 'is', null);
-    
-  if (error) {
-    console.error('Error fetching branch counts:', error);
-    return json({ error: 'Failed to fetch branch counts' }, { status: 500 });
-  }
-  
-  // Count branches per message
-  const counts = {};
-  branchCounts?.forEach(branch => {
-    const messageId = branch.parent_message_id;
-    counts[messageId] = (counts[messageId] || 0) + 1;
-  });
-  
-  return json({ success: true, counts });
-}

@@ -2,7 +2,7 @@
 <script>
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import { Pin, FileText, HelpCircle, BrushCleaning, MessageCircle } from 'lucide-svelte';
+  import { Plus, BrushCleaning } from 'lucide-svelte';
 
   export const projectId = null;
 
@@ -48,10 +48,27 @@
     }, 10);
   }
 
+  function handleSelectionChange() {
+    if (!browser || typeof window === 'undefined') return;
+    
+    const sel = window.getSelection();
+    const text = sel.toString().trim();
+    
+    // If selection is cleared, hide menu
+    if (!text) {
+      hideMenu();
+    }
+  }
+
   function handleClick(event) {
     // Hide menu if clicking outside of it
-    if (!event.target.closest('.selection-menu')) {
-      hideMenu();
+    if (menuVisible && !event.target.closest('.selection-menu')) {
+      // Small delay to prevent immediate hiding when menu is first shown
+      setTimeout(() => {
+        if (menuVisible) {
+          hideMenu();
+        }
+      }, 10);
     }
   }
 
@@ -61,24 +78,14 @@
     selection = null;
   }
 
-  function addToFacts() {
+  function addAsCard() {
+    console.log('🎯 TextSelectionMenu addAsCard called with selectedText:', selectedText);
     if (selectedText) {
-      dispatch('add-to-facts', { text: selectedText });
+      console.log('🎯 Dispatching add-as-card event with text:', selectedText);
+      dispatch('add-as-card', { text: selectedText });
       hideMenu();
-    }
-  }
-
-  function addToDocs() {
-    if (selectedText) {
-      dispatch('add-to-docs', { text: selectedText });
-      hideMenu();
-    }
-  }
-
-  function addToQuestions() {
-    if (selectedText) {
-      dispatch('add-to-questions', { text: selectedText });
-      hideMenu();
+    } else {
+      console.log('🎯 No selected text available');
     }
   }
 
@@ -94,6 +101,7 @@
     if (browser) {
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('click', handleClick);
+      document.addEventListener('selectionchange', handleSelectionChange);
     }
   });
 
@@ -101,38 +109,26 @@
     if (browser && typeof document !== 'undefined') {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('click', handleClick);
+      document.removeEventListener('selectionchange', handleSelectionChange);
     }
   });
 </script>
 
 {#if menuVisible && selectedText}
   <div 
-    class="selection-menu fixed z-[9999] bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg py-0.5 min-w-[130px]"
+    class="selection-menu fixed z-[9999] bg-blue-500 dark:bg-blue-600 border border-blue-400 dark:border-blue-500 rounded-md shadow-lg py-0.5 min-w-[130px]"
     style="left: {menuX}px; top: {menuY}px;"
+    on:click|stopPropagation
   >
     <button
-      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left cursor-pointer"
-      on:click={addToFacts}
+      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-white hover:bg-blue-400 dark:hover:bg-blue-500 transition-colors text-left cursor-pointer"
+      on:click={addAsCard}
     >
-      <Pin size="16" />
-      <span>Add to Facts</span>
+      <Plus size="16" />
+      <span>Add as Card</span>
     </button>
     <button
-      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left cursor-pointer"
-      on:click={addToDocs}
-    >
-      <FileText size="16" />
-      <span>Add to Docs</span>
-    </button>
-    <button
-      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left cursor-pointer"
-      on:click={addToQuestions}
-    >
-      <HelpCircle size="16" />
-      <span>Add to Next Questions</span>
-    </button>
-    <button
-      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left cursor-pointer"
+      class="w-full flex items-center gap-2 px-2 py-1 text-sm text-white hover:bg-blue-400 dark:hover:bg-blue-500 transition-colors text-left cursor-pointer"
       on:click={formatText}
     >
       <BrushCleaning size="16" />

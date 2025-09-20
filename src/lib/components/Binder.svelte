@@ -419,6 +419,10 @@
             {effectiveTier}
             {userPreferences}
             bind:showAddCardForm={showAddCardForm}
+            {cardTitle}
+            {cardContent}
+            {cardTags}
+            {cardType}
             searchTerm={currentSearchTerm}
             cardsGridSize={userPreferences.cards_grid_size}
             on:add={handleCardAdd}

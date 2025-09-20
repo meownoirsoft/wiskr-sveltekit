@@ -12,22 +12,22 @@
 
   // Custom avatar function for wizard council
   function getWizardAvatar(modelKey) {
-    // Map model keys to wizard names
+    // Map model keys to wizard names (using the same keys as getModelKeyFromWizardName)
     const modelToWizardMap = {
       'qwen-72b': 'quest',
       'llama-70b': 'tina', 
-      'gpt-4o-mini-2024-07-18': 'spark',
-      'gpt-4o-mini': 'prism',
-      'llama-3.1-70b-instruct': 'sage',
-      'claude-3-opus': 'titan',
-      'claude-3-haiku': 'ember',
-      'claude-3-5-sonnet': 'gem',
-      'claude-3-5-haiku': 'gale',
-      'gpt-4o': 'aurora',
-      'gpt-4-turbo': 'vega',
-      'claude-3-5-sonnet-20241022': 'verse',
-      'gpt-4-turbo-2024-04-09': 'dash',
-      'claude-3-5-sonnet-20240620': 'opal'
+      'micro': 'spark',
+      'gpt-oss': 'prism',
+      'deepseek-v3': 'sage',
+      'llama-405b': 'titan',
+      'speed': 'ember',
+      'gemini-pro': 'gem',
+      'mistral-large': 'gale',
+      'gpt4': 'aurora',
+      'gpt-5': 'vega',
+      'quality': 'verse',
+      'gpt4-turbo': 'dash',
+      'claude-opus': 'opal'
     };
     
     const wizardName = modelToWizardMap[modelKey] || 'quest';
@@ -46,14 +46,12 @@
 
   // Store card data when modal becomes visible
   $: if (isVisible && card) {
-    console.log('🧙‍♂️ Storing card data when modal opens:', card);
     console.log('🧙‍♂️ Selected wizard when modal opens:', selectedWizard);
     storedCard = card;
   }
   
   // Also store card data when card prop changes
   $: if (card) {
-    console.log('🧙‍♂️ Storing card data when card prop changes:', card);
     storedCard = card;
   }
 
@@ -78,6 +76,7 @@
   let currentSession = null;
   let isMobile = false;
   let sessionId = null; // Session ID for persisting messages
+  let branchId = null; // Branch ID for the current conversation
 
   // Wizard tier mapping (based on the model dropdown logic)
   const WIZARD_TIERS = {
@@ -310,8 +309,22 @@
     if (!wizard.isAvailable) return;
     
     console.log('🧙‍♂️ Selecting wizard:', wizard.name, 'Key:', wizard.key);
+    
+    // If it's the same wizard, don't do anything
+    if (selectedWizard?.key === wizard.key) {
+      console.log('🧙‍♂️ Same wizard selected, keeping current messages');
+      return;
+    }
+    
     selectedWizard = wizard;
-    initializeChat(wizard);
+    
+    // Only initialize chat if it hasn't been initialized yet
+    if (!hasInit) {
+      initializeChat(wizard);
+    } else {
+      // Load existing messages for this wizard without reinitializing
+      loadExistingMessages();
+    }
   }
 
   async function initializeChat(wizard) {
@@ -332,85 +345,109 @@
     console.log('🧙‍♂️ Session name:', name);
     console.log('🧙‍♂️ Generated session ID:', sessionId);
     console.log('🧙‍♂️ World ID:', worldId);
-    console.log('🧙‍♂️ Project ID for branches:', worldId || 'wizards-council');
+    
+    // Ensure we have a valid project ID
+    if (!worldId) {
+      console.error('🧙‍♂️ No project ID provided to Wizards Council');
+      return;
+    }
+    
+    console.log('🧙‍♂️ Project ID for branches:', worldId);
     
     current = {
-      id: worldId || 'wizards-council', // Use the current project ID or fallback
+      id: worldId, // Use the current project ID
       name: 'Wizard\'s Council',
       model: wizard.key,
       created_at: new Date().toISOString(),
-      project_id: worldId || 'wizards-council' // Add project_id for compatibility
+      project_id: worldId // Use the actual project ID
     };
     
     // Create a session object
     const cardTitle = storedCard?.title || card?.title || 'Untitled Card';
+    const branchName = `${cardTitle} - Council Chat`;
+    // Let the API generate the branch ID, we'll use it after creation
+    
     currentSession = {
       id: sessionId,
       session_name: `${cardTitle} - Wizard's Council`,
       created_at: new Date().toISOString()
     };
     
-    // Create or get a branch for this specific card (shared across all wizards)
-    const branchName = `${cardTitle} - Council Chat`;
-    let branchId = `card-${cardId}-main`; // Default to card-specific main branch
+    // Use a dummy session ID to bypass sessions table (valid UUID format)
+    const dummySessionId = '00000000-0000-0000-0000-000000000001';
+    sessionId = dummySessionId;
+    currentSession.id = sessionId;
+    currentSession.session_name = 'Wizards Council';
+    
+    console.log('🧙‍♂️ Using dummy session ID:', sessionId);
+    
+    // Check if branch already exists for this card, create if not
+    console.log('🧙‍♂️ Checking for existing branch for card:', branchName, branchId);
     
     try {
-      // First, try to find an existing branch for this card (shared across all wizards)
-      const findBranchResponse = await fetch('/api/branches', {
+      // First, try to list existing branches to see if this one exists
+      const listResponse = await fetch('/api/branches', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           action: 'list',
-          projectId: worldId || 'wizards-council',
+          projectId: worldId,
           sessionId: sessionId
         })
       });
       
-      if (findBranchResponse.ok) {
-        const findData = await findBranchResponse.json();
-        const existingBranch = findData.branches?.find(b => b.branch_name === branchName);
-        if (existingBranch) {
-          branchId = existingBranch.branch_id;
+      let branchExists = false;
+      let listData = null;
+      if (listResponse.ok) {
+        listData = await listResponse.json();
+        branchExists = listData.branches?.some(b => b.branch_name === branchName);
+        console.log('🧙‍♂️ Branch exists check:', branchExists, 'Total branches:', listData.branches?.length || 0);
+      }
+      
+      // Only create the branch if it doesn't exist
+      if (!branchExists) {
+        const branchData = {
+          action: 'create',
+          projectId: worldId,
+          sessionId: sessionId,
+          messageId: null, // No parent message for card-specific branches
+          branchName: branchName
+        };
+        
+        console.log('🧙‍♂️ Creating branch with data:', branchData);
+        
+        const branchResponse = await fetch('/api/branches', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(branchData)
+        });
+        
+        console.log('🧙‍♂️ Branch response status:', branchResponse.status);
+        
+        if (branchResponse.ok) {
+          const branchResult = await branchResponse.json();
+          console.log('🧙‍♂️ Branch created successfully:', branchResult);
+          // Use the branch ID returned by the API
+          branchId = branchResult.branch?.branch_id;
         } else {
-          // Create a new branch for this card (shared across all wizards)
-          const branchData = {
-            action: 'create',
-            projectId: worldId || 'wizards-council',
-            sessionId: sessionId,
-            messageId: null, // No parent message for card-specific branches
-            branchName: branchName
-          };
-          
-          console.log('🧙‍♂️ Creating branch with data:', branchData);
-          
-          const createBranchResponse = await fetch('/api/branches', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(branchData)
-          });
-          
-          if (createBranchResponse.ok) {
-            const createData = await createBranchResponse.json();
-            branchId = createData.branch?.branch_id || 'main';
-          } else {
-            const errorText = await createBranchResponse.text();
-            console.error('Failed to create branch:', createBranchResponse.status, errorText);
-            // Create a unique branch ID even if API fails
-            branchId = `card-${cardId}-${Date.now()}`;
-            console.log('🧙‍♂️ Using fallback branch ID:', branchId);
-          }
+          const errorText = await branchResponse.text();
+          console.error('Failed to create branch:', branchResponse.status, errorText);
+          // Generate a fallback branch ID
+          branchId = `card-${cardId}-${Date.now()}`;
         }
+      } else {
+        // Find the existing branch and use its ID
+        const existingBranch = listData.branches?.find(b => b.branch_name === branchName);
+        branchId = existingBranch?.branch_id || `card-${cardId}-${Date.now()}`;
+        console.log('🧙‍♂️ Branch already exists, reusing:', branchId);
       }
     } catch (error) {
       console.error('Error managing branch:', error);
-      // Create a unique branch ID as fallback
-      const cardId = storedCard?.id || card?.id || 'no-card';
-      branchId = `card-${cardId}-${Date.now()}`;
-      console.log('🧙‍♂️ Using catch fallback branch ID:', branchId);
+      // Continue anyway with the generated branch ID
     }
     
     // Update branch state
@@ -431,7 +468,7 @@
         },
         body: JSON.stringify({
           action: 'list',
-          projectId: worldId || 'wizards-council',
+          projectId: worldId,
           sessionId: sessionId
         })
       });
@@ -457,7 +494,7 @@
         },
         body: JSON.stringify({
           action: 'switch',
-          projectId: worldId || 'wizards-council',
+          projectId: worldId,
           sessionId: sessionId,
           branchId: branchId
         })
@@ -466,11 +503,13 @@
       if (response.ok) {
         const data = await response.json();
         if (data.messages && data.messages.length > 0) {
-          // Load existing messages
+          // Load existing messages, preserving original wizard info if available
           messages = data.messages.map(msg => ({
             ...msg,
-            avatar: selectedWizard.avatar,
-            avatarPath: selectedWizard.avatarPath
+            // Only set avatar info if not already present (preserve original wizard)
+            avatar: msg.avatar || selectedWizard.avatar,
+            avatarPath: msg.avatarPath || selectedWizard.avatarPath,
+            model_key: msg.model_key || selectedWizard.key
           }));
           return; // Don't add welcome message if we have existing messages
         }
@@ -481,21 +520,46 @@
       console.error('Error loading existing messages:', error);
     }
     
-    // Initialize with a welcome message from the wizard (only if no existing messages)
-    const welcomeMessage = {
-      id: uuidv4(), // Use proper UUID
-      role: 'assistant',
-      content: `Greetings! I am ${wizard.name} from the ${getCompanyDisplayName(wizard.company)} Order. ${wizard.description} I'm here to help you with ${wizard.bestFor}.
+    // No welcome message - start with empty chat
+  }
 
-How may I assist you with your creative endeavors today?`,
-      created_at: new Date().toISOString(),
-      model: wizard.key,
-      model_key: wizard.key,  // This is what MessageItem uses for getAIAvatar
-      avatar: wizard.avatar,  // Use the wizard's avatar
-      avatarPath: wizard.avatarPath  // Use the wizard's avatar path
-    };
-    
-    messages = [welcomeMessage];
+  async function loadExistingMessages() {
+    // Load existing messages without reinitializing the chat
+    try {
+      const response = await fetch('/api/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'get-messages',
+          projectId: worldId,
+          sessionId: sessionId,
+          branchId: branchId
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && data.messages.length > 0) {
+          // Load existing messages, preserving original wizard info if available
+          messages = data.messages.map(msg => ({
+            ...msg,
+            // Only set avatar info if not already present (preserve original wizard)
+            avatar: msg.avatar || selectedWizard.avatar,
+            avatarPath: msg.avatarPath || selectedWizard.avatarPath,
+            model_key: msg.model_key || selectedWizard.key
+          }));
+          console.log('🧙‍♂️ Loaded existing messages:', messages.length);
+        } else {
+          console.log('🧙‍♂️ No existing messages found');
+        }
+      } else {
+        console.error('Failed to load messages:', response.status, await response.text());
+      }
+    } catch (error) {
+      console.error('Error loading existing messages:', error);
+    }
   }
 
   function surpriseMe() {
@@ -511,8 +575,21 @@ How may I assist you with your creative endeavors today?`,
     const randomIndex = Math.floor(Math.random() * availableWizards.length);
     const randomWizard = availableWizards[randomIndex];
     
+    // If it's the same wizard, don't do anything
+    if (selectedWizard?.key === randomWizard.key) {
+      console.log('🧙‍♂️ Same wizard selected in surprise me, keeping current messages');
+      return;
+    }
+    
     selectedWizard = randomWizard;
-    initializeChat(randomWizard);
+    
+    // Only initialize chat if it hasn't been initialized yet
+    if (!hasInit) {
+      initializeChat(randomWizard);
+    } else {
+      // Load existing messages for this wizard without reinitializing
+      loadExistingMessages();
+    }
   }
 
   function closeModal() {
@@ -562,6 +639,8 @@ How may I assist you with your creative endeavors today?`,
         created_at: new Date().toISOString(),
         avatar: selectedWizard.avatar,  // Use the wizard's avatar
         avatarPath: selectedWizard.avatarPath,  // Use the wizard's avatar path
+        wizard_name: selectedWizard.name,  // Store the wizard's name
+        wizard_company: selectedWizard.company,  // Store the wizard's company
         isLoading: true // Add loading indicator
       }
     ];
@@ -782,8 +861,8 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
         <!-- Middle: Chat Interface -->
         <div class="w-1/2 flex flex-col overflow-hidden">
           {#if selectedWizard}
-            <!-- Chat Header -->
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <!-- Chat Header - Hidden -->
+            <!-- <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full overflow-hidden border-2 {getPortraitBorderClass(selectedWizard.tier)}">
                   <img 
@@ -801,7 +880,7 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
                   </p>
                 </div>
               </div>
-            </div>
+            </div> -->
             
             <!-- Chat Interface -->
             <div class="flex-1 overflow-hidden">
@@ -827,6 +906,7 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
                 {effectiveTier}
                 hideModelDropdown={true}
                 hideInfoPopup={true}
+                disableBranches={true}
                 hideSessions={true}
                 on:send={send}
                 on:message-sent={handleMessageSent}
@@ -875,20 +955,20 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
                   disabled={!wizard.isAvailable}
                 >
                 <!-- Tier Tag -->
-                <div class="absolute top-2 right-2 {wizard.isAvailable ? getTierTagColor(wizard.tier) : 'bg-gray-500'} text-white text-xs font-bold px-2 py-1 rounded-lg">
+                <div class="wizards-tier-tag absolute top-2 right-2 {wizard.isAvailable ? getTierTagColor(wizard.tier) : 'bg-gray-500'} text-white font-bold px-2 py-1 rounded-lg">
                   {getTierTagText(wizard.tier)}
                 </div>
                 
                 <div class="flex items-stretch h-full">
                   <!-- Portrait -->
-                  <div class="w-16 h-full overflow-hidden border-r-2 rounded-l-xl {wizard.isAvailable 
+                  <div class="wizards-portrait w-16 h-full overflow-hidden border-r-2 rounded-l-xl {wizard.isAvailable 
                     ? getPortraitBorderClass(wizard.tier) 
                     : 'border-gray-300 dark:border-gray-600 grayscale'} flex-shrink-0"
                   >
                     <img 
                       src={wizard.avatarPath} 
                       alt={wizard.name}
-                      class="w-full h-full object-cover rounded-l-xl"
+                      class="wizards-portrait-img w-full h-full object-cover rounded-l-xl"
                     />
                   </div>
                   
@@ -935,5 +1015,26 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
   
   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: rgba(156, 163, 175, 0.5);
+  }
+
+  /* Namespaced styles for wizards modal to prevent global CSS interference */
+  .wizards-tier-tag {
+    font-size: 0.75rem !important; /* text-xs equivalent */
+    line-height: 1rem !important;
+    z-index: 10 !important;
+  }
+
+  .wizards-portrait {
+    width: 4rem !important; /* w-16 equivalent */
+    height: 100% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+  }
+
+  .wizards-portrait-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
   }
 </style>

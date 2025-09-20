@@ -62,6 +62,12 @@
   export let cardsGridSize = 3;
   export let userPreferences = { display_name: null }; // User preferences
   
+  // Card form props
+  export let cardTitle = '';
+  export let cardContent = '';
+  export let cardTags = '';
+  export let cardType = 'character';
+  
   let projectCardTypes = [];
   let loadingCardTypes = false;
   let showEditModal = false;
@@ -969,6 +975,10 @@
 {#if showAddModal}
   <AddCardModal
     projectCardTypes={projectCardTypes}
+    initialTitle={cardTitle}
+    initialContent={cardContent}
+    initialTags={cardTags}
+    initialType={cardType}
     on:save={handleAddModalSave}
     on:cancel={handleAddModalCancel}
   />

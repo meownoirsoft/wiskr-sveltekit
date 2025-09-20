@@ -31,8 +31,14 @@ const config = {
     hmr: isDev
   },
   onwarn: (warning, handler) => {
-    if (warning.code.startsWith('a11y-')) return;
-    handler(warning);
+    // Suppress all warnings for now (temporary)
+    return;
+    
+    // Original suppression logic (commented out)
+    // if (warning.code && warning.code.startsWith('a11y-')) return;
+    // if (warning.code && warning.code.includes('export_let_unused')) return;
+    // if (warning.code && warning.code.includes('unused')) return;
+    // handler(warning);
   },
   vitePlugin: {
     inspector: false

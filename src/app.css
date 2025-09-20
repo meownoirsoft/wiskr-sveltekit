@@ -1309,6 +1309,11 @@ code {
   transition: all 0.3s ease;
 }
 
+/* Override button positioning for council invite button */
+.card-container button[title="Open Wizards Council"] {
+  position: absolute !important;
+}
+
 .card-container:hover {
   transform: translateY(-6px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);

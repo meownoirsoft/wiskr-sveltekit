@@ -24,6 +24,7 @@ import ContextManager from '$lib/components/ContextManager.svelte';
 import ChatManager from '$lib/components/ChatManager.svelte';
 import DeckDrawer from '$lib/components/DeckDrawer.svelte';
 import DeckView from '$lib/components/DeckView.svelte';
+import TextSelectionMenu from '$lib/components/TextSelectionMenu.svelte';
 
 // New management components
 import ProjectState from '$lib/components/ProjectState.svelte';
@@ -1613,13 +1614,20 @@ async function handleGenerateIdeas() {
 }
 
 // Text selection handlers from ChatInterface
-function handleTextAddToCards(event) {
+function handleTextAddAsCard(event) {
   const text = event.detail.text;
+  console.log('🎯 Main page handleTextAddAsCard called with text:', text);
+  console.log('🎯 Setting cardTitle to:', text.length > 50 ? text.substring(0, 50) + '...' : text);
+  console.log('🎯 Setting cardContent to:', text);
+  
   // Auto-populate card form with selected text
   cardTitle = text.length > 50 ? text.substring(0, 50) + '...' : text;
   cardContent = text;
   cardType = 'note'; // Default type for selected text
   showAddCardForm = true;
+  
+  console.log('🎯 After setting values - cardTitle:', cardTitle, 'cardContent:', cardContent, 'showAddCardForm:', showAddCardForm);
+  
   // Switch to cards tab and ensure left panel is visible
   activeTab = 'cards';
   showLeftPanel = true;
@@ -1627,6 +1635,11 @@ function handleTextAddToCards(event) {
   if (!isDesktop && showRightPanel) {
     showRightPanel = false;
   }
+  
+  // Check values after a short delay
+  setTimeout(() => {
+    console.log('🎯 After timeout - cardTitle:', cardTitle, 'cardContent:', cardContent, 'showAddCardForm:', showAddCardForm);
+  }, 100);
 }
 
 function handleTextAddToDocs(event) {
@@ -2669,6 +2682,7 @@ function handleTextAddToDocs(event) {
         <Binder
           bind:this={binderComponent}
           {current}
+          worldId={current?.id}
           {cards}
           {docs}
           loadingCards={loadingCards}
@@ -2683,7 +2697,6 @@ function handleTextAddToDocs(event) {
           onToggleCollapse={toggleLeftPanelCollapse}
           bind:showAddCardForm
           bind:cardType
-          worldId={current?.id}
           bind:cardTitle
           bind:cardContent
           bind:cardTags
@@ -3238,5 +3251,12 @@ function handleTextAddToDocs(event) {
   on:view-deck={handleViewDeck}
   on:toggle-pin={handleTogglePin}
   on:reorder-deck={handleReorderDeck}
+/>
+
+<!-- Text Selection Menu -->
+<TextSelectionMenu 
+  projectId={current?.id}
+  on:add-as-card={handleTextAddAsCard}
+  on:format-text={handleFormatText}
 />
 
