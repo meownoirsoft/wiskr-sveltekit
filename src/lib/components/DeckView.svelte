@@ -1187,7 +1187,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if isOpen && deck}
-  <div class="h-full flex flex-col bg-white dark:bg-gray-900">
+  <div class="deck-view-container h-full flex flex-col bg-white dark:bg-gray-900">
     <!-- Header -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center gap-3">
@@ -1205,8 +1205,8 @@
                 type="text"
                 bind:value={editingDeckName}
                 on:keydown={handleDeckNameKeydown}
-                class="text-xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-blue-500 focus:outline-none px-1 py-0.5"
-                style="min-width: 200px;"
+                class="text-xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none px-1 py-0.5"
+                style="color: white !important; min-width: 200px;"
                 autofocus
               />
               <button
@@ -1225,7 +1225,7 @@
               </button>
             </div>
           {:else}
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">{deck.name}</h1>
+            <h1 class="deck-name text-xl font-bold" style="color: white !important;">{deck.name}</h1>
             <button
               on:click={startEditingDeckName}
               class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -1242,29 +1242,31 @@
         <!-- Collapse/Expand All Buttons -->
         <div class="flex items-center gap-1 border border-gray-200 dark:border-gray-600 rounded-lg p-1">
           <button
-            class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-md"
             on:click={collapseAllSections}
             title="Collapse all sections"
           >
             <Minimize2 size="16" />
+            <span class="text-xs">Collapse All</span>
           </button>
           <button
-            class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-md"
             on:click={expandAllSections}
             title="Expand all sections"
           >
             <Maximize2 size="16" />
+            <span class="text-xs">Expand All</span>
           </button>
         </div>
         
-        <!-- Branching Paths Toggle -->
-        <button
+        <!-- Branching Paths Toggle - Hidden -->
+        <!-- <button
           class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {showBranchingPaths ? 'text-blue-500 dark:text-blue-400' : ''}"
           on:click={toggleBranchingPaths}
           title={showBranchingPaths ? "Hide branching paths" : "Show branching paths"}
         >
           <Layers size="20" />
-        </button>
+        </button> -->
         <button
           class="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
           on:click={toggleCardLibrary}
@@ -1326,12 +1328,12 @@
         
         
         {#each sections as section, sectionIndex}
-        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 pt-3 pb-2 transition-all">
+        <div class="section-container">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
               <div class="flex gap-1">
                 <button
-                  class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="section-move-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Move section up"
                   disabled={sectionIndex === 0}
                   on:click={() => moveSectionUp(sectionIndex)}
@@ -1339,7 +1341,7 @@
                   <ChevronsUp size="16" />
                 </button>
                 <button
-                  class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="section-move-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Move section down"
                   disabled={sectionIndex === sections.length - 1}
                   on:click={() => moveSectionDown(sectionIndex)}
@@ -1395,7 +1397,7 @@
             <div class="flex items-center gap-2">
               <!-- Collapse/Expand Button -->
               <button
-                class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                class="section-collapse-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 on:click={() => toggleSectionCollapse(section.id)}
                 title={sectionCollapsedMap[section.id] ? "Expand section" : "Collapse section"}
               >
@@ -1432,16 +1434,16 @@
                       card={lastCard}
                       showActions={false}
                       on:card-click={openCardZoom}
-                      showRemoveButton={true}
+                      showRemoveButton={false}
                       on:remove={() => removeCardFromSection(lastCard, section.id)}
-                      xPaddingClass="px-4"
                     />
                   </div>
                 {/if}
       
                 <!-- Drop zone for library view -->
                 <div
-                  class="min-h-[350px] w-[125px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+                  style="background-color: transparent !important;"
                   on:dragover={(e) => handleDragOver(e, section.id, -1)}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
@@ -1462,16 +1464,12 @@
                   {#if section.cards.length > 0}
                     <FannedCardDeck
                       cards={section.cards}
-                      cardWidth="w-48"
-                      cardHeight="h-64"
                       maxRotation={0}
-                      cardSpacing={80}
-                      containerHeight="h-96"
+                      cardSpacing={200}
+                      containerHeight="h-[350px]"
                       allowSelection={false}
                       allowDrag={true}
                       allowReordering={true}
-                      autoFit={true}
-                      smartSpacing={true}
                       on:card-click={openCardZoom}
                       on:drag-start={(e) => handleDragStart(e.detail.event, e.detail.card)}
                       on:drag-end={(e) => handleDragEnd(e.detail.event)}
@@ -1496,7 +1494,8 @@
                 
                 <!-- Drop zone on the right -->
                 <div
-                  class="min-h-[350px] w-[125px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-red-400 dark:hover:border-red-500 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}"
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}"
+                  style="background-color: transparent !important;"
                   on:dragover={(e) => handleDragOver(e, section.id, -1)}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
@@ -1520,9 +1519,11 @@
       <!-- Card Library Panel -->
       {#if showCardLibrary}
         <div class="w-[70%] border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col">
-          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Card Library</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Drag cards to sections to add them
+              </p>
               <button
                 class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 on:click={toggleCardLibrary}
@@ -1530,9 +1531,6 @@
                 <X size="20" />
               </button>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Drag cards to sections to add them
-            </p>
           </div>
       
           <div class="flex-1 overflow-y-auto p-4">
@@ -1546,6 +1544,7 @@
                 {#each availableCards as card}
                   <div
                     class="relative w-fit mx-auto"
+                    style="background-color: transparent !important;"
                     draggable="true"
                     on:dragstart={(e) => handleDragStart(e, card)}
                     on:dragend={handleDragEnd}
@@ -1579,3 +1578,88 @@
         on:progress-updated={handleCardZoomUpdateProgress}
         on:zoom-card={handleCardZoomFromWizard}
       />
+
+<style>
+  .deck-view-container :global(h1) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(input) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.text-xl) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.font-bold) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.deck-name) {
+    color: white !important;
+    position: relative !important;
+    z-index: 10 !important;
+    background: transparent !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5) !important;
+  }
+  
+  .deck-view-container :global(.section-container) {
+    border: 1px solid white;
+    border-radius: 8px;
+    padding: 12px 12px 8px 12px;
+    transition: all 200ms ease;
+  }
+  
+  /* Target only specific deck view buttons by their classes */
+  .deck-view-container :global(.collapse-expand-button) {
+    background: transparent !important;
+    border: 1px solid white !important;
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.collapse-expand-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .deck-view-container :global(.section-move-button) {
+    background: transparent !important;
+    border: 1px solid white !important;
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.section-move-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .deck-view-container :global(.section-collapse-button) {
+    background: transparent !important;
+    border: 1px solid white !important;
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.section-collapse-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Target only deck view specific text elements */
+  .deck-view-container :global(.deck-name) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.section-container h3),
+  .deck-view-container :global(.section-container .section-title) {
+    color: white !important;
+  }
+  
+  .deck-view-container :global(.section-container input) {
+    color: white !important;
+  }
+  
+  /* Exclude fanned deck from deck view styling */
+  .deck-view-container :global(.fanned-deck-container) {
+    /* No styling applied - let fanned deck handle its own styling */
+  }
+  
+  
+</style>

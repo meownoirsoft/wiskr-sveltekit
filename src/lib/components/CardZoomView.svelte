@@ -787,7 +787,7 @@
     <!-- Just the Card -->
     <div 
       class="card-container relative transition-all duration-200 z-[99]"
-      style="width: 500px; height: 800px;"
+      style="width: 500px; height: 800px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
       on:click|stopPropagation
     >
       <!-- Wizards Council Invite Button -->

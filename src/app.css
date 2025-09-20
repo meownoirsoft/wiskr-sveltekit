@@ -292,7 +292,7 @@ body {
 }
 
 /* Ensure interactive elements are clickable over background */
-button:not(.card button), input, select, textarea, a, [role="button"]:not(.card-container) {
+button:not(.card button):not([data-wizard-key]):not(.card-frame):not(.fanned-card-wrapper button):not(.fanned-deck-card button):not(.fanned-deck-container button), input, select, textarea, a, [role="button"]:not(.card-container):not(.fanned-card-wrapper [role="button"]):not(.fanned-deck-card [role="button"]):not(.fanned-deck-container [role="button"]) {
   position: relative;
   z-index: 10;
   background-color: var(--bg-input, #ffffff);
@@ -454,6 +454,7 @@ button[title="Replace art"] {
 .card-frame {
   border-style: solid !important;
   border-width: 2px !important;
+  background-color: transparent !important;
 }
 
 /* Fix for backwards text in inputs */

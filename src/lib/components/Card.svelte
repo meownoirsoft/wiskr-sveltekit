@@ -11,6 +11,7 @@
   export let showRemoveButton = false;
   export let xPaddingClass = 'px-2';
   export let isNew = false;
+  export let inFannedDeck = false;
   
   // Check if this card is new
   $: isNewCard = isNew || (card?.id && $newCardIds.has(card.id));
@@ -299,8 +300,8 @@
 </script>
 
 <div 
-  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg"
-  style="width: 250px; height: 350px;"
+  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg rounded-lg"
+  style="width: 250px; height: 350px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
   on:click={handleCardClick}
   on:keydown={(e) => e.key === 'Enter' && handleCardClick()}
   role="button"
@@ -339,7 +340,7 @@
       >
         <h3 
           class="card-title font-bold text-sm leading-tight whitespace-nowrap transition-transform duration-1000 ease-in-out" 
-          style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+          style="color: {rarity.textColor} !important; text-shadow: {inFannedDeck ? '0 2px 6px rgba(0, 0, 0, 0.5) !important' : '0 2px 4px rgba(0, 0, 0, 0.2)'};"
           bind:this={titleElement}
         >
           {@html highlightText(card?.title || card?.key || 'Untitled Card', searchTerm)}
@@ -523,7 +524,7 @@
         <div class="relative">
           <span 
             class="card-rarity text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5 font-serif"
-            style:color={rarity.textColor}
+            style:color={`${rarity.textColor} !important`}
           >
             {card?.rarity || 'common'}
           </span>
