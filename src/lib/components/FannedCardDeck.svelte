@@ -26,6 +26,7 @@
   let cachedSpacing = null;
   let lastContainerWidth = null;
   let lastCardsLength = null;
+  let actualContainerWidth = 0; // Track actual container width
   
   // Preview modal state
   let previewCard = null;
@@ -179,11 +180,11 @@
 
   function getCardStyle(index) {
     const rotation = (index - (cards.length - 1) / 2) * maxRotation;
-    const translateX = index * cardSpacing - scrollPosition;
+    const translateX = index * optimalSpacing - scrollPosition;
     const isSelected = selectedCards.has(index);
     
     if (index === 0) {
-      console.log('🎡 Card 0 style:', { index, cardSpacing, scrollPosition, translateX });
+      console.log('🎡 Card 0 style:', { index, optimalSpacing, scrollPosition, translateX });
     }
     
     return `
@@ -248,27 +249,117 @@
     return totalWidth > containerWidth;
   }
 
+  function measureContainerWidth() {
+    if (scrollContainer) {
+      const newWidth = scrollContainer.offsetWidth;
+      if (newWidth !== actualContainerWidth) {
+        const oldWidth = actualContainerWidth;
+        actualContainerWidth = newWidth;
+        console.log('📏 Container width changed:', { oldWidth, newWidth });
+      }
+      return newWidth;
+    }
+    return 0;
+  }
+
   function getOptimalSpacing() {
     if (!scrollContainer || cards.length === 0) {
+      console.log('🔧 getOptimalSpacing: No container or cards', { 
+        hasContainer: !!scrollContainer, 
+        cardsLength: cards.length 
+      });
       return cardSpacing;
     }
     
-    const containerWidth = scrollContainer.offsetWidth;
-    if (containerWidth === 0) {
+    const currentWidth = measureContainerWidth();
+    console.log('🔧 getOptimalSpacing: Starting calculation', { 
+      currentWidth, 
+      actualContainerWidth,
+      cardsLength: cards.length,
+      cardSpacing 
+    });
+    
+    if (currentWidth === 0) {
+      console.log('🔧 getOptimalSpacing: Container width is 0, using fallback');
       return cardSpacing; // Fallback if container not ready
     }
     
     const cardWidth = 250; // Card component width
-    const minOverlap = cardWidth * 0.5; // Maximum 50% overlap (125px)
-    const maxSpacing = cardWidth - minOverlap; // Minimum 50% visible (125px)
+    const gaps = Math.max(1, cards.length - 1);
+    
+    // Check if cards fit with 50px spacing (no overlap needed)
+    const standardGap = 50;
+    const totalWidthWithStandardGap = cardWidth + (gaps * standardGap);
+    
+    console.log('🔧 Standard gap check:', {
+      currentWidth,
+      cardWidth,
+      gaps,
+      standardGap,
+      totalWidthWithStandardGap,
+      fitsWithStandardGap: totalWidthWithStandardGap <= currentWidth,
+      cardsCount: cards.length
+    });
+    
+    if (totalWidthWithStandardGap <= currentWidth) {
+      // Container is bigger than cards width with 50px spacing - calculate optimal spacing to fill width
+      console.log('🔧 Container has extra space - calculating optimal spacing to fill width');
+      
+      // Calculate spacing to fill the container width
+      const availableSpace = currentWidth - cardWidth;
+      const optimalSpacing = availableSpace / gaps;
+      
+      // Cap at a reasonable maximum spacing (e.g., 200px) to avoid cards being too far apart
+      const maxReasonableSpacing = 200;
+      const result = Math.min(optimalSpacing, maxReasonableSpacing);
+      
+      console.log('🔧 Optimal spacing calculation:', {
+        currentWidth,
+        cardWidth,
+        availableSpace,
+        optimalSpacing,
+        result,
+        cardsCount: cards.length
+      });
+      
+      return result;
+    }
+    
+    // Container is smaller than cards width with 50px spacing - need to add overlap
+    console.log('🔧 Container too small for 50px gaps - calculating overlap needed');
+    
+    // Calculate maximum overlap (50% of card width)
+    const maxOverlap = cardWidth * 0.5; // 125px for 250px cards
+    const minSpacing = cardWidth - maxOverlap; // 125px minimum spacing (50% visible)
     
     // Calculate minimum spacing needed to fit all cards
-    const minSpacing = (containerWidth - cardWidth) / Math.max(1, cards.length - 1);
+    const availableSpace = currentWidth - cardWidth;
+    const minSpacingNeeded = availableSpace / gaps;
     
-    // Use the larger of cardSpacing or minSpacing, but don't exceed maxSpacing
-    const result = Math.min(maxSpacing, Math.max(cardSpacing, minSpacing));
+    console.log('🔧 Overlap calculation:', {
+      currentWidth,
+      cardWidth,
+      gaps,
+      availableSpace,
+      minSpacingNeeded,
+      maxOverlap,
+      minSpacing
+    });
     
-    console.log('🔧 getOptimalSpacing:', { containerWidth, cardWidth, minSpacing, maxSpacing, result });
+    // Use the larger of: minimum spacing needed, or minimum spacing (50% overlap)
+    const result = Math.max(minSpacingNeeded, minSpacing);
+    
+    // Verify the result fits
+    const totalWidthWithResult = cardWidth + (gaps * result);
+    const fits = totalWidthWithResult <= currentWidth;
+    
+    console.log('🔧 Final calculation:', {
+      result,
+      totalWidthWithResult,
+      fits,
+      overlapPercentage: ((cardWidth - result) / cardWidth * 100).toFixed(1) + '%',
+      cardsCount: cards.length
+    });
     
     return result;
   }
@@ -292,11 +383,62 @@
     scrollPosition = 0;
   }
 
+  // Ensure spacing is recalculated after mount and track container changes
+  onMount(() => {
+    if (scrollContainer && cards.length > 0) {
+      // Small delay to ensure container is fully rendered
+      setTimeout(() => {
+        optimalSpacing = getOptimalSpacing();
+      }, 100);
+    }
+
+    // Set up ResizeObserver to track container width changes
+    if (scrollContainer) {
+      const resizeObserver = new ResizeObserver(() => {
+        measureContainerWidth();
+        // Recalculate spacing when container size changes
+        if (cards.length > 0) {
+          optimalSpacing = getOptimalSpacing();
+        }
+      });
+      
+      resizeObserver.observe(scrollContainer);
+      
+      // Cleanup on destroy
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  });
+
   // Force card updates when scroll position changes
   $: scrollPosition, cards.length;
   
   // Debug: Log props when they change
   $: console.log('🔧 FannedCardDeck props:', { cardSpacing, cardsLength: cards.length });
+  
+  // Calculate optimal spacing for current cards and container
+  $: optimalSpacing = scrollContainer ? getOptimalSpacing() : cardSpacing;
+  $: console.log('🎯 optimalSpacing updated:', { 
+    optimalSpacing, 
+    cardSpacing, 
+    cardsLength: cards.length,
+    actualContainerWidth,
+    calculationResult: scrollContainer ? getOptimalSpacing() : 'no container'
+  });
+  
+  // Recalculate spacing when container width or cards change
+  $: if (scrollContainer && cards.length > 0) {
+    console.log('🔄 Recalculating spacing due to change:', { 
+      actualContainerWidth, 
+      cardsLength: cards.length,
+      scrollContainerExists: !!scrollContainer 
+    });
+    optimalSpacing = getOptimalSpacing();
+  }
+  
+  // Specifically react to container width changes
+  $: actualContainerWidth, optimalSpacing = scrollContainer ? getOptimalSpacing() : cardSpacing;
   
   // Simple reactive variables for inline styles
   $: maxRotation = maxRotation;
@@ -313,12 +455,13 @@
     aria-label="Card deck with horizontal scrolling"
     aria-live="polite"
   >
+  
   <!-- Simple card display -->
   <div class="fanned-deck-viewport">
     {#each cards as card, index}
         <span 
           class="fanned-deck-card-wrapper"
-          style="left: {index * cardSpacing}px; top: 0px; z-index: {hoveredCardIndex === index ? 9999 : index + 10};"
+          style="left: {index * optimalSpacing}px; top: 0px; z-index: {hoveredCardIndex === index ? 9999 : index + 10};"
         >
           <div 
             class="fanned-deck-card"
@@ -330,6 +473,9 @@
               {card} 
               showActions={false}
               inFannedDeck={true}
+              draggable={allowDrag}
+              on:dragstart={(e) => handleDragStart(e, card)}
+              on:dragend={handleDragEnd}
             />
           </div>
         </span>
@@ -351,7 +497,7 @@
     position: relative;
     width: 100%;
     height: 350px;
-    overflow: visible;
+    overflow: hidden;
   }
   
   .fanned-deck-viewport {

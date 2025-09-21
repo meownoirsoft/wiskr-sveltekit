@@ -49,7 +49,10 @@
 
   function handleDragEnd(event) {
     event.target.style.opacity = '1';
-    draggedDeck = null;
+    // Clear draggedDeck after a small delay to prevent immediate clicks after dragging
+    setTimeout(() => {
+      draggedDeck = null;
+    }, 100);
     dragOverIndex = -1;
   }
 
@@ -187,7 +190,13 @@
         {#each displayDecks as deck, index}
           <div 
             class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer group transition-all {dragOverIndex === index ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-300' : ''}"
-            on:click={() => {
+            on:click={(e) => {
+              // Prevent click if we just finished dragging
+              if (draggedDeck) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
               console.log('🔍 DeckDrawer: Dispatching view-deck for deck:', deck);
               dispatch('view-deck', { deck });
             }}

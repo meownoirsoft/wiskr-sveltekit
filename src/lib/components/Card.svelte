@@ -12,6 +12,7 @@
   export let xPaddingClass = 'px-2';
   export let isNew = false;
   export let inFannedDeck = false;
+  export let draggable = false;
   
   // Check if this card is new
   $: isNewCard = isNew || (card?.id && $newCardIds.has(card.id));
@@ -304,8 +305,11 @@
   style="width: 250px; height: 350px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
   on:click={handleCardClick}
   on:keydown={(e) => e.key === 'Enter' && handleCardClick()}
+  on:dragstart
+  on:dragend
   role="button"
   tabindex="0"
+  {draggable}
 >
   {#if showRemoveButton}
     <button

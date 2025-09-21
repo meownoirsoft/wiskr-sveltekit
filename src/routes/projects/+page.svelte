@@ -461,7 +461,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   async function handleViewDeck(event) {
     const { deck } = event.detail;
     
-    // Reload the deck data to get the latest section order
+    // Immediately set the deck and show the view to provide instant feedback
+    currentDeck = deck;
+    showDeckDrawer = false;
+    showDeckView = true;
+    
+    // Then reload the deck data in the background to get the latest section order
     try {
       const response = await fetch(`/api/projects/${current.id}/decks`);
       if (response.ok) {
@@ -475,19 +480,12 @@ import PanelManager from '$lib/components/PanelManager.svelte';
             decks[deckIndex] = updatedDeck;
             decks = [...decks]; // trigger reactivity
           }
-        } else {
-          currentDeck = deck; // fallback to original deck
         }
-      } else {
-        currentDeck = deck; // fallback to original deck
       }
     } catch (error) {
       console.error('Error reloading deck data:', error);
-      currentDeck = deck; // fallback to original deck
+      // Don't change currentDeck if there's an error - keep the original
     }
-    
-    showDeckDrawer = false;
-    showDeckView = true;
   }
 
   function handleTogglePin(event) {

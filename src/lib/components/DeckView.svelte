@@ -1442,9 +1442,12 @@
       
                 <!-- Drop zone for library view -->
                 <div
-                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
-                  style="background-color: transparent !important;"
-                  on:dragover={(e) => handleDragOver(e, section.id, -1)}
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 transition-all duration-200 {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 shadow-lg scale-105' : 'hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'}"
+                  style="background-color: transparent !important; {dragOverSection === section.id && dragOverIndex === -1 ? 'border-color: #3b82f6 !important; background-color: #dbeafe !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: scale(1.05) !important;' : ''}"
+                  on:dragover={(e) => {
+                    console.log('🎯 Library drop zone dragover:', section.id, -1);
+                    handleDragOver(e, section.id, -1);
+                  }}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
                   role="button"
@@ -1465,7 +1468,7 @@
                     <FannedCardDeck
                       cards={section.cards}
                       maxRotation={0}
-                      cardSpacing={200}
+                      cardSpacing={160}
                       containerHeight="h-[350px]"
                       allowSelection={false}
                       allowDrag={true}
@@ -1494,9 +1497,12 @@
                 
                 <!-- Drop zone on the right -->
                 <div
-                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}"
-                  style="background-color: transparent !important;"
-                  on:dragover={(e) => handleDragOver(e, section.id, -1)}
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 transition-all duration-200 {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-100 dark:bg-red-900/30 shadow-lg scale-105' : 'hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}"
+                  style="background-color: transparent !important; {dragOverSection === section.id && dragOverIndex === -1 ? 'border-color: #ef4444 !important; background-color: #fee2e2 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: scale(1.05) !important;' : ''}"
+                  on:dragover={(e) => {
+                    console.log('🎯 Remove drop zone dragover:', section.id, -1);
+                    handleDragOver(e, section.id, -1);
+                  }}
                   on:dragleave={handleDragLeave}
                   on:drop={(e) => handleDrop(e, section.id, -1)}
                   role="button"
