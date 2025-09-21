@@ -85,6 +85,10 @@ export const POST = async ({ request, locals }) => {
 
   // 4) Persist the user message once
   console.log('💾 Saving user message to DB:', { projectId, sessionId, branchId, role: 'user', content: message.slice(0,50) + '...' });
+  console.log('💾 Full message content length:', message.length);
+  console.log('💾 Session ID type and value:', typeof sessionId, sessionId);
+  console.log('💾 Branch ID type and value:', typeof branchId, branchId);
+  
   const { data: userMsgResult, error: userMsgError } = await locals.supabase.from('messages').insert({
     project_id: projectId,
     session_id: sessionId,

@@ -30,6 +30,8 @@ export async function POST({ request, locals }) {
         return await listBranchesForMessage(locals.supabase, projectId, sessionId, messageId);
       case 'switch':
         return await switchBranch(locals.supabase, projectId, sessionId, branchId);
+      case 'get-messages':
+        return await getMessages(locals.supabase, projectId, sessionId, branchId);
       case 'rename':
         return await renameBranch(locals.supabase, projectId, sessionId, branchId, newName);
       case 'delete':
@@ -185,6 +187,19 @@ async function listBranchesForMessage(supabase, projectId, sessionId, messageId)
 async function switchBranch(supabase, projectId, sessionId, branchId) {
   console.log('🔧 API switchBranch called with:', { projectId, sessionId, branchId });
   
+  // First, let's see what messages exist for this project
+  const { data: allMessages, error: allError } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at');
+    
+  console.log('🔍 All messages for project in switchBranch:', allMessages?.length || 0);
+  if (allMessages && allMessages.length > 0) {
+    console.log('🔍 Sample message in switchBranch:', allMessages[0]);
+    console.log('🔍 All branch IDs in switchBranch:', [...new Set(allMessages.map(m => m.branch_id))]);
+  }
+  
   // Fetch messages for the specified branch
   const { data: messages, error } = await supabase
     .from('messages')
@@ -198,7 +213,7 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
     return json({ error: 'Failed to fetch branch messages' }, { status: 500 });
   }
   
-  console.log('📨 Messages found:', messages?.length || 0);
+  console.log('📨 Messages found for branch in switchBranch:', messages?.length || 0);
   
   let branch = null;
   
@@ -252,6 +267,46 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
     success: true, 
     messages: messages || [],
     branch: branch
+  });
+}
+
+async function getMessages(supabase, projectId, sessionId, branchId) {
+  console.log('🔧 API getMessages called with:', { projectId, sessionId, branchId });
+  
+  // First, let's see what messages exist for this project
+  const { data: allMessages, error: allError } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at');
+    
+  console.log('🔍 All messages for project:', allMessages?.length || 0);
+  if (allMessages && allMessages.length > 0) {
+    console.log('🔍 Sample message:', allMessages[0]);
+    console.log('🔍 All branch IDs:', [...new Set(allMessages.map(m => m.branch_id))]);
+  }
+  
+  // Fetch messages for the specified branch
+  const { data: messages, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('project_id', projectId)
+    .eq('branch_id', branchId)
+    .order('created_at');
+    
+  if (error) {
+    console.error('API getMessages: Supabase error:', error);
+    return json({ error: 'Failed to fetch messages' }, { status: 500 });
+  }
+  
+  console.log('📨 Messages found for branch:', messages?.length || 0);
+  if (messages && messages.length > 0) {
+    console.log('📨 Sample message from branch:', messages[0]);
+  }
+  
+  return json({ 
+    success: true, 
+    messages: messages || []
   });
 }
 

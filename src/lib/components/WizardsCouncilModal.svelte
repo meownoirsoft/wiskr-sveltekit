@@ -46,8 +46,36 @@
 
   // Store card data when modal becomes visible
   $: if (isVisible && card) {
-    console.log('🧙‍♂️ Selected wizard when modal opens:', selectedWizard);
+    console.log('🧙‍♂️ Modal opened with card:', card);
+    
+    // Always reinitialize when a card is loaded to get the correct branch ID
+    console.log('🧙‍♂️ Card loaded, reinitializing chat for card:', card.id);
+    
+    // Clear messages and branch info for the new card
+    messages = [];
+    current = null;
+    branches = [];
+    currentBranch = null;
+    currentBranchId = 'main';
+    sessionId = null;
+    // Don't clear branchId - it will be set to the consistent card-specific ID
+    
     storedCard = card;
+    
+    // Auto-initialize chat with a default wizard if none selected
+    if (!selectedWizard) {
+      // Select the first available wizard
+      const availableWizards = wizardModels.filter(wizard => wizard.isAvailable);
+      if (availableWizards.length > 0) {
+        selectedWizard = availableWizards[0];
+        console.log('🧙‍♂️ Auto-selecting first available wizard:', selectedWizard.name);
+      }
+    }
+    
+    if (selectedWizard) {
+      console.log('🧙‍♂️ Initializing chat for card:', card.id);
+      initializeChat(selectedWizard);
+    }
   }
   
   // Also store card data when card prop changes
@@ -364,8 +392,14 @@
     
     // Create a session object
     const cardTitle = storedCard?.title || card?.title || 'Untitled Card';
-    const branchName = `${cardTitle} - Council Chat`;
-    // Let the API generate the branch ID, we'll use it after creation
+    const branchName = `${cardTitle} - ${wizard.name}`;
+    
+    // Generate a card-specific branch ID for this card only
+    // All wizards for this card will share the same branch
+    const cardSpecificBranchId = `branch-${cardId}`;
+    branchId = cardSpecificBranchId;
+    
+    console.log('🧙‍♂️ Using card-specific branch ID:', branchId);
     
     currentSession = {
       id: sessionId,
@@ -373,13 +407,13 @@
       created_at: new Date().toISOString()
     };
     
-    // Use a dummy session ID to bypass sessions table (valid UUID format)
-    const dummySessionId = '00000000-0000-0000-0000-000000000001';
-    sessionId = dummySessionId;
+    // Use the dummy session ID for all Wizards Council conversations
+    // But each card will have its own branch within that session
+    sessionId = '00000000-0000-0000-0000-000000000001';
     currentSession.id = sessionId;
-    currentSession.session_name = 'Wizards Council';
-    
-    console.log('🧙‍♂️ Using dummy session ID:', sessionId);
+    currentSession.session_name = `Wizards Council - ${cardTitle}`;
+
+    console.log('🧙‍♂️ Using dummy session ID for Wizards Council:', sessionId);
     
     // Check if branch already exists for this card, create if not
     console.log('🧙‍♂️ Checking for existing branch for card:', branchName, branchId);
@@ -402,6 +436,8 @@
       let listData = null;
       if (listResponse.ok) {
         listData = await listResponse.json();
+        console.log('🧙‍♂️ All branches found:', listData.branches?.map(b => ({ name: b.branch_name, id: b.branch_id })) || []);
+        console.log('🧙‍♂️ Looking for branch:', branchName);
         branchExists = listData.branches?.some(b => b.branch_name === branchName);
         console.log('🧙‍♂️ Branch exists check:', branchExists, 'Total branches:', listData.branches?.length || 0);
       }
@@ -413,7 +449,8 @@
           projectId: worldId,
           sessionId: sessionId,
           messageId: null, // No parent message for card-specific branches
-          branchName: branchName
+          branchName: branchName,
+          branchId: branchId // Use our pre-generated branch ID
         };
         
         console.log('🧙‍♂️ Creating branch with data:', branchData);
@@ -431,19 +468,19 @@
         if (branchResponse.ok) {
           const branchResult = await branchResponse.json();
           console.log('🧙‍♂️ Branch created successfully:', branchResult);
-          // Use the branch ID returned by the API
-          branchId = branchResult.branch?.branch_id;
+          // Keep using our pre-generated branch ID
         } else {
           const errorText = await branchResponse.text();
           console.error('Failed to create branch:', branchResponse.status, errorText);
-          // Generate a fallback branch ID
-          branchId = `card-${cardId}-${Date.now()}`;
+          // Keep using our pre-generated branch ID as fallback
         }
       } else {
         // Find the existing branch and use its ID
         const existingBranch = listData.branches?.find(b => b.branch_name === branchName);
-        branchId = existingBranch?.branch_id || `card-${cardId}-${Date.now()}`;
-        console.log('🧙‍♂️ Branch already exists, reusing:', branchId);
+        if (existingBranch) {
+          branchId = existingBranch.branch_id;
+        }
+        console.log('🧙‍♂️ Branch already exists, using:', branchId);
       }
     } catch (error) {
       console.error('Error managing branch:', error);
@@ -458,6 +495,7 @@
       colorClass: 'bg-white border-gray-200',
       color_index: 0 // Default to main branch color
     };
+    
     
     // Load all branches for this session
     try {
@@ -511,6 +549,7 @@
             avatarPath: msg.avatarPath || selectedWizard.avatarPath,
             model_key: msg.model_key || selectedWizard.key
           }));
+          console.log('🧙‍♂️ Loaded existing messages from switch action:', messages.length);
           return; // Don't add welcome message if we have existing messages
         }
       } else {
@@ -520,11 +559,15 @@
       console.error('Error loading existing messages:', error);
     }
     
-    // No welcome message - start with empty chat
+    // Don't add welcome message - let users start the conversation naturally
+    console.log('🧙‍♂️ No existing messages found, starting with empty conversation');
+    messages = [];
   }
 
   async function loadExistingMessages() {
     // Load existing messages without reinitializing the chat
+    console.log('🧙‍♂️ loadExistingMessages called with:', { worldId, sessionId, branchId });
+    
     try {
       const response = await fetch('/api/branches', {
         method: 'POST',
@@ -539,8 +582,12 @@
         })
       });
       
+      console.log('🧙‍♂️ get-messages response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('🧙‍♂️ get-messages response data:', data);
+        
         if (data.messages && data.messages.length > 0) {
           // Load existing messages, preserving original wizard info if available
           messages = data.messages.map(msg => ({
@@ -555,7 +602,8 @@
           console.log('🧙‍♂️ No existing messages found');
         }
       } else {
-        console.error('Failed to load messages:', response.status, await response.text());
+        const errorText = await response.text();
+        console.error('Failed to load messages:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error loading existing messages:', error);
@@ -593,6 +641,7 @@
   }
 
   function closeModal() {
+    // Don't reset chat state - keep messages for next time
     dispatch('close');
   }
 
@@ -674,17 +723,21 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
       const messageWithContext = userMsg + cardContext;
 
       // Use the same streaming API as regular chat
+      const chatPayload = { 
+        projectId: current.id, 
+        sessionId: sessionId, // Use the dynamic session ID
+        message: messageWithContext, // User message with hidden card context
+        modelKey: selectedWizard.key, 
+        tz, 
+        branchId: currentBranchId // Use the card-specific branch ID
+      };
+      
+      console.log('🧙‍♂️ Sending to /api/chat with payload:', chatPayload);
+      
       await robustStreamingFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          projectId: current.id, 
-          sessionId: sessionId, // Use the dynamic session ID
-          message: messageWithContext, // User message with hidden card context
-          modelKey: selectedWizard.key, 
-          tz, 
-          branchId: currentBranchId // Use the card-specific branch ID
-        })
+        body: JSON.stringify(chatPayload)
       }, (chunk) => {
         if (chunk === '[DONE]') return;
         
