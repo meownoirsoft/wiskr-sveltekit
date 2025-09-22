@@ -1,7 +1,7 @@
 <!-- CardsManager.svelte - MTG-style card collection manager -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { Plus, Filter, Grid, List, Star, Zap, Package, Layers, Brain } from 'lucide-svelte';
+  import { Plus, Filter, Grid, List, Star, Zap, Package, Layers, Brain, FileText } from 'lucide-svelte';
   import Card from './Card.svelte';
   import CardZoomView from './CardZoomView.svelte';
   import EditCardModal from './modals/EditCardModal.svelte';
@@ -55,6 +55,7 @@
   export let loadingCards = false;
   export let showAddCardForm = false;
   export let worldId = null;
+  export let projectName = null; // Project name for scroll generation
   export let user = null;
   export let userTier = 0; // User tier level
   export let effectiveTier = 0; // Effective tier level
@@ -664,6 +665,138 @@
     // Dispatch event to parent to handle wizard selection and chat opening
     dispatch('wizard-selected', { wizard });
   }
+
+  async function generateScroll() {
+    if (!worldId) {
+      alert('No project selected');
+      return;
+    }
+
+    // Get project name from props or use a default
+    const currentProjectName = projectName || 'Untitled Project';
+    
+    try {
+      // Fetch all decks for this project
+      const response = await fetch(`/api/projects/${worldId}/decks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch decks');
+      }
+      const data = await response.json();
+      const allDecks = data.decks || [];
+      
+      if (allDecks.length === 0) {
+        alert('No decks found in this project');
+        return;
+      }
+      
+      // Start building the markdown content
+      let markdown = `# ${currentProjectName}\n\n`;
+      markdown += `*Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}*\n\n`;
+      
+      // Add table of contents
+      markdown += `## Table of Contents\n\n`;
+      allDecks.forEach((deck, index) => {
+        markdown += `${index + 1}. [${deck.name}](#${deck.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')})\n`;
+      });
+      markdown += `\n---\n\n`;
+      
+      // Process each deck
+      allDecks.forEach((deck, deckIndex) => {
+        markdown += `## ${deck.name}\n\n`;
+        
+        if (!deck.sections || deck.sections.length === 0) {
+          markdown += `*No sections in this deck*\n\n`;
+        } else {
+          // Process each section in this deck
+          deck.sections.forEach((section, sectionIndex) => {
+            markdown += `### ${section.name}\n\n`;
+            
+            if (!section.cards || section.cards.length === 0) {
+              markdown += `*No cards in this section*\n\n`;
+              return;
+            }
+            
+            // Process cards in order (left to right)
+            section.cards.forEach((card, cardIndex) => {
+              // Card title with rarity and progress
+              const rarity = card.rarity || 'common';
+              const progressStars = card.progress || 0;
+              const progressPercentage = progressStars * 20; // Convert stars to percentage (1 star = 20%)
+              
+              markdown += `#### ${card.title}\n\n`;
+              markdown += `**Rarity:** ${rarity.charAt(0).toUpperCase() + rarity.slice(1)} | **Progress:** ${progressPercentage}%\n\n`;
+              
+              // Card content
+              if (card.content) {
+                markdown += `${card.content}\n\n`;
+              }
+              
+              // Tags
+              if (card.tags && card.tags.length > 0) {
+                markdown += `**Tags:** ${card.tags.join(', ')}\n\n`;
+              }
+              
+              // Card type if available
+              if (card.type) {
+                markdown += `**Type:** ${card.type.charAt(0).toUpperCase() + card.type.slice(1)}\n\n`;
+              }
+              
+              // Add separator between cards (except last card in section)
+              if (cardIndex < section.cards.length - 1) {
+                markdown += `---\n\n`;
+              }
+            });
+            
+            // Add separator between sections (except last section in deck)
+            if (sectionIndex < deck.sections.length - 1) {
+              markdown += `\n---\n\n`;
+            }
+          });
+        }
+        
+        // Add separator between decks (except last deck)
+        if (deckIndex < allDecks.length - 1) {
+          markdown += `\n---\n\n`;
+        }
+      });
+      
+      // Add footer
+      markdown += `\n---\n\n`;
+      markdown += `*End of ${currentProjectName}*\n`;
+      markdown += `*Total decks: ${allDecks.length}*\n`;
+      markdown += `*Total sections: ${allDecks.reduce((total, deck) => total + (deck.sections?.length || 0), 0)}*\n`;
+      markdown += `*Total cards: ${allDecks.reduce((total, deck) => 
+        total + (deck.sections?.reduce((sectionTotal, section) => 
+          sectionTotal + (section.cards?.length || 0), 0) || 0), 0)}*\n`;
+      
+      // Create timestamp for filename
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      const timeString = `${String(displayHours).padStart(2, '0')}-${minutes}${ampm}`;
+      const dateString = `${month}-${day}-${year}`;
+      
+      // Create and download the file
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentProjectName}-Scroll-${dateString}-${timeString}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error generating scroll:', error);
+      alert('Error generating scroll: ' + error.message);
+    }
+  }
 </script>
 
 <div class="cards-manager h-full flex flex-col">
@@ -811,6 +944,16 @@
         >
           <Layers size="16" />
           <span>Decks</span>
+        </button>
+        
+        <!-- Generate Scroll Button -->
+        <button
+          class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+          on:click={generateScroll}
+          title="Generate Scroll"
+        >
+          <FileText size="16" />
+          <span>Generate Scroll</span>
         </button>
         <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
           <button

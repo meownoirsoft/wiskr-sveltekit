@@ -12,6 +12,7 @@
   export let cards = [];
   export let isOpen = false;
   export let projectId = null;
+  export let projectName = null;
   export let userPreferences = { display_name: null }; // User preferences
 
 
@@ -359,6 +360,7 @@
     const updatedSections = [...sections, newSection];
     await saveDeckStructure(updatedSections);
   }
+
 
   function startEditSection(section) {
     editingSection = section.id;

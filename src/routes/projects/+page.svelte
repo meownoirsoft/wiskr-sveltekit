@@ -2672,6 +2672,7 @@ function handleTextAddToDocs(event) {
           cards={cards}
           isOpen={showDeckView}
           projectId={current?.id}
+          projectName={current?.name}
           userPreferences={userPreferences}
           on:close-deck={closeDeck}
           on:deck-updated={handleDeckUpdated}

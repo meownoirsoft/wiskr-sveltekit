@@ -414,6 +414,7 @@
             cards={sortedCards}
             loadingCards={loadingCards}
             {worldId}
+            projectName={current?.name}
             {user}
             {userTier}
             {effectiveTier}

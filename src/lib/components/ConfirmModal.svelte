@@ -8,7 +8,7 @@
   export let confirmText = 'Confirm';
   export let cancelText = 'Cancel';
   export let confirmClass = 'bg-red-600 hover:bg-red-700 text-white';
-  export let cancelClass = 'bg-gray-300 hover:bg-gray-400 text-gray-800';
+  export let cancelClass = 'bg-gray-300 hover:bg-gray-400 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100';
 
 
   const dispatch = createEventDispatcher();
