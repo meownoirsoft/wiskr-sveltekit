@@ -11,6 +11,7 @@ export const contextScoreLoading = writable(false);
 // Track which project we're currently watching
 let currentProjectId = null;
 let refreshTimeout = null;
+let isInitialized = false;
 
 /**
  * Load/refresh the context quality score for a project
@@ -68,7 +69,22 @@ export async function refreshContextScore(projectId, force = false) {
 export function initContextScoreTracking(projectId) {
   if (!browser || !projectId) return;
   
+  // Prevent multiple initializations for the same project
+  if (isInitialized && currentProjectId === projectId) {
+    console.log('🎯 Context score: Already initialized for project', projectId, '- skipping');
+    return;
+  }
+  
+  // If switching projects, clean up first
+  if (isInitialized && currentProjectId !== projectId) {
+    console.log('🎯 Context score: Switching projects from', currentProjectId, 'to', projectId);
+    cleanupContextScoreTracking();
+  }
+  
   currentProjectId = projectId;
+  isInitialized = true;
+  
+  console.log('🎯 Context score: Initializing tracking for project', projectId);
   
   // Load initial score
   refreshContextScore(projectId);
@@ -166,4 +182,5 @@ export function cleanupContextScoreTracking() {
   }
   
   currentProjectId = null;
+  isInitialized = false;
 }

@@ -1271,6 +1271,7 @@ async function createProject() {
     }
 
     const { project } = await res.json();
+    creatingProject = false;
     showNewProjectModal = false;
     newProjectName = '';
     newProjectDescription = '';

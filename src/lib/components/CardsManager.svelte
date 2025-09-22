@@ -732,7 +732,8 @@
             </select>
             <button
               on:click={() => sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'}
-              class="flex items-center gap-1 px-2 py-1 text-sm bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              class="flex items-center gap-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+              style="background-color: transparent !important;"
               title={`Currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
             >
               {#if sortOrder === 'asc'}
@@ -801,7 +802,7 @@
         <!-- Decks Button -->
         <button
           id="toggle-decks"
-          class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+          class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
           on:click={() => {
             // Dispatch event to toggle deck drawer
             window.dispatchEvent(new CustomEvent('toggle-deck-drawer'));

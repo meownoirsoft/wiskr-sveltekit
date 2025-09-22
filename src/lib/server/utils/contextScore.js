@@ -93,12 +93,6 @@ export function calculateDescriptionQualityScore(description) {
 export function calculateContextQualityScoreFromRings({ rings, metadata }) {
   let score = 0;
   
-  console.log('🎯 Server: Calculating rings-based score for rings:', {
-    global: rings?.global ? 'exists' : 'missing',
-    local: rings?.local ? 'exists' : 'missing', 
-    neighbors: rings?.neighbors ? 'exists' : 'missing',
-    target: rings?.target ? 'exists' : 'missing'
-  });
   
   // Global Ring Quality (0-30 points)
   const globalRing = rings?.global;
@@ -121,8 +115,6 @@ export function calculateContextQualityScoreFromRings({ rings, metadata }) {
     
     // Token efficiency (0-15 points) - more tokens = richer context
     score += Math.min(globalTokens / 2, 15);
-  } else {
-    console.log('🎯 Server: No global ring content');
   }
   
   // Local Ring Quality (0-25 points)
@@ -139,8 +131,6 @@ export function calculateContextQualityScoreFromRings({ rings, metadata }) {
     // Content diversity (0-10 points)
     if (localLength > 200) score += 5;
     if (localLength > 500) score += 5;
-  } else {
-    console.log('🎯 Server: No local ring content');
   }
   
   // Neighbors Ring Quality (0-25 points)
@@ -157,8 +147,6 @@ export function calculateContextQualityScoreFromRings({ rings, metadata }) {
     // Related content quality (0-10 points)
     if (neighborsLength > 150) score += 5;
     if (neighborsLength > 400) score += 5;
-  } else {
-    console.log('🎯 Server: No neighbors ring content');
   }
   
   // Target Ring Quality (0-20 points)
@@ -175,8 +163,6 @@ export function calculateContextQualityScoreFromRings({ rings, metadata }) {
     // Target richness (0-10 points)
     if (targetLength > 100) score += 5;
     if (targetLength > 300) score += 5;
-  } else {
-    console.log('🎯 Server: No target ring content');
   }
   
   // Overall Token Efficiency Bonus (0-10 points)
@@ -225,7 +211,6 @@ export function calculateContextQualityScore({ hasProjectDescription, projectDes
  */
 export async function refreshContextScore(supabase, projectId) {
   try {
-    console.log('🎯 Server: Starting context score refresh for project', projectId);
     
     // Import buildContextRings to get raw rings data for scoring
     const { buildContextRings } = await import('../context/contextRings.js');
@@ -234,13 +219,6 @@ export async function refreshContextScore(supabase, projectId) {
     const { supabaseAdmin } = await import('../supabaseClient.js');
     
     // Get raw context rings for scoring (not formatted for AI)
-    console.log('🎯 Server: Calling buildContextRings for scoring with params:', {
-      projectId,
-      operation: 'create',
-      targetCards: [],
-      userMessage: 'Assess context quality',
-      budget: 'high'
-    });
     
     const contextData = await buildContextRings({
       supabase: supabaseAdmin,
@@ -251,22 +229,8 @@ export async function refreshContextScore(supabase, projectId) {
       budget: 'high' // Use high budget to get comprehensive context
     });
 
-    console.log('🎯 Server: Context data retrieved for scoring');
-    console.log('🎯 Server: contextData.rings exists:', !!contextData.rings);
-    console.log('🎯 Server: contextData.totalTokens exists:', !!contextData.totalTokens);
-    console.log('🎯 Server: Context rings data:', {
-      global: contextData.rings?.global?.tokens || 0,
-      local: contextData.rings?.local?.tokens || 0,
-      neighbors: contextData.rings?.neighbors?.tokens || 0,
-      target: contextData.rings?.target?.tokens || 0,
-      totalTokens: contextData.totalTokens || 0
-    });
 
     // Calculate score using rings-based method
-    console.log('🎯 Server: About to call calculateContextQualityScoreFromRings with:', {
-      rings: contextData.rings,
-      metadata: { tokenUsage: { totalTokens: contextData.totalTokens } }
-    });
     
     const score = calculateContextQualityScoreFromRings({
       rings: contextData.rings,

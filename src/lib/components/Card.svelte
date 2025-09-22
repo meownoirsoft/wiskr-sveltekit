@@ -478,7 +478,7 @@
             </div>
           {:else}
             <span 
-              class="text-sm text-gray-400 dark:text-gray-500 italic ml-1"
+              class="mb-1 text-sm text-gray-400 dark:text-gray-500 italic ml-1"
             >
               No tags yet. Click to add.
             </span>

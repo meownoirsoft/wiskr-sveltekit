@@ -183,9 +183,6 @@
     const translateX = index * optimalSpacing - scrollPosition;
     const isSelected = selectedCards.has(index);
     
-    if (index === 0) {
-      console.log('🎡 Card 0 style:', { index, optimalSpacing, scrollPosition, translateX });
-    }
     
     return `
       transform: rotate(${rotation}deg) translateX(${translateX}px);
@@ -255,7 +252,6 @@
       if (newWidth !== actualContainerWidth) {
         const oldWidth = actualContainerWidth;
         actualContainerWidth = newWidth;
-        console.log('📏 Container width changed:', { oldWidth, newWidth });
       }
       return newWidth;
     }
@@ -264,23 +260,12 @@
 
   function getOptimalSpacing() {
     if (!scrollContainer || cards.length === 0) {
-      console.log('🔧 getOptimalSpacing: No container or cards', { 
-        hasContainer: !!scrollContainer, 
-        cardsLength: cards.length 
-      });
       return cardSpacing;
     }
     
     const currentWidth = measureContainerWidth();
-    console.log('🔧 getOptimalSpacing: Starting calculation', { 
-      currentWidth, 
-      actualContainerWidth,
-      cardsLength: cards.length,
-      cardSpacing 
-    });
     
     if (currentWidth === 0) {
-      console.log('🔧 getOptimalSpacing: Container width is 0, using fallback');
       return cardSpacing; // Fallback if container not ready
     }
     
@@ -291,19 +276,9 @@
     const standardGap = 50;
     const totalWidthWithStandardGap = cardWidth + (gaps * standardGap);
     
-    console.log('🔧 Standard gap check:', {
-      currentWidth,
-      cardWidth,
-      gaps,
-      standardGap,
-      totalWidthWithStandardGap,
-      fitsWithStandardGap: totalWidthWithStandardGap <= currentWidth,
-      cardsCount: cards.length
-    });
     
     if (totalWidthWithStandardGap <= currentWidth) {
       // Container is bigger than cards width with 50px spacing - calculate optimal spacing to fill width
-      console.log('🔧 Container has extra space - calculating optimal spacing to fill width');
       
       // Calculate spacing to fill the container width
       const availableSpace = currentWidth - cardWidth;
@@ -313,20 +288,11 @@
       const maxReasonableSpacing = 200;
       const result = Math.min(optimalSpacing, maxReasonableSpacing);
       
-      console.log('🔧 Optimal spacing calculation:', {
-        currentWidth,
-        cardWidth,
-        availableSpace,
-        optimalSpacing,
-        result,
-        cardsCount: cards.length
-      });
       
       return result;
     }
     
     // Container is smaller than cards width with 50px spacing - need to add overlap
-    console.log('🔧 Container too small for 50px gaps - calculating overlap needed');
     
     // Calculate maximum overlap (50% of card width)
     const maxOverlap = cardWidth * 0.5; // 125px for 250px cards
@@ -336,15 +302,6 @@
     const availableSpace = currentWidth - cardWidth;
     const minSpacingNeeded = availableSpace / gaps;
     
-    console.log('🔧 Overlap calculation:', {
-      currentWidth,
-      cardWidth,
-      gaps,
-      availableSpace,
-      minSpacingNeeded,
-      maxOverlap,
-      minSpacing
-    });
     
     // Use the larger of: minimum spacing needed, or minimum spacing (50% overlap)
     const result = Math.max(minSpacingNeeded, minSpacing);
@@ -353,13 +310,6 @@
     const totalWidthWithResult = cardWidth + (gaps * result);
     const fits = totalWidthWithResult <= currentWidth;
     
-    console.log('🔧 Final calculation:', {
-      result,
-      totalWidthWithResult,
-      fits,
-      overlapPercentage: ((cardWidth - result) / cardWidth * 100).toFixed(1) + '%',
-      cardsCount: cards.length
-    });
     
     return result;
   }
@@ -415,25 +365,12 @@
   $: scrollPosition, cards.length;
   
   // Debug: Log props when they change
-  $: console.log('🔧 FannedCardDeck props:', { cardSpacing, cardsLength: cards.length });
   
   // Calculate optimal spacing for current cards and container
   $: optimalSpacing = scrollContainer ? getOptimalSpacing() : cardSpacing;
-  $: console.log('🎯 optimalSpacing updated:', { 
-    optimalSpacing, 
-    cardSpacing, 
-    cardsLength: cards.length,
-    actualContainerWidth,
-    calculationResult: scrollContainer ? getOptimalSpacing() : 'no container'
-  });
   
   // Recalculate spacing when container width or cards change
   $: if (scrollContainer && cards.length > 0) {
-    console.log('🔄 Recalculating spacing due to change:', { 
-      actualContainerWidth, 
-      cardsLength: cards.length,
-      scrollContainerExists: !!scrollContainer 
-    });
     optimalSpacing = getOptimalSpacing();
   }
   

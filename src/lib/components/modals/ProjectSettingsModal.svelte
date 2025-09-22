@@ -339,43 +339,15 @@
                 />
               </div>
               
-                             <!-- Info Icon with Title -->
-               <div>
-                 <div class="flex items-center gap-2 mb-2">
-                   <h4 class="text-sm font-medium text-blue-600 dark:text-blue-200">🎯 Critical for Wiskr Performance</h4>
-                   <div class="relative group info-tooltip-container">
-                     <button
-                       on:click={() => showInfoTooltip = !showInfoTooltip}
-                       class="h-4 w-4 text-blue-400 cursor-pointer hover:text-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
-                       aria-label="Show project description help"
-                     >
-                       <svg viewBox="0 0 20 20" fill="currentColor">
-                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                       </svg>
-                     </button>
-                                           <!-- Tooltip - Show only when clicked -->
-                                             <div class="absolute top-full left-0 md:right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg transition-opacity duration-200 pointer-events-none z-[99999] {showInfoTooltip ? 'opacity-100' : 'opacity-0'} w-80">
-                        <div class="text-center">
-                          <p class="font-medium mb-1">The description below is the <strong>most important context</strong> for Wiskrs.</p>
-                          <p class="text-gray-300">It's their <strong>"north star"</strong> for providing targeted assistance.</p>
-                          <p class="text-gray-300 mt-1">This should clearly define:</p>
-                                                     <ul class="text-left mt-1 space-y-0.5 ml-6">
-                             <li>• What you're trying to achieve or build</li>
-                             <li>• Your main goals and objectives</li>
-                             <li>• The scope and focus areas, and any specifics or constraints</li>
-                           </ul>
-                        </div>
-                                                 <!-- Arrow -->
-                         <div class="absolute bottom-full right-4 w-0 h-0 border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-900"></div>
-                      </div>
-                   </div>
-                 </div>
-               </div>
+              <!-- Project Description Section -->
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <label for="project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Project Description
-                  </label>
+                  <div class="flex items-center gap-2">
+                    <label for="project-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Project Description
+                    </label>
+                    <span class="text-xs text-blue-600 dark:text-blue-200">🎯 Critical for Wiskr Performance</span>
+                  </div>
                   
                   {#if projectDescription.trim()}
                     <FeatureGate user={{ ...user, tier: userTier }} feature="say-less" requiredTier={1} showBadge={true} let:hasAccess>

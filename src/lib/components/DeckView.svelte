@@ -69,10 +69,10 @@
 
   // Initialize sections when deck changes
   $: if (deck && !hasLocalChanges) {
-    console.log('🔄 Deck data changed, reloading sections. Current sections:', sections.length, 'New sections:', deck.sections?.length || 0);
-    console.log('🔄 Current sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
-    console.log('🔄 New sections cards:', deck.sections?.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })) || []);
-    console.log('🔄 Has local changes:', hasLocalChanges);
+    // console.log('🔄 Deck data changed, reloading sections. Current sections:', sections.length, 'New sections:', deck.sections?.length || 0);
+    // console.log('🔄 Current sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
+    // console.log('🔄 New sections cards:', deck.sections?.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })) || []);
+    // console.log('🔄 Has local changes:', hasLocalChanges);
     
     // Use deck sections from database
     if (deck.sections && deck.sections.length > 0) {
@@ -83,17 +83,17 @@
         { id: 'temp-1', name: 'New Section', cards: [] }
       ];
     }
-    console.log('🔄 Sections updated to:', sections.length, 'sections');
-    console.log('🔄 Final sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
+    //console.log('🔄 Sections updated to:', sections.length, 'sections');
+    //console.log('🔄 Final sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
   }
   
   // Log when deck changes but we skip due to local changes
-  $: if (deck && hasLocalChanges) {
-    console.log('🔄 Skipping deck data reload due to local changes');
-  }
+  // $: if (deck && hasLocalChanges) {
+  //   console.log('🔄 Skipping deck data reload due to local changes');
+  // }
 
   // Force reactivity for collapse states
-  $: console.log('🔍 Collapse state changed - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
+  //$: console.log('🔍 Collapse state changed - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
   
   // Create a reactive variable to force re-evaluation of section collapse states
   $: sectionCollapseStates = sectionCollapsedStates;
@@ -105,7 +105,7 @@
     return acc;
   }, {});
   
-  $: console.log('🔍 sectionCollapsedMap updated:', sectionCollapsedMap);
+  //$: console.log('🔍 sectionCollapsedMap updated:', sectionCollapsedMap);
 
   // Collapse/Expand functionality
   function collapseAllSections() {
@@ -120,28 +120,28 @@
     sections.forEach(section => {
       sectionCollapsedStates[section.id] = true;
     });
-    console.log('🔍 After collapseAllSections - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
+    //console.log('🔍 After collapseAllSections - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
   }
 
   function expandAllSections() {
-    console.log('🔍 expandAllSections called');
+    //console.log('🔍 expandAllSections called');
     allSectionsCollapsed = false;
     sectionCollapsedStates = {};
     sections.forEach(section => {
       sectionCollapsedStates[section.id] = false;
     });
-    console.log('🔍 After expandAllSections - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
+    //console.log('🔍 After expandAllSections - allSectionsCollapsed:', allSectionsCollapsed, 'sectionCollapsedStates:', sectionCollapsedStates);
   }
 
   function toggleSectionCollapse(sectionId) {
-    console.log('🔍 toggleSectionCollapse called for:', sectionId, 'current state:', sectionCollapsedStates[sectionId]);
+    //console.log('🔍 toggleSectionCollapse called for:', sectionId, 'current state:', sectionCollapsedStates[sectionId]);
     sectionCollapsedStates[sectionId] = !sectionCollapsedStates[sectionId];
-    console.log('🔍 After toggle - new state:', sectionCollapsedStates[sectionId]);
+    //console.log('🔍 After toggle - new state:', sectionCollapsedStates[sectionId]);
   }
 
   function isSectionCollapsed(sectionId) {
     const collapsed = allCollapsed || sectionCollapseStates[sectionId] || false;
-    console.log('🔍 isSectionCollapsed:', sectionId, 'allCollapsed:', allCollapsed, 'sectionState:', sectionCollapseStates[sectionId], 'result:', collapsed);
+    //console.log('🔍 isSectionCollapsed:', sectionId, 'allCollapsed:', allCollapsed, 'sectionState:', sectionCollapseStates[sectionId], 'result:', collapsed);
     return collapsed;
   }
 
@@ -154,12 +154,12 @@
     });
     availableCards = cards.filter(card => !assignedCardIds.has(card.id));
     
-    console.log('🔍 Available cards structure:', availableCards.map(card => ({
-      id: card.id,
-      title: card.title,
-      content: card.content,
-      hasTitle: !!card.title
-    })));
+    // console.log('🔍 Available cards structure:', availableCards.map(card => ({
+    //   id: card.id,
+    //   title: card.title,
+    //   content: card.content,
+    //   hasTitle: !!card.title
+    // })));
     
     // Regenerate connections if branching paths are shown
     if (showBranchingPaths) {
@@ -195,9 +195,9 @@
       ];
       
       await Promise.all(promises);
-      console.log('✅ Context generation completed for deck and sections');
+      //console.log('✅ Context generation completed for deck and sections');
     } catch (error) {
-      console.error('❌ Error generating context:', error);
+      //console.error('❌ Error generating context:', error);
     }
   }
 
@@ -245,9 +245,9 @@
         throw new Error('Failed to save art URL to database');
       }
       
-      console.log('✅ Art URL saved to database successfully');
+      //console.log('✅ Art URL saved to database successfully');
     } catch (error) {
-      console.error('❌ Error saving art URL to database:', error);
+      //console.error('❌ Error saving art URL to database:', error);
       // TODO: Show user-friendly error message
     }
   }
@@ -384,6 +384,7 @@
     editingSection = null;
     editingSectionName = '';
   }
+
 
   function handleDragStart(event, card) {
     console.log('🔍 handleDragStart called with card:', card.id);
@@ -1026,19 +1027,19 @@
 
   // Card action handlers
   async function handleProgressChange(event) {
-    console.log('🔍 DeckView: handleProgressChange called with event:', event);
+    //console.log('🔍 DeckView: handleProgressChange called with event:', event);
     const { card, targetLevel } = event.detail;
-    console.log('DeckView: Updating card progress:', card.id, 'from', card.progress, 'to', targetLevel);
+    //console.log('DeckView: Updating card progress:', card.id, 'from', card.progress, 'to', targetLevel);
 
     // Update the card in the local sections array
-    console.log('🔍 Before progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
+    //console.log('🔍 Before progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
     sections = sections.map(section => ({
       ...section,
       cards: section.cards.map(c => 
         c.id === card.id ? { ...c, progress: targetLevel } : c
       )
     }));
-    console.log('🔍 After progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
+    //console.log('🔍 After progress update - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, progress: c.progress })) })));
     
     // Mark that we have local changes to prevent deck data reload
     hasLocalChanges = true;
@@ -1063,9 +1064,9 @@
         throw new Error(error.error || 'Failed to update progress');
       }
 
-      console.log('✅ Progress update successful');
+      //console.log('✅ Progress update successful');
     } catch (error) {
-      console.error('❌ Error updating progress:', error);
+      //console.error('❌ Error updating progress:', error);
       // Revert the optimistic update
       sections = sections.map(section => ({
         ...section,
@@ -1077,23 +1078,23 @@
   }
 
   async function handleRarityUpgrade(event) {
-    console.log('🔍 DeckView: handleRarityUpgrade called with event:', event);
+    //console.log('🔍 DeckView: handleRarityUpgrade called with event:', event);
     const { card } = event.detail;
     const rarityOrder = ['common', 'special', 'rare', 'legendary'];
     const currentIndex = rarityOrder.indexOf(card.rarity);
     const newRarity = rarityOrder[Math.min(currentIndex + 1, rarityOrder.length - 1)];
     
-    console.log('DeckView: Upgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
+    //console.log('DeckView: Upgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
 
     // Update the card in the local sections array
-    console.log('🔍 Before rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
+    //console.log('🔍 Before rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
     sections = sections.map(section => ({
       ...section,
       cards: section.cards.map(c => 
         c.id === card.id ? { ...c, rarity: newRarity } : c
       )
     }));
-    console.log('🔍 After rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
+    //console.log('🔍 After rarity upgrade - sections:', sections.map(s => ({ id: s.id, cards: s.cards.map(c => ({ id: c.id, rarity: c.rarity })) })));
     
     // Mark that we have local changes to prevent deck data reload
     hasLocalChanges = true;
@@ -1118,9 +1119,9 @@
         throw new Error(error.error || 'Failed to update rarity');
       }
 
-      console.log('✅ Rarity upgrade successful');
+      //console.log('✅ Rarity upgrade successful');
     } catch (error) {
-      console.error('❌ Error upgrading rarity:', error);
+      //console.error('❌ Error upgrading rarity:', error);
       // Revert the optimistic update
       sections = sections.map(section => ({
         ...section,
@@ -1137,7 +1138,7 @@
     const currentIndex = rarityOrder.indexOf(card.rarity);
     const newRarity = rarityOrder[Math.max(currentIndex - 1, 0)];
     
-    console.log('DeckView: Downgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
+    //console.log('DeckView: Downgrading card rarity:', card.id, 'from', card.rarity, 'to', newRarity);
 
     // Update the card in the local sections array
     sections = sections.map(section => ({
@@ -1170,9 +1171,9 @@
         throw new Error(error.error || 'Failed to update rarity');
       }
 
-      console.log('✅ Rarity downgrade successful');
+      //console.log('✅ Rarity downgrade successful');
     } catch (error) {
-      console.error('❌ Error downgrading rarity:', error);
+      //console.error('❌ Error downgrading rarity:', error);
       // Revert the optimistic update
       sections = sections.map(section => ({
         ...section,
@@ -1211,14 +1212,16 @@
               />
               <button
                 on:click={saveDeckName}
-                class="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                class="p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+                style="background-color: transparent !important;"
                 title="Save name"
               >
                 <Check size="16" />
               </button>
               <button
                 on:click={cancelEditingDeckName}
-                class="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                class="p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+                style="background-color: transparent !important;"
                 title="Cancel"
               >
                 <XIcon size="16" />
@@ -1228,7 +1231,8 @@
             <h1 class="deck-name text-xl font-bold" style="color: white !important;">{deck.name}</h1>
             <button
               on:click={startEditingDeckName}
-              class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              class="p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+              style="background-color: transparent !important;"
               title="Rename deck"
             >
               <Edit3 size="16" />
@@ -1242,7 +1246,8 @@
         <!-- Collapse/Expand All Buttons -->
         <div class="flex items-center gap-1 border border-gray-200 dark:border-gray-600 rounded-lg p-1">
           <button
-            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-md"
+            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+            style="background-color: transparent !important;"
             on:click={collapseAllSections}
             title="Collapse all sections"
           >
@@ -1250,7 +1255,8 @@
             <span class="text-xs">Collapse All</span>
           </button>
           <button
-            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-md"
+            class="collapse-expand-button flex items-center gap-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+            style="background-color: transparent !important;"
             on:click={expandAllSections}
             title="Expand all sections"
           >
@@ -1268,14 +1274,14 @@
           <Layers size="20" />
         </button> -->
         <button
-          class="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           on:click={toggleCardLibrary}
         >
           <Layers size="16" />
           Card Library ({availableCards.length})
         </button>
         <button
-          class="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           on:click={addNewSection}
         >
           <Plus size="16" />
@@ -1331,24 +1337,6 @@
         <div class="section-container">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
-              <div class="flex gap-1">
-                <button
-                  class="section-move-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Move section up"
-                  disabled={sectionIndex === 0}
-                  on:click={() => moveSectionUp(sectionIndex)}
-                >
-                  <ChevronsUp size="16" />
-                </button>
-                <button
-                  class="section-move-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Move section down"
-                  disabled={sectionIndex === sections.length - 1}
-                  on:click={() => moveSectionDown(sectionIndex)}
-                >
-                  <ChevronsDown size="16" />
-                </button>
-              </div>
               {#if editingSection === section.id}
                 <div class="flex items-center gap-2">
                   <input
@@ -1385,7 +1373,8 @@
                     {section.name}
                   </h3>
                   <button
-                    class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    class="p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-600"
+                    style="background-color: transparent !important;"
                     on:click={() => startEditSection(section)}
                     title="Edit section name"
                   >
@@ -1393,11 +1382,36 @@
                   </button>
                 </div>
               {/if}
+              
+              <!-- Section move buttons after edit icons -->
+              <div class="flex gap-1">
+                {#if sectionIndex > 0}
+                  <button
+                    class="section-move-button p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                    style="background-color: transparent !important;"
+                    title="Move section up"
+                    on:click={() => moveSectionUp(sectionIndex)}
+                  >
+                    <ChevronsUp size="16" />
+                  </button>
+                {/if}
+                {#if sectionIndex < sections.length - 1}
+                  <button
+                    class="section-move-button p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                    style="background-color: transparent !important;"
+                    title="Move section down"
+                    on:click={() => moveSectionDown(sectionIndex)}
+                  >
+                    <ChevronsDown size="16" />
+                  </button>
+                {/if}
+              </div>
             </div>
             <div class="flex items-center gap-2">
               <!-- Collapse/Expand Button -->
               <button
-                class="section-collapse-button p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                class="section-collapse-button p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                style="background-color: transparent !important;"
                 on:click={() => toggleSectionCollapse(section.id)}
                 title={sectionCollapsedMap[section.id] ? "Expand section" : "Collapse section"}
               >
@@ -1412,7 +1426,8 @@
               <!-- <DeckContextIndicator sectionId={section.id} darkMode={true} isMobile={false} /> -->
               {#if sectionIndex > 0}
                 <button
-                  class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  class="p-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-colors rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                  style="background-color: transparent !important;"
                   on:click={() => deleteSection(section.id)}
                   title="Delete section"
                 >
@@ -1630,22 +1645,40 @@
   
   .deck-view-container :global(.section-move-button) {
     background: transparent !important;
-    border: 1px solid white !important;
-    color: white !important;
+    border: 1px solid #d1d5db !important; /* gray-300 */
+    color: white !important; /* keep icons white for visibility */
   }
   
   .deck-view-container :global(.section-move-button:hover) {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.1) !important; /* subtle white overlay */
+  }
+  
+  .dark .deck-view-container :global(.section-move-button) {
+    border: 1px solid #4b5563 !important; /* gray-600 */
+    color: white !important; /* keep icons white for visibility */
+  }
+  
+  .dark .deck-view-container :global(.section-move-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important; /* subtle white overlay */
   }
   
   .deck-view-container :global(.section-collapse-button) {
     background: transparent !important;
-    border: 1px solid white !important;
-    color: white !important;
+    border: 1px solid #d1d5db !important; /* gray-300 */
+    color: white !important; /* keep icons white for visibility */
   }
   
   .deck-view-container :global(.section-collapse-button:hover) {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.1) !important; /* subtle white overlay */
+  }
+  
+  .dark .deck-view-container :global(.section-collapse-button) {
+    border: 1px solid #4b5563 !important; /* gray-600 */
+    color: white !important; /* keep icons white for visibility */
+  }
+  
+  .dark .deck-view-container :global(.section-collapse-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important; /* subtle white overlay */
   }
   
   /* Target only deck view specific text elements */

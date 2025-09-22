@@ -99,52 +99,7 @@
     const rawCards = c ?? [];
     console.log('🔍 ContextManager: Loading cards, found', rawCards.length, 'total cards');
     
-    // Add mock cards for testing when no cards are found
-    if (rawCards.length === 0) {
-      console.log('🎴 ContextManager: No cards found, adding mock cards for testing');
-      const mockCards = [
-        {
-          id: '00000000-0000-0000-0000-000000000101',
-          title: 'The Mysterious Forest',
-          content: 'A dense forest where ancient magic still flows through the trees. Creatures of legend are said to dwell here, hidden from the modern world.',
-          tags: ['location', 'magic', 'forest'],
-          rarity: 'rare',
-          progress: 3,
-          mana_cost: 4,
-          art_url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop',
-          pinned: false,
-          created_at: new Date().toISOString(),
-          project_id: current.id
-        },
-        {
-          id: '00000000-0000-0000-0000-000000000102',
-          title: 'The Crystal Sword',
-          content: 'A legendary weapon forged from pure crystal. It glows with inner light and can cut through any material.',
-          tags: ['weapon', 'legendary', 'crystal'],
-          rarity: 'legendary',
-          progress: 2,
-          mana_cost: 6,
-          art_url: 'https://picsum.photos/400/300?random=1',
-          pinned: true,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          project_id: current.id
-        },
-        {
-          id: '00000000-0000-0000-0000-000000000103',
-          title: 'The Village Elder',
-          content: 'A wise old woman who knows the secrets of the land. She has lived for centuries and remembers when the world was young.',
-          tags: ['character', 'wise', 'ancient'],
-          rarity: 'special',
-          progress: 4,
-          mana_cost: 3,
-          art_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
-          pinned: false,
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          project_id: current.id
-        }
-      ];
-      rawCards.push(...mockCards);
-    }
+    // No mock cards - let users start with a clean slate
     
     cards = rawCards.map(card => {
       // console.log('🔍 ContextManager: Processing card:', {

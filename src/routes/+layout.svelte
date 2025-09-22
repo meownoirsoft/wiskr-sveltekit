@@ -321,6 +321,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         if (foundProject) {
           currentProject = foundProject;
           // console.log('🎯 Layout: Updated current project to:', foundProject.name);
+          // Reset context score flag when switching projects
+          contextScoreLoaded = false;
           // Load context quality score for the new project
           loadContextQualityScore(foundProject.id);
         }
@@ -343,6 +345,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           const newProject = projects.find(p => p.id === e.detail.id);
           if (newProject) {
             currentProject = newProject;
+            contextScoreLoaded = false;
             // Track navigation to newly created project
             trackProjectNavigation(newProject.id, newProject.name);
           }
@@ -436,46 +439,115 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     }
   }
   
-  // Shooting stars background effect
-  function initShootingStars() {
+  // CodePen-style starry background effect
+  let starsContainer = null;
+  let resizeTimeout = null;
+  let starsGenerated = false;
+  
+  function initStarryBackground() {
     const particlesContainer = document.querySelector('.fantasy-particles');
     
     if (!particlesContainer) {
       return;
     }
     
-    function createShootingStar() {
-      const star = document.createElement('div');
-      star.className = 'shooting-star';
-      
-      // Random starting position - container now starts at top of content area
-      const startX = Math.random() * window.innerWidth;
-      const startY = Math.random() * (window.innerHeight - 64) * 0.5; // Start in top half of content area
-      
-      star.style.left = `${startX}px`;
-      star.style.top = `${startY}px`;
-      
-      // Random delay for variety
-      star.style.animationDelay = `${Math.random() * 2}s`;
-      
-      particlesContainer.appendChild(star);
-      
-      // Remove star after animation completes
-      setTimeout(() => {
-        if (star.parentNode) {
-          star.parentNode.removeChild(star);
-        }
-      }, 3000);
+    // Clean up existing stars if they exist
+    if (starsContainer) {
+      starsContainer.remove();
+      starsContainer = null;
     }
     
-    // Create shooting stars periodically
-    const interval = setInterval(createShootingStar, 2000 + Math.random() * 3000);
+    // Create a container for the moving stars
+    starsContainer = document.createElement('div');
+    starsContainer.className = 'moving-stars';
+    starsContainer.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 200%;
+      pointer-events: none;
+      animation: move-stars 20s linear infinite;
+    `;
     
-    // Clean up interval on destroy
-    onDestroy(() => {
-      clearInterval(interval);
-    });
+    // Generate stars dynamically
+    function generateStars() {
+      const starCount = 200; // Number of stars
+      const containerWidth = window.innerWidth;
+      const containerHeight = window.innerHeight * 2; // Double height for seamless loop
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        // Random position
+        const x = Math.random() * containerWidth;
+        const y = Math.random() * containerHeight;
+        
+        // Random size (1-3px)
+        const size = 1 + Math.random() * 2;
+        
+        // Random opacity
+        const opacity = 0.3 + Math.random() * 0.7;
+        
+        // Random color variation
+        const colors = ['#fff', '#eee', '#ddd', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0.6)'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        star.style.cssText = `
+          position: absolute;
+          left: ${x}px;
+          top: ${y}px;
+          width: ${size}px;
+          height: ${size}px;
+          background: ${color};
+          border-radius: 50%;
+          opacity: ${opacity};
+        `;
+        
+        starsContainer.appendChild(star);
+      }
+    }
+    
+    // Generate initial stars
+    generateStars();
+    
+    // Add the stars container to the particles container
+    particlesContainer.appendChild(starsContainer);
+    
+    // Regenerate stars on window resize
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (starsContainer) {
+          starsContainer.innerHTML = '';
+          generateStars();
+        }
+      }, 250);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Store the resize handler for cleanup
+    starsContainer._resizeHandler = handleResize;
   }
+  
+  function cleanupStarryBackground() {
+    if (starsContainer) {
+      // Remove resize listener
+      if (starsContainer._resizeHandler) {
+        window.removeEventListener('resize', starsContainer._resizeHandler);
+      }
+      // Remove the stars container
+      starsContainer.remove();
+      starsContainer = null;
+    }
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = null;
+    }
+  }
+  
   
   // Load preferences on mount
   onMount(() => {
@@ -486,8 +558,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       checkScreenSize();
       window.addEventListener('resize', checkScreenSize);
       
-      // Initialize shooting stars background effect
-      initShootingStars();
+      // Initialize starry background effect
+      initStarryBackground();
     }
   });
   
@@ -502,6 +574,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       window.removeEventListener('layout:open-settings', () => {
         openAppSettings();
       });
+      // Clean up starry background
+      cleanupStarryBackground();
     }
   });
   
@@ -643,8 +717,15 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   }
   
   // Context quality functions
+  let contextScoreLoaded = false;
   async function loadContextQualityScore(projectId) {
     if (!projectId || !browser) return;
+    
+    // Prevent multiple loads for the same project
+    if (contextScoreLoaded && currentProject?.id === projectId) {
+      console.log('🎯 Layout: Context score already loaded for project', projectId, '- skipping');
+      return;
+    }
     
     loadingContextScore = true;
     try {
@@ -668,6 +749,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
         window.contextScoreUnsubscribes = [];
       }
       window.contextScoreUnsubscribes.push(unsubscribeScore, unsubscribeLoading);
+      
+      // Mark as loaded for this project
+      contextScoreLoaded = true;
       
     } catch (error) {
       console.error('Failed to initialize context quality score tracking:', error);
@@ -771,6 +855,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                   trackEvent(ANALYTICS_EVENTS.PROJECT_SELECTED, { project_id: e.detail.id, project_name: e.detail.name, previous_project_id: previousProject?.id, previous_project_name: previousProject?.name });
                   trackProjectNavigation(e.detail.id, e.detail.name);
                   window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                  currentProject = e.detail;
+                  contextScoreLoaded = false;
                   loadContextQualityScore(e.detail.id);
                 }
               }}
@@ -1087,6 +1173,8 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                   trackProjectNavigation(e.detail.id, e.detail.name);
                   // Dispatch event to notify the projects page
                   window.dispatchEvent(new CustomEvent('project:selected', { detail: e.detail }));
+                  // Reset context score flag when switching projects
+                  contextScoreLoaded = false;
                   // Load context quality score for the selected project
                   loadContextQualityScore(e.detail.id);
                 }
