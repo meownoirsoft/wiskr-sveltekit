@@ -4,7 +4,7 @@
   <meta name="robots" content="index,follow" />
 </svelte:head>
 
-<section class="mx-auto max-w-4xl px-6 py-12">
+<section class="mx-auto max-w-4xl px-6 py-12 relative z-20" style="background: var(--bg-primary);">
   <header class="mb-12 text-center">
     <h1 class="text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Privacy Policy</h1>
     <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">

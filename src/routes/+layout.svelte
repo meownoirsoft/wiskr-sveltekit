@@ -1043,7 +1043,7 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                <LogOut size="16" />
                <span>Logout</span>
              </a>
-           {:else}
+           {:else if isPublicPage}
              <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
              <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
            {/if}

@@ -12,16 +12,8 @@ export const load = async ({ locals }) => {
       hint: 'Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file.'
     });
   }
-  const { data, error: authError } = await locals.supabase.auth.getUser();
-  if (authError) {
-    console.error('Authentication error in projects page load:', authError);
-    throw error(500, {
-      message: 'Authentication error',
-      hint: 'There was a problem verifying your session. Please try logging in again.'
-    });
-  }
-
-  const { user } = data;
+  // Get user from locals (already authenticated in hooks.server.js)
+  const user = locals.user;
   
   if (!user) {
     // Redirect to login if not authenticated
@@ -144,20 +136,7 @@ export const load = async ({ locals }) => {
     }
   }
   
-  // Add mock data for testing when no user is authenticated
-  if (!user && finalProjects.length === 0) {
-    finalProjects = [
-      {
-        id: '00000000-0000-0000-0000-000000000001',
-        name: 'Test World',
-        icon: '🌍',
-        color: '#3b82f6',
-        brief_text: 'A test world for development',
-        description: 'This is a mock project for testing purposes',
-        created_at: new Date().toISOString()
-      }
-    ];
-  }
+  // Note: Mock data removed - unauthenticated users are redirected to login above
 
   // Check if user has admin permissions
   const adminCheck = user ? await isAdmin(locals.supabase, user) : { isAdmin: false };

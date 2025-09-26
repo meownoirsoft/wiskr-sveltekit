@@ -34,6 +34,7 @@
     return `/avatars/wizard-${wizardName}.png`;
   }
 
+
   export let isVisible = false;
   export let effectiveTier = 0;
   export let user = null;
@@ -43,44 +44,28 @@
   
   // Store the card data when modal becomes visible
   let storedCard = null;
+  let currentCardId = null; // Track the current card ID for branch generation
 
-  // Store card data when modal becomes visible
-  $: if (isVisible && card) {
-    console.log('🧙‍♂️ Modal opened with card:', card);
+  // Initialize when modal opens with a card
+  $: if (isVisible && card && card.id !== currentCardId) {
+    // Store the card and set current card ID
+    storedCard = card;
+    currentCardId = card.id;
     
-    // Always reinitialize when a card is loaded to get the correct branch ID
-    console.log('🧙‍♂️ Card loaded, reinitializing chat for card:', card.id);
-    
-    // Clear messages and branch info for the new card
+    // Clear previous state
     messages = [];
     current = null;
     branches = [];
     currentBranch = null;
     currentBranchId = 'main';
     sessionId = null;
-    // Don't clear branchId - it will be set to the consistent card-specific ID
+    hasInit = false; // Reset hasInit for new card
+    loadingMessages = false;
     
-    storedCard = card;
-    
-    // Auto-initialize chat with a default wizard if none selected
-    if (!selectedWizard) {
-      // Select the first available wizard
-      const availableWizards = wizardModels.filter(wizard => wizard.isAvailable);
-      if (availableWizards.length > 0) {
-        selectedWizard = availableWizards[0];
-        console.log('🧙‍♂️ Auto-selecting first available wizard:', selectedWizard.name);
-      }
-    }
-    
-    if (selectedWizard) {
-      console.log('🧙‍♂️ Initializing chat for card:', card.id);
-      initializeChat(selectedWizard);
-    }
-  }
-  
-  // Also store card data when card prop changes
-  $: if (card) {
-    storedCard = card;
+    // Initialize chat for this card
+    setTimeout(() => {
+      initializeChat();
+    }, 0);
   }
 
   const dispatch = createEventDispatcher();
@@ -88,9 +73,14 @@
   // Selected wizard state
   let selectedWizard = null;
   
+  // Computed disabled state for input - disabled until wizard is selected
+  $: isInputDisabled = !selectedWizard;
+  
   // Chat state
   let messages = [];
   let loadingMessages = false;
+  
+  // Messages and loading state
   let input = '';
   let current = null;
   let hasInit = false;
@@ -147,7 +137,7 @@
       const wizardData = {
         ...aiInfo, // Spread all aiInfo properties first
         key: modelKey,
-        avatarPath: getWizardAvatar(modelKey), // Use custom wizard avatar function
+        avatarPath: getWizardAvatar(modelKey), // Use custom wizard avatar function (override aiInfo.avatar)
         avatar: `wizard-${name}.png`, // Also override the avatar property
         tier: getWizardTier(modelKey),
         isAvailable: isWizardAvailable(getWizardTier(modelKey))
@@ -346,33 +336,37 @@
     
     selectedWizard = wizard;
     
-    // Only initialize chat if it hasn't been initialized yet
-    if (!hasInit) {
-      initializeChat(wizard);
+    // Update the model if chat is initialized
+    if (current && hasInit) {
+      current.model = wizard.key;
+      console.log('🧙‍♂️ Updated model to:', wizard.key, 'Messages preserved:', messages.length);
     } else {
-      // Load existing messages for this wizard without reinitializing
-      loadExistingMessages();
+      console.log('🧙‍♂️ Chat not initialized yet, messages:', messages.length);
     }
   }
 
-  async function initializeChat(wizard) {
+  async function initializeChat() {
+    // Prevent multiple initializations
+    if (hasInit) {
+      return;
+    }
+    
     // Initialize chat state for the selected wizard
     hasInit = true;
     
+    // Use the current card ID to generate consistent session and branch IDs
+    const cardId = currentCardId || storedCard?.id || card?.id;
+    if (!cardId) {
+      console.error('🧙‍♂️ No card ID available for initialization');
+      return;
+    }
+    
     // Create a card-specific session ID for this card's wizard conversations
-    // This ensures each card has its own isolated chat context with ALL wizards
-    // Use UUID v5 to generate a consistent UUID based on project and card (not wizard)
     const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // DNS namespace
-    const cardId = storedCard?.id || card?.id || 'no-card';
     const name = `card-${cardId}-${worldId || 'council'}`;
     sessionId = uuidv5(name, namespace);
     
-    console.log('🧙‍♂️ Initializing chat for wizard:', wizard.name);
-    console.log('🧙‍♂️ Stored card:', storedCard);
-    console.log('🧙‍♂️ Card ID:', cardId);
-    console.log('🧙‍♂️ Session name:', name);
-    console.log('🧙‍♂️ Generated session ID:', sessionId);
-    console.log('🧙‍♂️ World ID:', worldId);
+    // Chat initialized for card
     
     // Ensure we have a valid project ID
     if (!worldId) {
@@ -385,21 +379,16 @@
     current = {
       id: worldId, // Use the current project ID
       name: 'Wizard\'s Council',
-      model: wizard.key,
+      model: 'ember', // Default model, will be updated when wizard is selected
       created_at: new Date().toISOString(),
       project_id: worldId // Use the actual project ID
     };
     
     // Create a session object
     const cardTitle = storedCard?.title || card?.title || 'Untitled Card';
-    const branchName = `${cardTitle} - ${wizard.name}`;
     
-    // Generate a card-specific branch ID for this card only
-    // All wizards for this card will share the same branch
-    const cardSpecificBranchId = `branch-${cardId}`;
-    branchId = cardSpecificBranchId;
-    
-    console.log('🧙‍♂️ Using card-specific branch ID:', branchId);
+    // Generate consistent branch ID for this card
+    branchId = `branch-${cardId}`;
     
     currentSession = {
       id: sessionId,
@@ -416,7 +405,7 @@
     console.log('🧙‍♂️ Using dummy session ID for Wizards Council:', sessionId);
     
     // Check if branch already exists for this card, create if not
-    console.log('🧙‍♂️ Checking for existing branch for card:', branchName, branchId);
+    console.log('🧙‍♂️ Checking for existing branch for card:', branchId);
     
     try {
       // First, try to list existing branches to see if this one exists
@@ -437,8 +426,8 @@
       if (listResponse.ok) {
         listData = await listResponse.json();
         console.log('🧙‍♂️ All branches found:', listData.branches?.map(b => ({ name: b.branch_name, id: b.branch_id })) || []);
-        console.log('🧙‍♂️ Looking for branch:', branchName);
-        branchExists = listData.branches?.some(b => b.branch_name === branchName);
+        console.log('🧙‍♂️ Looking for branch:', branchId);
+        branchExists = listData.branches?.some(b => b.branch_id === branchId);
         console.log('🧙‍♂️ Branch exists check:', branchExists, 'Total branches:', listData.branches?.length || 0);
       }
       
@@ -449,7 +438,7 @@
           projectId: worldId,
           sessionId: sessionId,
           messageId: null, // No parent message for card-specific branches
-          branchName: branchName,
+          branchName: `${cardTitle} - Wizard's Council`,
           branchId: branchId // Use our pre-generated branch ID
         };
         
@@ -475,11 +464,6 @@
           // Keep using our pre-generated branch ID as fallback
         }
       } else {
-        // Find the existing branch and use its ID
-        const existingBranch = listData.branches?.find(b => b.branch_name === branchName);
-        if (existingBranch) {
-          branchId = existingBranch.branch_id;
-        }
         console.log('🧙‍♂️ Branch already exists, using:', branchId);
       }
     } catch (error) {
@@ -491,7 +475,7 @@
     currentBranchId = branchId;
     currentBranch = {
       branch_id: branchId,
-      branch_name: branchName,
+      branch_name: `${cardTitle} - Wizard's Council`,
       colorClass: 'bg-white border-gray-200',
       color_index: 0 // Default to main branch color
     };
@@ -523,50 +507,19 @@
       branches = [];
     }
     
-    // Try to load existing messages for this wizard and card
-    try {
-      const response = await fetch('/api/branches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'switch',
-          projectId: worldId,
-          sessionId: sessionId,
-          branchId: branchId
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && data.messages.length > 0) {
-          // Load existing messages, preserving original wizard info if available
-          messages = data.messages.map(msg => ({
-            ...msg,
-            // Only set avatar info if not already present (preserve original wizard)
-            avatar: msg.avatar || selectedWizard.avatar,
-            avatarPath: msg.avatarPath || selectedWizard.avatarPath,
-            model_key: msg.model_key || selectedWizard.key
-          }));
-          console.log('🧙‍♂️ Loaded existing messages from switch action:', messages.length);
-          return; // Don't add welcome message if we have existing messages
-        }
-      } else {
-        console.error('Failed to load messages:', response.status, await response.text());
-      }
-    } catch (error) {
-      console.error('Error loading existing messages:', error);
-    }
-    
-    // Don't add welcome message - let users start the conversation naturally
-    console.log('🧙‍♂️ No existing messages found, starting with empty conversation');
-    messages = [];
+    // Load existing messages for this branch
+    await loadExistingMessages();
   }
 
   async function loadExistingMessages() {
-    // Load existing messages without reinitializing the chat
-    console.log('🧙‍♂️ loadExistingMessages called with:', { worldId, sessionId, branchId });
+    if (!worldId || !sessionId || !branchId) {
+      console.error('🧙‍♂️ Missing required IDs for message loading');
+      return;
+    }
+    
+    // Loading messages for this card's branch
+    
+    loadingMessages = true;
     
     try {
       const response = await fetch('/api/branches', {
@@ -582,31 +535,31 @@
         })
       });
       
-      console.log('🧙‍♂️ get-messages response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('🧙‍♂️ get-messages response data:', data);
+        
+        // Messages loaded successfully
         
         if (data.messages && data.messages.length > 0) {
-          // Load existing messages, preserving original wizard info if available
+          // Load existing messages, ensuring correct wizard avatar paths
           messages = data.messages.map(msg => ({
             ...msg,
-            // Only set avatar info if not already present (preserve original wizard)
-            avatar: msg.avatar || selectedWizard.avatar,
-            avatarPath: msg.avatarPath || selectedWizard.avatarPath,
-            model_key: msg.model_key || selectedWizard.key
+            // Ensure correct wizard avatar paths
+            avatar: msg.avatar || `wizard-${getWizardNameFromModelKey(msg.model_key)}.png`,
+            avatarPath: getWizardAvatar(msg.model_key) || `/avatars/wizard-ember.png`,
+            model_key: msg.model_key
           }));
-          console.log('🧙‍♂️ Loaded existing messages:', messages.length);
+          // Messages loaded successfully
         } else {
-          console.log('🧙‍♂️ No existing messages found');
+          // No messages found for this card
         }
       } else {
-        const errorText = await response.text();
-        console.error('Failed to load messages:', response.status, errorText);
+        console.error('🧙‍♂️ Failed to load messages:', response.status);
       }
     } catch (error) {
-      console.error('Error loading existing messages:', error);
+      console.error('🧙‍♂️ Error loading messages:', error);
+    } finally {
+      loadingMessages = false;
     }
   }
 
@@ -633,7 +586,7 @@
     
     // Only initialize chat if it hasn't been initialized yet
     if (!hasInit) {
-      initializeChat(randomWizard);
+      initializeChat();
     } else {
       // Load existing messages for this wizard without reinitializing
       loadExistingMessages();
@@ -657,9 +610,8 @@
       eventDetail: event.detail
     });
     
-    if (!selectedWizard || !current || !event.detail?.message?.trim()) {
+    if (!current || !event.detail?.message?.trim()) {
       console.log('🧙‍♂️ Send function early return:', { 
-        selectedWizard: !!selectedWizard, 
         current: !!current, 
         message: event.detail?.message,
         messageTrimmed: event.detail?.message?.trim()
@@ -684,12 +636,12 @@
         id: assistantMsgId, 
         role: 'assistant', 
         content: '', 
-        model_key: selectedWizard.key, 
+        model_key: selectedWizard?.key || 'ember', 
         created_at: new Date().toISOString(),
-        avatar: selectedWizard.avatar,  // Use the wizard's avatar
-        avatarPath: selectedWizard.avatarPath,  // Use the wizard's avatar path
-        wizard_name: selectedWizard.name,  // Store the wizard's name
-        wizard_company: selectedWizard.company,  // Store the wizard's company
+        avatar: selectedWizard?.avatar || '/avatars/wizard-ember.png',  // Use the wizard's avatar
+        avatarPath: selectedWizard?.avatarPath || '/avatars/wizard-ember.png',  // Use the wizard's avatar path
+        wizard_name: selectedWizard?.name || 'Ember',  // Store the wizard's name
+        wizard_company: selectedWizard?.company || 'anthropic',  // Store the wizard's company
         isLoading: true // Add loading indicator
       }
     ];
@@ -709,7 +661,7 @@
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       let assistantText = '';
       
-      // Prepare card context for AI (included in message but formatted as system context)
+      // Prepare card context for AI (sent separately, not concatenated with user message)
       const currentCard = storedCard || card;
       const cardContext = currentCard ? `
 
@@ -720,19 +672,18 @@ ${currentCard.content ? `Content: ${currentCard.content}` : ''}
 ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.join(', ')}` : ''}
 [/SYSTEM]` : '';
 
-      const messageWithContext = userMsg + cardContext;
-
       // Use the same streaming API as regular chat
       const chatPayload = { 
         projectId: current.id, 
         sessionId: sessionId, // Use the dynamic session ID
-        message: messageWithContext, // User message with hidden card context
-        modelKey: selectedWizard.key, 
+        message: userMsg, // User message only (no system context concatenated)
+        systemContext: cardContext, // System context sent separately
+        modelKey: selectedWizard?.key || 'ember', 
         tz, 
         branchId: currentBranchId // Use the card-specific branch ID
       };
       
-      console.log('🧙‍♂️ Sending to /api/chat with payload:', chatPayload);
+      // Send message to chat API
       
       await robustStreamingFetch('/api/chat', {
         method: 'POST',
@@ -764,13 +715,16 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
       
     } catch (error) {
       console.error('Wizard Council: Error sending message:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      console.error('Error string:', String(error));
       
       // Update the assistant message with error
-      const errorMessage = error.message.includes('Network connection failed') ?
+      const errorMessage = error?.message?.includes('Network connection failed') ?
         'Network error. Please check your connection and try again.' :
-        error.message.includes('timeout') ?
+        error?.message?.includes('timeout') ?
         'Request timed out. Please try again.' :
-        `Error: ${error.message}`;
+        `Error: ${error?.message || String(error) || 'Unknown error'}`;
       
       messages = messages.map((m, i, arr) => 
         i === arr.length - 1 ? 
@@ -880,7 +834,7 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
         <!-- Left Side: Card View -->
         <div class="w-1/4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Card Context</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Selected Card</h3>
           </div>
           <div class="flex-1 overflow-y-auto p-4">
             {#if storedCard}
@@ -913,77 +867,40 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
         
         <!-- Middle: Chat Interface -->
         <div class="w-1/2 flex flex-col overflow-hidden">
-          {#if selectedWizard}
-            <!-- Chat Header - Hidden -->
-            <!-- <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full overflow-hidden border-2 {getPortraitBorderClass(selectedWizard.tier)}">
-                  <img 
-                    src={selectedWizard.avatarPath} 
-                    alt={selectedWizard.name}
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 dark:text-white">
-                    {selectedWizard.name}
-                  </h3>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
-                    {getCompanyDisplayName(selectedWizard.company)} Order • {selectedWizard.bestFor}
-                  </p>
-                </div>
-              </div>
-            </div> -->
-            
-            <!-- Chat Interface -->
-            <div class="flex-1 overflow-hidden">
-              <ChatInterface 
-                {current}
-                {hasInit}
-                {messages}
-                {loadingMessages}
-                bind:input={input}
-                modelKey={selectedWizard.key}
-                availableModels={wizardModels}
-                {branches}
-                {currentBranch}
-                {currentBranchId}
-                {usage}
-                {showUsageStats}
-                {showSessionNavigator}
-                {sessions}
-                {currentSession}
-                {isMobile}
-                {user}
-                {userTier}
-                {effectiveTier}
-                hideModelDropdown={true}
-                hideInfoPopup={true}
-                disableBranches={true}
-                hideSessions={true}
-                on:send={send}
-                on:message-sent={handleMessageSent}
-                on:input-change={handleInputChange}
-                on:branch-change={handleBranchChange}
-                on:session-change={handleSessionChange}
-              />
-            </div>
-          {:else}
-            <!-- No Wizard Selected State -->
-            <div class="flex-1 flex items-center justify-center p-8">
-              <div class="text-center">
-                <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users size={32} class="text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Choose Your Wizard
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Select a wizard from the right to begin your magical consultation
-                </p>
-              </div>
-            </div>
-          {/if}
+          <!-- Chat Interface -->
+          <div class="flex-1 overflow-hidden">
+            <ChatInterface 
+              {current}
+              {hasInit}
+              {messages}
+              {loadingMessages}
+              bind:input={input}
+              modelKey={selectedWizard?.key || 'ember'}
+              availableModels={wizardModels}
+              {branches}
+              {currentBranch}
+              {currentBranchId}
+              {usage}
+              {showUsageStats}
+              {showSessionNavigator}
+              {sessions}
+              {currentSession}
+              {isMobile}
+              {user}
+              {userTier}
+              {effectiveTier}
+              hideModelDropdown={true}
+              hideInfoPopup={true}
+              disableBranches={true}
+              hideSessions={true}
+              disableInput={isInputDisabled}
+              on:send={send}
+              on:message-sent={handleMessageSent}
+              on:input-change={handleInputChange}
+              on:branch-change={handleBranchChange}
+              on:session-change={handleSessionChange}
+            />
+          </div>
         </div>
         
         <!-- Right Side: Wizards List -->

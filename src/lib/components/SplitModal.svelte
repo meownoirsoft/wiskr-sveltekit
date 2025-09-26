@@ -100,33 +100,6 @@
   }
 
 
-  function selectAllCards(type) {
-    switch (type) {
-      case 'dismantle':
-        selectedDismantleCards = new Set(dismantleResult.cards.map((_, index) => index));
-        break;
-      case 'refract':
-        selectedRefractCards = new Set(refractResult.cards.map((_, index) => index));
-        break;
-      case 'unfold':
-        selectedUnfoldCards = new Set(unfoldResult.cards.map((_, index) => index));
-        break;
-    }
-  }
-
-  function deselectAllCards(type) {
-    switch (type) {
-      case 'dismantle':
-        selectedDismantleCards = new Set();
-        break;
-      case 'refract':
-        selectedRefractCards = new Set();
-        break;
-      case 'unfold':
-        selectedUnfoldCards = new Set();
-        break;
-    }
-  }
 
   function saveSplitResult(type) {
     console.log('🎴 SplitModal: saveSplitResult called for type:', type);
@@ -218,22 +191,8 @@
             <!-- Results -->
             <div class="flex-1 min-w-0 flex flex-col">
               {#if activeTab === 'dismantle' && dismantleResult}
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Dismantled Elements</h3>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => selectAllCards('dismantle')}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => deselectAllCards('dismantle')}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
                 </div>
                 <div class="flex-1 -mt-4">
                   <FannedCardDeck 
@@ -242,9 +201,6 @@
                     allowSelection={true}
                     on:selection-change={(e) => selectedDismantleCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -259,22 +215,8 @@
                   </button>
                 </div>
               {:else if activeTab === 'refract' && refractResult}
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Refracted Perspectives</h3>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => selectAllCards('refract')}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => deselectAllCards('refract')}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
                 </div>
                 <div class="flex-1 -mt-4">
                   <FannedCardDeck 
@@ -283,9 +225,6 @@
                     allowSelection={true}
                     on:selection-change={(e) => selectedRefractCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -300,22 +239,8 @@
                   </button>
                 </div>
               {:else if activeTab === 'unfold' && unfoldResult}
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Unfolded Timeline</h3>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => selectAllCards('unfold')}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={() => deselectAllCards('unfold')}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
                 </div>
                 <div class="flex-1 -mt-4">
                   <FannedCardDeck 
@@ -324,9 +249,6 @@
                     allowSelection={true}
                     on:selection-change={(e) => selectedUnfoldCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">

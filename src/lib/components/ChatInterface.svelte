@@ -39,6 +39,7 @@ import VirtualMessageList from './VirtualMessageList.svelte';
   export let hideInfoPopup = false; // Whether to hide the info popup
   export let hideSessions = false; // Whether to hide the sessions section entirely
   export let disableBranches = false; // Whether to disable branch functionality entirely
+  export let disableInput = false; // Whether to disable the input field
   
     // Scroll position state
   let isAtBottom = true;
@@ -1087,6 +1088,7 @@ Just hit **Enter** or click **Send** and they'll give you their take on it. You'
     isSearchMode={!!highlightedMessageId}
     {hideModelDropdown}
     {hideInfoPopup}
+    {disableInput}
     bind:showMobileForm
     on:submit={send}
     on:reask={reAskLastQuestion}

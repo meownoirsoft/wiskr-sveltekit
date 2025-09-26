@@ -301,7 +301,7 @@
 </script>
 
 <div 
-  class="card-container relative cursor-pointer transition-all duration-200 hover:shadow-lg rounded-lg"
+  class="card-container relative cursor-pointer transition-all duration-200 hover:wobble rounded-lg overflow-hidden"
   style="width: 250px; height: 350px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
   on:click={handleCardClick}
   on:keydown={(e) => e.key === 'Enter' && handleCardClick()}
@@ -333,7 +333,6 @@
       color: {darkMode ? rarity.textColorDark : rarity.textColor};
     "
   >
-    
     <!-- Header: Title -->
     <div class="mb-2 -mt-2 -mx-2">
       <div 
@@ -634,7 +633,7 @@
         </div>
       </div>
     {/if}
-
+    <span class="holo-sheen"></span>
   </div>
 
   <!-- NEW! Badge - positioned outside card frame to avoid stacking context issues -->
@@ -730,6 +729,14 @@
     line-clamp: 6;
   }
 
+  /* Smooth zoom animation for card hover */
+  .hover\:wobble:hover {
+    transform: scale(1.03);
+    transition: transform 0.3s ease-out;
+  }
 
+  .hover\:wobble {
+    transition: transform 0.3s ease-out;
+  }
 
 </style>

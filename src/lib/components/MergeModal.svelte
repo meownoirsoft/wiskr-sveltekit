@@ -75,6 +75,11 @@
     selectedAvailableCards = new Set();
   }
 
+  function handleModalWheel(e) {
+    // Forward wheel events to any FannedCardDeck components in the modal
+    // Let the event bubble to the FannedCardDeck components
+  }
+
   function toggleConjureCardSelection(index) {
     if (selectedConjureCards.has(index)) {
       selectedConjureCards.delete(index);
@@ -102,13 +107,6 @@
     selectedDivineCards = selectedDivineCards; // Trigger reactivity
   }
 
-  function selectAllDivineCards() {
-    selectedDivineCards = new Set(divineResults.map((_, index) => index));
-  }
-
-  function deselectAllDivineCards() {
-    selectedDivineCards = new Set();
-  }
 
   function toggleAvailableCardSelection(index) {
     if (selectedAvailableCards.has(index)) {
@@ -119,13 +117,6 @@
     selectedAvailableCards = selectedAvailableCards; // Trigger reactivity
   }
 
-  function selectAllAvailableCards() {
-    selectedAvailableCards = new Set(filteredCards.map((_, index) => index));
-  }
-
-  function deselectAllAvailableCards() {
-    selectedAvailableCards = new Set();
-  }
 
   function addSelectedCards() {
     selectedAvailableCards.forEach(index => {
@@ -318,7 +309,7 @@
 
 {#if isOpen}
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" on:click={closeModal}>
-    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden" on:click|stopPropagation>
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden" on:click|stopPropagation on:wheel={handleModalWheel}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
@@ -337,7 +328,7 @@
       <!-- Tab Content -->
       <div class="flex-1 overflow-hidden">
         {#if activeTab === 'conjure'}
-          <!-- Conjure Tab - Three Column Layout -->
+          <!-- Conjure Tab - Two Column Layout -->
           <div class="flex h-full">
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
@@ -359,76 +350,48 @@
               </div>
             </div>
 
-            <!-- Middle: Action Area -->
-            <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+            <!-- Right: Card Selection (Expanded) -->
+            <div class="w-2/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
               <!-- Tab Navigation -->
-              <div class="flex gap-2 mb-6">
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'conjure'}
-                >
-                  <Sparkles size="16" />
-                  Conjure
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'weave'}
-                >
-                  <Layers size="16" />
-                  Weave
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'divine'}
-                >
-                  <Eye size="16" />
-                  Divine
-                </button>
-              </div>
-
-              <div class="text-center mb-6">
-                <Sparkles size="48" class="mx-auto text-purple-500 mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Conjure</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Combine cards to create a creative new concept</p>
-              </div>
-
-              <!-- Search -->
-              <div class="w-full mb-4">
-                <input
-                  type="text"
-                  placeholder="Search cards..."
-                  bind:value={searchQuery}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <!-- Action Button -->
-              {#if selectedCards.length >= 1}
-                <button
-                  class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
-                  on:click={performConjure}
-                  disabled={loading}
-                >
-                  {#if loading}
-                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {:else}
+              <div class="flex items-center gap-4 mb-4">
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Choose your spell:
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'conjure'}
+                  >
                     <Sparkles size="16" />
+                    Conjure
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'weave'}
+                  >
+                    <Layers size="16" />
+                    Weave
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'divine'}
+                  >
+                    <Eye size="16" />
+                    Divine
+                  </button>
+                </div>
+                
+                <!-- Spell Explanation -->
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  {#if activeTab === 'conjure'}
+                    Combine cards to create a creative new concept
+                  {:else if activeTab === 'weave'}
+                    Unify and summarize cards into a cohesive concept
+                  {:else if activeTab === 'divine'}
+                    Generate 3 derivative cards from the concept
                   {/if}
-                  Conjure New Idea
-                </button>
-              {:else}
-                <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
-                  Select a card to combine
                 </div>
-
-                <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
-                  Your original card will not be affected.
-                </div>
-              {/if}
-            </div>
-
-            <!-- Right: Card Selection -->
-            <div class="w-1/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+              </div>
 
               <!-- Selected Cards -->
               {#if selectedCards.length > 0}
@@ -454,55 +417,52 @@
                 </div>
               {/if}
 
-              <!-- Available Cards -->
+              <!-- Available Cards (Expanded) -->
               <div class="flex-1 flex flex-col">
-                <div class="flex items-center justify-between mb-2">
-                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={selectAllAvailableCards}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={deselectAllAvailableCards}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
-                </div>
                 <div class="flex-1 -mt-4 mt-4">
                   <FannedCardDeck 
                     cards={filteredCards}
                     selectedCards={selectedAvailableCards}
                     allowSelection={true}
-                    containerHeight="h-[28rem]"
+                    containerHeight="h-[32rem]"
+                    enableGlobalWheel={true}
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
-                  <button
-                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    on:click={addSelectedCards}
-                    disabled={selectedAvailableCards.size === 0}
-                  >
-                    Add Selected ({selectedAvailableCards.size})
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      on:click={addSelectedCards}
+                      disabled={selectedAvailableCards.size === 0}
+                    >
+                      Add Selected ({selectedAvailableCards.size})
+                    </button>
+                    {#if selectedCards.length >= 1}
+                      <button
+                        class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
+                        on:click={performConjure}
+                        disabled={loading}
+                      >
+                        {#if loading}
+                          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {:else}
+                          <Sparkles size="16" />
+                        {/if}
+                        Conjure New Idea
+                      </button>
+                    {/if}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
         {:else if activeTab === 'weave'}
-          <!-- Weave Tab - Three Column Layout -->
+          <!-- Weave Tab - Two Column Layout -->
           <div class="flex h-full">
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
@@ -524,72 +484,48 @@
               </div>
             </div>
 
-            <!-- Middle: Action Area -->
-            <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+            <!-- Right: Card Selection (Expanded) -->
+            <div class="w-2/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
               <!-- Tab Navigation -->
-              <div class="flex gap-2 mb-6">
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'conjure'}
-                >
-                  <Sparkles size="16" />
-                  Conjure
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'weave'}
-                >
-                  <Layers size="16" />
-                  Weave
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'divine'}
-                >
-                  <Eye size="16" />
-                  Divine
-                </button>
-              </div>
-
-              <div class="text-center mb-6">
-                <Layers size="48" class="mx-auto text-blue-500 mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Weave</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Unify and summarize cards into a cohesive concept</p>
-              </div>
-
-              <!-- Search -->
-              <div class="w-full mb-4">
-                <input
-                  type="text"
-                  placeholder="Search cards..."
-                  bind:value={searchQuery}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <!-- Action Button -->
-              {#if selectedCards.length >= 1}
-                <button
-                  class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
-                  on:click={performWeave}
-                  disabled={loading}
-                >
-                  {#if loading}
-                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {:else}
-                    <Layers size="16" />
-                  {/if}
-                  Weave Together
-                </button>
-              {:else}
-                <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
-                  Select a card to weave
+              <div class="flex items-center gap-4 mb-4">
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Choose your spell:
                 </div>
-              {/if}
-            </div>
-
-            <!-- Right: Card Selection -->
-            <div class="w-1/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+                <div class="flex gap-2">
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'conjure'}
+                  >
+                    <Sparkles size="16" />
+                    Conjure
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'weave'}
+                  >
+                    <Layers size="16" />
+                    Weave
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'divine'}
+                  >
+                    <Eye size="16" />
+                    Divine
+                  </button>
+                </div>
+                
+                <!-- Spell Explanation -->
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  {#if activeTab === 'conjure'}
+                    Combine cards to create a creative new concept
+                  {:else if activeTab === 'weave'}
+                    Unify and summarize cards into a cohesive concept
+                  {:else if activeTab === 'divine'}
+                    Generate 3 derivative cards from the concept
+                  {/if}
+                </div>
+              </div>
 
               <!-- Selected Cards -->
               {#if selectedCards.length > 0}
@@ -615,55 +551,52 @@
                 </div>
               {/if}
 
-              <!-- Available Cards -->
+              <!-- Available Cards (Expanded) -->
               <div class="flex-1 flex flex-col">
-                <div class="flex items-center justify-between mb-2">
-                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={selectAllAvailableCards}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={deselectAllAvailableCards}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
-                </div>
                 <div class="flex-1 -mt-4 mt-4">
                   <FannedCardDeck 
                     cards={filteredCards}
                     selectedCards={selectedAvailableCards}
                     allowSelection={true}
-                    containerHeight="h-[28rem]"
+                    containerHeight="h-[32rem]"
+                    enableGlobalWheel={true}
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
-                  <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    on:click={addSelectedCards}
-                    disabled={selectedAvailableCards.size === 0}
-                  >
-                    Add Selected ({selectedAvailableCards.size})
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      on:click={addSelectedCards}
+                      disabled={selectedAvailableCards.size === 0}
+                    >
+                      Add Selected ({selectedAvailableCards.size})
+                    </button>
+                    {#if selectedCards.length >= 1}
+                      <button
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
+                        on:click={performWeave}
+                        disabled={loading}
+                      >
+                        {#if loading}
+                          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {:else}
+                          <Layers size="16" />
+                        {/if}
+                        Weave Together
+                      </button>
+                    {/if}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
         {:else if activeTab === 'divine'}
-          <!-- Divine Tab - Three Column Layout -->
+          <!-- Divine Tab - Two Column Layout -->
           <div class="flex h-full">
             <!-- Left: Source Card -->
             <div class="w-1/3 p-4 border-r border-gray-200 dark:border-gray-700">
@@ -685,72 +618,48 @@
               </div>
             </div>
 
-            <!-- Middle: Action Area -->
-            <div class="w-1/3 p-4 flex flex-col items-center justify-start relative">
+            <!-- Right: Card Selection (Expanded) -->
+            <div class="w-2/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
               <!-- Tab Navigation -->
-              <div class="flex gap-2 mb-6">
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'conjure'}
-                >
-                  <Sparkles size="16" />
-                  Conjure
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'weave'}
-                >
-                  <Layers size="16" />
-                  Weave
-                </button>
-                <button
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-                  on:click={() => activeTab = 'divine'}
-                >
-                  <Eye size="16" />
-                  Divine
-                </button>
-              </div>
-
-              <div class="text-center mb-6">
-                <Eye size="48" class="mx-auto text-green-500 mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Divine</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Generate 3 derivative cards from the concept</p>
-              </div>
-
-              <!-- Search -->
-              <div class="w-full mb-4">
-                <input
-                  type="text"
-                  placeholder="Search cards..."
-                  bind:value={searchQuery}
-                  class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <!-- Action Button -->
-              {#if selectedCards.length >= 1}
-                <button
-                  class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
-                  on:click={performDivine}
-                  disabled={loading}
-                >
-                  {#if loading}
-                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {:else}
-                    <Eye size="16" />
-                  {/if}
-                  Divine Insights
-                </button>
-              {:else}
-                <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
-                  Select a card to divine from
+              <div class="flex items-center gap-4 mb-4">
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Choose your spell:
                 </div>
-              {/if}
-            </div>
-
-            <!-- Right: Card Selection -->
-            <div class="w-1/3 p-4 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+                <div class="flex gap-2">
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'conjure' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'conjure'}
+                  >
+                    <Sparkles size="16" />
+                    Conjure
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'weave' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'weave'}
+                  >
+                    <Layers size="16" />
+                    Weave
+                  </button>
+                  <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'divine' ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                    on:click={() => activeTab = 'divine'}
+                  >
+                    <Eye size="16" />
+                    Divine
+                  </button>
+                </div>
+                
+                <!-- Spell Explanation -->
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  {#if activeTab === 'conjure'}
+                    Combine cards to create a creative new concept
+                  {:else if activeTab === 'weave'}
+                    Unify and summarize cards into a cohesive concept
+                  {:else if activeTab === 'divine'}
+                    Generate 3 derivative cards from the concept
+                  {/if}
+                </div>
+              </div>
 
               <!-- Selected Cards -->
               {#if selectedCards.length > 0}
@@ -776,48 +685,45 @@
                 </div>
               {/if}
 
-              <!-- Available Cards -->
+              <!-- Available Cards (Expanded) -->
               <div class="flex-1 flex flex-col">
-                <div class="flex items-center justify-between mb-2">
-                  <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400">Available Cards</h5>
-                  <div class="flex gap-2">
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={selectAllAvailableCards}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={deselectAllAvailableCards}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
-                </div>
                 <div class="flex-1 -mt-4 mt-4">
                   <FannedCardDeck 
                     cards={filteredCards}
                     selectedCards={selectedAvailableCards}
                     allowSelection={true}
-                    containerHeight="h-[28rem]"
+                    containerHeight="h-[32rem]"
+                    enableGlobalWheel={true}
                     on:selection-change={(e) => selectedAvailableCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     {selectedAvailableCards.size} of {filteredCards.length} selected
                   </span>
-                  <button
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    on:click={addSelectedCards}
-                    disabled={selectedAvailableCards.size === 0}
-                  >
-                    Add Selected ({selectedAvailableCards.size})
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      on:click={addSelectedCards}
+                      disabled={selectedAvailableCards.size === 0}
+                    >
+                      Add Selected ({selectedAvailableCards.size})
+                    </button>
+                    {#if selectedCards.length >= 1}
+                      <button
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-lg font-semibold"
+                        on:click={performDivine}
+                        disabled={loading}
+                      >
+                        {#if loading}
+                          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {:else}
+                          <Eye size="16" />
+                        {/if}
+                        Divine Insights
+                      </button>
+                    {/if}
+                  </div>
                 </div>
               </div>
             </div>
@@ -947,33 +853,15 @@
                     </button>
                   </div>
                 </div>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex gap-2">
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={selectAllDivineCards}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      on:click={deselectAllDivineCards}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
-                </div>
                 <div class="flex-1 -mt-4 mt-4">
                   <FannedCardDeck 
                     cards={divineResults}
                     selectedCards={selectedDivineCards}
                     allowSelection={true}
                     containerHeight="h-[28rem]"
+                    enableGlobalWheel={true}
                     on:selection-change={(e) => selectedDivineCards = e.detail.selectedCards}
                   />
-                </div>
-                <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Hold shift and hover for full card view
                 </div>
                 <div class="flex justify-between items-center mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <span class="text-sm text-gray-600 dark:text-gray-400">

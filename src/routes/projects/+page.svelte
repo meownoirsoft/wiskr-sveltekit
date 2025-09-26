@@ -3,6 +3,7 @@
   import { onMount, onDestroy, tick } from 'svelte';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { supabase } from '$lib/supabase.js';
   import { loadAvatars } from '$lib/stores/avatars.js';
   import { marked } from 'marked';
@@ -712,7 +713,20 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     }
   }
 
+  // Immediate client-side authentication check (before onMount)
+  if (browser && !data?.user) {
+    console.log('No user data found, redirecting to login immediately');
+    window.location.href = '/login';
+  }
+
   onMount(async () => {
+    // Additional client-side authentication check as backup
+    if (!data?.user) {
+      console.log('No user data found in onMount, redirecting to login');
+      window.location.href = '/login';
+      return;
+    }
+    
     // Server should have preloaded projects (including creating default for new users)
     // Only fetch fresh if server didn't preload properly
     if (!projects || projects.length === 0) {
@@ -1316,8 +1330,10 @@ function handleCardAdd(event) {
   console.log('🎴 Main page: event.detail:', event.detail);
   
   if (contextManager) {
-    // Pass the event data to the context manager
-    contextManager.addCard(event.detail);
+    // Pass the card data to the context manager
+    // event.detail is { card: newCard } from CardsManager
+    const cardData = event.detail.card || event.detail;
+    contextManager.addCard(cardData);
   } else {
     console.error('🎴 Main page: ContextManager not available!');
   }

@@ -11,7 +11,7 @@
   <meta name="robots" content="index,follow" />
 </svelte:head>
 
-<section class="mx-auto max-w-2xl px-6 py-12">
+<section class="mx-auto max-w-2xl px-6 py-12 relative z-20" style="background: var(--bg-primary);">
   <header class="mb-8">
     <h1 class="text-3xl font-semibold tracking-tight">Legal</h1>
     <p class="mt-2 text-base text-muted-foreground">

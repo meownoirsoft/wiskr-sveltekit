@@ -21,6 +21,7 @@
   export let isSearchMode = false; // Whether we're in search result mode
   export let hideModelDropdown = false; // Whether to hide the model dropdown
   export let hideInfoPopup = false; // Whether to hide the info popup
+  export let disableInput = false; // Whether to disable the input field
   
   const dispatch = createEventDispatcher();
   
@@ -166,13 +167,13 @@
           rows="2" 
           bind:value={input} 
           placeholder={current ? "Ask…" : "Pick a project"} 
-          disabled={!current} on:keydown={handleKeydown} 
+          disabled={!current || disableInput} on:keydown={handleKeydown} 
           style="touch-action: manipulation;"></textarea>
           {#if input.trim()}
             <button
               type="button"
-              class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 touch-action-manipulation"
-              style="touch-action: manipulation;"
+              class="absolute text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 touch-action-manipulation"
+              style="touch-action: manipulation; top: 0.5rem; right: 0.5rem; z-index: 9999; position: absolute !important;"
               on:click={() => input = ''}
               title="Clear box"
             >
@@ -181,7 +182,7 @@
             </button>
           {/if}
         </div>
-        <button class="border border-gray-300 dark:border-gray-600 rounded pl-1 pr-2 sm:pl-1.5 sm:pr-2 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim()} 
+        <button class="border border-gray-300 dark:border-gray-600 rounded pl-1 pr-2 sm:pl-1.5 sm:pr-2 py-2 sm:py-3 transition-colors flex-shrink-0 min-h-[var(--input-height-mobile)] sm:min-h-[var(--input-height)] touch-action-manipulation" type="submit" disabled={!current || !input.trim() || disableInput} 
         style="background-color: var(--color-accent); color: var(--color-accent-text);" 
         on:mouseenter={(e) => e.target.style.backgroundColor = 'var(--color-accent-hover)'} 
         on:mouseleave={(e) => e.target.style.backgroundColor = 'var(--color-accent)'}

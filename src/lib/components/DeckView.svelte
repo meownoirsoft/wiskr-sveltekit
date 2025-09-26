@@ -69,20 +69,43 @@
   });
 
   // Initialize sections when deck changes
-  $: if (deck && !hasLocalChanges) {
+  $: if (deck) {
     // console.log('🔄 Deck data changed, reloading sections. Current sections:', sections.length, 'New sections:', deck.sections?.length || 0);
     // console.log('🔄 Current sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
     // console.log('🔄 New sections cards:', deck.sections?.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })) || []);
     // console.log('🔄 Has local changes:', hasLocalChanges);
     
-    // Use deck sections from database
-    if (deck.sections && deck.sections.length > 0) {
-      sections = deck.sections;
+    if (!hasLocalChanges) {
+      // No local changes - use deck sections from database as-is
+      if (deck.sections && deck.sections.length > 0) {
+        sections = deck.sections;
+      } else {
+        // If no sections exist, create default ones
+        sections = [
+          { id: 'temp-1', name: 'New Section', cards: [] }
+        ];
+      }
     } else {
-      // If no sections exist, create default ones
-      sections = [
-        { id: 'temp-1', name: 'New Section', cards: [] }
-      ];
+      // Has local changes - merge section names from database while preserving local card changes
+      if (deck.sections && deck.sections.length > 0) {
+        console.log('🔄 Merging section names from database while preserving local changes');
+        const newSections = deck.sections.map(dbSection => {
+          const localSection = sections.find(s => s.id === dbSection.id);
+          if (localSection) {
+            // Preserve local cards but update name from database
+            console.log(`🔄 Updating section ${dbSection.id} name from "${localSection.name}" to "${dbSection.name}"`);
+            return {
+              ...localSection,
+              name: dbSection.name
+            };
+          } else {
+            // New section from database
+            console.log(`🔄 Adding new section from database: ${dbSection.id} - ${dbSection.name}`);
+            return dbSection;
+          }
+        });
+        sections = newSections;
+      }
     }
     //console.log('🔄 Sections updated to:', sections.length, 'sections');
     //console.log('🔄 Final sections cards:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards?.length || 0 })));
@@ -296,6 +319,86 @@
     showCardZoom = true;
   }
 
+  async function handleCardZoomSave(event) {
+    const { card } = event.detail;
+    
+    try {
+      // Update the card via API
+      const response = await fetch(`/api/cards/create/${card.id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: card.title,
+          content: card.content,
+          tags: card.tags,
+          mana_cost: card.mana_cost,
+          reembed: 'auto' // re-embed if text changed
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save card:', await response.text());
+        alert('Failed to save card');
+        return;
+      }
+
+      // Update the card in the sections
+      sections = sections.map(section => ({
+        ...section,
+        cards: section.cards.map(c => 
+          c.id === card.id ? card : c
+        )
+      }));
+
+      // Mark that we have local changes to prevent deck data reload
+      hasLocalChanges = true;
+
+      // Also update the main cards array for the binder view
+      dispatch('card-updated', { cardId: card.id, updates: card });
+
+      // Close the zoom view
+      closeCardZoom();
+    } catch (error) {
+      console.error('Error saving card:', error);
+      alert('Error saving card: ' + error.message);
+    }
+  }
+
+  async function handleCardZoomDelete(event) {
+    const { card } = event.detail;
+    
+    try {
+      // Delete the card via API
+      const response = await fetch(`/api/cards/create/${card.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete card:', await response.text());
+        alert('Failed to delete card');
+        return;
+      }
+
+      // Remove the card from sections
+      sections = sections.map(section => ({
+        ...section,
+        cards: section.cards.filter(c => c.id !== card.id)
+      }));
+
+      // Mark that we have local changes
+      hasLocalChanges = true;
+
+      // Dispatch to parent for binder view update
+      dispatch('card-deleted', { cardId: card.id });
+
+      // Close the zoom view
+      closeCardZoom();
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      alert('Error deleting card: ' + error.message);
+    }
+  }
+
   function startEditingDeckName() {
     isEditingDeckName = true;
     editingDeckName = deck.name;
@@ -367,24 +470,71 @@
     editingSectionName = section.name;
   }
 
-  function saveSectionName() {
+  async function saveSectionName() {
+    console.log('🔍 saveSectionName called with editingSection:', editingSection, 'editingSectionName:', editingSectionName);
     if (editingSection && editingSectionName.trim()) {
-      sections = sections.map(section => 
-        section.id === editingSection 
-          ? { ...section, name: editingSectionName.trim() }
-          : section
-      );
+      console.log('🔍 Updating section name from:', sections.find(s => s.id === editingSection)?.name, 'to:', editingSectionName.trim());
       
-      // Save section name change to database
-      saveDeckStructure(sections);
+      // Find and update the section directly
+      const sectionIndex = sections.findIndex(s => s.id === editingSection);
+      if (sectionIndex !== -1) {
+        // Create a new sections array to ensure reactivity
+        const newSections = [...sections];
+        newSections[sectionIndex] = { ...newSections[sectionIndex], name: editingSectionName.trim() };
+        sections = newSections;
+      }
+      
+      console.log('🔍 Updated sections:', sections.map(s => ({ id: s.id, name: s.name })));
+      
+      // Save section name change to database (async, don't wait for it)
+      saveSectionNameToDatabase(editingSection, editingSectionName.trim()).catch(error => {
+        console.error('❌ Error saving section name to database:', error);
+        // Could show a toast notification here if needed
+      });
+    } else {
+      console.log('🔍 saveSectionName: No editingSection or empty name, skipping save');
     }
+    console.log('🔍 Clearing editing state, editingSection was:', editingSection);
     editingSection = null;
     editingSectionName = '';
+    console.log('🔍 Editing state cleared, editingSection is now:', editingSection);
   }
 
   function cancelEditSection() {
     editingSection = null;
     editingSectionName = '';
+  }
+
+  async function saveSectionNameToDatabase(sectionId, newName) {
+    if (!deck || !deck.id) {
+      console.log('🔍 saveSectionNameToDatabase: No deck or deck.id');
+      return;
+    }
+    
+    console.log('🔍 saveSectionNameToDatabase: Saving section name:', sectionId, 'to:', newName);
+    
+    try {
+      const response = await fetch(`/api/deck-sections/${sectionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newName
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ saveSectionNameToDatabase failed:', response.status, response.statusText, errorText);
+        throw new Error(`Failed to save section name: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('✅ Section name saved to database successfully');
+    } catch (error) {
+      console.error('❌ Error saving section name to database:', error);
+      throw error;
+    }
   }
 
 
@@ -466,7 +616,7 @@
     event.dataTransfer.dropEffect = 'move';
     dragOverSection = sectionId;
     dragOverIndex = cardIndex;
-    console.log('🔍 handleDragOver called with sectionId:', sectionId, 'cardIndex:', cardIndex);
+    console.log('🔍 handleDragOver called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id);
   }
 
   function handleDragLeave(event) {
@@ -548,6 +698,7 @@
     event.preventDefault();
     event.stopPropagation();
     console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id, 'isSynthetic:', event.isSynthetic, 'showCardLibrary:', showCardLibrary);
+    console.log('🔍 Available sections:', sections.map(s => ({ id: s.id, name: s.name, cardCount: s.cards.length })));
     
     // Try to get card from dataTransfer if draggedCard is null
     let cardToMove = draggedCard;
@@ -570,8 +721,8 @@
     }
     
     if (cardToMove) {
-      // Check if we're dropping on trash zone (when library is closed)
-      if (!showCardLibrary && cardIndex === -1) {
+      // Check if we're dropping on trash zone
+      if (cardIndex === 'trash') {
         console.log('🗑️ Dropping card on trash zone - removing from deck');
         removeCardFromSection(cardToMove, sectionId);
         return;
@@ -658,6 +809,9 @@
         }
       }
     }
+    
+    // Reset dragged card after successful drop
+    draggedCard = null;
     
     // Don't reset drag over state here - let handleDragEnd do it
     // This allows the fallback mechanism to work properly
@@ -873,7 +1027,22 @@
         const updatedDeck = await response.json();
         console.log('✅ saveDeckStructure success, updated deck:', updatedDeck);
         console.log('🔍 Fetched updated deck:', updatedDeck);
-        sections = updatedDeck.sections || [];
+        
+        // Only update sections if the server response has different data
+        // This prevents overwriting local changes during section name editing
+        const serverSections = updatedDeck.sections || [];
+        const hasStructuralChanges = sections.length !== serverSections.length || 
+          sections.some((section, index) => {
+            const serverSection = serverSections[index];
+            return !serverSection || section.cards.length !== serverSection.cards.length;
+          });
+        
+        if (hasStructuralChanges) {
+          console.log('🔍 Structural changes detected, updating sections from server');
+          sections = serverSections;
+        } else {
+          console.log('🔍 No structural changes, keeping local sections');
+        }
         
         // Calculate card count for the deck
         const cardCount = sections.reduce((total, section) => total + (section.cards?.length || 0), 0);
@@ -1335,8 +1504,18 @@
         {/if}
         
         
-        {#each sections as section, sectionIndex}
-        <div class="section-container">
+        {#each sections as section, sectionIndex (section.id)}
+        <div 
+          class="section-container {dragOverSection === section.id && dragOverIndex === -1 ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}"
+          on:dragover={(e) => {
+            console.log('🎯 Section container dragover:', section.id, -1);
+            handleDragOver(e, section.id, -1);
+          }}
+          on:dragleave={handleDragLeave}
+          on:drop={(e) => handleDrop(e, section.id, -1)}
+          role="region"
+          aria-label="Section: {section.name}"
+        >
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
               {#if editingSection === section.id}
@@ -1502,11 +1681,21 @@
                     />
                   {:else}
                     <!-- Empty state when no cards -->
-                    <div class="h-96 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                    <div 
+                      class="h-96 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg transition-all duration-200 {dragOverSection === section.id && dragOverIndex === -1 ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 shadow-lg' : 'hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'}"
+                      on:dragover={(e) => {
+                        console.log('🎯 Empty section dragover:', section.id, -1);
+                        handleDragOver(e, section.id, -1);
+                      }}
+                      on:dragleave={handleDragLeave}
+                      on:drop={(e) => handleDrop(e, section.id, -1)}
+                      role="region"
+                      aria-label="Drop zone for {section.name}"
+                    >
                       <div class="text-center">
                         <Layers size="48" class="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                         <p class="text-gray-500 dark:text-gray-400">No cards in this section</p>
-                        <p class="text-sm text-gray-400 mt-1">Drop cards from the library</p>
+                        <p class="text-sm text-gray-400 mt-1">Drop cards here</p>
                       </div>
                     </div>
                   {/if}
@@ -1514,14 +1703,14 @@
                 
                 <!-- Drop zone on the right -->
                 <div
-                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 transition-all duration-200 {dragOverSection === section.id && dragOverIndex === -1 ? 'border-red-500 bg-red-100 dark:bg-red-900/30 shadow-lg scale-105' : 'hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}"
-                  style="background-color: transparent !important; {dragOverSection === section.id && dragOverIndex === -1 ? 'border-color: #ef4444 !important; background-color: #fee2e2 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: scale(1.05) !important;' : ''}"
+                  class="min-h-[350px] w-[125px] border-2 border-dashed border-white rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 transition-all duration-200 {dragOverSection === section.id && dragOverIndex === 'trash' ? 'border-red-500 bg-red-100 dark:bg-red-900/30 shadow-lg scale-105' : 'hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}"
+                  style="background-color: transparent !important; {dragOverSection === section.id && dragOverIndex === 'trash' ? 'border-color: #ef4444 !important; background-color: #fee2e2 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: scale(1.05) !important;' : ''}"
                   on:dragover={(e) => {
-                    console.log('🎯 Remove drop zone dragover:', section.id, -1);
-                    handleDragOver(e, section.id, -1);
+                    console.log('🎯 Remove drop zone dragover:', section.id, 'trash');
+                    handleDragOver(e, section.id, 'trash');
                   }}
                   on:dragleave={handleDragLeave}
-                  on:drop={(e) => handleDrop(e, section.id, -1)}
+                  on:drop={(e) => handleDrop(e, section.id, 'trash')}
                   role="button"
                   tabindex="0"
                 >
@@ -1596,6 +1785,8 @@
         card={zoomedCard}
         userPreferences={userPreferences}
         on:close={closeCardZoom}
+        on:save={handleCardZoomSave}
+        on:delete={handleCardZoomDelete}
         on:art-selected={handleCardZoomGenerateArt}
         on:rarity-updated={handleCardZoomUpdateRarity}
         on:progress-updated={handleCardZoomUpdateProgress}

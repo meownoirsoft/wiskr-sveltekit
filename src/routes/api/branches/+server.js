@@ -23,7 +23,7 @@ export async function POST({ request, locals }) {
     
     switch (action) {
       case 'create':
-        return await createBranch(locals.supabase, projectId, sessionId, messageId, branchName);
+        return await createBranch(locals.supabase, projectId, sessionId, messageId, branchName, branchId);
       case 'list':
         return await listBranches(locals.supabase, projectId, sessionId);
       case 'listForMessage':
@@ -45,7 +45,7 @@ export async function POST({ request, locals }) {
   }
 }
 
-async function createBranch(supabase, projectId, sessionId, parentMessageId, branchName) {
+async function createBranch(supabase, projectId, sessionId, parentMessageId, branchName, customBranchId = null) {
   // Check for duplicate branch name within the same parent message
   if (parentMessageId && branchName) {
     const { data: existingBranch } = await supabase
@@ -63,8 +63,8 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
     }
   }
   
-  // Generate unique branch ID
-  const branchId = `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // Use custom branch ID if provided, otherwise generate unique branch ID
+  const branchId = customBranchId || `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   // Get current branch count to assign rainbow color
   const { data: existingBranches } = await supabase
@@ -236,18 +236,31 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
       .select('*')
       .eq('project_id', projectId)
       .eq('branch_id', branchId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
       
     if (branchError) {
       console.error('Error fetching branch data:', branchError);
-      // If branch doesn't exist in conversation_branches, return error
-      return json({ error: 'Branch not found' }, { status: 404 });
+      // If there's a real database error, return error
+      return json({ error: 'Database error fetching branch' }, { status: 500 });
     }
     
     if (branchData) {
       branch = {
         ...branchData,
         colorClass: RAINBOW_COLORS[branchData.color_index % RAINBOW_COLORS.length]
+      };
+    } else {
+      // Branch doesn't exist in conversation_branches, create a default branch object
+      console.log('Branch not found in conversation_branches, creating default branch object for:', branchId);
+      branch = {
+        project_id: projectId,
+        session_id: sessionId,
+        branch_id: branchId,
+        branch_name: `Branch ${branchId}`,
+        parent_message_id: null,
+        color_index: 0,
+        colorClass: 'bg-white border-gray-200',
+        created_at: new Date().toISOString()
       };
     }
   }
@@ -271,21 +284,6 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
 }
 
 async function getMessages(supabase, projectId, sessionId, branchId) {
-  console.log('🔧 API getMessages called with:', { projectId, sessionId, branchId });
-  
-  // First, let's see what messages exist for this project
-  const { data: allMessages, error: allError } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('project_id', projectId)
-    .order('created_at');
-    
-  console.log('🔍 All messages for project:', allMessages?.length || 0);
-  if (allMessages && allMessages.length > 0) {
-    console.log('🔍 Sample message:', allMessages[0]);
-    console.log('🔍 All branch IDs:', [...new Set(allMessages.map(m => m.branch_id))]);
-  }
-  
   // Fetch messages for the specified branch
   const { data: messages, error } = await supabase
     .from('messages')
@@ -299,13 +297,9 @@ async function getMessages(supabase, projectId, sessionId, branchId) {
     return json({ error: 'Failed to fetch messages' }, { status: 500 });
   }
   
-  console.log('📨 Messages found for branch:', messages?.length || 0);
-  if (messages && messages.length > 0) {
-    console.log('📨 Sample message from branch:', messages[0]);
-  }
-  
-  return json({ 
-    success: true, 
+  // Return messages for the branch
+  return json({
+    success: true,
     messages: messages || []
   });
 }

@@ -77,6 +77,7 @@
   let showPackOpener = false;
   let showCardZoom = false;
   let zoomedCard = null;
+  let isNewCard = false;
   let generatingEmbeddings = false;
   let embeddingsStatus = '';
   let selectedCards = new Set();
@@ -96,8 +97,8 @@
   }
 
   // React to showAddCardForm prop changes from parent
-  $: if (showAddCardForm && !showAddModal) {
-    showAddModal = true;
+  $: if (showAddCardForm && !showCardZoom) {
+    openAddModal(); // This will open CardZoomView in new card mode
     showAddCardForm = false;
   }
 
@@ -237,7 +238,10 @@
   }
 
   function openAddModal() {
-    showAddModal = true;
+    // Open CardZoomView in new card mode instead of AddCardModal
+    zoomedCard = null;
+    isNewCard = true;
+    showCardZoom = true;
   }
 
   async function generateEmbeddings() {
@@ -361,6 +365,7 @@
   function closeCardZoom() {
     showCardZoom = false;
     zoomedCard = null;
+    isNewCard = false;
   }
 
   function handleCardZoomSave(event) {
@@ -370,6 +375,14 @@
     cards = cards.map(c => c.id === card.id ? card : c);
     
     dispatch('edit', { card, updates: card });
+    closeCardZoom();
+  }
+
+  function handleCardZoomCreate(event) {
+    const { card } = event.detail;
+    
+    // Dispatch the create event to parent (ContextManager)
+    dispatch('add', { card });
     closeCardZoom();
   }
 
@@ -1150,6 +1163,7 @@
 <CardZoomView 
   card={zoomedCard}
   bind:isOpen={showCardZoom}
+  {isNewCard}
   {user}
   {userTier}
   {effectiveTier}
@@ -1157,6 +1171,7 @@
   userPreferences={userPreferences}
   on:close={closeCardZoom}
   on:save={handleCardZoomSave}
+  on:create={handleCardZoomCreate}
   on:delete={handleCardZoomDelete}
   on:rarity-change={handleCardZoomRarityChange}
   on:progress-change={handleCardZoomProgressChange}
@@ -1168,6 +1183,7 @@
   on:open-deck={handleCardZoomOpenDeck}
   on:wizard-selected={handleWizardSelected}
   on:zoom-card={handleCardZoomFromWizard}
+  on:pack-complete={handlePackComplete}
 />
 
 <style>

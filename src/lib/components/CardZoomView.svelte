@@ -1,16 +1,18 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Ungroup, Combine, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Ungroup, Combine, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users, Sparkles } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
   import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
   import ArtFeedbackModal from './modals/ArtFeedbackModal.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import WizardsCouncilModal from './WizardsCouncilModal.svelte';
+  import PackOpener from './PackOpener.svelte';
 
   export let card = null;
   export let isOpen = false;
+  export let isNewCard = false;
   export let userPreferences = { display_name: null };
   export let availableModels = [];
   export let userTier = 0;
@@ -111,36 +113,20 @@
   let artUrl = '';
   let showArtManager = false;
   
-  // Tooltip state
-  let showTooltip = false;
-  let tooltipContent = '';
-  let tooltipType = '';
-  let tooltipPosition = { x: 0, y: 0 };
-  let hoverTimeout = null;
-  let tooltipLoading = false;
-  
-  
-  // Tooltip data cache
-  let tooltipNotes = [];
-  let tooltipDecks = [];
-  let tooltipResources = [];
-  
-  // Progress tooltip state
-  let showProgressTooltip = false;
-  let progressTooltipElement = null;
+  // Removed tooltip functionality
   
   // Markdown editor state
   let isFullScreen = false;
   
   // Modal states
   let showNotesModal = false;
-  let showDecksModal = false;
-  let showResourcesModal = false;
+  // Removed tooltip modal variables
   let showFeedbackModal = false;
   let feedbackArtUrl = '';
   let showMergeModal = false;
   let showSplitModal = false;
   let showWizardsCouncil = false;
+  let showPackOpener = false;
   
   // Notes management state
   let notes = [];
@@ -167,20 +153,19 @@
   // Update artUrl when card changes
   $: if (card && card.art_url !== artUrl) {
     artUrl = card.art_url || '';
-    console.log('🔍 CardZoomView: Updated artUrl from card:', artUrl);
+    //console.log('🔍 CardZoomView: Updated artUrl from card:', artUrl);
   }
 
   // Debug art display
-  $: console.log('🔍 CardZoomView art display state:', {
-    artUrl,
-    editedCardArtUrl: editedCard?.art_url,
-    isEditing,
-    displayArt: artUrl || editedCard?.art_url
-  });
+  // $: console.log('🔍 CardZoomView art display state:', {
+  //   artUrl,
+  //   editedCardArtUrl: editedCard?.art_url,
+  //   isEditing,
+  //   displayArt: artUrl || editedCard?.art_url
+  // });
 
   // Initialize edited card when modal opens
-  $: if (isOpen && card) {
-    console.log('🔍 CardZoomView received card:', card);
+  $: if (isOpen && (card || isNewCard)) {
     // Clear previous state first
     editedCard = null;
     isEditing = false;
@@ -189,14 +174,41 @@
     tags = [];
     artUrl = '';
     initializeEditedCard();
-    // Load counts for the card after editedCard is set
-    loadCounts();
+    // Load counts for the card after editedCard is set (only for existing cards)
+    if (!isNewCard) {
+      loadCounts();
+    }
   }
 
   function initializeEditedCard() {
-    if (!card) return;
+    if (isNewCard) {
+      // Create a new card template
+      editedCard = {
+        id: null, // Will be set after creation
+        title: 'Untitled Card',
+        content: '',
+        tags: [],
+        art_url: null,
+        rarity: 'common',
+        progress: 1,
+        mana_cost: 0,
+        pinned: false,
+        generation_model: 'GPT-4o',
+        art_model: 'Midjourney',
+        created_at: new Date().toISOString()
+      };
+      
+      title = editedCard.title;
+      content = editedCard.content;
+      tags = [...editedCard.tags];
+      artUrl = editedCard.art_url || '';
+      
+      // Start in editing mode for new cards
+      isEditing = true;
+      return;
+    }
     
-    console.log('🔍 CardZoomView initializing with card:', card);
+    if (!card) return;
     
     // Use card data directly from the new cards table structure
     editedCard = {
@@ -214,7 +226,7 @@
       created_at: card.created_at || new Date().toISOString()
     };
 
-    console.log('🔍 Final editedCard:', editedCard);
+    // Final editedCard initialized
 
     title = editedCard.title;
     content = editedCard.content;
@@ -235,8 +247,13 @@
   }
 
   function cancelEditing() {
-    isEditing = false;
-    initializeEditedCard();
+    if (isNewCard) {
+      // For new cards, canceling should close the modal
+      dispatch('close');
+    } else {
+      isEditing = false;
+      initializeEditedCard();
+    }
   }
 
   function saveCard() {
@@ -244,21 +261,37 @@
 
     console.log('Saving content:', content);
 
-    // Increment mana cost by 1 for each edit
-    const newManaCost = (editedCard.mana_cost || 0) + 1;
+    if (isNewCard) {
+      // For new cards, don't increment mana cost
+      const newCard = {
+        ...editedCard,
+        title,
+        content,
+        tags: tags.filter(tag => tag.trim()),
+        art_url: artUrl.trim() || null,
+        mana_cost: 0 // Start with 0 mana cost for new cards
+      };
 
-    const updatedCard = {
-      ...editedCard,
-      title,
-      content,
-      tags: tags.filter(tag => tag.trim()),
-      art_url: artUrl.trim() || null,
-      mana_cost: newManaCost
-    };
+      console.log('Creating new card:', newCard);
+      dispatch('create', { card: newCard });
+      isEditing = false;
+    } else {
+      // For existing cards, increment mana cost by 1 for each edit
+      const newManaCost = (editedCard.mana_cost || 0) + 1;
 
-    console.log('Updated card:', updatedCard);
-    dispatch('save', { card: updatedCard });
-    isEditing = false;
+      const updatedCard = {
+        ...editedCard,
+        title,
+        content,
+        tags: tags.filter(tag => tag.trim()),
+        art_url: artUrl.trim() || null,
+        mana_cost: newManaCost
+      };
+
+      console.log('Updated card:', updatedCard);
+      dispatch('save', { card: updatedCard });
+      isEditing = false;
+    }
   }
 
   function deleteCard(event) {
@@ -441,74 +474,9 @@
     feedbackArtUrl = '';
   }
 
-  // Tooltip functions
-  async function showTooltipForType(type, event) {
-    // Clear any existing timeout
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      hoverTimeout = null;
-    }
-    
-    const rect = event.currentTarget.getBoundingClientRect();
-    
-    // Position all tooltips above their buttons
-    const x = rect.left + rect.width / 2;
-    const y = rect.top - 10;
-    
-    tooltipPosition = { x, y };
-    tooltipType = type;
-    tooltipLoading = true;
-    showTooltip = true;
-    
-    // Load real data based on type
-    switch (type) {
-      case 'notes':
-        if (tooltipNotes.length === 0) {
-          await loadTooltipNotes();
-        }
-        tooltipContent = tooltipNotes;
-        break;
-      case 'decks':
-        if (tooltipDecks.length === 0) {
-          await loadTooltipDecks();
-        }
-        tooltipContent = tooltipDecks;
-        break;
-      case 'resources':
-        if (tooltipResources.length === 0) {
-          await loadTooltipResources();
-        }
-        tooltipContent = tooltipResources;
-        break;
-    }
-    
-    tooltipLoading = false;
-  }
+  // Removed tooltip functions
 
-  function hideTooltip() {
-    // Add a small delay before hiding to allow mouse to move to tooltip
-    hoverTimeout = setTimeout(() => {
-      showTooltip = false;
-    }, 150);
-  }
-
-  function keepTooltipVisible() {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      hoverTimeout = null;
-    }
-  }
-
-  // Progress tooltip handlers
-  function handleProgressHover(event) {
-    showProgressTooltip = true;
-    progressTooltipElement = event.currentTarget;
-  }
-
-  function handleProgressLeave() {
-    showProgressTooltip = false;
-    progressTooltipElement = null;
-  }
+  // Removed tooltip handlers
 
 
   // Markdown rendering function
@@ -537,13 +505,12 @@
         loadNotes();
         break;
       case 'decks':
-        showDecksModal = true;
+        // Removed tooltip modal
         break;
       case 'resources':
-        showResourcesModal = true;
+        // Removed tooltip modal
         break;
     }
-    hideTooltip();
   }
 
   function openDeckView(deckId, deckName) {
@@ -563,10 +530,10 @@
         newNoteContent = '';
         break;
       case 'decks':
-        showDecksModal = false;
+        // Removed tooltip modal
         break;
       case 'resources':
-        showResourcesModal = false;
+        // Removed tooltip modal
         break;
     }
   }
@@ -628,8 +595,6 @@
       
       if (response.ok) {
         await loadNotes(); // Reload notes
-        // Clear tooltip cache so it refreshes next time
-        tooltipNotes = [];
         cancelNoteEdit();
       } else {
         console.error('Failed to save note');
@@ -651,8 +616,6 @@
       
       if (response.ok) {
         await loadNotes(); // Reload notes
-        // Clear tooltip cache so it refreshes next time
-        tooltipNotes = [];
       } else {
         console.error('Failed to delete note');
         alert('Failed to delete note');
@@ -699,52 +662,21 @@
     }
   }
 
-  // Tooltip data loading functions
-  async function loadTooltipNotes() {
-    if (!editedCard?.id) return;
-    
-    try {
-      const response = await fetch(`/api/cards/${editedCard.id}/notes`);
-      if (response.ok) {
-        const notes = await response.json();
-        // Create short excerpts (first 100 characters) for tooltip display
-        tooltipNotes = notes.map(note => {
-          const excerpt = note.content.length > 100 
-            ? note.content.substring(0, 100) + '...'
-            : note.content;
-          return excerpt;
-        });
-      } else {
-        tooltipNotes = [];
-      }
-    } catch (error) {
-      console.error('Error loading tooltip notes:', error);
-      tooltipNotes = [];
-    }
+  function openPackOpener() {
+    showPackOpener = true;
   }
 
-
-  async function loadTooltipDecks() {
-    if (!editedCard?.id) return;
-    
-    try {
-      const response = await fetch(`/api/cards/${editedCard.id}/decks`);
-      if (response.ok) {
-        const decks = await response.json();
-        tooltipDecks = decks;
-      } else {
-        tooltipDecks = [];
-      }
-    } catch (error) {
-      console.error('Error loading tooltip decks:', error);
-      tooltipDecks = [];
-    }
+  function closePackOpener() {
+    showPackOpener = false;
   }
 
-  async function loadTooltipResources() {
-    // TODO: Implement when resources system is ready
-    tooltipResources = [];
+  function handlePackComplete(event) {
+    // Dispatch the pack completion event to parent
+    dispatch('pack-complete', event.detail);
+    closePackOpener();
   }
+
+  // Removed tooltip data loading functions
 
   // Load counts for all content types
   async function loadCounts() {
@@ -786,31 +718,11 @@
     
     <!-- Just the Card -->
     <div 
-      class="card-container relative transition-all duration-200 z-[99]"
+      class="card-container relative transition-all duration-200 z-[99] rounded-lg overflow-hidden"
       style="width: 500px; height: 800px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
       on:click|stopPropagation
     >
-      <!-- Wizards Council Invite Button -->
-      <button
-        class="absolute w-[200px] h-[89px] transition-all duration-200 hover:scale-105 cursor-pointer flex flex-col justify-center"
-        style="
-          background-image: url('/council-invite.webp'); 
-          background-size: cover; 
-          background-position: center;
-          position: absolute;
-          right: 16px;
-          bottom: 110px;
-          z-index: 9999;
-        "
-        on:click={() => showWizardsCouncil = true}
-        title="Open Wizards Council"
-      >
-        <div class="text-white font-bold text-lg drop-shadow-lg" style="margin-left: 60px; font-family: var(--font-logo); line-height: 1.1;">
-          <div>Summon</div>
-          <div>Wizard's</div>
-          <div>Council</div>
-        </div>
-      </button>
+    <div id="foil" class="foil">&nbsp;</div>
 
       <!-- Card Frame -->
       <div 
@@ -839,7 +751,6 @@
               <h3 
                 class="card-title text-lg font-bold leading-tight truncate" 
                 style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
-                title={editedCard.title}
               >
                 {editedCard.title}
               </h3>
@@ -921,9 +832,11 @@
           
           <!-- Art Edit Button - Bottom Right Corner -->
           <button
-            class="absolute bottom-2 right-2 flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 hover:bg-black/70 transition-all cursor-pointer"
+            class="absolute bottom-2 right-2 z-30 flex items-center gap-2 px-3 py-2 rounded-full transition-all cursor-pointer border border-white/30 hover:border-white/50 pointer-events-auto"
+            style="position: absolute !important; background-color: rgba(0, 0, 0, 0.5) !important;"
             on:click={handleGenerateArt}
-            title="Replace art"
+            on:mouseenter={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'}
+            on:mouseleave={(e) => e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
           >
             <span class="text-white text-sm font-medium">Replace Art</span>
             <Palette size="16" class="text-white" />
@@ -935,7 +848,6 @@
             <button
               class="absolute bottom-2 left-2 p-2 rounded-full bg-orange-500/50 hover:bg-orange-500/70 transition-all cursor-pointer"
               on:click={() => reportBadArt(artUrl || editedCard.art_url)}
-              title="Report art issue"
             >
               <Flag size="16" class="text-white" />
             </button>
@@ -971,6 +883,7 @@
                       bind:value={newTag}
                       on:keydown={handleKeydown}
                       class="w-30 px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-transparent"
+                      style="color: {rarity.textColor}; border-color: {rarity.textColor}; opacity: 0.7;"
                       placeholder="Add..."
                     />
                     <button on:click={addTag} class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
@@ -1010,8 +923,8 @@
 
             <!-- Content Text -->
             <div 
-              class="line-clamp-12 px-5 mt-1"
-              style="color: {rarity.textColor};"
+              class="px-5 mt-1 overflow-y-auto"
+              style="color: {rarity.textColor}; height: 280px;"
             >
               {#if isEditing}
                 <!-- Markdown Editor -->
@@ -1044,8 +957,6 @@
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
               style="color: #e1d5c4;"
               on:click={() => openContentModal('notes')}
-              on:mouseenter={(e) => showTooltipForType('notes', e)}
-              on:mouseleave={hideTooltip}
             >
               Notes {notesCount > 0 ? `(${notesCount})` : ''}
             </button>
@@ -1053,8 +964,6 @@
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
               style="color: #e1d5c4;"
               on:click={() => openContentModal('decks')}
-              on:mouseenter={(e) => showTooltipForType('decks', e)}
-              on:mouseleave={hideTooltip}
             >
               Decks {decksCount > 0 ? `(${decksCount})` : ''}
             </button>
@@ -1062,15 +971,13 @@
               class="underline hover:no-underline cursor-pointer transition-all duration-200 hover:opacity-80 py-1 font-serif"
               style="color: #e1d5c4;"
               on:click={() => openContentModal('resources')}
-              on:mouseenter={(e) => showTooltipForType('resources', e)}
-              on:mouseleave={hideTooltip}
             >
               Resources {resourcesCount > 0 ? `(${resourcesCount})` : ''}
             </button>
           </div>
         </div>
 
-        <!-- Bottom Bar: Rarity and Progress -->
+        <!-- Bottom Bar: Rarity, Summon Pack, and Progress -->
         <div class="absolute bottom-12 left-2 right-2 bottom-bar flex items-center justify-between flex-wrap gap-y-1" style="margin-bottom: 20px; padding-right: 8px;">
           <!-- Rarity -->
           <div class="flex items-center">
@@ -1080,7 +987,6 @@
                 <button 
                   class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityUpgrade}
-                  title="Upgrade rarity"
                 >
                   <ChevronsUp size={24} color={darkMode ? '#ffffff' : '#000000'} />
                 </button>
@@ -1101,7 +1007,6 @@
                 <button 
                   class="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                   on:click={handleRarityDowngrade}
-                  title="Downgrade rarity"
                 >
                   <ChevronsDown size={24} color={darkMode ? '#ffffff' : '#000000'} />
                 </button>
@@ -1109,11 +1014,21 @@
             </div>
           </div>
 
+          <!-- Summon Pack Button -->
+          <div class="flex justify-center">
+            <button
+              class="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg"
+              on:click={openPackOpener}
+              title="Summon a pack of related cards"
+            >
+              <Sparkles size="14" />
+              Summon Pack
+            </button>
+          </div>
+
           <!-- Progress Stars -->
           <div 
             class="flex flex-col items-center gap-1 relative"
-            on:mouseenter={handleProgressHover}
-            on:mouseleave={handleProgressLeave}
           >
             <!-- Stars -->
             <div class="flex items-center gap-1">
@@ -1121,22 +1036,14 @@
                 <button
                   class="transition-colors hover:scale-110 cursor-pointer"
                   on:click={() => handleProgressClick(level.level)}
-                  title="Set to {level.name} ({level.level} star{level.level > 1 ? 's' : ''})"
-                  style:color={editedCard.progress >= level.level ? '#ffffff' : (darkMode ? '#4b5563' : '#d1d5db')}
+                  style:color={editedCard.progress >= level.level ? '#ffffff' : (darkMode ? rarity.textColorDark + '40' : rarity.textColor + '60')}
                 >
                   <Star size="18" class="fill-current" />
                 </button>
               {/each}
             </div>
             
-            <!-- Custom Tooltip -->
-            {#if showProgressTooltip}
-              <div 
-                class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50"
-              >
-                {progressLevels.find(level => level.level === editedCard.progress)?.name || 'Raw'} ({editedCard.progress || 1} star{(editedCard.progress || 1) > 1 ? 's' : ''})
-              </div>
-            {/if}
+            <!-- Removed progress tooltip -->
           </div>
         </div>
 
@@ -1163,7 +1070,6 @@
               <button
                 class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={saveCard}
-                title="Save changes"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Save size="20" />
@@ -1171,7 +1077,6 @@
               <button
                 class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={cancelEditing}
-                title="Cancel editing"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <XCircle size="20" />
@@ -1180,7 +1085,6 @@
               <button
                 class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={startEditing}
-                title="Edit card"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Pencil size="20" />
@@ -1188,7 +1092,6 @@
               <button
                 class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
                 on:click={deleteCard}
-                title="Delete card"
                 style:color={darkMode ? '#ffffff' : rarity.textColor}
               >
                 <Trash size="20" />
@@ -1197,7 +1100,6 @@
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleMerge}
-              title="Combine cards"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <Combine size="20" />
@@ -1205,7 +1107,6 @@
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={handleSplit}
-              title="Distill card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <Ungroup size="20" />
@@ -1218,7 +1119,6 @@
                 // Close the zoom view when opening Wizard's Council
                 dispatch('close');
               }}
-              title="Summon The Wizard's Council"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
               style="display: none;"
             >
@@ -1227,7 +1127,6 @@
             <button
               class="p-1 rounded hover:bg-opacity-20 transition-colors cursor-pointer"
               on:click={closeModal}
-              title="Close card"
               style:color={darkMode ? '#ffffff' : rarity.textColor}
             >
               <X size="20" />
@@ -1236,78 +1135,30 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Tooltip -->
-  {#if showTooltip}
-    <div 
-      class="fixed z-[10000] bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 rounded-lg shadow-lg p-3 max-w-xs border border-gray-700 dark:border-gray-600 cursor-pointer hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
-      style:left="{tooltipPosition.x}px" style:top="{tooltipPosition.y}px" style:transform="translateX(-50%) translateY(-100%)"
-      on:mouseenter={keepTooltipVisible}
-      on:mouseleave={hideTooltip}
-      on:click={() => openContentModal(tooltipType)}
+    <!-- Wizards Council Invite Button - Outside card container to avoid clipping -->
+    <button
+      class="absolute w-[200px] h-[89px] transition-all duration-200 hover:scale-105 cursor-pointer flex flex-col justify-center"
+      style="
+        background-image: url('/council-invite.webp'); 
+        background-size: cover; 
+        background-position: center;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(270px, -50%);
+        z-index: 10000;
+      "
+      on:click={() => showWizardsCouncil = true}
     >
-      <div class="text-sm font-medium mb-2 capitalize text-white dark:text-gray-100">{tooltipType}</div>
-      
-      {#if tooltipType === 'notes'}
-        <div class="space-y-1">
-          {#if tooltipLoading}
-            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
-          {:else if tooltipContent && tooltipContent.length > 0}
-            {#each tooltipContent as note, index}
-              <div class="text-xs text-gray-300 dark:text-gray-300 truncate">
-                {index + 1}. {note}
-              </div>
-            {/each}
-          {:else}
-            <div class="text-xs text-gray-400 dark:text-gray-500">No notes yet</div>
-          {/if}
-        </div>
-      {:else if tooltipType === 'decks'}
-        <div class="space-y-1 max-h-32 overflow-y-auto">
-          {#if tooltipLoading}
-            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
-          {:else if tooltipContent && tooltipContent.length > 0}
-            {#each tooltipContent as deck}
-              <div 
-                class="flex items-center gap-2 text-xs text-blue-300 dark:text-blue-400 hover:text-blue-200 dark:hover:text-blue-300 cursor-pointer underline hover:no-underline transition-colors"
-                on:click={() => openDeckView(deck.id, deck.name)}
-                on:click|stopPropagation
-              >
-                <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                </svg>
-                <span class="truncate">{deck.name}</span>
-              </div>
-            {/each}
-          {:else}
-            <div class="text-xs text-gray-400 dark:text-gray-500">No decks yet</div>
-          {/if}
-        </div>
-      {:else if tooltipType === 'resources'}
-        <div class="space-y-1">
-          {#if tooltipLoading}
-            <div class="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
-          {:else if tooltipContent && tooltipContent.length > 0}
-            {#each tooltipContent as resource}
-              <div class="text-xs text-gray-300 dark:text-gray-300 flex items-center gap-2">
-                <span>{resource.icon}</span>
-                <span>{resource.name}</span>
-              </div>
-            {/each}
-          {:else}
-            <div class="text-xs text-gray-400 dark:text-gray-500">No resources yet</div>
-          {/if}
-        </div>
-      {/if}
-      
-      <div class="mt-2 pt-2 border-t border-gray-700 dark:border-gray-600">
-        <div class="text-xs text-gray-400 dark:text-gray-400 text-center">
-          Click to edit
-        </div>
+      <div class="text-white font-bold text-lg drop-shadow-lg" style="margin-left: 60px; font-family: var(--font-logo); line-height: 1.1;">
+        <div>Summon</div>
+        <div>Wizard's</div>
+        <div>Council</div>
       </div>
-    </div>
-  {/if}
+    </button>
+  </div>
+  <!-- Removed tooltip section -->
 {/if}
 
 <!-- Art Manager Modal -->
@@ -1451,93 +1302,7 @@
 {/if}
 
 
-<!-- Decks Modal -->
-{#if showDecksModal}
-  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('decks')}>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Decks for {editedCard?.title || 'Card'}</h3>
-          <button
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            on:click={() => closeContentModal('decks')}
-          >
-            <X size="20" />
-          </button>
-        </div>
-        <div class="space-y-2 max-h-96 overflow-y-auto">
-          {#each tooltipContent as deck}
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                </svg>
-                <span class="text-sm text-gray-900 dark:text-white">{deck.name}</span>
-              </div>
-              <button 
-                class="text-blue-500 hover:text-blue-600 text-sm"
-                on:click={() => openDeckView(deck.id, deck.name)}
-              >
-                View
-              </button>
-            </div>
-          {/each}
-        </div>
-        <div class="mt-4 flex justify-end">
-          <button
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            on:click={() => closeContentModal('decks')}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
-
-<!-- Resources Modal -->
-{#if showResourcesModal}
-  <div class="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={() => closeContentModal('resources')}>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden" on:click|stopPropagation>
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Resources for {editedCard?.title || 'Card'}</h3>
-          <button
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            on:click={() => closeContentModal('resources')}
-          >
-            <X size="20" />
-          </button>
-        </div>
-        <div class="space-y-2">
-          <!-- Coming Soon message -->
-          <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center">
-            <p class="text-gray-600 dark:text-gray-300 text-sm italic">Coming Soon...</p>
-          </div>
-          
-          {#each tooltipContent as resource}
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-lg">{resource.icon}</span>
-                <span class="text-sm text-gray-900 dark:text-white">{resource.name}</span>
-              </div>
-              <button class="text-blue-500 hover:text-blue-600 text-sm">Open</button>
-            </div>
-          {/each}
-        </div>
-        <div class="mt-4 flex justify-end">
-          <button
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            on:click={() => closeContentModal('resources')}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
+<!-- Removed tooltip modals -->
 
 <!-- Art Feedback Modal -->
 <ArtFeedbackModal
@@ -1578,6 +1343,16 @@
           on:wizard-selected={handleWizardSelected}
           on:card-zoom={handleCardZoom}
           on:close={() => showWizardsCouncil = false}
+        />
+
+        <!-- Pack Opener Modal -->
+        <PackOpener
+          bind:isOpen={showPackOpener}
+          {worldId}
+          {user}
+          selectedCard={editedCard}
+          on:pack-complete={handlePackComplete}
+          on:close={closePackOpener}
         />
 
 

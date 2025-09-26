@@ -75,7 +75,7 @@
   }
 </script>
 
-<div class="min-h-screen flex justify-center px-4 pt-12">
+<div class="min-h-screen flex justify-center px-4 pt-12 relative z-20" style="background: var(--bg-primary);">
   <div class="p-6 max-w-sm w-full space-y-4">
   <h1 class="text-xl font-semibold text-center">{mode === 'signup' ? 'Create account' : 'Sign in'}</h1>
   

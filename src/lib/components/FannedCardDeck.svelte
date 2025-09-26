@@ -15,6 +15,7 @@
   export let autoFit = false; // Auto-fit cards without scrolling when possible
   export let smartSpacing = false; // Use compact spacing when possible, fan only when needed
   export let allowReordering = false; // Enable cards as drop zones for reordering
+  export let enableGlobalWheel = false; // Enable wheel handling anywhere on the page (for modals)
 
   const dispatch = createEventDispatcher();
   
@@ -101,6 +102,29 @@
     dispatch('card-drop', { index, event: e });
   }
 
+  function handleContainerDragOver(e) {
+    if (!allowReordering) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Dispatch with index -1 to indicate dropping at the end of the deck
+    dispatch('card-drag-over', { index: -1, event: e });
+  }
+
+  function handleContainerDragLeave(e) {
+    if (!allowReordering) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch('card-drag-leave', { index: -1, event: e });
+  }
+
+  function handleContainerDrop(e) {
+    if (!allowReordering) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Dispatch with index -1 to indicate dropping at the end of the deck
+    dispatch('card-drop', { index: -1, event: e });
+  }
+
   function handleCardMouseEnter(index, event) {
     // Only show preview if SHIFT key is held
     if (!event.shiftKey) {
@@ -180,20 +204,20 @@
 
   function getCardStyle(index) {
     const rotation = (index - (cards.length - 1) / 2) * maxRotation;
-    const translateX = index * optimalSpacing - scrollPosition;
+    const leftPosition = index * optimalSpacing - scrollPosition;
     const isSelected = selectedCards.has(index);
     
-    
     return `
-      transform: rotate(${rotation}deg) translateX(${translateX}px);
+      left: ${leftPosition}px;
+      transform: rotate(${rotation}deg);
       z-index: ${index + 10};
       opacity: 1;
     `;
   }
 
   function handleWheel(e) {
-    // Only handle scroll if mouse is over a card and we need scrolling
-    if (hoveredCardIndex >= 0 && needsScrolling()) {
+    // Only handle scroll if we need scrolling (works anywhere on the page)
+    if (needsScrolling()) {
       e.preventDefault();
       e.stopPropagation();
       
@@ -359,6 +383,8 @@
         resizeObserver.disconnect();
       };
     }
+
+    // Global wheel handling disabled for now - using modal-level handling instead
   });
 
   // Force card updates when scroll position changes
@@ -387,6 +413,9 @@
     bind:this={scrollContainer}
     on:wheel={handleWheel}
     on:keydown={handleKeydown}
+    on:dragover={handleContainerDragOver}
+    on:dragleave={handleContainerDragLeave}
+    on:drop={handleContainerDrop}
     role="region"
     tabindex="-1"
     aria-label="Card deck with horizontal scrolling"
@@ -397,8 +426,8 @@
   <div class="fanned-deck-viewport">
     {#each cards as card, index}
         <span 
-          class="fanned-deck-card-wrapper"
-          style="left: {index * optimalSpacing}px; top: 0px; z-index: {hoveredCardIndex === index ? 9999 : index + 10};"
+          class="fanned-deck-card-wrapper {selectedCards.has(index) ? 'selected' : ''}"
+          style="left: {index * optimalSpacing - scrollPosition}px; transform: rotate({(index - (cards.length - 1) / 2) * maxRotation}deg); top: 0px; z-index: {hoveredCardIndex === index ? 9999 : index + 10}; opacity: 1;"
         >
           <div 
             class="fanned-deck-card"
@@ -415,6 +444,16 @@
               on:dragend={handleDragEnd}
             />
           </div>
+          
+          <!-- Selection Checkmark -->
+          {#if selectedCards.has(index)}
+            <div class="selection-checkmark">
+              <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="5" fill="#ffffff" stroke="#10b981" stroke-width="0.5"/>
+                <path d="M9 12l2 2 4-4" stroke="#10b981" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"/>
+              </svg>
+            </div>
+          {/if}
         </span>
     {/each}
   </div>
@@ -447,6 +486,32 @@
     position: absolute;
     width: 250px;
     height: 350px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .fanned-deck-card-wrapper.selected {
+    box-shadow: 0 0 0 2px #10b981, 0 0 15px rgba(16, 185, 129, 0.3);
+  }
+  
+  .selection-checkmark {
+    position: absolute;
+    top: 30px;
+    left: -20px;
+    z-index: 1000;
+    pointer-events: none;
+    animation: checkmark-appear 0.2s ease-out;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+  
+  @keyframes checkmark-appear {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
   
   .fanned-deck-card {
@@ -567,5 +632,20 @@
   .fanned-deck-card-wrapper :global(.text-gray-400),
   .fanned-deck-card-wrapper :global(.text-gray-500) {
     color: rgb(107, 114, 128) !important;
+  }
+  
+  /* Ensure mana cost text is white and visible - but exclude tags area */
+  .fanned-deck-card-wrapper :global(.mana-cost),
+  .fanned-deck-card-wrapper :global(.mana-cost span),
+  .fanned-deck-card-wrapper :global(.mana-cost .text-white) {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  }
+  
+  /* Target text inside gem sockets or mana cost areas - but exclude tags */
+  .fanned-deck-card-wrapper :global(div[class*="absolute"]:not([class*="tag"]):not([class*="content"]) span),
+  .fanned-deck-card-wrapper :global(div[class*="z-10"]:not([class*="tag"]):not([class*="content"]) span) {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
   }
 </style>

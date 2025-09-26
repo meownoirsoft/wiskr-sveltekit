@@ -242,7 +242,7 @@
   <meta name="robots" content="index,follow" />
 </svelte:head>
 
-<section class="mx-auto max-w-7xl px-6 py-12">
+<section class="mx-auto max-w-7xl px-6 py-12 relative z-20" style="background: var(--bg-primary);">
   <!-- Hero Section -->
   <header class="mb-16 text-center">
     <h1 class="text-5xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Choose Your Plan</h1>

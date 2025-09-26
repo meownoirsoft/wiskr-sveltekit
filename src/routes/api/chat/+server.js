@@ -9,7 +9,7 @@ import { DAILY_TOKEN_LIMIT } from '$env/static/private';
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();
-  const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main', sessionId } = body;
+  const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main', sessionId, systemContext } = body;
 
   const { data: { user } } = await locals.supabase.auth.getUser();
   if (!user) return new Response('Unauthorized', { status: 401 });
@@ -56,6 +56,8 @@ export const POST = async ({ request, locals }) => {
   }
 
   const finalMessages = [
+    // Add system context if provided (for Wizard's Council)
+    ...(systemContext ? [{ role: 'system', content: systemContext }] : []),
     ...baseMessages,
     ...overrideBlocks.map(content => ({ role: 'system', content })),
     { role: 'user', content: message }
