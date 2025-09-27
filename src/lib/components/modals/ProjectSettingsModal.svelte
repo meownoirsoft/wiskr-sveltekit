@@ -118,6 +118,13 @@
         setTimeout(() => {
           saveSuccess = false;
         }, 3000);
+        
+        // Dispatch event to refresh projects list in layout
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('projects:refresh', {
+            detail: { id: project.id }
+          }));
+        }
       } else {
         let errorData;
         try {

@@ -527,7 +527,7 @@
         <div class="relative">
           <span 
             class="card-rarity text-xs font-bold uppercase bg-white dark:bg-white rounded px-1.5 py-0.5 font-serif"
-            style:color={`${rarity.textColor} !important`}
+            style:color={rarity.textColor}
           >
             {card?.rarity || 'common'}
           </span>

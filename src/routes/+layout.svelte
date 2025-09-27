@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, onDestroy } from 'svelte';
-import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Plus, ClipboardList, MessageSquare, GitBranch, Layers } from 'lucide-svelte';
+import { Settings, BarChart3, LogOut, ChevronsLeft, ChevronsRight, Plus, ClipboardList, MessageSquare, GitBranch, Layers, Menu, X, ScrollText, WandSparkles } from 'lucide-svelte';
 import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte';
   import ContextQualityIndicator from '$lib/components/ContextQualityIndicator.svelte';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
@@ -11,6 +11,7 @@ import HeaderProjectSelector from '$lib/components/HeaderProjectSelector.svelte'
   import ProjectExport from '$lib/components/ProjectExport.svelte';
 import AppSettingsModal from '$lib/components/modals/AppSettingsModal.svelte';
 import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
+import PackOpener from '$lib/components/PackOpener.svelte';
   import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
@@ -75,6 +76,9 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.conversation-dropdown')) {
           showConversationDropdown = false;
+        }
+        if (!e.target.closest('.hamburger-menu-container')) {
+          showHamburgerMenu = false;
         }
       });
 
@@ -396,6 +400,11 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   let showMobileMenu = false;
   let showContextMenu = false;
   let showAddInsMenu = false;
+  let showHamburgerMenu = false;
+  let hamburgerMenuEl;
+  let hamburgerButtonEl;
+  let hamburgerMenuPosition = { top: 0, left: 0 };
+  let showPackOpener = false;
   
   // Panel state tracking for mobile chevron icons
   let showLeftPanel = false; // Default state, will be synced with actual panel state
@@ -633,6 +642,178 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
     initialSettingsTab = tab;
     showAppSettings = true;
     loadUserPreferences();
+  }
+
+  // Hamburger menu positioning
+  function updateHamburgerMenuPosition() {
+    if (hamburgerButtonEl) {
+      const rect = hamburgerButtonEl.getBoundingClientRect();
+      hamburgerMenuPosition = {
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 192 // 192px is the width of the menu (w-48)
+      };
+    }
+  }
+
+  // Portal action for hamburger menu
+  function createHamburgerPortal(node) {
+    if (!browser) return;
+    
+    // Create portal container if it doesn't exist
+    let portalContainer = document.getElementById('hamburger-menu-portal');
+    if (!portalContainer) {
+      portalContainer = document.createElement('div');
+      portalContainer.id = 'hamburger-menu-portal';
+      portalContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999;';
+      document.body.appendChild(portalContainer);
+    }
+
+    // Move the node to the portal container
+    portalContainer.appendChild(node);
+    
+    // Enable pointer events on the dropdown itself
+    node.style.pointerEvents = 'auto';
+    
+    return {
+      destroy() {
+        if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      }
+    };
+  }
+
+  // Generate Scroll function
+  async function generateScroll() {
+    if (!currentProject?.id) {
+      alert('No project selected');
+      return;
+    }
+
+    // Get project name from current project
+    const currentProjectName = currentProject.name || 'Untitled Project';
+    
+    try {
+      // Fetch all decks for this project
+      const { data: allDecks, error } = await supabase
+        .from('decks')
+        .select(`
+          id,
+          name,
+          sections:deck_sections(
+            id,
+            name,
+            cards:deck_cards(
+              id,
+              title,
+              content,
+              progress,
+              rarity,
+              pinned
+            )
+          )
+        `)
+        .eq('project_id', currentProject.id)
+        .order('created_at');
+
+      if (error) {
+        console.error('Error fetching decks:', error);
+        alert('Error fetching project data: ' + error.message);
+        return;
+      }
+
+      if (!allDecks || allDecks.length === 0) {
+        alert('No decks found in this project');
+        return;
+      }
+
+      // Generate markdown content
+      let markdown = `# ${currentProjectName}\n\n`;
+      markdown += `*Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}*\n\n`;
+      
+      allDecks.forEach((deck, deckIndex) => {
+        markdown += `## ${deck.name}\n\n`;
+        
+        if (deck.sections && deck.sections.length > 0) {
+          deck.sections.forEach((section, sectionIndex) => {
+            markdown += `### ${section.name}\n\n`;
+            
+            if (section.cards && section.cards.length > 0) {
+              section.cards.forEach(card => {
+                markdown += `#### ${card.title}\n\n`;
+                markdown += `${card.content}\n\n`;
+                if (card.pinned) {
+                  markdown += `*📌 Pinned*\n\n`;
+                }
+              });
+            } else {
+              markdown += `*No cards in this section*\n\n`;
+            }
+            
+            // Add separator between sections (except last section in deck)
+            if (sectionIndex < deck.sections.length - 1) {
+              markdown += `\n---\n\n`;
+            }
+          });
+        }
+        
+        // Add separator between decks (except last deck)
+        if (deckIndex < allDecks.length - 1) {
+          markdown += `\n---\n\n`;
+        }
+      });
+      
+      // Add footer
+      markdown += `\n---\n\n`;
+      markdown += `*End of ${currentProjectName}*\n`;
+      markdown += `*Total decks: ${allDecks.length}*\n`;
+      markdown += `*Total sections: ${allDecks.reduce((total, deck) => total + (deck.sections?.length || 0), 0)}*\n`;
+      markdown += `*Total cards: ${allDecks.reduce((total, deck) => 
+        total + (deck.sections?.reduce((sectionTotal, section) => 
+          sectionTotal + (section.cards?.length || 0), 0) || 0), 0)}*\n`;
+      
+      // Create timestamp for filename
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      const timeString = `${String(displayHours).padStart(2, '0')}-${minutes}${ampm}`;
+      const dateString = `${month}-${day}-${year}`;
+      
+      // Create and download the file
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentProjectName}-Scroll-${dateString}-${timeString}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error generating scroll:', error);
+      alert('Error generating scroll: ' + error.message);
+    }
+  }
+
+  // PackOpener functions
+  function openPackOpener() {
+    showPackOpener = true;
+  }
+
+  function closePackOpener() {
+    showPackOpener = false;
+  }
+
+  function handlePackComplete(event) {
+    // Handle pack completion - could dispatch event to projects page if needed
+    console.log('Pack completed:', event.detail);
+    closePackOpener();
   }
   
   // Handle settings modal events
@@ -947,11 +1128,33 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
 
       </div>
 
-      <!-- Right side: Menus and controls -->
+      <!-- Right side: Hamburger menu and controls -->
       <div class="flex items-center gap-0 md:gap-4 flex-shrink-0 -mr-4 md:mr-0">
         {#if isProjectsPage && !isPublicPage}
-          <!-- Desktop: Account Tier Badge and Usage Stats -->
+          <!-- Desktop: Summon Pack, Generate Scroll Button and Account Tier Badge -->
           <div class="{isDesktop ? 'flex' : 'hidden'} items-center gap-4">
+            <!-- Summon Pack Button -->
+            <button
+              type="button"
+              class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+              on:click={openPackOpener}
+              title="Summon Pack"
+            >
+              <WandSparkles size="16" />
+              <span>Summon Pack</span>
+            </button>
+            
+            <!-- Generate Scroll Button -->
+            <button
+              type="button"
+              class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+              on:click={generateScroll}
+              title="Generate Scroll"
+            >
+              <ScrollText size="16" />
+              <span>Generate Scroll</span>
+            </button>
+            
             <!-- Account Tier Badge -->
             <div class="flex flex-col items-center text-xs text-gray-600 dark:text-gray-400">
               <span class="font-medium">Account:</span>
@@ -965,17 +1168,93 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
                  'Free'}
               </span>
             </div>
-            
-            <!-- Usage Stats Button -->
+          </div>
+          
+          <!-- Hamburger Menu (Desktop) -->
+          <div class="relative hamburger-menu-container">
             <button
+              bind:this={hamburgerButtonEl}
               type="button"
               class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-              title="Usage Stats"
-              on:click={() => { window.dispatchEvent(new CustomEvent('usage:toggle')); }}
+              on:click={() => {
+                showHamburgerMenu = !showHamburgerMenu;
+                if (showHamburgerMenu) {
+                  updateHamburgerMenuPosition();
+                }
+              }}
+              aria-label="Menu"
             >
-              <BarChart3 size="16" />
-              <span>Usage</span>
+              <Menu size="16" />
+              <span>Menu</span>
             </button>
+            
+            <!-- Hamburger Menu Dropdown (Portal) -->
+            {#if showHamburgerMenu}
+              <div 
+                bind:this={hamburgerMenuEl}
+                use:createHamburgerPortal
+                class="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
+                style="position: fixed; top: {hamburgerMenuPosition.top}px; left: {hamburgerMenuPosition.left}px;"
+              >
+                <div class="py-1">
+                  {#if data?.user}
+                    <!-- Usage Stats -->
+                    <button
+                      type="button"
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      on:click={() => { 
+                        window.dispatchEvent(new CustomEvent('usage:toggle')); 
+                        showHamburgerMenu = false;
+                      }}
+                    >
+                      <BarChart3 size="16" />
+                      <span>Usage</span>
+                    </button>
+                    
+                    <!-- Settings -->
+                    {#if $page?.url?.pathname === '/projects'}
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        on:click={() => { 
+                          openAppSettings(); 
+                          showHamburgerMenu = false;
+                        }}
+                      >
+                        <Settings size="16" />
+                        <span>Settings</span>
+                      </button>
+                    {/if}
+                    
+                    <!-- Logout -->
+                    <a
+                      href="/logout"
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      on:click={() => showHamburgerMenu = false}
+                    >
+                      <LogOut size="16" />
+                      <span>Logout</span>
+                    </a>
+                  {:else if isPublicPage}
+                    <!-- Login/Signup for public pages -->
+                    <a
+                      href="/login"
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      on:click={() => showHamburgerMenu = false}
+                    >
+                      <span>Login</span>
+                    </a>
+                    <a
+                      href="/signup"
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      on:click={() => showHamburgerMenu = false}
+                    >
+                      <span>Sign Up</span>
+                    </a>
+                  {/if}
+                </div>
+              </div>
+            {/if}
           </div>
           
           <!-- Mobile hamburger menu (positioned between branches and ideas) -->
@@ -1015,39 +1294,14 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
           </div>
         {/if}
 
-                 <!-- Desktop navigation (>= 1200px) -->
-         <div class="hidden xl:flex items-center gap-6">
-           {#if data?.user}
-              <!-- App/Account Settings -->
-             {#if $page?.url?.pathname === '/projects'}
-             <button 
-               type="button"
-               class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors"
-               title="Settings"
-               on:click={openAppSettings}
-             >
-               <Settings size="16" />
-               <span>Settings</span>
-             </button>
-             {/if}
-             
-             <!-- Back to Projects (show on public pages) -->
-             {#if isPublicPage}
-               <a href="/projects" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
-                 <span>← Back to Projects</span>
-               </a>
-             {/if}
-             
-             <!-- Logout -->
-             <a href="/logout" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
-               <LogOut size="16" />
-               <span>Logout</span>
+                 <!-- Back to Projects (show on public pages) -->
+         {#if isPublicPage}
+           <div class="hidden xl:flex items-center gap-6">
+             <a href="/projects" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">
+               <span>← Back to Projects</span>
              </a>
-           {:else if isPublicPage}
-             <a href="/login" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Login</a>
-             <a href="/signup" class="text-sm underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-blue-400 transition-colors">Sign Up</a>
-           {/if}
-         </div>
+           </div>
+         {/if}
         
                  <!-- Public pages: Show authentication links and back to projects on mobile -->
          {#if isPublicPage}
@@ -1303,4 +1557,12 @@ import SayLessModal from '$lib/components/modals/SayLessModal.svelte';
   
   <!-- Toast Notifications -->
   <ToastNotification />
+  
+  <!-- Pack Opener Modal -->
+  <PackOpener
+    bind:isOpen={showPackOpener}
+    projectId={currentProject?.id}
+    on:pack-complete={handlePackComplete}
+    on:close={closePackOpener}
+  />
 </div>

@@ -1,7 +1,7 @@
 <!-- CardZoomView.svelte - Large zoomed-in card view for editing -->
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { Pin, PinOff, Pencil, Trash, Star, Ungroup, Combine, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users, Sparkles } from 'lucide-svelte';
+  import { Pin, PinOff, Pencil, Trash, Star, Ungroup, Combine, Palette, X, Save, XCircle, Flag, Plus, Edit3, Trash2, ChevronsUp, ChevronsDown, Users, WandSparkles } from 'lucide-svelte';
   import MergeModal from './MergeModal.svelte';
   import SplitModal from './SplitModal.svelte';
   import ArtManager from './ArtManager.svelte';
@@ -923,8 +923,8 @@
 
             <!-- Content Text -->
             <div 
-              class="px-5 mt-1 overflow-y-auto"
-              style="color: {rarity.textColor}; height: 280px;"
+              class="px-5 mt-1 overflow-y-auto custom-scrollbar"
+              style="color: {rarity.textColor}; height: 280px; --scrollbar-thumb: {rarity.textColor}; --scrollbar-track: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
             >
               {#if isEditing}
                 <!-- Markdown Editor -->
@@ -1015,21 +1015,34 @@
           </div>
 
           <!-- Summon Pack Button -->
-          <div class="flex justify-center">
+          <div class="flex justify-center relative z-10">
             <button
               class="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg"
               on:click={openPackOpener}
               title="Summon a pack of related cards"
             >
-              <Sparkles size="14" />
+              <WandSparkles size="14" />
               Summon Pack
             </button>
           </div>
+
 
           <!-- Progress Stars -->
           <div 
             class="flex flex-col items-center gap-1 relative"
           >
+            <!-- Beckon Wizard Button - Positioned above stars -->
+            <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 z-10 mr-2">
+              <button
+                class="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
+                on:click={() => showWizardsCouncil = true}
+                title="Beckon Wizard"
+              >
+                <Users size="12" />
+                Beckon Wizard
+              </button>
+            </div>
+            
             <!-- Stars -->
             <div class="flex items-center gap-1">
               {#each progressLevels as level}
@@ -1136,27 +1149,6 @@
       </div>
     </div>
 
-    <!-- Wizards Council Invite Button - Outside card container to avoid clipping -->
-    <button
-      class="absolute w-[200px] h-[89px] transition-all duration-200 hover:scale-105 cursor-pointer flex flex-col justify-center"
-      style="
-        background-image: url('/council-invite.webp'); 
-        background-size: cover; 
-        background-position: center;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(270px, -50%);
-        z-index: 10000;
-      "
-      on:click={() => showWizardsCouncil = true}
-    >
-      <div class="text-white font-bold text-lg drop-shadow-lg" style="margin-left: 60px; font-family: var(--font-logo); line-height: 1.1;">
-        <div>Summon</div>
-        <div>Wizard's</div>
-        <div>Council</div>
-      </div>
-    </button>
   </div>
   <!-- Removed tooltip section -->
 {/if}
@@ -1363,6 +1355,34 @@
   
   .card-frame {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Custom scrollbar styling */
+  .custom-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    opacity: 0.8;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
   
 </style>

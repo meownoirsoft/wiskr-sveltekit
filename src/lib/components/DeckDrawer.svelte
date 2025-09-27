@@ -144,7 +144,6 @@
     <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
       <div>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{currentWorld}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Decks</p>
       </div>
       <button
         class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -221,13 +220,10 @@
 
     <!-- Footer -->
     <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-      <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-        <button class="flex items-center gap-2 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-          <div class="w-4 h-4">⚙️</div>
-          Deck settings
-        </button>
+      <div class="flex items-center justify-end text-sm text-gray-500 dark:text-gray-400">
         <button 
-          class="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          class="hover:text-gray-700 dark:hover:text-gray-200 transition-colors bg-transparent border-none outline-none"
+          style="background: none !important; border: none !important;"
           on:click={toggleDrawer}
         >
           Collapse »
