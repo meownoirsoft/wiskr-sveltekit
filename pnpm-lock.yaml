@@ -59,6 +59,9 @@ importers:
       docx:
         specifier: ^9.5.1
         version: 9.5.1
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.2.2
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -1460,6 +1463,10 @@ packages:
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
+
+  dotenv@17.2.2:
+    resolution: {integrity: sha512-Sf2LSQP+bOlhKWWyhFsn0UsfdK/kCWRv1iuA2gXAwt3dyNabr6QSj00I2V10pidqz69soatm9ZwZvpQMTIOd5Q==}
     engines: {node: '>=12'}
 
   dunder-proto@1.0.1:
@@ -4076,6 +4083,8 @@ snapshots:
       xml-js: 1.6.11
 
   dotenv@16.6.1: {}
+
+  dotenv@17.2.2: {}
 
   dunder-proto@1.0.1:
     dependencies:
