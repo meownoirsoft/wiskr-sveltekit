@@ -54,27 +54,50 @@ export async function signInWithDiscord(redirectTo = '/projects') {
     
     // Try a simpler OAuth configuration first
     console.log('🔧 Attempting OAuth with simplified config...');
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: {
-        redirectTo: `${window.location.origin}${redirectTo}`
-      }
+    
+    // Check if we can access the Supabase client properly
+    console.log('🔍 Supabase client check:', {
+      supabaseUrl: supabase.supabaseUrl,
+      supabaseKey: supabase.supabaseKey ? 'present' : 'missing'
     });
     
-    console.log('🔧 OAuth response:', { data, error });
-
-    if (error) {
-      console.error('❌ Error signing in with Discord:', error);
-      console.error('❌ Discord OAuth error details:', {
-        message: error.message,
-        status: error.status,
-        code: error.code
+    // Try using the auth.getSession() first to ensure clean state
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('🔍 Current session before OAuth:', sessionData);
+    
+    // Try a different approach - check if Discord provider is available
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: `${window.location.origin}${redirectTo}`
+        }
       });
-      return { data: null, error };
-    }
+      
+      console.log('🔧 OAuth response:', { data, error });
+      
+      // If successful, log the redirect URL
+      if (data?.url) {
+        console.log('🔗 OAuth redirect URL:', data.url);
+      }
 
-    console.log('✅ Discord OAuth initiated successfully, data:', data);
-    return { data, error: null };
+      if (error) {
+        console.error('❌ Error signing in with Discord:', error);
+        console.error('❌ Discord OAuth error details:', {
+          message: error.message,
+          status: error.status,
+          code: error.code
+        });
+        return { data: null, error };
+      }
+
+      console.log('✅ Discord OAuth initiated successfully, data:', data);
+      return { data, error: null };
+      
+    } catch (oauthError) {
+      console.error('💥 OAuth initiation failed:', oauthError);
+      return { data: null, error: oauthError };
+    }
   } catch (err) {
     console.error('💥 Unexpected error during Discord sign in:', err);
     return { data: null, error: err };
