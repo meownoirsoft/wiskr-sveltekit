@@ -84,17 +84,29 @@ Generate related and expanded ideas that build upon this concept. Consider diffe
     
     // Provide more specific error messages
     let errorMessage = 'Failed to generate pack';
+    let statusCode = 500;
+    
     if (error.message.includes('environment variable')) {
       errorMessage = 'Server configuration error. Please contact support.';
     } else if (error.message.includes('Unauthorized')) {
       errorMessage = 'Authentication error. Please try logging in again.';
+      statusCode = 401;
     } else if (error.message.includes('network') || error.message.includes('fetch')) {
       errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.message.includes('OpenAI API error')) {
+      errorMessage = 'AI service temporarily unavailable. Please try again in a moment.';
+    } else if (error.message.includes('Database error')) {
+      errorMessage = 'Database error. Please try again.';
+    } else if (error.message.includes('No ideas were generated')) {
+      errorMessage = 'Unable to generate ideas. Please try a different prompt.';
+    } else {
+      // Include the actual error message for debugging
+      errorMessage = error.message || 'Failed to generate pack';
     }
     
     return json({ 
       error: errorMessage,
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    }, { status: 500 });
+    }, { status: statusCode });
   }
 }

@@ -144,7 +144,6 @@
         <svelte:component this={Sidebar} 
           on:fact-add 
           on:doc-add 
-          on:brief-regenerate 
           {...$$restProps} 
         />
       {:else}

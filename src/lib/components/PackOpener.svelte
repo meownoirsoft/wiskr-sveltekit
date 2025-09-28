@@ -20,6 +20,8 @@
   let currentRevealIndex = 0;
   let packAnimation = 'closed';
   let wiskrDialogue = '';
+  let openingDialogue = '';
+  let completeDialogue = '';
   let dialogueIndex = 0;
 
   // Rarity icons and colors
@@ -83,6 +85,8 @@
     currentRevealIndex = 0;
     packAnimation = 'closed';
     wiskrDialogue = '';
+    openingDialogue = '';
+    completeDialogue = '';
     dialogueIndex = 0;
     setWiskrDialogue('greeting');
   }
@@ -95,13 +99,6 @@
     }
   }
 
-  function getWiskrDialogueForRarity(rarity) {
-    if (rarity === 'legendary') {
-      setWiskrDialogue('legendary');
-    } else {
-      setWiskrDialogue('opening');
-    }
-  }
 
   async function generatePack() {
     if (!prompt.trim() && !selectedCard) {
@@ -132,6 +129,13 @@
         packAnimation = 'opening';
         showPack = true;
         
+        // Set opening dialogue immediately when pack opens
+        const dialogues = wiskrDialogues['opening'];
+        if (dialogues && dialogues.length > 0) {
+          const randomIndex = Math.floor(Math.random() * dialogues.length);
+          openingDialogue = dialogues[randomIndex];
+        }
+        
         // Start card reveal sequence
         setTimeout(() => {
           revealCards();
@@ -141,7 +145,22 @@
       }
     } catch (error) {
       console.error('Error generating pack:', error);
-      alert('Failed to generate pack. Please try again.');
+      
+      // Show more specific error message
+      let errorMessage = 'Failed to generate pack. Please try again.';
+      if (error.message.includes('AI service temporarily unavailable')) {
+        errorMessage = 'AI service is temporarily busy. Please try again in a moment.';
+      } else if (error.message.includes('Unable to generate ideas')) {
+        errorMessage = 'Unable to generate ideas for this prompt. Please try a different approach.';
+      } else if (error.message.includes('Database error')) {
+        errorMessage = 'Database error occurred. Please try again.';
+      } else if (error.message.includes('Server configuration error')) {
+        errorMessage = 'Server configuration issue. Please contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       isGenerating = false;
     }
@@ -152,8 +171,7 @@
       const card = generatedPack[currentRevealIndex];
       revealedCards.push(card);
       
-      // Mr. Wiskr reacts to the card rarity
-      getWiskrDialogueForRarity(card.rarity);
+      // Opening dialogue is now set when pack animation starts
       
       currentRevealIndex++;
       
@@ -163,7 +181,11 @@
       }, 1200); // Slightly longer delay to read dialogue
     } else {
       packAnimation = 'complete';
-      setWiskrDialogue('complete');
+      const dialogues = wiskrDialogues['complete'];
+      if (dialogues && dialogues.length > 0) {
+        const randomIndex = Math.floor(Math.random() * dialogues.length);
+        completeDialogue = dialogues[randomIndex];
+      }
     }
   }
 
@@ -273,13 +295,24 @@
           <!-- Pack Opening Animation -->
           <div class="text-center">
             <!-- Mr. Wiskr's Dialogue During Opening -->
-            {#if wiskrDialogue}
-              <div class="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-                <div class="flex items-start gap-3">
-                  <img src="/mr-wiskr-emoji.png" alt="Mr. Wiskr" class="w-10 h-10 flex-shrink-0" />
-                  <div>
-                    <p class="text-sm font-medium text-purple-900 dark:text-purple-100 mb-1">Mr. Wiskr says:</p>
-                    <p class="text-gray-700 dark:text-gray-300 italic">"{wiskrDialogue}"</p>
+            {#if packAnimation === 'opening' && openingDialogue}
+              <div class="mb-8 text-center">
+                <div class="relative inline-block">
+                  <!-- Magical sparkle effects -->
+                  <div class="absolute -top-2 -left-2 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div class="absolute -top-1 -right-3 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style="animation-delay: 0.5s;"></div>
+                  <div class="absolute -bottom-1 -left-1 w-2 h-2 bg-pink-400 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
+                  <div class="absolute -bottom-2 -right-2 w-3 h-3 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 1.5s;"></div>
+                  
+                  <!-- Mr. Wiskr's dialogue box -->
+                  <div class="bg-gradient-to-br from-purple-100 via-pink-50 to-purple-100 dark:from-purple-900/30 dark:via-pink-900/20 dark:to-purple-900/30 border-4 border-purple-500 dark:border-purple-400 rounded-2xl p-8 shadow-2xl backdrop-blur-sm transform scale-110">
+                    <div class="flex flex-col items-center gap-6">
+                      <img src="/mr-wiskr-emoji.png" alt="Mr. Wiskr" class="w-20 h-20 drop-shadow-2xl" />
+                      <div class="text-center">
+                        <p class="text-lg font-bold text-purple-900 dark:text-purple-100 mb-4 tracking-widest uppercase">✨ MR. WISKR SPEAKS ✨</p>
+                        <p class="text-xl text-purple-900 dark:text-purple-100 italic leading-relaxed max-w-lg font-bold" style="font-family: var(--font-logo); text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">"{openingDialogue}"</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -317,13 +350,24 @@
             {#if packAnimation === 'complete'}
               <div class="space-y-4">
                 <!-- Mr. Wiskr's Final Dialogue -->
-                {#if wiskrDialogue}
-                  <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
-                    <div class="flex items-start gap-3">
-                      <img src="/mr-wiskr-emoji.png" alt="Mr. Wiskr" class="w-10 h-10 flex-shrink-0" />
-                      <div>
-                        <p class="text-sm font-medium text-purple-900 dark:text-purple-100 mb-1">Mr. Wiskr says:</p>
-                        <p class="text-gray-700 dark:text-gray-300 italic">"{wiskrDialogue}"</p>
+                {#if completeDialogue}
+                  <div class="text-center mb-6">
+                    <div class="relative inline-block">
+                      <!-- Magical sparkle effects -->
+                      <div class="absolute -top-2 -left-2 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                      <div class="absolute -top-1 -right-3 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style="animation-delay: 0.5s;"></div>
+                      <div class="absolute -bottom-1 -left-1 w-2 h-2 bg-pink-400 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
+                      <div class="absolute -bottom-2 -right-2 w-3 h-3 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 1.5s;"></div>
+                      
+                      <!-- Mr. Wiskr's dialogue box -->
+                      <div class="bg-gradient-to-br from-purple-100 via-pink-50 to-purple-100 dark:from-purple-900/30 dark:via-pink-900/20 dark:to-purple-900/30 border-4 border-purple-500 dark:border-purple-400 rounded-2xl p-8 shadow-2xl backdrop-blur-sm transform scale-110">
+                        <div class="flex flex-col items-center gap-6">
+                          <img src="/mr-wiskr-emoji.png" alt="Mr. Wiskr" class="w-20 h-20 drop-shadow-2xl" />
+                          <div class="text-center">
+                            <p class="text-lg font-bold text-purple-900 dark:text-purple-100 mb-4 tracking-widest uppercase">✨ MR. WISKR SPEAKS ✨</p>
+                            <p class="text-xl text-purple-900 dark:text-purple-100 italic leading-relaxed max-w-lg font-bold" style="font-family: var(--font-logo); text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">"{completeDialogue}"</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

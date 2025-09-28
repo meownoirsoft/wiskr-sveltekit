@@ -26,6 +26,7 @@ import ChatManager from '$lib/components/ChatManager.svelte';
 import DeckDrawer from '$lib/components/DeckDrawer.svelte';
 import DeckView from '$lib/components/DeckView.svelte';
 import TextSelectionMenu from '$lib/components/TextSelectionMenu.svelte';
+import CardZoomView from '$lib/components/CardZoomView.svelte';
 
 // New management components
 import ProjectState from '$lib/components/ProjectState.svelte';
@@ -51,6 +52,9 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   // Project state is now managed by ProjectState component
   // These will be bound to ProjectState component
   let projects = data?.projects ?? [];
+  let user = data?.user;
+  let userTier = data?.userTier || 0;
+  let effectiveTier = data?.effectiveTier || 0;
   
   // Test project removed - context menu positioning fix is complete
   
@@ -122,7 +126,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     }
   }
 
-  // Listen for mobile search toggle event
+  // Listen for mobile search toggle event and pack completion
   onMount(() => {
     if (browser) {
       window.addEventListener('mobile:toggle-search', toggleMobileSearch);
@@ -132,6 +136,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
       window.addEventListener('search:clear-filter', () => {
         search = '';
       });
+      window.addEventListener('pack-complete', handlePackCompleteFromLayout);
     }
     
     return () => {
@@ -143,6 +148,7 @@ import PanelManager from '$lib/components/PanelManager.svelte';
         window.removeEventListener('search:clear-filter', () => {
           search = '';
         });
+        window.removeEventListener('pack-complete', handlePackCompleteFromLayout);
       }
     };
   });
@@ -393,11 +399,25 @@ import PanelManager from '$lib/components/PanelManager.svelte';
   let currentDeck = null;
   let decks = [];
   let showDeckView = false;
+  
+  // Card zoom view state
+  let showCardZoom = false;
+  let zoomedCard = null;
+  let isNewCard = false;
+  
+  // Additional variables needed for CardZoomView
+  let worldId = null; // Will be set to current project ID
+  let availableModels = []; // Empty array for now
 
 
   // Load decks from database when project changes
   $: if (current?.id && projects.length > 0) {
     loadDecks(current.id);
+  }
+  
+  // Set worldId when current project changes
+  $: if (current?.id) {
+    worldId = current.id;
   }
 
   async function loadDecks(projectId) {
@@ -951,12 +971,6 @@ import PanelManager from '$lib/components/PanelManager.svelte';
     }
   }
 
-  async function regenerateBrief() {
-    if (!current) return;
-    if (contextManager) {
-      await contextManager.regenerateBrief();
-    }
-  }
 
 
 
@@ -1631,17 +1645,21 @@ async function handleGenerateIdeas() {
 // Text selection handlers from ChatInterface
 function handleTextAddAsCard(event) {
   const text = event.detail.text;
-  console.log('🎯 Main page handleTextAddAsCard called with text:', text);
-  console.log('🎯 Setting cardTitle to:', text.length > 50 ? text.substring(0, 50) + '...' : text);
-  console.log('🎯 Setting cardContent to:', text);
   
-  // Auto-populate card form with selected text
-  cardTitle = text.length > 50 ? text.substring(0, 50) + '...' : text;
-  cardContent = text;
-  cardType = 'note'; // Default type for selected text
-  showAddCardForm = true;
+  // Create a new card object with the selected text
+  const newCard = {
+    title: text.length > 50 ? text.substring(0, 50) + '...' : text,
+    content: text,
+    type: 'note',
+    rarity: 'common',
+    progress: 1,
+    mana_cost: 0
+  };
   
-  console.log('🎯 After setting values - cardTitle:', cardTitle, 'cardContent:', cardContent, 'showAddCardForm:', showAddCardForm);
+  // Open CardZoomView in new card mode
+  zoomedCard = newCard;
+  isNewCard = true;
+  showCardZoom = true;
   
   // Switch to cards tab and ensure left panel is visible
   activeTab = 'cards';
@@ -1650,11 +1668,6 @@ function handleTextAddAsCard(event) {
   if (!isDesktop && showRightPanel) {
     showRightPanel = false;
   }
-  
-  // Check values after a short delay
-  setTimeout(() => {
-    console.log('🎯 After timeout - cardTitle:', cardTitle, 'cardContent:', cardContent, 'showAddCardForm:', showAddCardForm);
-  }, 100);
 }
 
 function handleTextAddToDocs(event) {
@@ -1692,6 +1705,136 @@ function handleTextAddToDocs(event) {
     formattedContent = '';
     selectedPlatform = '';
     selectedMessageIndex = -1; // Since this is selected text, not a full message
+  }
+
+  // CardZoomView event handlers
+  function closeCardZoom() {
+    showCardZoom = false;
+    zoomedCard = null;
+    isNewCard = false;
+  }
+
+  function handleCardZoomSave(event) {
+    // Handle card save from zoom view
+    console.log('CardZoomView: Save event received', event.detail);
+    // For now, just reload the context to refresh the cards
+    if (contextManager) {
+      contextManager.loadContext(true);
+    }
+    closeCardZoom();
+  }
+
+  function handleCardZoomCreate(event) {
+    // Handle new card creation from zoom view
+    if (contextManager) {
+      contextManager.addCard(event.detail);
+    }
+    closeCardZoom();
+  }
+
+  function handleCardZoomDelete(event) {
+    // Handle card deletion from zoom view
+    console.log('CardZoomView: Delete event received', event.detail);
+    // For now, just reload the context to refresh the cards
+    if (contextManager) {
+      contextManager.loadContext(true);
+    }
+    closeCardZoom();
+  }
+
+  function handleCardZoomRarityChange(event) {
+    // Handle rarity change from zoom view
+    if (contextManager) {
+      contextManager.updateCardRarity(event.detail);
+    }
+  }
+
+  function handleCardZoomProgressChange(event) {
+    // Handle progress change from zoom view
+    if (contextManager) {
+      contextManager.updateCardProgress(event.detail);
+    }
+  }
+
+  function handleCardZoomTogglePin(event) {
+    // Handle pin toggle from zoom view
+    if (contextManager) {
+      contextManager.toggleCardPin(event.detail);
+    }
+  }
+
+  function handleCardZoomMerge(event) {
+    // Handle card merge from zoom view
+    if (contextManager) {
+      contextManager.mergeCards(event.detail);
+    }
+    closeCardZoom();
+  }
+
+  function handleCardZoomSplit(event) {
+    // Handle card split from zoom view
+    if (contextManager) {
+      contextManager.splitCard(event.detail);
+    }
+    closeCardZoom();
+  }
+
+  function handleCardZoomGenerateArt(event) {
+    // Handle art generation from zoom view
+    if (contextManager) {
+      contextManager.generateCardArt(event.detail);
+    }
+  }
+
+  function handleCardZoomOpenDeck(event) {
+    // Handle opening deck from zoom view
+    const { deckId } = event.detail;
+    const deck = decks.find(d => d.id === deckId);
+    if (deck) {
+      currentDeck = deck;
+      showDeckView = true;
+    }
+  }
+
+
+  function handleCardZoomFromWizard(event) {
+    // Handle zooming to card from wizard
+    zoomedCard = event.detail.card;
+    isNewCard = false;
+    showCardZoom = true;
+  }
+
+  function handlePackComplete(event) {
+    // Handle pack completion from zoom view
+    console.log('CardZoomView: Pack complete event received', event.detail);
+    // For now, just reload the context to refresh the cards
+    if (contextManager) {
+      contextManager.loadContext(true);
+    }
+  }
+
+  // Handle pack completion from layout (PackOpener)
+  function handlePackCompleteFromLayout(event) {
+    console.log('Pack completed from layout:', event.detail);
+    const { cards } = event.detail;
+    
+    if (cards && cards.length > 0 && contextManager) {
+      // Mark all pack-generated cards as new
+      import('$lib/stores/newCards.js').then(({ markCardAsNew }) => {
+        cards.forEach(card => {
+          console.log('🎴 Marking pack card as new:', card.title);
+          markCardAsNew(card.id);
+        });
+      });
+      
+      // Cards are already saved by the pack generation system, just reload the context
+      contextManager.loadContext(true);
+      
+      // Show success message
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.success(`Added ${cards.length} cards to your collection!`);
+      }
+    }
   }
 
   // Panel toggle functions - independent on mobile, desktop shows both by default
@@ -2726,7 +2869,6 @@ function handleTextAddToDocs(event) {
           bind:docContent
           bind:docTags
           bind:activeTab
-          on:brief-regenerate={regenerateBrief}
           on:card-add={handleCardAdd}
           on:card-cancel-add={() => { contextManager?.clearCardForm(); }}
           on:card-start-edit={handleCardStartEdit}
@@ -3280,4 +3422,34 @@ function handleTextAddToDocs(event) {
   on:add-as-card={handleTextAddAsCard}
   on:format-text={handleFormatText}
 />
+
+<!-- Card Zoom View -->
+{#if showCardZoom}
+<CardZoomView
+  bind:isOpen={showCardZoom}
+  card={zoomedCard}
+  {isNewCard}
+  {user}
+  {userTier}
+  {effectiveTier}
+  {worldId}
+  {availableModels}
+  userPreferences={userPreferences}
+  on:close={closeCardZoom}
+  on:save={handleCardZoomSave}
+  on:create={handleCardZoomCreate}
+  on:delete={handleCardZoomDelete}
+  on:rarity-updated={handleCardZoomRarityChange}
+  on:progress-change={handleCardZoomProgressChange}
+  on:toggle-pin={handleCardZoomTogglePin}
+  on:merge={handleCardZoomMerge}
+  on:save-card={handleCardSave}
+  on:split={handleCardZoomSplit}
+  on:generate-art={handleCardZoomGenerateArt}
+  on:open-deck={handleCardZoomOpenDeck}
+  on:wizard-selected={handleWizardSelected}
+  on:zoom-card={handleCardZoomFromWizard}
+  on:pack-complete={handlePackComplete}
+/>
+{/if}
 

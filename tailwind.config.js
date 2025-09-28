@@ -36,6 +36,12 @@ export default {
     // Prose styles for markdown formatting
     'prose', 'prose-sm', 'max-w-none',
   ],
-  theme: { extend: {} },
+  theme: { 
+    extend: {
+      fontFamily: {
+        'cinzel-decorative': ['Cinzel Decorative', 'serif'],
+      }
+    } 
+  },
   plugins: [forms, typography]
 };

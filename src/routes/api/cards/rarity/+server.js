@@ -77,7 +77,7 @@ export async function POST({ request, locals }) {
       type: updatedCard.type || 'other',
       rarity: updatedCard.rarity,
       progress: updatedCard.progress || 1,
-      mana_cost: updatedCard.mana_cost || 0,
+      mana_cost: updatedCard.mana_cost || 1,
       art_url: updatedCard.art_url,
       pinned: updatedCard.pinned,
       created_at: updatedCard.created_at,

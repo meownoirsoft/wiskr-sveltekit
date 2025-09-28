@@ -30,7 +30,7 @@
   // Function to detect and mark new cards
   function detectNewCards(newCards) {
     const currentTime = Date.now();
-    const timeThreshold = 5000; // 5 seconds - cards created within this time are considered "new"
+    const timeThreshold = 10000; // 10 seconds - cards created within this time are considered "new"
     
     newCards.forEach(card => {
       const cardCreatedTime = new Date(card.created_at).getTime();
@@ -38,6 +38,7 @@
       
       // If card was created recently and after our last load, mark it as new
       if (timeDiff < timeThreshold && cardCreatedTime > lastLoadTime) {
+        console.log('🎴 Marking card as new:', card.title, 'created', timeDiff, 'ms ago');
         markCardAsNew(card.id);
       }
     });
@@ -72,7 +73,12 @@
 
   // Context loading function
   export async function loadContext(force = false) {
-    if (!current) return;
+    if (!current) {
+      console.log('🔍 ContextManager: No current project, skipping load');
+      return;
+    }
+    
+    console.log('🔍 ContextManager: Starting loadContext for project:', current.id, 'force:', force);
     
     // Prevent unnecessary reloads if we're already loading or if it's the same project
     if (isLoading) {
@@ -90,13 +96,43 @@
     
     console.log('🔍 ContextManager: Loading context for project:', current.id, force ? '(forced)' : '', 'lastLoaded:', lastLoadedProjectId);
     
-    const [{ data: c }, { data: d }, { data: p }] = await Promise.all([
-      supabase.from('cards').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
-      supabase.from('docs').select('*').eq('project_id', current.id).order('created_at', { ascending: false }).limit(10),
-      supabase.from('projects').select('*').eq('id', current.id).single()
-    ]);
-    // Load cards directly from the cards table
-    const rawCards = c ?? [];
+    try {
+      // Check user authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('❌ ContextManager: Auth error:', authError);
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        console.error('❌ ContextManager: No authenticated user');
+        throw new Error('No authenticated user');
+      }
+      console.log('🔍 ContextManager: Authenticated user:', user.id);
+      
+      const [{ data: c, error: cardsError }, { data: d, error: docsError }, { data: p, error: projectError }] = await Promise.all([
+        supabase.from('cards').select('*').eq('project_id', current.id).order('created_at', { ascending: false }),
+        supabase.from('docs').select('*').eq('project_id', current.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('projects').select('*').eq('id', current.id).single()
+      ]);
+      
+      // Handle errors
+      if (cardsError) {
+        console.error('❌ ContextManager: Error loading cards:', cardsError);
+        throw new Error(`Failed to load cards: ${cardsError.message}`);
+      }
+      
+      if (docsError) {
+        console.error('❌ ContextManager: Error loading docs:', docsError);
+        throw new Error(`Failed to load docs: ${docsError.message}`);
+      }
+      
+      if (projectError) {
+        console.error('❌ ContextManager: Error loading project:', projectError);
+        throw new Error(`Failed to load project: ${projectError.message}`);
+      }
+      
+      // Load cards directly from the cards table
+      const rawCards = c ?? [];
     console.log('🔍 ContextManager: Loading cards, found', rawCards.length, 'total cards');
     
     // No mock cards - let users start with a clean slate
@@ -150,32 +186,24 @@
     lastLoadedProjectId = current.id;
     isLoading = false;
     loadingCards = false;
-  }
-
-  // Helper function for auto-regenerating summary when content changes
-  async function autoRegenerateSummary() {
-    if (!current) return;
     
-    try {
-      // Only auto-regenerate if online - this is not critical
-      if (getNetworkStatus()) {
-        await robustFetchJSON('/api/brief/regenerate', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ projectId: current.id })
-        }, {
-          timeout: 10000,
-          maxRetries: 1 // Keep retries low for background operations
-        });
-        
-        // Reload context to refresh the UI with the new summary
-        await loadContext(true);
-      }
     } catch (error) {
-      console.log('Auto-regeneration failed (not critical):', error);
-      // Don't show error toasts for background operations
+      console.error('❌ ContextManager: Error in loadContext:', error);
+      // Set empty arrays on error to prevent UI crashes
+      cards = [];
+      docs = [];
+      isLoading = false;
+      loadingCards = false;
+      
+      // Show user-friendly error message
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error(`Failed to load project data: ${error.message}`);
+      } else {
+        console.error('Failed to load project data:', error.message);
+      }
     }
   }
+
 
   // CARDS MANAGEMENT FUNCTIONS
 
@@ -296,8 +324,6 @@
       // reload lists
       await loadContext(true);
       
-      // Auto-regenerate summary since cards content changed
-      await autoRegenerateSummary();
       
     } catch (error) {
       console.error('ContextManager: Error adding card:', error);
@@ -391,8 +417,6 @@
       // reload lists
       await loadContext(true);
       
-      // Auto-regenerate summary since cards content changed
-      await autoRegenerateSummary();
       
       if (browser && window.showNetworkToast && window.showNetworkToast.success) {
         window.showNetworkToast.success('Card created successfully!');
@@ -451,8 +475,6 @@
     // Refresh lists
     await loadContext(true);
     
-    // Auto-regenerate summary since card content changed
-    await autoRegenerateSummary();
   }
 
   export async function deleteCard(f, i) {
@@ -494,8 +516,6 @@
       // Remove from local array
       cards = cards.filter((_, idx) => idx !== i);
       
-      // Auto-regenerate summary since card was deleted
-      await autoRegenerateSummary();
       
     } catch (error) {
       console.error('Error deleting card:', error);
@@ -607,8 +627,6 @@
 
       await loadContext(true);
       
-      // Auto-regenerate summary since docs content changed
-      await autoRegenerateSummary();
       
     } catch (error) {
       console.error('ContextManager: Error adding document:', error);
@@ -656,8 +674,6 @@
     }
     await loadContext(true);
     
-    // Auto-regenerate summary since doc content changed
-    await autoRegenerateSummary();
   }
 
   export async function deleteDoc(d, i) {
@@ -666,8 +682,6 @@
     if (error) { alert(error.message); return; }
     docs = docs.filter((_, idx) => idx !== i);
     
-    // Auto-regenerate summary since doc was deleted
-    await autoRegenerateSummary();
   }
 
   export async function toggleDocPin(d) {
@@ -700,16 +714,6 @@
     docTags = '';
   }
 
-  // Regenerate brief (exposed for external use)
-  export async function regenerateBrief() {
-    if (!current) return;
-    await fetch('/api/brief/regenerate', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ projectId: current.id })
-    });
-    await loadContext(true);
-  }
 </script>
 
 <!-- This component has no template - it's pure logic -->

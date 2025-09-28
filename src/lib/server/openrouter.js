@@ -40,10 +40,10 @@ export const OPENROUTER_MODELS = {
   
   // Ultra cheap for simple tasks
   micro: {
-    name: 'google/gemini-flash-1.5',
-    friendlyName: getAIName('gemini-flash-1.5'),
-    inPerTok: 0.075/1_000_000,
-    outPerTok: 0.30/1_000_000,
+    name: 'openai/gpt-4o-mini-2024-07-18',
+    friendlyName: getAIName('gpt-4o-mini-2024-07-18'),
+    inPerTok: 0.15/1_000_000,
+    outPerTok: 0.60/1_000_000,
     provider: 'openrouter',
     tier: 'Budget',
     category: 'Ultra Efficient'

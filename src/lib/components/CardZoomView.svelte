@@ -191,7 +191,7 @@
         art_url: null,
         rarity: 'common',
         progress: 1,
-        mana_cost: 0,
+        mana_cost: 1,
         pinned: false,
         generation_model: 'GPT-4o',
         art_model: 'Midjourney',
@@ -269,7 +269,7 @@
         content,
         tags: tags.filter(tag => tag.trim()),
         art_url: artUrl.trim() || null,
-        mana_cost: 0 // Start with 0 mana cost for new cards
+        mana_cost: 1 // Start with 1 mana cost for new cards (database constraint requires >= 1)
       };
 
       console.log('Creating new card:', newCard);
@@ -1355,6 +1355,23 @@
   
   .card-frame {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .foil {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.1) 0px,
+      rgba(255, 255, 255, 0.1) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+    pointer-events: none;
   }
   
   /* Custom scrollbar styling */

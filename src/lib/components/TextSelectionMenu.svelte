@@ -63,12 +63,7 @@
   function handleClick(event) {
     // Hide menu if clicking outside of it
     if (menuVisible && !event.target.closest('.selection-menu')) {
-      // Small delay to prevent immediate hiding when menu is first shown
-      setTimeout(() => {
-        if (menuVisible) {
-          hideMenu();
-        }
-      }, 10);
+      hideMenu();
     }
   }
 
@@ -78,18 +73,16 @@
     selection = null;
   }
 
-  function addAsCard() {
-    console.log('🎯 TextSelectionMenu addAsCard called with selectedText:', selectedText);
+  function addAsCard(event) {
+    event.stopPropagation();
     if (selectedText) {
-      console.log('🎯 Dispatching add-as-card event with text:', selectedText);
       dispatch('add-as-card', { text: selectedText });
       hideMenu();
-    } else {
-      console.log('🎯 No selected text available');
     }
   }
 
-  function formatText() {
+  function formatText(event) {
+    event.stopPropagation();
     if (selectedText) {
       dispatch('format-text', { text: selectedText });
       hideMenu();

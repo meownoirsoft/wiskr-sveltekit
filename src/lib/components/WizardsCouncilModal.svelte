@@ -764,11 +764,15 @@ ${currentCard.tags && currentCard.tags.length > 0 ? `Tags: ${currentCard.tags.jo
   }
 
   onMount(() => {
-    document.addEventListener('keydown', handleKeydown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeydown);
+    }
   });
 
   onDestroy(() => {
-    document.removeEventListener('keydown', handleKeydown);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('keydown', handleKeydown);
+    }
   });
 </script>
 

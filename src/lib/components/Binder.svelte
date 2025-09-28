@@ -233,10 +233,6 @@
   
   
 
-  // Context summary events
-  function handleBriefRegenerate() {
-    dispatch('brief-regenerate');
-  }
 
   // Cards manager events
   function handleCardAdd(event) {
@@ -406,7 +402,6 @@
         {#if activeTab === 'summary'}
           <ContextSummary 
             {current}
-            on:regenerate={handleBriefRegenerate}
           />
         {:else if activeTab === 'cards'}
           <CardsManager

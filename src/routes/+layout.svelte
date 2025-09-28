@@ -706,11 +706,14 @@ import PackOpener from '$lib/components/PackOpener.svelte';
             name,
             cards:deck_cards(
               id,
-              title,
-              content,
-              progress,
-              rarity,
-              pinned
+              card:cards(
+                id,
+                title,
+                content,
+                progress,
+                rarity,
+                pinned
+              )
             )
           )
         `)
@@ -740,11 +743,14 @@ import PackOpener from '$lib/components/PackOpener.svelte';
             markdown += `### ${section.name}\n\n`;
             
             if (section.cards && section.cards.length > 0) {
-              section.cards.forEach(card => {
-                markdown += `#### ${card.title}\n\n`;
-                markdown += `${card.content}\n\n`;
-                if (card.pinned) {
-                  markdown += `*📌 Pinned*\n\n`;
+              section.cards.forEach(deckCard => {
+                if (deckCard.card) {
+                  const card = deckCard.card;
+                  markdown += `#### ${card.title}\n\n`;
+                  markdown += `${card.content}\n\n`;
+                  if (card.pinned) {
+                    markdown += `*📌 Pinned*\n\n`;
+                  }
                 }
               });
             } else {
@@ -812,8 +818,16 @@ import PackOpener from '$lib/components/PackOpener.svelte';
   }
 
   function handlePackComplete(event) {
-    // Handle pack completion - could dispatch event to projects page if needed
+    // Handle pack completion - dispatch event to projects page to add cards
     console.log('Pack completed:', event.detail);
+    
+    // Dispatch a custom event that the projects page can listen to
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('pack-complete', {
+        detail: event.detail
+      }));
+    }
+    
     closePackOpener();
   }
   
@@ -1150,7 +1164,7 @@ import PackOpener from '$lib/components/PackOpener.svelte';
               type="button"
               class="flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 font-medium bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
               on:click={generateScroll}
-              title="Generate Scroll"
+              title="Generate Scroll: this outputs all your cards in a markdown scroll."
             >
               <ScrollText size="16" />
               <span>Generate Scroll</span>
