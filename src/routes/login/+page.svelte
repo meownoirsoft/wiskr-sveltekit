@@ -18,6 +18,9 @@
   onMount(() => {
     // Clear any URL parameters after component mounts
     if (data?.error && window.history.replaceState) {
+      console.log('🚨 Login page error detected:', data.error);
+      console.log('🚨 Full URL:', window.location.href);
+      console.log('🚨 Search params:', Object.fromEntries(new URLSearchParams(window.location.search)));
       window.history.replaceState(null, '', '/login');
     }
   });

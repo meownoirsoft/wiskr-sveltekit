@@ -26,7 +26,8 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
     url: event.url.toString(),
     method: event.request.method,
     hasCode: event.url.searchParams.has('code'),
-    hasError: event.url.searchParams.has('error')
+    hasError: event.url.searchParams.has('error'),
+    searchParams: Object.fromEntries(event.url.searchParams.entries())
   });
   event.locals.supabase = createServerClient(
     PUBLIC_SUPABASE_URL,
