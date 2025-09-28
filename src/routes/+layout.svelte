@@ -15,6 +15,7 @@ import PackOpener from '$lib/components/PackOpener.svelte';
   import { isOnline, connectionStatus } from '$lib/stores/networkStore.js';
   import { initAnalytics, trackPageView, trackProjectNavigation, identifyUser, resetUser, ANALYTICS_EVENTS, trackEvent } from '$lib/analytics.js';
   import { initTutorial, shouldShowTutorial } from '$lib/stores/tutorial.js';
+  import { supabase } from '$lib/supabase.js';
   import TutorialOverlay from '$lib/components/TutorialOverlay.svelte';
   import ToastNotification from '$lib/components/ToastNotification.svelte';
   import '../app.css';
@@ -1561,7 +1562,7 @@ import PackOpener from '$lib/components/PackOpener.svelte';
   <!-- Pack Opener Modal -->
   <PackOpener
     bind:isOpen={showPackOpener}
-    projectId={currentProject?.id}
+    worldId={currentProject?.id}
     on:pack-complete={handlePackComplete}
     on:close={closePackOpener}
   />
