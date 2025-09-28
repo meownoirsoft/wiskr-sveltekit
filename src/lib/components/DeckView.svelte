@@ -14,12 +14,17 @@
   export let projectId = null;
   export let projectName = null;
   export let userPreferences = { display_name: null }; // User preferences
+  export let user = null;
+  export let userTier = 0;
+  export let effectiveTier = 0;
+  export let worldId = null;
 
 
   const dispatch = createEventDispatcher();
 
   let showCardZoom = false;
   let zoomedCard = null;
+  let isNewCard = false;
   let sections = [];
   let draggedCard = null;
   let dragOverSection = null;
@@ -227,12 +232,27 @@
 
   function openCardZoom(event) {
     zoomedCard = event.detail.card;
+    isNewCard = false;
+    showCardZoom = true;
+  }
+
+  function openNewCardModal() {
+    zoomedCard = null;
+    isNewCard = true;
     showCardZoom = true;
   }
 
   function closeCardZoom() {
     showCardZoom = false;
     zoomedCard = null;
+    isNewCard = false;
+  }
+
+  function handleCardZoomCreate(event) {
+    // Handle new card creation from zoom view
+    const { card } = event.detail;
+    dispatch('card-created', { card });
+    closeCardZoom();
   }
 
   async function handleCardZoomGenerateArt(event) {
@@ -1452,6 +1472,13 @@
           Card Library ({availableCards.length})
         </button>
         <button
+          class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+          on:click={openNewCardModal}
+        >
+          <Plus size="16" />
+          New Card
+        </button>
+        <button
           class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           on:click={addNewSection}
         >
@@ -1783,9 +1810,15 @@
       <CardZoomView
         bind:isOpen={showCardZoom}
         card={zoomedCard}
+        {isNewCard}
+        {user}
+        {userTier}
+        {effectiveTier}
+        {worldId}
         userPreferences={userPreferences}
         on:close={closeCardZoom}
         on:save={handleCardZoomSave}
+        on:create={handleCardZoomCreate}
         on:delete={handleCardZoomDelete}
         on:art-selected={handleCardZoomGenerateArt}
         on:rarity-updated={handleCardZoomUpdateRarity}

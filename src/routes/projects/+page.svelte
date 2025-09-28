@@ -2690,9 +2690,14 @@ function handleTextAddToDocs(event) {
           projectId={current?.id}
           projectName={current?.name}
           userPreferences={userPreferences}
+          user={data?.user}
+          userTier={data?.userTier}
+          effectiveTier={data?.effectiveTier}
+          worldId={current?.id}
           on:close-deck={closeDeck}
           on:deck-updated={handleDeckUpdated}
           on:card-updated={handleCardUpdated}
+          on:card-created={handleCardAdd}
         />
       {:else}
         <Binder

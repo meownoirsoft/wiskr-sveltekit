@@ -185,6 +185,14 @@
     
     if (!current) {
       console.error('🎴 ContextManager: No current project!');
+      
+      // Show user-friendly error message
+      if (browser && window.showToast) {
+        window.showToast(
+          'Please select a project before creating a card.',
+          'error'
+        );
+      }
       return;
     }
 
@@ -202,6 +210,18 @@
     
     if (!title?.trim() || !content?.trim()) {
       console.error('🎴 ContextManager: Missing title or content!');
+      
+      // Show user-friendly error message
+      if (browser && window.showToast) {
+        const missingFields = [];
+        if (!title?.trim()) missingFields.push('title');
+        if (!content?.trim()) missingFields.push('content');
+        
+        window.showToast(
+          `Please provide a ${missingFields.join(' and ')} for the card.`,
+          'error'
+        );
+      }
       return;
     }
 
