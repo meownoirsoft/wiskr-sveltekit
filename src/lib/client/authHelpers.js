@@ -41,25 +41,45 @@ export async function signInWithGoogle(redirectTo = '/projects') {
  */
 export async function signInWithDiscord(redirectTo = '/projects') {
   try {
-    console.log('Initiating Discord OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    console.log('🚀 Initiating Discord OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    console.log('🔍 Current URL:', window.location.href);
+    console.log('🔍 Supabase URL:', supabase.supabaseUrl);
     
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    // Clear any existing auth state to ensure clean OAuth flow
+    console.log('🧹 Clearing existing auth state...');
+    await supabase.auth.signOut();
+    
+    const oauthOptions = {
       provider: 'discord',
       options: {
         redirectTo: `${window.location.origin}${redirectTo}`,
-        scopes: 'identify email'
+        scopes: 'identify email',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        },
+        skipBrowserRedirect: false
       }
-    });
+    };
+    
+    console.log('🔧 OAuth options:', oauthOptions);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth(oauthOptions);
 
     if (error) {
-      console.error('Error signing in with Discord:', error);
+      console.error('❌ Error signing in with Discord:', error);
+      console.error('❌ Discord OAuth error details:', {
+        message: error.message,
+        status: error.status,
+        code: error.code
+      });
       return { data: null, error };
     }
 
-    console.log('Discord OAuth initiated successfully');
+    console.log('✅ Discord OAuth initiated successfully, data:', data);
     return { data, error: null };
   } catch (err) {
-    console.error('Unexpected error during Discord sign in:', err);
+    console.error('💥 Unexpected error during Discord sign in:', err);
     return { data: null, error: err };
   }
 }
@@ -78,6 +98,28 @@ export function getOAuthErrorMessage(error) {
   
   if (error.message?.includes('cancelled')) {
     return 'Sign in was cancelled. Please try again.';
+  }
+  
+  // Discord-specific error messages
+  if (error.message?.includes('discord') || error.message?.includes('Discord')) {
+    if (error.message?.includes('redirect_uri_mismatch')) {
+      return 'Discord OAuth configuration error. Please contact support.';
+    }
+    if (error.message?.includes('invalid_client')) {
+      return 'Discord OAuth is not properly configured. Please contact support.';
+    }
+    if (error.message?.includes('access_denied')) {
+      return 'Discord sign in was denied. Please try again.';
+    }
+  }
+  
+  // Handle specific Supabase OAuth errors
+  if (error.message?.includes('Unable to exchange external code')) {
+    return 'OAuth code exchange failed. This usually means the authorization code expired or there was a configuration issue. Please try signing in again.';
+  }
+  
+  if (error.message?.includes('unexpected_failure')) {
+    return 'An unexpected error occurred during sign in. Please try again or contact support if the issue persists.';
   }
   
   return error.message || 'An error occurred during sign in. Please try again.';

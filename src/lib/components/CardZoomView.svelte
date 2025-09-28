@@ -182,19 +182,19 @@
 
   function initializeEditedCard() {
     if (isNewCard) {
-      // Create a new card template
+      // Create a new card template using the passed card data
       editedCard = {
         id: null, // Will be set after creation
-        title: 'Untitled Card',
-        content: '',
-        tags: [],
-        art_url: null,
-        rarity: 'common',
-        progress: 1,
-        mana_cost: 1,
-        pinned: false,
-        generation_model: 'GPT-4o',
-        art_model: 'Midjourney',
+        title: card?.title || 'Untitled Card',
+        content: card?.content || '',
+        tags: card?.tags || [],
+        art_url: card?.art_url || null,
+        rarity: card?.rarity || 'common',
+        progress: card?.progress || 1,
+        mana_cost: card?.mana_cost || 1,
+        pinned: card?.pinned || false,
+        generation_model: card?.generation_model || 'GPT-4o',
+        art_model: card?.art_model || 'Midjourney',
         created_at: new Date().toISOString()
       };
       

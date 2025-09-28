@@ -20,6 +20,14 @@ function setSentryEnvironment(event) {
 export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
   // Set environment for this request
   setSentryEnvironment(event);
+  
+  // Debug logging for all requests
+  console.log('🔍 Request received:', {
+    url: event.url.toString(),
+    method: event.request.method,
+    hasCode: event.url.searchParams.has('code'),
+    hasError: event.url.searchParams.has('error')
+  });
   event.locals.supabase = createServerClient(
     PUBLIC_SUPABASE_URL,
     PUBLIC_SUPABASE_ANON_KEY,
@@ -36,12 +44,60 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
   if (event.url.searchParams.has('code')) {
     const code = event.url.searchParams.get('code');
     const next = event.url.searchParams.get('next') ?? '/projects';
+    const errorParam = event.url.searchParams.get('error');
+    
+    console.log('OAuth callback received:', {
+      code: code ? 'present' : 'missing',
+      next,
+      error: errorParam,
+      url: event.url.toString()
+    });
+    
+    // Check if Discord returned an error
+    if (errorParam) {
+      console.error('Discord OAuth error:', errorParam);
+      const errorDescription = event.url.searchParams.get('error_description') || errorParam;
+      throw redirect(303, `/login?error=${encodeURIComponent(`Discord OAuth error: ${errorDescription}`)}`);
+    }
+    
+    if (!code) {
+      console.error('No authorization code received from Discord');
+      throw redirect(303, `/login?error=${encodeURIComponent('No authorization code received')}`);
+    }
     
     try {
       // Force cookie reading to ensure code_verifier is available
       const allCookies = event.cookies.getAll();
       console.log('Available cookies during OAuth callback:', allCookies.map(c => c.name));
       
+      // Check for PKCE code verifier cookie - look for Supabase-specific cookie names
+      const codeVerifierCookie = allCookies.find(c => 
+        c.name.includes('code_verifier') || 
+        c.name.includes('pkce') ||
+        c.name.includes('sb-') ||
+        c.name.includes('supabase')
+      );
+      
+      if (!codeVerifierCookie) {
+        console.warn('No PKCE code verifier cookie found, this might cause OAuth issues');
+        console.log('All cookies:', allCookies);
+        
+        // Try to clear any existing auth state and retry
+        console.log('Attempting to clear auth state and retry...');
+        event.cookies.delete('sb-access-token', { path: '/' });
+        event.cookies.delete('sb-refresh-token', { path: '/' });
+        event.cookies.delete('sb-session', { path: '/' });
+        
+        // Clear all Supabase-related cookies
+        allCookies.forEach(cookie => {
+          if (cookie.name.startsWith('sb-') || cookie.name.includes('supabase')) {
+            event.cookies.delete(cookie.name, { path: '/' });
+          }
+        });
+      }
+      
+      // Try the code exchange with enhanced error handling
+      console.log('Attempting code exchange for code:', code.substring(0, 10) + '...');
       const { data, error } = await event.locals.supabase.auth.exchangeCodeForSession(code);
       
       if (error) {
@@ -50,9 +106,16 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
           message: error.message,
           status: error.status,
           code: code ? 'present' : 'missing',
-          url: event.url.toString()
+          url: event.url.toString(),
+          cookies: allCookies.map(c => c.name)
         });
-        throw redirect(303, `/login?error=${encodeURIComponent(error.message)}`);
+        
+        // If it's a code exchange error, try to provide a more helpful message
+        if (error.message?.includes('Unable to exchange external code')) {
+          throw redirect(303, `/login?error=${encodeURIComponent('OAuth code exchange failed. This usually means the authorization code expired or there was a configuration issue. Please try signing in again.')}`);
+        }
+        
+        throw redirect(303, `/login?error=${encodeURIComponent(`Code exchange failed: ${error.message}`)}`);
       }
       
       if (data?.session) {
@@ -68,6 +131,9 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
         });
         
         throw redirect(303, next);
+      } else {
+        console.error('No session data received after code exchange');
+        throw redirect(303, `/login?error=${encodeURIComponent('No session data received')}`);
       }
     } catch (err) {
       if (err?.status === 303) {
@@ -75,7 +141,7 @@ export const handle = sequence(Sentry.sentryHandle(), async ({ event, resolve })
         throw err;
       }
       console.error('Unexpected OAuth error:', err);
-      throw redirect(303, `/login?error=${encodeURIComponent('Authentication failed')}`);
+      throw redirect(303, `/login?error=${encodeURIComponent(`Authentication failed: ${err.message}`)}`);
     }
   }
 

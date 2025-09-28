@@ -64,11 +64,13 @@
     try {
       const { error } = await signInWithDiscord('/projects');
       if (error) {
+        console.error('Discord sign in failed:', error);
         msg = getOAuthErrorMessage(error);
         oauthLoading = false;
       }
       // If no error, OAuth redirect is happening, keep loading state
     } catch (e) {
+      console.error('Discord sign in exception:', e);
       msg = e.message || String(e);
       oauthLoading = false;
     }
