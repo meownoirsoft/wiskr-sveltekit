@@ -49,22 +49,19 @@ export async function signInWithDiscord(redirectTo = '/projects') {
     console.log('🧹 Clearing existing auth state...');
     await supabase.auth.signOut();
     
-    const oauthOptions = {
+    // Wait a moment for signOut to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Try a simpler OAuth configuration first
+    console.log('🔧 Attempting OAuth with simplified config...');
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: `${window.location.origin}${redirectTo}`,
-        scopes: 'identify email',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        },
-        skipBrowserRedirect: false
+        redirectTo: `${window.location.origin}${redirectTo}`
       }
-    };
+    });
     
-    console.log('🔧 OAuth options:', oauthOptions);
-    
-    const { data, error } = await supabase.auth.signInWithOAuth(oauthOptions);
+    console.log('🔧 OAuth response:', { data, error });
 
     if (error) {
       console.error('❌ Error signing in with Discord:', error);
