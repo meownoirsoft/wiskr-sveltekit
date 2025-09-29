@@ -271,7 +271,7 @@ import PackOpener from '$lib/components/PackOpener.svelte';
   onMount(async () => {
     if (!browser) return;
     
-    // Initialize PostHog analytics
+    // Initialize simple analytics
     initAnalytics();
     
     // Sentry is already initialized in hooks.server.js

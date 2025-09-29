@@ -27,8 +27,7 @@ export default defineConfig({
 			'@supabase/supabase-js',
 			'@floating-ui/dom',
 			'luxon',
-			'jszip',
-			'posthog-js'
+			'jszip'
 		],
 		// Exclude problematic dependencies that should not be pre-bundled
 		exclude: ['@supabase/auth-helpers-sveltekit'],
