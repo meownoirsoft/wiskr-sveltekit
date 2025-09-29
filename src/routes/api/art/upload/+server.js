@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE, BUNNY_API_KEY } from '$env/static/private';
+import { processCardArt, getImageMetadata } from '$lib/server/utils/imageProcessor.js';
 
 export async function POST({ request }) {
   try {
@@ -10,33 +11,37 @@ export async function POST({ request }) {
       return json({ error: 'No file provided' }, { status: 400 });
     }
     
-    // Generate unique filename
+    // Get original image metadata
+    const originalMetadata = await getImageMetadata(file);
+    console.log('🔍 Original image metadata:', {
+      width: originalMetadata.width,
+      height: originalMetadata.height,
+      format: originalMetadata.format
+    });
+    
+    // Process image: resize to 230x230 and convert to WebP
+    const processedImageBuffer = await processCardArt(file, {
+      width: 230,
+      height: 230,
+      quality: 85,
+      format: 'webp'
+    });
+    
+    // Generate unique filename (always WebP now)
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
+    const filename = `art-${timestamp}-${randomId}.webp`;
     
-    // Get extension from file name or default to jpg
-    let extension = 'jpg'; // Default to jpg
-    if (file.name && file.name.includes('.')) {
-      extension = file.name.split('.').pop().toLowerCase();
-    } else if (file.type) {
-      // Fallback to MIME type
-      if (file.type.includes('png')) extension = 'png';
-      else if (file.type.includes('gif')) extension = 'gif';
-      else if (file.type.includes('webp')) extension = 'webp';
-      // Default to jpg for jpeg and other types
-    }
-    
-    const filename = `art-${timestamp}-${randomId}.${extension}`;
-    
-    console.log('🔍 Art upload:', { 
+    console.log('🔍 Art upload processed:', { 
       originalName: file.name, 
-      fileType: file.type, 
-      extension, 
+      originalType: file.type,
+      originalSize: file.size,
+      processedSize: processedImageBuffer.length,
       filename 
     });
     
-    // Upload to BunnyCDN
-    const bunnyUrl = await uploadToBunnyCDN(file, filename);
+    // Upload processed image to BunnyCDN
+    const bunnyUrl = await uploadToBunnyCDN(processedImageBuffer, filename);
     
     return json({ 
       url: bunnyUrl,
@@ -49,7 +54,7 @@ export async function POST({ request }) {
   }
 }
 
-async function uploadToBunnyCDN(file, filename) {
+async function uploadToBunnyCDN(imageData, filename) {
   // Use the same URL format as the working cURL command
   const uploadUrl = `https://la.storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/${filename}`;
   
@@ -60,20 +65,24 @@ async function uploadToBunnyCDN(file, filename) {
     throw new Error('No BunnyCDN authentication configured');
   }
   
+  // Determine content type based on file extension
+  const contentType = filename.endsWith('.webp') ? 'image/webp' : 'application/octet-stream';
+  
   console.log('🔍 BunnyCDN upload attempt:', {
     uploadUrl,
     storageZone: BUNNY_STORAGE_ZONE,
     hasPassword: !!BUNNY_PASSWORD,
-    authMethod: 'PASSWORD'
+    authMethod: 'PASSWORD',
+    contentType
   });
   
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
       'AccessKey': authHeader,
-      'Content-Type': 'application/octet-stream'
+      'Content-Type': contentType
     },
-    body: file
+    body: imageData
   });
   
   if (!response.ok) {

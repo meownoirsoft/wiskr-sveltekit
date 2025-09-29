@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { OPENAI_API_KEY, BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE } from '$env/static/private';
 import { requireAuth } from '$lib/server/supabaseClient.js';
 import { trackUsage } from '$lib/server/utils/usageTracker.js';
+import { processCardArt, getImageMetadata } from '$lib/server/utils/imageProcessor.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -31,7 +32,7 @@ Rarity: ${rarity} (${rarityPrompt})
 
 CRITICAL STYLE REQUIREMENTS:
 - Magic: The Gathering card art style - epic fantasy illustration
-- 16:10 aspect ratio (landscape orientation)
+- Square aspect ratio (1:1) - perfect for card art
 - NO text, words, letters, or written content anywhere in the image
 - NO card borders, frames, or UI elements
 - NO card game symbols, mana symbols, or game elements
@@ -82,7 +83,7 @@ The art should be a pure illustration that represents the concept described in t
       operation: 'art-generation'
     });
     
-    // Download the DALL-E image and upload to BunnyCDN for permanent storage
+    // Download the DALL-E image and process it
     try {
       const imageResponse = await fetch(dallEUrl);
       if (!imageResponse.ok) {
@@ -92,14 +93,30 @@ The art should be a pure illustration that represents the concept described in t
       const imageBlob = await imageResponse.blob();
       console.log('🔍 Downloaded DALL-E image, size:', imageBlob.size, 'type:', imageBlob.type);
       
-      // Generate filename for BunnyCDN
+      // Get original image metadata
+      const originalMetadata = await getImageMetadata(imageBlob);
+      console.log('🔍 Original image metadata:', {
+        width: originalMetadata.width,
+        height: originalMetadata.height,
+        format: originalMetadata.format
+      });
+      
+      // Process image: resize to 230x230 and convert to WebP
+      const processedImageBuffer = await processCardArt(imageBlob, {
+        width: 230,
+        height: 230,
+        quality: 85,
+        format: 'webp'
+      });
+      
+      // Generate filename for BunnyCDN (now WebP)
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 15);
-      const filename = `ai-art-${timestamp}-${randomId}.jpg`;
+      const filename = `ai-art-${timestamp}-${randomId}.webp`;
       
-      // Upload to BunnyCDN
-      const bunnyUrl = await uploadToBunnyCDN(imageBlob, filename);
-      console.log('🔍 Uploaded to BunnyCDN:', bunnyUrl);
+      // Upload processed image to BunnyCDN
+      const bunnyUrl = await uploadToBunnyCDN(processedImageBuffer, filename);
+      console.log('🔍 Uploaded processed image to BunnyCDN:', bunnyUrl);
       
       return json({ 
         artUrl: bunnyUrl,
@@ -127,16 +144,19 @@ The art should be a pure illustration that represents the concept described in t
   }
 }
 
-async function uploadToBunnyCDN(blob, filename) {
+async function uploadToBunnyCDN(imageData, filename) {
   const uploadUrl = `https://la.storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/${filename}`;
+  
+  // Determine content type based on file extension
+  const contentType = filename.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
   
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
       'AccessKey': BUNNY_PASSWORD,
-      'Content-Type': 'image/jpeg'
+      'Content-Type': contentType
     },
-    body: blob
+    body: imageData
   });
   
   if (!response.ok) {
