@@ -872,7 +872,7 @@
                       style="background-color: {rarity.textColor}; color: {rarity.bgColor}; opacity: 0.8;"
                     >
                       {tag}
-                      <button on:click={() => removeTag(tag)} class="text-gray-500 hover:text-red-500">
+                      <button on:click={() => removeTag(tag)} class="text-white hover:text-red-500">
                         ×
                       </button>
                     </span>
