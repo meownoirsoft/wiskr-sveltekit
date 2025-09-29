@@ -65,12 +65,22 @@ export async function signInWithDiscord(redirectTo = '/projects') {
     const { data: sessionData } = await supabase.auth.getSession();
     console.log('🔍 Current session before OAuth:', sessionData);
     
-    // Try a different approach - check if Discord provider is available
+    // Try a different approach - use the auth.getSession() first to ensure clean state
     try {
+      // Force a clean auth state
+      await supabase.auth.signOut();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Try OAuth with explicit PKCE handling
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`
+          redirectTo: `${window.location.origin}${redirectTo}`,
+          scopes: 'identify email',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
       

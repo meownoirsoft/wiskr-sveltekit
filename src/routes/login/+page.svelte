@@ -100,6 +100,8 @@
       Continue with Google
     </button>
     
+    <!-- Discord button temporarily disabled due to OAuth issues -->
+    <!--
     <button 
       class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#5865F2] hover:bg-[#4752C4] border border-[#5865F2] rounded-lg shadow-sm text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       on:click={handleDiscordSignIn}
@@ -110,6 +112,7 @@
       </svg>
       Continue with Discord
     </button>
+    -->
   </div>
   
   <!-- Divider -->
