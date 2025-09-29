@@ -7,7 +7,14 @@ import { supabase } from '$lib/supabase.js';
  */
 export async function signInWithGoogle(redirectTo = '/projects') {
   try {
-    console.log('Initiating Google OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    console.log('🚀 Initiating Google OAuth with redirectTo:', `${window.location.origin}${redirectTo}`);
+    
+    // Clear any existing auth state to ensure clean OAuth flow
+    console.log('🧹 Clearing existing auth state...');
+    await supabase.auth.signOut();
+    
+    // Wait a moment for signOut to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -22,14 +29,14 @@ export async function signInWithGoogle(redirectTo = '/projects') {
     });
 
     if (error) {
-      console.error('Error signing in with Google:', error);
+      console.error('❌ Error signing in with Google:', error);
       return { data: null, error };
     }
 
-    console.log('Google OAuth initiated successfully');
+    console.log('✅ Google OAuth initiated successfully');
     return { data, error: null };
   } catch (err) {
-    console.error('Unexpected error during Google sign in:', err);
+    console.error('💥 Unexpected error during Google sign in:', err);
     return { data: null, error: err };
   }
 }
@@ -146,6 +153,10 @@ export function getOAuthErrorMessage(error) {
   // Handle specific Supabase OAuth errors
   if (error.message?.includes('Unable to exchange external code')) {
     return 'OAuth code exchange failed. This usually means the authorization code expired or there was a configuration issue. Please try signing in again.';
+  }
+  
+  if (error.message?.includes('code challenge does not match previously saved code verifier')) {
+    return 'OAuth authentication failed due to a security verification issue. Please try signing in again.';
   }
   
   if (error.message?.includes('unexpected_failure')) {

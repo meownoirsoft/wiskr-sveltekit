@@ -1807,8 +1807,26 @@ function handleTextAddToDocs(event) {
   function handlePackComplete(event) {
     // Handle pack completion from zoom view
     console.log('CardZoomView: Pack complete event received', event.detail);
-    // For now, just reload the context to refresh the cards
-    if (contextManager) {
+    const { cards } = event.detail;
+    
+    if (cards && cards.length > 0 && contextManager) {
+      // Mark all pack-generated cards as new
+      import('$lib/stores/newCards.js').then(({ markCardAsNew }) => {
+        cards.forEach(card => {
+          console.log('🎴 Marking pack card as new:', card.title);
+          markCardAsNew(card.id);
+        });
+      });
+      
+      // Cards are already saved by the pack generation system, just reload the context
+      contextManager.loadContext(true);
+      
+      // Show success message
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.success(`Added ${cards.length} cards to your collection!`);
+      }
+    } else if (contextManager) {
+      // Fallback: just reload the context
       contextManager.loadContext(true);
     }
   }
