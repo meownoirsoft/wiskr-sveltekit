@@ -2744,6 +2744,18 @@ function handleTextAddToDocs(event) {
   async function handleProjectChanged(event) {
     const { projectId, project } = event.detail;
     
+    // Reset deck-related state when switching projects
+    showDeckView = false;
+    currentDeck = null;
+    showDeckDrawer = false;
+    decks = [];
+    showCardZoom = false;
+    zoomedCard = null;
+    isNewCard = false;
+
+    // Ensure binder is visible
+    showLeftPanel = true;
+
     // Reset branch state when switching projects
     currentBranchId = 'main';
     currentBranch = null;
@@ -2758,7 +2770,12 @@ function handleTextAddToDocs(event) {
     if (contextManager) {
       await contextManager.loadContext(true); // Force reload when switching projects
     }
-    
+
+    // Load decks for the newly selected project
+    if (projectId) {
+      await loadDecks(projectId);
+    }
+
     // Load questions and messages for this project using ChatManager
     if (chatManager) {
       await chatManager.loadQuestions();

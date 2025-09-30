@@ -368,6 +368,8 @@
     isNewCard = false;
   }
 
+  $: binderColumns = Math.min(cardsGridSize, Math.max(sortedCards.length, 1));
+
   function handleCardZoomSave(event) {
     const { card } = event.detail;
     
@@ -870,7 +872,7 @@
 
     {#if viewMode === 'binder'}
       <!-- Line 577 -->
-      <div class="cards-grid gap-4" style:grid-template-columns="repeat({cardsGridSize}, minmax(0, 1fr))">
+      <div class="cards-grid" style:grid-template-columns="repeat({binderColumns}, max-content)">
         {#each sortedCards as card (card.id)}
           <!-- Line 580 -->
           <Card 
@@ -1062,5 +1064,9 @@
   .cards-grid {
     display: grid;
     grid-auto-rows: minmax(300px, auto);
+    justify-content: flex-start;
+    justify-items: start;
+    column-gap: 0.75rem;
+    row-gap: 1.25rem;
   }
 </style>

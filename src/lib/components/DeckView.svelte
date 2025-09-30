@@ -73,6 +73,8 @@
     }
   });
 
+  let isEnsuringDefaultSection = false;
+
   // Initialize sections when deck changes
   $: if (deck) {
     // console.log('🔄 Deck data changed, reloading sections. Current sections:', sections.length, 'New sections:', deck.sections?.length || 0);
@@ -81,14 +83,10 @@
     // console.log('🔄 Has local changes:', hasLocalChanges);
     
     if (!hasLocalChanges) {
-      // No local changes - use deck sections from database as-is
       if (deck.sections && deck.sections.length > 0) {
         sections = deck.sections;
-      } else {
-        // If no sections exist, create default ones
-        sections = [
-          { id: 'temp-1', name: 'New Section', cards: [] }
-        ];
+      } else if (!isEnsuringDefaultSection) {
+        ensureDefaultSectionExists();
       }
     } else {
       // Has local changes - merge section names from database while preserving local card changes
@@ -715,6 +713,11 @@
   }
 
   function handleDrop(event, sectionId, cardIndex) {
+    if (isEnsuringDefaultSection) {
+      console.log('⏳ handleDrop: Sections still initializing, ignoring drop');
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     console.log('🔍 handleDrop called with sectionId:', sectionId, 'cardIndex:', cardIndex, 'draggedCard:', draggedCard?.id, 'isSynthetic:', event.isSynthetic, 'showCardLibrary:', showCardLibrary);
@@ -979,6 +982,11 @@
   }
 
   function addCardToSection(card, sectionId) {
+    if (isEnsuringDefaultSection) {
+      console.log('⏳ addCardToSection: Sections still initializing, skipping');
+      return;
+    }
+
     const newSections = [...sections];
     const section = newSections.find(s => s.id === sectionId);
     if (section) {
@@ -1018,7 +1026,7 @@
   async function saveDeckStructure(sectionsToSave) {
     if (!deck || !deck.id) {
       console.log('🔍 saveDeckStructure: No deck or deck.id');
-      return;
+      return [];
     }
     
     console.log('🔍 saveDeckStructure: Saving sections:', sectionsToSave.map(s => ({ id: s.id, name: s.name, position: sectionsToSave.indexOf(s) })));
@@ -1043,50 +1051,88 @@
       
       console.log('✅ saveDeckStructure response:', response.status);
 
-      if (response.ok) {
-        const updatedDeck = await response.json();
-        console.log('✅ saveDeckStructure success, updated deck:', updatedDeck);
-        console.log('🔍 Fetched updated deck:', updatedDeck);
-        
-        // Only update sections if the server response has different data
-        // This prevents overwriting local changes during section name editing
-        const serverSections = updatedDeck.sections || [];
-        const hasStructuralChanges = sections.length !== serverSections.length || 
-          sections.some((section, index) => {
-            const serverSection = serverSections[index];
-            return !serverSection || section.cards.length !== serverSection.cards.length;
-          });
-        
-        if (hasStructuralChanges) {
-          console.log('🔍 Structural changes detected, updating sections from server');
-          sections = serverSections;
-        } else {
-          console.log('🔍 No structural changes, keeping local sections');
+      const updatedDeck = await response.json();
+      console.log('✅ saveDeckStructure success, updated deck:', updatedDeck);
+      console.log('🔍 Fetched updated deck:', updatedDeck);
+
+      const normalizedSections = normalizeServerSections(updatedDeck.sections || []);
+      console.log('🔍 Normalized sections from server:', normalizedSections.map(s => ({ id: s.id, name: s.name, cards: s.cards.length })));
+
+      sections = normalizedSections;
+      deck = { ...deck, sections: normalizedSections };
+
+      const cardCount = normalizedSections.reduce((total, section) => total + (section.cards?.length || 0), 0);
+
+      dispatch('deck-updated', { 
+        deck: {
+          id: updatedDeck.id,
+          name: updatedDeck.name,
+          description: updatedDeck.description,
+          isPinned: updatedDeck.is_pinned,
+          cardCount
         }
-        
-        // Calculate card count for the deck
-        const cardCount = sections.reduce((total, section) => total + (section.cards?.length || 0), 0);
-        
-        // Dispatch deck-updated event with the full deck object
-        dispatch('deck-updated', { 
-          deck: {
-            id: updatedDeck.id,
-            name: updatedDeck.name,
-            description: updatedDeck.description,
-            isPinned: updatedDeck.is_pinned,
-            cardCount: cardCount
-          }
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('🔍 Error saving deck structure:', `Failed to save deck structure: ${response.status} ${response.statusText}`, errorText);
-        throw new Error(`Failed to save deck structure: ${response.status} ${response.statusText}`);
-      }
-      
+      });
+
       console.log('🔍 Deck structure saved successfully');
+      return normalizedSections;
     } catch (error) {
       console.error('🔍 Error saving deck structure:', error);
       // TODO: Show user-friendly error message
+      return sections;
+    }
+  }
+
+  function normalizeServerSections(serverSections) {
+    return serverSections.map(section => ({
+      id: section.id,
+      name: section.name,
+      cards: (section.cards || []).map(deckCard => {
+        const card = deckCard.cards ?? deckCard;
+        return {
+          id: card.id,
+          title: card.title,
+          content: card.content,
+          tags: card.tags || [],
+          rarity: card.rarity || 'common',
+          progress: card.progress || 1,
+          mana_cost: card.mana_cost || 1,
+          art_url: card.art_url,
+          generation_model: card.generation_model || 'GPT-4o',
+          art_model: card.art_model || 'Midjourney',
+          created_at: card.created_at
+        };
+      })
+    }));
+  }
+
+  async function ensureDefaultSectionExists() {
+    if (!deck?.id) {
+      console.log('🔍 ensureDefaultSectionExists: No deck id available');
+      return;
+    }
+
+    if (isEnsuringDefaultSection) {
+      console.log('🔍 ensureDefaultSectionExists: Already ensuring, skipping');
+      return;
+    }
+
+    console.log('🔍 ensureDefaultSectionExists: Creating default section for deck');
+    isEnsuringDefaultSection = true;
+
+    const tempSection = {
+      id: `section-${uuidv4()}`,
+      name: 'New Section',
+      cards: []
+    };
+
+    sections = [tempSection];
+
+    try {
+      await saveDeckStructure([tempSection]);
+    } catch (error) {
+      console.error('❌ Failed to create default section:', error);
+    } finally {
+      isEnsuringDefaultSection = false;
     }
   }
 
