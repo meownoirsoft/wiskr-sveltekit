@@ -23,26 +23,37 @@ export async function POST({ request, locals }) {
 
     const rarityPrompt = rarityPrompts[rarity] || rarityPrompts.common;
 
-    const prompt = `Create MTG-style fantasy card art illustration for a creative idea card:
+    const prompt = `Create a pure fantasy illustration in Magic: The Gathering card art style:
 
-Title: ${cardTitle}
-Content: ${cardContent}
-Tags: ${cardTags?.join(', ') || 'none'}
-Rarity: ${rarity} (${rarityPrompt})
+CONCEPT TO ILLUSTRATE: ${cardContent}
+RARITY LEVEL: ${rarity} (${rarityPrompt})
 
-CRITICAL STYLE REQUIREMENTS:
+ABSOLUTE REQUIREMENTS - NO EXCEPTIONS:
+- ZERO text, words, letters, numbers, or written content of any kind
+- ZERO card borders, frames, UI elements, or game symbols
+- ZERO mana symbols, card game elements, or interface components
+- ZERO titles, labels, captions, or descriptive text
+- ZERO signs, banners, scrolls, or text-bearing objects
+- ZERO playing-card layouts, corner pips, decorative edges, or border treatments
+- ZERO depictions of physical playing cards, tarot cards, or rectangular card objects of any kind
+- PURE illustration only - no text whatsoever
+
+STYLE REQUIREMENTS:
 - Magic: The Gathering card art style - epic fantasy illustration
 - Square aspect ratio (1:1) - perfect for card art
-- NO text, words, letters, or written content anywhere in the image
-- NO card borders, frames, or UI elements
-- NO card game symbols, mana symbols, or game elements
 - High contrast, vibrant colors with dramatic lighting
 - Professional fantasy art quality
-- Focus on the main subject/creature/concept, not card design elements
 - Epic, cinematic composition suitable for a collectible card
 - Match the ${rarity} rarity level with appropriate visual complexity and grandeur
+- Focus entirely on the main subject/creature/concept
 
-The art should be a pure illustration that represents the concept described in the card content, designed to fit within a card frame but without any card design elements visible.`;
+PRESENTATION REQUIREMENTS:
+- Full-bleed illustration only with absolutely no borders, frames, margins, or drop shadows
+- Deliver a single unified image with no inset panels or surrounding design elements
+- Edge-to-edge composition; extend the environment all the way to the image boundaries
+- If the concept mentions cards or printed media, reinterpret the scene so that no card faces, card backs, or card silhouettes are visible anywhere in frame
+
+Create a pure visual representation of the concept without any textual elements. If any forbidden border, frame, or card element would appear, choose a different composition that avoids it entirely. The image must be completely text-free.`;
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',

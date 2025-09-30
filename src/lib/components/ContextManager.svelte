@@ -556,6 +556,141 @@
     await loadContext(true);
   }
 
+  export async function updateCardRarity({ card, rarity }) {
+    if (!card?.id) {
+      console.warn('ContextManager: Missing card id for rarity update');
+      return;
+    }
+
+    const cardId = card.id;
+    const newRarity = rarity || card.rarity || 'common';
+    const existingCard = cards.find(c => c.id === cardId);
+    const previousRarity = existingCard?.rarity || 'common';
+
+    // Optimistically update local state so binder reflects the change immediately
+    cards = cards.map(c => c.id === cardId ? { ...c, rarity: newRarity } : c);
+
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/cards/rarity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardId, newRarity })
+        });
+        await loadContext(true);
+      }, { type: 'update_card_rarity', cardId, newRarity });
+
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Rarity change will sync when you are back online.');
+      }
+      return;
+    }
+
+    incrementPendingOperations();
+
+    try {
+      const { card: updatedCard } = await robustFetchJSON('/api/cards/rarity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardId, newRarity })
+      }, {
+        timeout: 10000,
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying rarity update', attempt, 3);
+          }
+        }
+      });
+
+      if (updatedCard) {
+        cards = cards.map(c => c.id === cardId ? { ...c, ...updatedCard } : c);
+      }
+    } catch (error) {
+      addNetworkError(error);
+      console.error('ContextManager: Error updating card rarity:', error);
+      cards = cards.map(c => c.id === cardId ? { ...c, rarity: previousRarity } : c);
+
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error('Failed to update card rarity. Please try again.');
+      } else {
+        alert('Failed to update card rarity.');
+      }
+    } finally {
+      decrementPendingOperations();
+    }
+  }
+
+  export async function updateCardProgress({ card, progress }) {
+    if (!card?.id) {
+      console.warn('ContextManager: Missing card id for progress update');
+      return;
+    }
+
+    const cardId = card.id;
+    const newProgress = typeof progress === 'number' ? progress : card.progress;
+    const existingCard = cards.find(c => c.id === cardId);
+    const previousProgress = existingCard?.progress || 1;
+
+    if (!Number.isInteger(newProgress) || newProgress < 1 || newProgress > 5) {
+      console.warn('ContextManager: Invalid progress level', newProgress);
+      return;
+    }
+
+    // Optimistically update local state
+    cards = cards.map(c => c.id === cardId ? { ...c, progress: newProgress } : c);
+
+    if (!getNetworkStatus()) {
+      offlineQueue.add(async () => {
+        await robustFetchJSON('/api/cards/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardId, newProgress })
+        });
+        await loadContext(true);
+      }, { type: 'update_card_progress', cardId, newProgress });
+
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.offline('Progress change will sync when you are back online.');
+      }
+      return;
+    }
+
+    incrementPendingOperations();
+
+    try {
+      const { card: updatedCard } = await robustFetchJSON('/api/cards/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardId, newProgress })
+      }, {
+        timeout: 10000,
+        maxRetries: 2,
+        onRetry: (attempt) => {
+          if (browser && window.showNetworkToast) {
+            window.showNetworkToast.retry('Retrying progress update', attempt, 3);
+          }
+        }
+      });
+
+      if (updatedCard) {
+        cards = cards.map(c => c.id === cardId ? { ...c, ...updatedCard } : c);
+      }
+    } catch (error) {
+      addNetworkError(error);
+      console.error('ContextManager: Error updating card progress:', error);
+      cards = cards.map(c => c.id === cardId ? { ...c, progress: previousProgress } : c);
+
+      if (browser && window.showNetworkToast) {
+        window.showNetworkToast.error('Failed to update card progress. Please try again.');
+      } else {
+        alert('Failed to update card progress.');
+      }
+    } finally {
+      decrementPendingOperations();
+    }
+  }
+
   // DOCS MANAGEMENT FUNCTIONS
 
   export async function addDoc(data = null) {

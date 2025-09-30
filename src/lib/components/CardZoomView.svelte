@@ -166,17 +166,22 @@
 
   // Initialize edited card when modal opens
   $: if (isOpen && (card || isNewCard)) {
-    // Clear previous state first
-    editedCard = null;
-    isEditing = false;
-    title = '';
-    content = '';
-    tags = [];
-    artUrl = '';
-    initializeEditedCard();
-    // Load counts for the card after editedCard is set (only for existing cards)
-    if (!isNewCard) {
-      loadCounts();
+    // Prevent reinitializing while editing the same card so unsaved field edits stay intact
+    const editingSameCard = isEditing && !isNewCard && Boolean(card?.id) && Boolean(editedCard?.id) && editedCard.id === card.id;
+
+    if (!editingSameCard) {
+      // Clear previous state first
+      editedCard = null;
+      isEditing = false;
+      title = '';
+      content = '';
+      tags = [];
+      artUrl = '';
+      initializeEditedCard();
+      // Load counts for the card after editedCard is set (only for existing cards)
+      if (!isNewCard) {
+        loadCounts();
+      }
     }
   }
 
@@ -337,7 +342,7 @@
     editedCard.progress = targetLevel;
     // Update the card prop so modals get the updated data
     card = { ...card, progress: targetLevel };
-    dispatch('progress-updated', { card, progress: targetLevel });
+    dispatch('progress-updated', { card, progress: targetLevel, targetLevel });
   }
 
   function togglePin() {

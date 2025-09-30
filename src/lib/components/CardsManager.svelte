@@ -394,12 +394,32 @@
 
   function handleCardZoomRarityChange(event) {
     const { card, rarity } = event.detail;
-    dispatch('rarity-change', { card, newRarity: rarity });
+    if (!card?.id) return;
+    const newRarity = rarity ?? card.rarity;
+
+    // Optimistically update local state for immediate feedback
+    cards = cards.map(c =>
+      c.id === card.id
+        ? { ...c, rarity: newRarity }
+        : c
+    );
+
+    dispatch('rarity-change', { card: { ...card, rarity: newRarity }, newRarity });
   }
 
   function handleCardZoomProgressChange(event) {
-    const { card, targetLevel } = event.detail;
-    dispatch('progress-change', { card, targetLevel });
+    const { card, progress, targetLevel } = event.detail;
+    if (!card?.id) return;
+    const newLevel = targetLevel ?? progress ?? card.progress;
+
+    // Optimistically update local state for immediate feedback
+    cards = cards.map(c =>
+      c.id === card.id
+        ? { ...c, progress: newLevel }
+        : c
+    );
+
+    dispatch('progress-change', { card: { ...card, progress: newLevel }, targetLevel: newLevel });
   }
 
   function handleCardZoomTogglePin(event) {
@@ -1026,7 +1046,7 @@
   on:create={handleCardZoomCreate}
   on:delete={handleCardZoomDelete}
   on:rarity-updated={handleCardZoomRarityChange}
-  on:progress-change={handleCardZoomProgressChange}
+  on:progress-updated={handleCardZoomProgressChange}
   on:toggle-pin={handleCardZoomTogglePin}
   on:merge={handleCardZoomMerge}
   on:save-card={handleCardSave}

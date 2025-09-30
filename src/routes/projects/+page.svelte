@@ -1742,18 +1742,28 @@ function handleTextAddToDocs(event) {
     closeCardZoom();
   }
 
-  function handleCardZoomRarityChange(event) {
-    // Handle rarity change from zoom view
-    if (contextManager) {
-      contextManager.updateCardRarity(event.detail);
-    }
+  function handleCardRarityChange(event) {
+    if (!contextManager) return;
+    const { card, rarity, newRarity } = event.detail || {};
+    if (!card?.id) return;
+    const normalizedRarity = rarity ?? newRarity ?? card.rarity ?? 'common';
+
+    const updatedCard = { ...card, rarity: normalizedRarity };
+    cards = cards.map(c => c.id === updatedCard.id ? { ...c, rarity: normalizedRarity } : c);
+
+    contextManager.updateCardRarity({ card: updatedCard, rarity: normalizedRarity });
   }
 
-  function handleCardZoomProgressChange(event) {
-    // Handle progress change from zoom view
-    if (contextManager) {
-      contextManager.updateCardProgress(event.detail);
-    }
+  function handleCardProgressChange(event) {
+    if (!contextManager) return;
+    const { card, progress, targetLevel } = event.detail || {};
+    if (!card?.id) return;
+    const normalizedProgress = targetLevel ?? progress ?? card.progress ?? 1;
+
+    const updatedCard = { ...card, progress: normalizedProgress };
+    cards = cards.map(c => c.id === updatedCard.id ? { ...c, progress: normalizedProgress } : c);
+
+    contextManager.updateCardProgress({ card: updatedCard, progress: normalizedProgress });
   }
 
   function handleCardZoomTogglePin(event) {
@@ -2894,6 +2904,8 @@ function handleTextAddToDocs(event) {
           on:card-save-edit={handleCardSaveEdit}
           on:card-delete={handleCardDelete}
           on:card-toggle-pin={handleCardTogglePin}
+          on:card-progress-change={handleCardProgressChange}
+          on:card-rarity-change={handleCardRarityChange}
           on:save-card={handleCardSave}
           on:card-open-deck={handleCardOpenDeck}
           on:doc-add={handleDocAdd}
@@ -3457,8 +3469,8 @@ function handleTextAddToDocs(event) {
   on:save={handleCardZoomSave}
   on:create={handleCardZoomCreate}
   on:delete={handleCardZoomDelete}
-  on:rarity-updated={handleCardZoomRarityChange}
-  on:progress-change={handleCardZoomProgressChange}
+  on:rarity-updated={handleCardRarityChange}
+  on:progress-updated={handleCardProgressChange}
   on:toggle-pin={handleCardZoomTogglePin}
   on:merge={handleCardZoomMerge}
   on:save-card={handleCardSave}
@@ -3470,4 +3482,3 @@ function handleTextAddToDocs(event) {
   on:pack-complete={handlePackComplete}
 />
 {/if}
-
