@@ -1,107 +1,325 @@
-Wiskr – Creative Project Manager & AI‑Assisted World‑Building
+# Wiskr – Creative Project Manager & AI-Assisted World-Building
 
-Wiskr is an open‑source creative project manager and AI‑assisted world‑building tool.
-Built with SvelteKit and Supabase, it helps authors, game masters, designers and storytellers collect, organise and enrich their lore. Wiskr combines a fast, responsive workspace with AI‑powered helpers so you can brainstorm ideas, generate narratives, track canon facts and experiment with branching story lines—all in one place.
+**Wiskr** is an open-source creative project manager and AI-assisted world-building tool.
 
-Why Wiskr?
+Built with **SvelteKit** and **Supabase**, it helps authors, game masters, designers, and storytellers collect, organize, and enrich their lore. Wiskr combines a fast, responsive workspace with AI-powered helpers so you can brainstorm ideas, generate narratives, track canon facts, and experiment with branching storylines—all in one place.
 
-Writing a novel or running a role‑playing campaign often involves juggling dozens of notes, scene outlines, timelines and reference documents. Spreadsheets and generic note apps quickly become unmanageable, and AI chat models forget important context once they exceed a few paragraphs.
+---
 
-Wiskr solves these problems by providing a structured workspace with decks, cards and documents. It packages relevant information into context bundles for the AI so your assistant always remembers the facts. Wiskr also lets you branch conversations, generate ideas, ingest external sources and export polished summaries—making it your hub for world‑building and creative planning.
+# Why Wiskr?
 
-Features
+Writing a novel or running a role-playing campaign often involves juggling dozens of notes, scene outlines, timelines, and reference documents. Spreadsheets and generic note apps quickly become unmanageable, and AI chat models forget important context once they exceed a few paragraphs.
 
-Project & Deck Management – Create multiple projects, each containing decks and cards that represent characters, locations, items, scenes and other story elements.
-Reorder decks, pin favourites and categorise content to stay organised. A global search lets you find anything across your entire workspace.
+Wiskr solves these problems by providing a structured workspace with **decks, cards, and documents**. It packages relevant information into context bundles for the AI so your assistant always remembers the facts.
 
-Card & Document Ingestion – Use the built‑in editor (powered by CodeMirror) to write notes in Markdown or import documents from external sources. Cards can be marked as “canonical” so Wiskr knows to include them when talking to the AI. You can even ingest websites or PDFs and extract key facts for your story world.
+Wiskr also lets you:
 
-AI Chat & Sessions – Talk to Wiskr’s AI assistant (powered by OpenAI) to brainstorm ideas, ask questions about your world or generate descriptions and names. Conversations are organised into sessions; you can branch a session at any point to explore what‑if scenarios without losing the original thread. The Context Quality Indicator shows how many tokens your current conversation uses and helps you manage relevance.
+- branch conversations
+- generate ideas
+- ingest external sources
+- export polished summaries
 
-Idea & Question Tools – Select text in a card and instantly generate ideas, art prompts, or follow‑up questions via the context menu. Wiskr will call the AI service for you and insert the results as new cards or notes.
+This makes it a central hub for **world-building and creative planning**.
 
-Formatting & Export – Use the Format modal to transform your text for different targets—novel prose, TTRPG stat blocks, bullet‑point outlines and more. You can export a whole project as a Markdown “scroll” or generate a .docx file using the built‑in Word exporter.
+---
 
-Theming & Customisation – Choose dark or light mode, pick an accent colour and enjoy an animated starry background. Wiskr remembers your preferences across sessions and works great on mobile thanks to a responsive layout.
-Built‑in modals let you manage settings, open card packs (a fun gamified feature), summon help (“Say Less”) and run through the onboarding tutorial.
+# Features
 
-Analytics & Error Reporting – The app integrates with Sentry for error tracking and uses Supabase for analytics and database. You can view usage stats such as requests made, credits spent and context token counts.
+## Project & Deck Management
 
-PWA Support – Wiskr is built as a Progressive Web App. Add it to your home screen and use it offline; the application will sync changes once back online.
+Create multiple projects, each containing decks and cards that represent:
 
-Technology Stack
-Layer	Implementation
-Frontend	SvelteKit
- with Vite, TypeScript and Tailwind CSS
-Backend	Supabase
- (PostgreSQL + Auth + Storage)
-Editor	CodeMirror 6 for Markdown editing
-AI	OpenAI API (GPT‑4o) via openai
+- characters
+- locations
+- items
+- scenes
+- lore elements
 
-UI Library	shadcn/ui components, lucide‑svelte icons
-Other libs	Luxon (dates), JSZip (exports), docx (Word export), uuid, lodash‑es
-Getting Started
-Prerequisites
+Features include:
 
-Node.js ≥ 20
+- deck reordering
+- pinned favorites
+- organized categorization
+- global search across the entire workspace
 
-pnpm
- or npm
+---
 
-A Supabase account and project (or run Supabase locally via the CLI)
+## Card & Document Ingestion
 
-Clone and Install
+Use the built-in editor (**CodeMirror**) to write notes in **Markdown** or import documents from external sources.
+
+Cards can be marked as **canonical**, allowing Wiskr to include them when communicating with the AI.
+
+You can also ingest:
+
+- websites
+- PDFs
+- external documents
+
+Wiskr extracts important information and adds it to your story knowledge base.
+
+---
+
+## AI Chat & Sessions
+
+Interact with Wiskr's AI assistant (powered by **OpenAI**) to:
+
+- brainstorm ideas
+- generate descriptions
+- explore character concepts
+- ask questions about your world
+
+Key capabilities:
+
+- conversations organized into **sessions**
+- ability to **branch sessions** for alternate scenarios
+- **Context Quality Indicator** showing token usage and relevance
+
+---
+
+## Idea & Question Tools
+
+Highlight text within a card and instantly generate:
+
+- new ideas
+- art prompts
+- follow-up questions
+- narrative expansions
+
+Wiskr automatically inserts results into new cards or notes.
+
+---
+
+## Formatting & Export
+
+Transform text using the **Format modal** for different purposes:
+
+- novel prose
+- RPG stat blocks
+- bullet-point outlines
+- structured summaries
+
+You can export:
+
+- a full project as a **Markdown scroll**
+- a formatted **.docx document**
+
+---
+
+## Theming & Customization
+
+Wiskr supports:
+
+- dark and light mode
+- customizable accent colors
+- animated starry background
+
+Additional built-in tools include modals for:
+
+- settings
+- card packs (gamified feature)
+- help system (“Say Less”)
+- onboarding tutorial
+
+The interface is **mobile-responsive** and optimized for creative workflows.
+
+---
+
+## Analytics & Error Reporting
+
+Wiskr integrates with:
+
+- **Sentry** for error tracking
+- **Supabase** for analytics and database operations
+
+Users can track metrics such as:
+
+- AI requests
+- token usage
+- credits consumed
+- activity statistics
+
+---
+
+## PWA Support
+
+Wiskr functions as a **Progressive Web App (PWA)**.
+
+You can install it on desktop or mobile and use it offline. Changes synchronize automatically once the connection is restored.
+
+---
+
+# Technology Stack
+
+| Layer | Implementation |
+|------|----------------|
+| Frontend | SvelteKit with Vite, TypeScript, Tailwind CSS |
+| Backend | Supabase (PostgreSQL, Auth, Storage) |
+| Editor | CodeMirror 6 (Markdown editing) |
+| AI | OpenAI API (GPT-4o) |
+| UI Components | shadcn/ui, lucide-svelte icons |
+| Additional Libraries | Luxon, JSZip, docx, uuid, lodash-es |
+
+---
+
+# Getting Started
+
+## Prerequisites
+
+- Node.js **20+**
+- **pnpm** or npm
+- A **Supabase project** (or local Supabase via CLI)
+
+---
+
+# Clone and Install
+
+```bash
 git clone https://github.com/meownoirsoft/wiskr-sveltekit.git
 cd wiskr-sveltekit
 
-# Install dependencies (using pnpm)
+# install dependencies
 pnpm install
-Configure Environment
+```
 
-Copy the provided example environment file and populate it with your own keys:
+---
 
+# Configure Environment
+
+Copy the example environment file:
+
+```bash
 cp .env.example .env
+```
 
-Edit .env and set the following variables:
+Edit `.env` and configure:
 
-PUBLIC_SUPABASE_URL – your Supabase project URL
+```
+PUBLIC_SUPABASE_URL=
+PUBLIC_SUPABASE_ANON_KEY=
+OPENAI_API_KEY=
+SENTRY_DSN=
+```
 
-PUBLIC_SUPABASE_ANON_KEY – the anonymous key for your Supabase project
+### Variables
 
-OPENAI_API_KEY – optional; required for AI features (GPT‑4o)
+| Variable | Purpose |
+|--------|---------|
+| PUBLIC_SUPABASE_URL | Supabase project URL |
+| PUBLIC_SUPABASE_ANON_KEY | Public Supabase key |
+| OPENAI_API_KEY | Required for AI features |
+| SENTRY_DSN | Optional error reporting |
 
-SENTRY_DSN – optional; to enable error reporting
+If running Supabase locally with the CLI, update the variables using credentials generated by:
 
-If you run Supabase locally using the Supabase CLI
-, update PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY with the local credentials generated by supabase start.
+```
+supabase start
+```
 
-Run in Development
+---
+
+# Run in Development
+
+```bash
 pnpm run dev
+```
 
-The app will be available at http://localhost:5173. On first load you’ll be prompted to sign up or sign in using Supabase Auth.
+Application runs at:
 
-Running Admin Panel
+```
+http://localhost:5173
+```
 
-This repository also contains an admin interface for managing decks, cards and users. To run both the main app and the admin panel concurrently:
+Users will be prompted to sign up or log in using Supabase Auth.
 
+---
+
+# Running the Admin Panel
+
+The repository also includes an **admin interface**.
+
+To run both the main app and the admin panel:
+
+```bash
 pnpm run dev:both
-Build for Production
+```
+
+---
+
+# Build for Production
+
+```bash
 pnpm run build
 pnpm run preview
+```
 
-Use pnpm run build:both to build both the main app and admin panel.
-The project ships with adapters for Node (serverless) and Netlify; adjust pnpm run build scripts depending on your deployment target.
+To build both application and admin panel:
 
-Database Migrations & Scripts
+```bash
+pnpm run build:both
+```
 
-Wiskr uses Supabase migrations to keep the database schema in sync. Use supabase db push to apply migrations when running locally. For production deployments, manage migrations via the Supabase dashboard or CLI.
-Additional helper scripts live in the scripts/ directory (e.g., increment-build.js for build numbering).
+Deployment adapters are included for:
 
-Contributing
+- Node
+- Netlify
 
-Contributions are welcome! To propose a feature or report a bug, please open an issue. Pull requests should follow the existing code style and include meaningful descriptions. When adding new functionality, update any relevant documentation or examples.
-If you’re interested in integrating other AI models or adding new export formats, open a discussion and we’ll be happy to collaborate.
+Adjust build scripts depending on your hosting environment.
 
-License
+---
 
-As of now, this repository does not include an explicit licence file. Please contact the project maintainer (@meownoirsoft) if you plan to use or modify Wiskr in a commercial or open‑source context.
+# Database Migrations
+
+Wiskr uses **Supabase migrations**.
+
+Apply migrations locally:
+
+```bash
+supabase db push
+```
+
+Production migrations should be managed via:
+
+- Supabase CLI
+- Supabase dashboard
+
+Helper scripts are located in:
+
+```
+scripts/
+```
+
+Example:
+
+```
+increment-build.js
+```
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+You can help by:
+
+- opening issues
+- proposing new features
+- submitting pull requests
+- improving documentation
+
+When submitting a PR:
+
+- follow existing code style
+- include clear descriptions
+- update documentation when relevant
+
+If you're interested in integrating additional AI models or export formats, feel free to start a discussion.
+
+---
+
+# License
+
+This repository currently does **not include a license file**.
+
+Please contact the maintainer **@meownoirsoft** before using or modifying Wiskr in commercial or open-source projects.
