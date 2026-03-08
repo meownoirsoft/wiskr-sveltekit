@@ -1,183 +1,107 @@
-# Supabase CLI
+Wiskr – Creative Project Manager & AI‑Assisted World‑Building
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+Wiskr is an open‑source creative project manager and AI‑assisted world‑building tool.
+Built with SvelteKit and Supabase, it helps authors, game masters, designers and storytellers collect, organise and enrich their lore. Wiskr combines a fast, responsive workspace with AI‑powered helpers so you can brainstorm ideas, generate narratives, track canon facts and experiment with branching story lines—all in one place.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+Why Wiskr?
 
-This repository contains all the functionality for Supabase CLI.
+Writing a novel or running a role‑playing campaign often involves juggling dozens of notes, scene outlines, timelines and reference documents. Spreadsheets and generic note apps quickly become unmanageable, and AI chat models forget important context once they exceed a few paragraphs.
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+Wiskr solves these problems by providing a structured workspace with decks, cards and documents. It packages relevant information into context bundles for the AI so your assistant always remembers the facts. Wiskr also lets you branch conversations, generate ideas, ingest external sources and export polished summaries—making it your hub for world‑building and creative planning.
 
-## Getting started
+Features
 
-### Install the CLI
+Project & Deck Management – Create multiple projects, each containing decks and cards that represent characters, locations, items, scenes and other story elements.
+Reorder decks, pin favourites and categorise content to stay organised. A global search lets you find anything across your entire workspace.
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+Card & Document Ingestion – Use the built‑in editor (powered by CodeMirror) to write notes in Markdown or import documents from external sources. Cards can be marked as “canonical” so Wiskr knows to include them when talking to the AI. You can even ingest websites or PDFs and extract key facts for your story world.
 
-```bash
-npm i supabase --save-dev
-```
+AI Chat & Sessions – Talk to Wiskr’s AI assistant (powered by OpenAI) to brainstorm ideas, ask questions about your world or generate descriptions and names. Conversations are organised into sessions; you can branch a session at any point to explore what‑if scenarios without losing the original thread. The Context Quality Indicator shows how many tokens your current conversation uses and helps you manage relevance.
 
-To install the beta release channel:
+Idea & Question Tools – Select text in a card and instantly generate ideas, art prompts, or follow‑up questions via the context menu. Wiskr will call the AI service for you and insert the results as new cards or notes.
 
-```bash
-npm i supabase@beta --save-dev
-```
+Formatting & Export – Use the Format modal to transform your text for different targets—novel prose, TTRPG stat blocks, bullet‑point outlines and more. You can export a whole project as a Markdown “scroll” or generate a .docx file using the built‑in Word exporter.
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+Theming & Customisation – Choose dark or light mode, pick an accent colour and enjoy an animated starry background. Wiskr remembers your preferences across sessions and works great on mobile thanks to a responsive layout.
+Built‑in modals let you manage settings, open card packs (a fun gamified feature), summon help (“Say Less”) and run through the onboarding tutorial.
 
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
+Analytics & Error Reporting – The app integrates with Sentry for error tracking and uses Supabase for analytics and database. You can view usage stats such as requests made, credits spent and context token counts.
 
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+PWA Support – Wiskr is built as a Progressive Web App. Add it to your home screen and use it offline; the application will sync changes once back online.
 
-<details>
-  <summary><b>macOS</b></summary>
+Technology Stack
+Layer	Implementation
+Frontend	SvelteKit
+ with Vite, TypeScript and Tailwind CSS
+Backend	Supabase
+ (PostgreSQL + Auth + Storage)
+Editor	CodeMirror 6 for Markdown editing
+AI	OpenAI API (GPT‑4o) via openai
 
-  Available via [Homebrew](https://brew.sh). To install:
+UI Library	shadcn/ui components, lucide‑svelte icons
+Other libs	Luxon (dates), JSZip (exports), docx (Word export), uuid, lodash‑es
+Getting Started
+Prerequisites
 
-  ```sh
-  brew install supabase/tap/supabase
-  ```
+Node.js ≥ 20
 
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
+pnpm
+ or npm
 
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
+A Supabase account and project (or run Supabase locally via the CLI)
 
-<details>
-  <summary><b>Windows</b></summary>
+Clone and Install
+git clone https://github.com/meownoirsoft/wiskr-sveltekit.git
+cd wiskr-sveltekit
 
-  Available via [Scoop](https://scoop.sh). To install:
+# Install dependencies (using pnpm)
+pnpm install
+Configure Environment
 
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
+Copy the provided example environment file and populate it with your own keys:
 
-  To upgrade:
+cp .env.example .env
 
-  ```powershell
-  scoop update supabase
-  ```
-</details>
+Edit .env and set the following variables:
 
-<details>
-  <summary><b>Linux</b></summary>
+PUBLIC_SUPABASE_URL – your Supabase project URL
 
-  Available via [Homebrew](https://brew.sh) and Linux packages.
+PUBLIC_SUPABASE_ANON_KEY – the anonymous key for your Supabase project
 
-  #### via Homebrew
+OPENAI_API_KEY – optional; required for AI features (GPT‑4o)
 
-  To install:
+SENTRY_DSN – optional; to enable error reporting
 
-  ```sh
-  brew install supabase/tap/supabase
-  ```
+If you run Supabase locally using the Supabase CLI
+, update PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY with the local credentials generated by supabase start.
 
-  To upgrade:
+Run in Development
+pnpm run dev
 
-  ```sh
-  brew upgrade supabase
-  ```
+The app will be available at http://localhost:5173. On first load you’ll be prompted to sign up or sign in using Supabase Auth.
 
-  #### via Linux packages
+Running Admin Panel
 
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+This repository also contains an admin interface for managing decks, cards and users. To run both the main app and the admin panel concurrently:
 
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
+pnpm run dev:both
+Build for Production
+pnpm run build
+pnpm run preview
 
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
+Use pnpm run build:both to build both the main app and admin panel.
+The project ships with adapters for Node (serverless) and Netlify; adjust pnpm run build scripts depending on your deployment target.
 
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
+Database Migrations & Scripts
 
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
+Wiskr uses Supabase migrations to keep the database schema in sync. Use supabase db push to apply migrations when running locally. For production deployments, manage migrations via the Supabase dashboard or CLI.
+Additional helper scripts live in the scripts/ directory (e.g., increment-build.js for build numbering).
 
-<details>
-  <summary><b>Other Platforms</b></summary>
+Contributing
 
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+Contributions are welcome! To propose a feature or report a bug, please open an issue. Pull requests should follow the existing code style and include meaningful descriptions. When adding new functionality, update any relevant documentation or examples.
+If you’re interested in integrating other AI models or adding new export formats, open a discussion and we’ll be happy to collaborate.
 
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
+License
 
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
-
-```bash
-supabase bootstrap
-```
-
-Or using npx:
-
-```bash
-npx supabase bootstrap
-```
-
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
-
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
-```
+As of now, this repository does not include an explicit licence file. Please contact the project maintainer (@meownoirsoft) if you plan to use or modify Wiskr in a commercial or open‑source context.
