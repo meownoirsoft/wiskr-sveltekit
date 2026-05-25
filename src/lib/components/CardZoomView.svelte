@@ -139,6 +139,21 @@
   let showPreview = false;
   let showSplitView = false;
 
+  // Scale card to fit viewport height
+  const CARD_W = 500;
+  const CARD_H = 800;
+  let cardScale = 1;
+  function computeScale() {
+    const maxH = window.innerHeight * 0.92; // 92vh
+    const maxW = window.innerWidth * 0.96;
+    cardScale = Math.min(1, maxH / CARD_H, maxW / CARD_W);
+  }
+  onMount(() => {
+    computeScale();
+    window.addEventListener('resize', computeScale);
+    return () => window.removeEventListener('resize', computeScale);
+  });
+
   // Reactive values
   $: rarity = getRarityConfig(editedCard?.rarity || card?.rarity || 'common');
   $: progress = getProgressInfo(editedCard?.progress || card?.progress || 1);
@@ -722,10 +737,13 @@
   <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" on:click={handleBackgroundClick}>
     
     <!-- Just the Card -->
-    <div 
-      class="card-container relative transition-all duration-200 z-[99] rounded-lg overflow-hidden"
-      style="width: 500px; height: 800px; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
+    <div
+      style="width: {CARD_W * cardScale}px; height: {CARD_H * cardScale}px; flex-shrink: 0;"
       on:click|stopPropagation
+    >
+    <div
+      class="card-container relative transition-all duration-200 z-[99] rounded-lg overflow-hidden"
+      style="width: {CARD_W}px; height: {CARD_H}px; transform: scale({cardScale}); transform-origin: top left; background-color: {darkMode ? rarity.bgColorDark : rarity.bgColor};"
     >
     <div id="foil" class="foil">&nbsp;</div>
 
@@ -1152,6 +1170,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
 
   </div>

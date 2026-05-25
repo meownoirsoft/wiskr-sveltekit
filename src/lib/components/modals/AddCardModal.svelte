@@ -110,16 +110,15 @@
     tabindex="0"
   >
     <!-- Modal Content -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
       <!-- Modal Header -->
-      <div class="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Zap size="20" class="text-white" />
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <Zap size="16" class="text-white" />
           </div>
           <div>
-            <h2 id="create-card-title" class="text-xl font-bold text-gray-900 dark:text-gray-100">Create New Card</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Add a new idea to your world</p>
+            <h2 id="create-card-title" class="text-base font-bold text-gray-900 dark:text-gray-100">Create New Card</h2>
           </div>
         </div>
         <button
@@ -132,11 +131,11 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="space-y-6">
+      <div class="flex-1 overflow-y-auto min-h-0 px-5 py-3">
+        <div class="space-y-4">
           <!-- Title -->
           <div>
-            <label for="card-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="card-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Card Title
             </label>
             <input 
@@ -151,14 +150,14 @@
 
           <!-- Content -->
           <div>
-            <label for="card-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="card-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Idea Content
               <span class="text-red-500">*</span>
             </label>
-            <textarea 
+            <textarea
               id="card-content"
               bind:value={content}
-              rows="4"
+              rows="3"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:border-transparent resize-none"
               style="--tw-ring-color: var(--color-accent);"
               placeholder="Describe your idea in detail..."
@@ -169,7 +168,7 @@
           <div class="grid grid-cols-2 gap-6">
             <!-- Rarity -->
             <div>
-              <label for="card-rarity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="card-rarity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Rarity
               </label>
               <select 
@@ -182,14 +181,11 @@
                   <option value={option.value}>{option.label}</option>
                 {/each}
               </select>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {rarityOptions.find(o => o.value === rarity)?.description}
-              </p>
             </div>
 
             <!-- Progress -->
             <div>
-              <label for="card-progress" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="card-progress" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Progress Level
               </label>
               <div class="flex items-center gap-2">
@@ -213,7 +209,7 @@
             <!-- Type -->
             {#if projectFactTypes.length > 0}
               <div>
-                <label for="card-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label for="card-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Type
                 </label>
                 <select 
@@ -231,7 +227,7 @@
 
             <!-- Tags -->
             <div>
-              <label for="card-tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="card-tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tags
               </label>
               <input 
@@ -242,15 +238,12 @@
                 style="--tw-ring-color: var(--color-accent);"
                 placeholder="tag1, tag2, tag3..."
               />
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Separate tags with commas
-              </p>
             </div>
           </div>
 
           <!-- Flavor Text (Hidden) -->
           <div style="display: none;">
-            <label for="card-flavor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label for="card-flavor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Flavor Text (Optional)
             </label>
             <textarea 
@@ -267,7 +260,7 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="flex items-center justify-end gap-3 p-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"
           on:click={closeModal}

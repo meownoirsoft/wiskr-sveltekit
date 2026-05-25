@@ -1339,7 +1339,7 @@ import PackOpener from '$lib/components/PackOpener.svelte';
 
   <!-- Center: Global Search (Desktop) - Absolutely positioned to center on viewport -->
   {#if isProjectsPage && !isPublicPage}
-    <div class="{isDesktop ? 'fixed' : 'hidden'} z-[200]" style="left: 50%; transform: translateX(-50%); top: 8px; height: 48px; width: 640px;">
+    <div class="{isDesktop ? 'fixed' : 'hidden'} z-[200]" style="left: 50%; transform: translateX(-50%); top: 8px; height: 48px; width: 380px;">
       <div class="flex items-center justify-center h-full gap-2">
         <GlobalSearch 
           projectId={currentProject?.id}
