@@ -432,7 +432,7 @@ class QueryBuilder {
       const rowPlaceholders = columns.map(col => {
         const val = row[col];
         if (val !== undefined) {
-          allValues.push(Array.isArray(val) ? JSON.stringify(val) : val);
+          allValues.push(val);
           return `$${idx++}`;
         }
         return 'DEFAULT';
@@ -466,7 +466,7 @@ class QueryBuilder {
       const val = payload[col];
       if (val !== undefined) {
         setClauses.push(`${escapeIdentifier(col)} = $${idx++}`);
-        allValues.push(Array.isArray(val) ? JSON.stringify(val) : val);
+        allValues.push(val);
       }
     }
 
