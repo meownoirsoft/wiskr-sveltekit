@@ -1,19 +1,7 @@
 // Pack generation system for MTG-style idea cards
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 
-// Validate environment variables
-if (!SUPABASE_URL) {
-  throw new Error('SUPABASE_URL environment variable is required');
-}
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
-}
-if (!OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY environment variable is required');
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = db;
 
 // Rarity distribution weights (percentages)
 const RARITY_DISTRIBUTION = {

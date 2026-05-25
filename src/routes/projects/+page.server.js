@@ -1,17 +1,8 @@
 // src/routes/projects/+page.server.js
-import { redirect, error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { isAdmin } from '$lib/auth/admin.js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '$env/static/private';
 
 export const load = async ({ locals }) => {
-  // Server-side validation of Supabase credentials
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('❌ Supabase environment variables are missing on the server.');
-    throw error(500, {
-      message: 'Server configuration error: Missing database credentials.',
-      hint: 'Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file.'
-    });
-  }
   // Get user from locals (already authenticated in hooks.server.js)
   const user = locals.user;
   
