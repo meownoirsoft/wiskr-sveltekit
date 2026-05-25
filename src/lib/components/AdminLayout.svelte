@@ -45,8 +45,7 @@
   }
   
   async function handleLogout() {
-    const { supabase } = await import('$lib/supabase.js');
-    await supabase.auth.signOut();
+    await fetch('/logout', { method: 'GET', redirect: 'manual' }).catch(() => {});
     window.location.href = '/login';
   }
 </script>

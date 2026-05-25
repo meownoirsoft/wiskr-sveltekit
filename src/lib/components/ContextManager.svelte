@@ -98,15 +98,12 @@
     
     try {
       // Check user authentication first
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        console.error('❌ ContextManager: Auth error:', authError);
-        throw new Error(`Authentication error: ${authError.message}`);
-      }
-      if (!user) {
+      const meRes = await fetch('/api/auth/me');
+      if (!meRes.ok) {
         console.error('❌ ContextManager: No authenticated user');
         throw new Error('No authenticated user');
       }
+      const { user } = await meRes.json();
       console.log('🔍 ContextManager: Authenticated user:', user.id);
       
       const [{ data: c, error: cardsError }, { data: d, error: docsError }, { data: p, error: projectError }] = await Promise.all([

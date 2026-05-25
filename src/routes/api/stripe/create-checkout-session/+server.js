@@ -6,8 +6,8 @@ export async function POST({ request, locals }) {
     const { tier, successUrl, cancelUrl } = await request.json();
     
     // Get the current user from the server-side session
-    const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
-    if (authError || !user) {
+    const user = locals.user;
+    if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
