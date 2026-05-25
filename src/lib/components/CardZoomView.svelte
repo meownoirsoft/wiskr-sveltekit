@@ -138,6 +138,10 @@
   let showNoteEditor = false;
   let showPreview = false;
   let showSplitView = false;
+  // Track which card ID was last used to initialize editedCard, so the
+  // reactive init block doesn't depend on editedCard itself (which would
+  // cause it to re-fire every time we update rarity/progress/etc).
+  let _initCardId = null;
 
   // Scale card to fit viewport height
   const CARD_W = 500;
@@ -179,13 +183,15 @@
   //   displayArt: artUrl || editedCard?.art_url
   // });
 
-  // Initialize edited card when modal opens
+  // Initialize edited card when modal opens.
+  // Deliberately uses _initCardId instead of editedCard.id so that updates
+  // to editedCard (rarity, progress, etc.) do NOT re-trigger this block.
   $: if (isOpen && (card || isNewCard)) {
-    // Prevent reinitializing while editing the same card so unsaved field edits stay intact
-    const editingSameCard = isEditing && !isNewCard && Boolean(card?.id) && Boolean(editedCard?.id) && editedCard.id === card.id;
+    const incomingId = isNewCard ? 'new' : (card?.id ?? null);
+    const editingSameCard = isEditing && !isNewCard && incomingId && incomingId === _initCardId;
 
     if (!editingSameCard) {
-      // Clear previous state first
+      _initCardId = incomingId;
       editedCard = null;
       isEditing = false;
       title = '';
@@ -193,7 +199,6 @@
       tags = [];
       artUrl = '';
       initializeEditedCard();
-      // Load counts for the card after editedCard is set (only for existing cards)
       if (!isNewCard) {
         loadCounts();
       }
@@ -335,10 +340,8 @@
     const rarities = ['common', 'special', 'rare', 'legendary'];
     const currentIndex = rarities.indexOf(editedCard.rarity);
     if (currentIndex < rarities.length - 1) {
-      editedCard.rarity = rarities[currentIndex + 1];
-      // Update the card prop so modals get the updated data
-      card = { ...card, rarity: editedCard.rarity };
-      dispatch('rarity-updated', { card, rarity: editedCard.rarity });
+      editedCard = { ...editedCard, rarity: rarities[currentIndex + 1] };
+      dispatch('rarity-updated', { card: editedCard, rarity: editedCard.rarity });
     }
   }
 
@@ -346,18 +349,14 @@
     const rarities = ['common', 'special', 'rare', 'legendary'];
     const currentIndex = rarities.indexOf(editedCard.rarity);
     if (currentIndex > 0) {
-      editedCard.rarity = rarities[currentIndex - 1];
-      // Update the card prop so modals get the updated data
-      card = { ...card, rarity: editedCard.rarity };
-      dispatch('rarity-updated', { card, rarity: editedCard.rarity });
+      editedCard = { ...editedCard, rarity: rarities[currentIndex - 1] };
+      dispatch('rarity-updated', { card: editedCard, rarity: editedCard.rarity });
     }
   }
 
   function handleProgressClick(targetLevel) {
-    editedCard.progress = targetLevel;
-    // Update the card prop so modals get the updated data
-    card = { ...card, progress: targetLevel };
-    dispatch('progress-updated', { card, progress: targetLevel, targetLevel });
+    editedCard = { ...editedCard, progress: targetLevel };
+    dispatch('progress-updated', { card: editedCard, progress: targetLevel, targetLevel });
   }
 
   function togglePin() {
