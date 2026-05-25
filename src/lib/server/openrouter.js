@@ -1,6 +1,7 @@
 // src/lib/server/openrouter.js
 import OpenAI from 'openai';
-import { OPENROUTER_API_KEY, OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { OPENROUTER_API_KEY, OPENAI_API_KEY } = env;
 import { getAIName } from '$lib/config/aiAvatars.js';
 
 // OpenRouter model configurations with pricing

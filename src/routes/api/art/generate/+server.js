@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { OPENAI_API_KEY, BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { OPENAI_API_KEY, BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE } = env;
 
 import { trackUsage } from '$lib/server/utils/usageTracker.js';
 import { processCardArt, getImageMetadata } from '$lib/server/utils/imageProcessor.js';

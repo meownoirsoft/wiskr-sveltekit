@@ -3,12 +3,8 @@
  * Uses direct HTTP requests — no external OAuth library needed.
  */
 import { randomBytes } from 'crypto';
-import {
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-  DISCORD_CLIENT_ID,
-  DISCORD_CLIENT_SECRET
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET } = env;
 
 // ---------------------------------------------------------------------------
 // State / PKCE helpers

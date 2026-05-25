@@ -5,7 +5,8 @@ import { buildContext } from '$lib/server/context/buildContext.js';
 import { getModelConfig } from '$lib/server/openrouter.js';
 import { postProcessStreamedResponse } from '$lib/server/responseProcessor.js';
 import { autoUpdateSessionTitle } from '$lib/server/services/autoTitling.js';
-import { DAILY_TOKEN_LIMIT } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { DAILY_TOKEN_LIMIT } = env;
 
 export const POST = async ({ request, locals }) => {
   const body = await request.json();

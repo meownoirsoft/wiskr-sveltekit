@@ -2,7 +2,8 @@
 // Analyzes facts to automatically detect entities (characters, places, events) for card generation
 
 import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { OPENAI_API_KEY } = env;
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 

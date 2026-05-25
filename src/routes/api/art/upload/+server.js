@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE, BUNNY_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE, BUNNY_API_KEY } = env;
 import { processCardArt, getImageMetadata } from '$lib/server/utils/imageProcessor.js';
 
 export async function POST({ request }) {

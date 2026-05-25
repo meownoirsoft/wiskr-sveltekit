@@ -1,6 +1,7 @@
 // Build chat system context: pinned + top-k semantic matches via pgvector.
 import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const { OPENAI_API_KEY } = env;
 import { selectDiverseFacts, selectDiverseDocs } from '../utils/mmr.js';
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
