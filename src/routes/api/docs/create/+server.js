@@ -42,7 +42,7 @@ export const POST = async ({ request, locals }) => {
       model: 'text-embedding-3-small',
       inputText: text,
       outputText: '', // Embeddings don't have output text
-      supabase: locals.db,
+      db: locals.db,
       operation: 'docs-create-embedding'
     });
   } catch (e) {

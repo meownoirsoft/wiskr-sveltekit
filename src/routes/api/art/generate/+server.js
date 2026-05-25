@@ -91,7 +91,7 @@ Create a pure visual representation of the concept without any textual elements.
       tokensIn: 0, // DALL-E doesn't use tokens, but we track the generation
       tokensOut: 1, // Count as 1 generation
       costUsd: 0.04, // DALL-E 3 standard quality cost
-      supabase: locals.db,
+      db: locals.db,
       operation: 'art-generation'
     });
     

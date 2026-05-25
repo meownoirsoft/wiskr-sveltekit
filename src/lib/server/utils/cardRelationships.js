@@ -12,7 +12,7 @@ import { db } from '$lib/server/db/queries.js';
  */
 export async function createCardRelationship(sourceCardId, targetCardId, relationshipType, strength = 1.0, notes = '') {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('card_relationships')
       .insert({
         source_card_id: sourceCardId,
@@ -40,7 +40,7 @@ export async function createCardRelationship(sourceCardId, targetCardId, relatio
  */
 export async function getCardRelationships(cardId, direction = 'both') {
   try {
-    let query = supabase
+    let query = db
       .from('card_relationships')
       .select(`
         *,
@@ -74,7 +74,7 @@ export async function getCardRelationships(cardId, direction = 'both') {
  */
 export async function updateCardRelationship(relationshipId, updates) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('card_relationships')
       .update(updates)
       .eq('id', relationshipId)
@@ -96,7 +96,7 @@ export async function updateCardRelationship(relationshipId, updates) {
  */
 export async function deleteCardRelationship(relationshipId) {
   try {
-    const { error } = await supabase
+    const { error } = await db
       .from('card_relationships')
       .delete()
       .eq('id', relationshipId);
@@ -116,7 +116,7 @@ export async function deleteCardRelationship(relationshipId) {
  */
 export async function getCardRelationshipStats(cardId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('card_relationships')
       .select('relationship_type, strength')
       .or(`source_card_id.eq.${cardId},target_card_id.eq.${cardId}`);
@@ -152,7 +152,7 @@ export async function getCardRelationshipStats(cardId) {
  */
 export async function findRelatedCards(cardId, relationshipType) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('card_relationships')
       .select(`
         *,

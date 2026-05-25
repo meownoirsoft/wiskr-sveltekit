@@ -10,11 +10,11 @@ import { createOpenAIClient } from '$lib/server/openrouter.js';
  * @param {number} params.tokensIn - Input tokens
  * @param {number} params.tokensOut - Output tokens
  * @param {number} params.costUsd - Cost in USD
- * @param {Object} params.supabase - Supabase client
+ * @param {Object} params.db - Supabase client
  * @param {string} params.operation - Operation type (optional)
  * @returns {Promise<Object>} Usage log result
  */
-export async function trackUsage({ userId, projectId, model, tokensIn, tokensOut, costUsd, supabase, operation = null }) {
+export async function trackUsage({ userId, projectId, model, tokensIn, tokensOut, costUsd, db, operation = null }) {
   const usagePayload = {
     user_id: userId,
     project_id: projectId,
@@ -27,7 +27,7 @@ export async function trackUsage({ userId, projectId, model, tokensIn, tokensOut
 
   console.log(`📊 Tracking usage for ${operation || 'AI operation'}:`, usagePayload);
   
-  const { data: usageResult, error: usageError } = await supabase
+  const { data: usageResult, error: usageError } = await db
     .from('usage_logs')
     .insert(usagePayload)
     .select();
@@ -95,11 +95,11 @@ export function calculateUsage(model, inputText, outputText) {
  * @param {string} params.model - Model name
  * @param {string} params.inputText - Input text
  * @param {string} params.outputText - Output text
- * @param {Object} params.supabase - Supabase client
+ * @param {Object} params.db - Supabase client
  * @param {string} params.operation - Operation type
  * @returns {Promise<Object>} Usage log result
  */
-export async function trackAIUsage({ userId, projectId, model, inputText, outputText, supabase, operation }) {
+export async function trackAIUsage({ userId, projectId, model, inputText, outputText, db, operation }) {
   const usage = calculateUsage(model, inputText, outputText);
   
   return await trackUsage({
@@ -109,7 +109,7 @@ export async function trackAIUsage({ userId, projectId, model, inputText, output
     tokensIn: usage.tokensIn,
     tokensOut: usage.tokensOut,
     costUsd: usage.costUsd,
-    supabase,
+    db,
     operation
   });
 }

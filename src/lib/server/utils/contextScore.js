@@ -205,11 +205,11 @@ export function calculateContextQualityScore({ hasProjectDescription, projectDes
 
 /**
  * Refresh the context quality score for a project and cache it
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {string} projectId - Project ID to refresh score for
  * @returns {Promise<number>} The calculated score
  */
-export async function refreshContextScore(supabase, projectId) {
+export async function refreshContextScore(db, projectId) {
   try {
     
     // Import buildContextRings to get raw rings data for scoring
@@ -217,7 +217,7 @@ export async function refreshContextScore(supabase, projectId) {
     
     // Get raw context rings for scoring (not formatted for AI)
     const contextData = await buildContextRings({
-      supabase,
+      db,
       projectId,
       operation: 'create', // Use 'create' as a general context assessment
       targetCards: [],
@@ -237,7 +237,7 @@ export async function refreshContextScore(supabase, projectId) {
 
     // Cache the score
     try {
-      await supabase
+      await db
         .from('projects')
         .update({ 
           context_score: score,
@@ -255,7 +255,7 @@ export async function refreshContextScore(supabase, projectId) {
     
     // Fallback to legacy method if rings fail
     try {
-      const { data: project } = await supabase
+      const { data: project } = await db
         .from('projects')
         .select('name, description, brief_text')
         .eq('id', projectId)
@@ -266,7 +266,7 @@ export async function refreshContextScore(supabase, projectId) {
         return 0;
       }
 
-      const { data: pinnedCards } = await supabase
+      const { data: pinnedCards } = await db
         .from('cards')
         .select('id, title, content')
         .eq('project_id', projectId)
@@ -293,7 +293,7 @@ export async function refreshContextScore(supabase, projectId) {
       });
 
       try {
-        await supabase
+        await db
           .from('projects')
           .update({ 
             context_score: score,
@@ -314,14 +314,14 @@ export async function refreshContextScore(supabase, projectId) {
 
 /**
  * Get the cached context score for a project, or calculate it if not cached
- * @param {Object} supabase - Supabase client  
+ * @param {Object} db - Supabase client  
  * @param {string} projectId - Project ID
  * @returns {Promise<number>} The context quality score
  */
-export async function getContextScore(supabase, projectId) {
+export async function getContextScore(db, projectId) {
   try {
     // Try to get cached score first
-    const { data: project } = await supabase
+    const { data: project } = await db
       .from('projects')
       .select('context_score, context_score_updated_at')
       .eq('id', projectId)
@@ -338,11 +338,11 @@ export async function getContextScore(supabase, projectId) {
     }
 
     // Otherwise, calculate fresh score
-    return await refreshContextScore(supabase, projectId);
+    return await refreshContextScore(db, projectId);
 
   } catch (error) {
     console.error('Error getting context score:', error);
     // Fallback: try to refresh
-    return await refreshContextScore(supabase, projectId);
+    return await refreshContextScore(db, projectId);
   }
 }

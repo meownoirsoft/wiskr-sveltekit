@@ -4,18 +4,18 @@ import { getModelConfig } from '$lib/server/openrouter.js';
 
 /**
  * Handle when a new card is added - check if it relates to existing entities or creates new ones
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {Object} newCard - The newly created card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleNewCard(supabase, newCard) {
+export async function handleNewCard(db, newCard) {
   console.log('🔄 EntityCardRefresh: Processing new card:', newCard.title);
   
   try {
     const projectId = newCard.project_id;
     
     // Get existing entity cards for this project
-    const { data: existingCards, error: cardsError } = await supabase
+    const { data: existingCards, error: cardsError } = await db
       .from('entity_cards')
       .select('*')
       .eq('project_id', projectId);
@@ -42,7 +42,7 @@ export async function handleNewCard(supabase, newCard) {
           const entity = existingCards.find(e => e.entity_name === match.entity_name);
           if (entity) {
             // Add relationship between card and entity
-            const { error: relationError } = await supabase
+            const { error: relationError } = await db
               .from('entity_card_cards')
               .upsert({
                 entity_card_id: entity.id,
@@ -59,7 +59,7 @@ export async function handleNewCard(supabase, newCard) {
               actionsPerformed.cardRelationshipsAdded++;
               
               // Update entity card's card count and last check time
-              const { error: updateError } = await supabase
+              const { error: updateError } = await db
                 .from('entity_cards')
                 .update({
                   card_count: entity.card_count + 1,
@@ -72,7 +72,7 @@ export async function handleNewCard(supabase, newCard) {
                 console.log('✅ EntityCardRefresh: Updated entity card for', entity.entity_name);
                 
                 // Trigger summary regeneration for this entity (async)
-                regenerateEntitySummary(supabase, entity.id).catch(error => {
+                regenerateEntitySummary(db, entity.id).catch(error => {
                   console.error('❌ EntityCardRefresh: Error regenerating summary:', error);
                 });
               }
@@ -89,7 +89,7 @@ export async function handleNewCard(supabase, newCard) {
       console.log('🔍 EntityCardRefresh: Checking for new entities (periodic check)');
       
       // Get recent cards (including the new one) to check for new entities
-      const { data: recentCards, error: cardsError } = await supabase
+      const { data: recentCards, error: cardsError } = await db
         .from('cards')
         .select('*')
         .eq('project_id', projectId)
@@ -111,7 +111,7 @@ export async function handleNewCard(supabase, newCard) {
           
           if (!existsAlready && entityData.confidenceScore > 0.7) {
             console.log('🆕 EntityCardRefresh: Creating new entity card for', entityData.entityName);
-            const created = await createEntityCard(supabase, entityData, recentCards);
+            const created = await createEntityCard(db, entityData, recentCards);
             if (created) {
               actionsPerformed.newEntitiesDetected++;
             }
@@ -131,16 +131,16 @@ export async function handleNewCard(supabase, newCard) {
 
 /**
  * Handle when a card is updated - update related entity cards
- * @param {Object} supabase - Supabase client  
+ * @param {Object} db - Supabase client  
  * @param {Object} updatedCard - The updated card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleUpdatedCard(supabase, updatedCard) {
+export async function handleUpdatedCard(db, updatedCard) {
   console.log('🔄 EntityCardRefresh: Processing updated card:', updatedCard.title);
   
   try {
     // Find entity cards that reference this card
-    const { data: relatedCards, error: cardsError } = await supabase
+    const { data: relatedCards, error: cardsError } = await db
       .from('entity_card_cards')
       .select(`
         entity_card_id,
@@ -165,7 +165,7 @@ export async function handleUpdatedCard(supabase, updatedCard) {
       const entityCard = relation.entity_cards;
       if (entityCard) {
         // Update timestamp
-        const { error: updateError } = await supabase
+        const { error: updateError } = await db
           .from('entity_cards')
           .update({ last_cards_check: new Date().toISOString() })
           .eq('id', entityCard.id);
@@ -175,7 +175,7 @@ export async function handleUpdatedCard(supabase, updatedCard) {
           console.log('🔄 EntityCardRefresh: Marked entity for refresh:', entityCard.entity_name);
           
           // Trigger summary regeneration (async)
-          regenerateEntitySummary(supabase, entityCard.id).catch(error => {
+          regenerateEntitySummary(db, entityCard.id).catch(error => {
             console.error('❌ EntityCardRefresh: Error regenerating summary:', error);
           });
         }
@@ -193,16 +193,16 @@ export async function handleUpdatedCard(supabase, updatedCard) {
 
 /**
  * Handle when a card is deleted - remove from entity relationships and potentially delete entity cards
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {string} deletedCardId - ID of the deleted card
  * @returns {Object} - Summary of actions taken
  */
-export async function handleDeletedCard(supabase, deletedCardId) {
+export async function handleDeletedCard(db, deletedCardId) {
   console.log('🗑️ EntityCardRefresh: Processing deleted card:', deletedCardId);
   
   try {
     // Find and remove entity-card relationships
-    const { data: relationships, error: fetchError } = await supabase
+    const { data: relationships, error: fetchError } = await db
       .from('entity_card_cards')
       .select(`
         entity_card_id,
@@ -221,7 +221,7 @@ export async function handleDeletedCard(supabase, deletedCardId) {
     }
     
     // Remove relationships
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('entity_card_cards')
       .delete()
       .eq('card_id', deletedCardId);
@@ -242,7 +242,7 @@ export async function handleDeletedCard(supabase, deletedCardId) {
         
         // If entity has no more cards, delete the card
         if (newCardCount === 0) {
-          const { error: deleteEntityError } = await supabase
+          const { error: deleteEntityError } = await db
             .from('entity_cards')
             .delete()
             .eq('id', entityCard.id);
@@ -253,7 +253,7 @@ export async function handleDeletedCard(supabase, deletedCardId) {
           }
         } else {
           // Update card count and timestamp
-          const { error: updateError } = await supabase
+          const { error: updateError } = await db
             .from('entity_cards')
             .update({
               card_count: newCardCount,
@@ -266,7 +266,7 @@ export async function handleDeletedCard(supabase, deletedCardId) {
             console.log('🔄 EntityCardRefresh: Updated entity card count:', entityCard.entity_name);
             
             // Trigger summary regeneration (async)
-            regenerateEntitySummary(supabase, entityCard.id).catch(error => {
+            regenerateEntitySummary(db, entityCard.id).catch(error => {
               console.error('❌ EntityCardRefresh: Error regenerating summary:', error);
             });
           }
@@ -291,12 +291,12 @@ export async function handleDeletedCard(supabase, deletedCardId) {
 
 /**
  * Create a new entity card
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {Object} entityData - Entity data from detection
  * @param {Array} cards - All cards for context
  * @returns {boolean} - Whether card was created successfully
  */
-async function createEntityCard(supabase, entityData, cards) {
+async function createEntityCard(db, entityData, cards) {
   try {
     // Generate summary
     const { config: modelConf, client: openai } = getModelConfig('micro');
@@ -357,7 +357,7 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
       last_cards_check: new Date().toISOString()
     };
     
-    const { data: newCard, error: cardError } = await supabase
+    const { data: newCard, error: cardError } = await db
       .from('entity_cards')
       .insert(cardData)
       .select()
@@ -375,7 +375,7 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
       relevance_score: rc.relevanceScore
     }));
     
-    const { error: relationError } = await supabase
+    const { error: relationError } = await db
       .from('entity_card_cards')
       .insert(cardRelationships);
     
@@ -394,13 +394,13 @@ Write a 2-3 sentence summary that introduces the entity and highlights key infor
 
 /**
  * Regenerate summary for an entity card based on current cards
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {string} entityCardId - ID of the entity card to regenerate
  */
-async function regenerateEntitySummary(supabase, entityCardId) {
+async function regenerateEntitySummary(db, entityCardId) {
   try {
     // Get entity card and its related cards
-    const { data: cardData, error: cardError } = await supabase
+    const { data: cardData, error: cardError } = await db
       .from('entity_cards')
       .select(`
         *,
@@ -453,7 +453,7 @@ Write a 2-3 sentence summary that captures all current information about this en
     }
     
     // Update entity card with new summary
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from('entity_cards')
       .update({
         summary: newSummary,

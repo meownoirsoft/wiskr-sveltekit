@@ -151,7 +151,7 @@ Summary:`;
           model: modelConf.name,
           inputText,
           outputText: rawSummary,
-          supabase: locals.db,
+          db: locals.db,
           operation: 'entity-cards-generate'
         });
         

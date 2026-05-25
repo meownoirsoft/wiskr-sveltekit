@@ -172,12 +172,12 @@ export async function generateSummary(content, type = 'deck') {
 /**
  * Generate context for a deck
  */
-export async function generateDeckContext(deckId, supabaseClient) {
+export async function generateDeckContext(deckId, db) {
 	try {
 		console.log(`Generating context for deck ${deckId}`);
 
 		// Get deck with all its sections and cards
-		const { data: deck, error: deckError } = await supabaseClient
+		const { data: deck, error: deckError } = await db
 			.from('decks')
 			.select(`
 				id,
@@ -237,7 +237,7 @@ export async function generateDeckContext(deckId, supabaseClient) {
 		const embedding = await generateEmbedding(contextText);
 
 		// Update deck with context
-		const { error: updateError } = await supabaseClient
+		const { error: updateError } = await db
 			.from('decks')
 			.update({
 				summary,
@@ -275,12 +275,12 @@ export async function generateDeckContext(deckId, supabaseClient) {
 /**
  * Generate context for a deck section
  */
-export async function generateSectionContext(sectionId, supabaseClient) {
+export async function generateSectionContext(sectionId, db) {
 	try {
 		console.log(`Generating context for section ${sectionId}`);
 
 		// Get section with its cards
-		const { data: section, error: sectionError } = await supabaseClient
+		const { data: section, error: sectionError } = await db
 			.from('deck_sections')
 			.select(`
 				id,
@@ -326,7 +326,7 @@ export async function generateSectionContext(sectionId, supabaseClient) {
 		const embedding = await generateEmbedding(contextText);
 
 		// Update section with context
-		const { error: updateError } = await supabaseClient
+		const { error: updateError } = await db
 			.from('deck_sections')
 			.update({
 				summary,
@@ -364,10 +364,10 @@ export async function generateSectionContext(sectionId, supabaseClient) {
 /**
  * Check if a deck has enough content for context generation
  */
-export async function getDeckContextReadiness(deckId, supabaseClient) {
+export async function getDeckContextReadiness(deckId, db) {
 	try {
 		// Count cards in deck
-		const { count: cardCount, error } = await supabaseClient
+		const { count: cardCount, error } = await db
 			.from('deck_cards')
 			.select('*', { count: 'exact', head: true })
 			.eq('deck_id', deckId);
@@ -375,7 +375,7 @@ export async function getDeckContextReadiness(deckId, supabaseClient) {
 		if (error) throw error;
 
 		// Check if deck has description
-		const { data: deck, error: deckError } = await supabaseClient
+		const { data: deck, error: deckError } = await db
 			.from('decks')
 			.select('description')
 			.eq('id', deckId)
@@ -416,10 +416,10 @@ export async function getDeckContextReadiness(deckId, supabaseClient) {
 /**
  * Check if a section has enough content for context generation
  */
-export async function getSectionContextReadiness(sectionId, supabaseClient) {
+export async function getSectionContextReadiness(sectionId, db) {
 	try {
 		// Count cards in section
-		const { count: cardCount, error } = await supabaseClient
+		const { count: cardCount, error } = await db
 			.from('deck_cards')
 			.select('*', { count: 'exact', head: true })
 			.eq('section_id', sectionId);

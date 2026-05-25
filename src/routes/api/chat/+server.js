@@ -19,7 +19,7 @@ export const POST = async ({ request, locals }) => {
   const { config: modelConf, client: openai } = getModelConfig(modelKey);
 
   // 1) Build base context
-  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, supabase: locals.db });
+  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, db: locals.db });
 
   // 2) One-time overrides
   const nowISO = new Date().toISOString();

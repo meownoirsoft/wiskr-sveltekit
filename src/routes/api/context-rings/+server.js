@@ -27,7 +27,7 @@ export async function POST({ request, locals }) {
     
     // Build context rings
     const context = await getContextRings({
-      supabase: locals.db,
+      db: locals.db,
       projectId,
       operation,
       targetCards,

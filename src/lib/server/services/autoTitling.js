@@ -123,14 +123,14 @@ export function shouldAutoGenerateTitle(session, messages) {
  * Auto-generates and updates a session title if needed
  * @param {string} sessionId - Session ID
  * @param {string} projectId - Project ID  
- * @param {Object} supabase - Supabase client
+ * @param {Object} db - Supabase client
  * @param {string} modelKey - Model to use for generation
  * @returns {Promise<string|null>} - New title if generated, null if not needed
  */
-export async function autoUpdateSessionTitle(sessionId, projectId, supabase, modelKey = 'speed') {
+export async function autoUpdateSessionTitle(sessionId, projectId, db, modelKey = 'speed') {
   try {
     // Get session details
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await db
       .from('conversation_sessions')
       .select('*')
       .eq('id', sessionId)
@@ -142,7 +142,7 @@ export async function autoUpdateSessionTitle(sessionId, projectId, supabase, mod
     }
 
     // Get messages for this session
-    const { data: messages, error: messagesError } = await supabase
+    const { data: messages, error: messagesError } = await db
       .from('messages')
       .select('role, content, created_at')
       .eq('session_id', sessionId)
@@ -166,7 +166,7 @@ export async function autoUpdateSessionTitle(sessionId, projectId, supabase, mod
     }
 
     // Update session with new title
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from('conversation_sessions')
       .update({ 
         session_name: newTitle,

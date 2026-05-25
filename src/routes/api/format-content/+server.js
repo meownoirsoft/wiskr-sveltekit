@@ -249,7 +249,7 @@ Format the content to be ready to post on ${platformConfig.name}.`;
       model: modelConf.name,
       inputText,
       outputText: formatted,
-      supabase: locals.db,
+      db: locals.db,
       operation: 'format-content'
     });
     
@@ -279,7 +279,7 @@ Format the content to be ready to post on ${platformConfig.name}.`;
         model: modelConf.name,
         inputText: shortenInputText,
         outputText: shorterFormatted,
-        supabase: locals.db,
+        db: locals.db,
         operation: 'format-content-shorten'
       });
       

@@ -62,7 +62,7 @@ export async function createCardChunks(cardId, content, maxTokens = 512) {
     }
 
     // Delete existing chunks
-    await supabase
+    await db
       .from('card_chunks')
       .delete()
       .eq('card_id', cardId);
@@ -78,7 +78,7 @@ export async function createCardChunks(cardId, content, maxTokens = 512) {
       // Generate embedding for chunk
       const embedding = await generateEmbedding(chunkContent);
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('card_chunks')
         .insert({
           card_id: cardId,
@@ -108,7 +108,7 @@ export async function createCardChunks(cardId, content, maxTokens = 512) {
  */
 export async function getCardChunks(cardId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('card_chunks')
       .select('*')
       .eq('card_id', cardId)
@@ -129,7 +129,7 @@ export async function getCardChunks(cardId) {
  */
 export async function deleteCardChunks(cardId) {
   try {
-    const { error } = await supabase
+    const { error } = await db
       .from('card_chunks')
       .delete()
       .eq('card_id', cardId);
@@ -158,7 +158,7 @@ export async function searchCardChunks(query, projectId, limit = 10) {
     }
 
     // Search using vector similarity
-    const { data, error } = await supabase.rpc('search_card_chunks_semantic', {
+    const { data, error } = await db.rpc('search_card_chunks_semantic', {
       query_embedding: queryEmbedding,
       project_id: projectId,
       match_threshold: 0.3,

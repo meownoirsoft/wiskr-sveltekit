@@ -48,8 +48,8 @@ function cosineSimilarity(vecA, vecB) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export async function buildContext({ supabase, projectId, userMessage, branchId = 'main' }) {
-  if (!supabase) throw new Error('buildContext: missing `supabase`');
+export async function buildContext({ db, projectId, userMessage, branchId = 'main' }) {
+  if (!db) throw new Error('buildContext: missing `db`');
   if (!projectId) throw new Error('buildContext: missing `projectId`');
 
   console.log('🏗️  buildContext: Starting context build for project:', projectId, 'branch:', branchId);
@@ -59,7 +59,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
 
   // 0) PROJECT DESCRIPTION - ULTIMATE HIGHEST PRIORITY
   // This is where users define the core aims and goals of their project
-  const { data: projWithDesc } = await supabase
+  const { data: projWithDesc } = await db
     .from('projects')
     .select('name, description, brief_text')
     .eq('id', projectId)
@@ -103,8 +103,8 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
   // 1) PINNED FACTS FIRST - CRITICAL PRIORITY
   // Get ALL pinned facts/docs - they're critical and must never be missed
   const [{ data: pFacts }, { data: pDocs }] = await Promise.all([
-    supabase.from('facts').select('id,type,key,value').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_FACTS),
-    supabase.from('docs').select('id,title,content').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_DOCS)
+    db.from('facts').select('id,type,key,value').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_FACTS),
+    db.from('docs').select('id,title,content').eq('project_id', projectId).eq('pinned', true).limit(MAX_PINNED_DOCS)
   ]);
   
   if (pFacts?.length) {
@@ -137,7 +137,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
 
   // 2) ENTITY CARDS - HIGH PRIORITY (coherent summaries)
   // Get entity cards for coherent context, supplement with atomic facts
-  const { data: entityCards, error: cardsError } = await supabase
+  const { data: entityCards, error: cardsError } = await db
     .from('entity_cards')
     .select('id, entity_name, entity_type, summary, confidence_score, embedding')
     .eq('project_id', projectId)
@@ -189,8 +189,8 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     console.log('🎯 Attempting vector similarity search...');
     try {
       const [{ data: simFacts }, { data: simDocs }] = await Promise.all([
-        supabase.rpc('match_facts', { p_project_id: projectId, p_query: qvec, p_limit: K_FACTS }),
-        supabase.rpc('match_docs',  { p_project_id: projectId, p_query: qvec, p_limit: K_DOCS  })
+        db.rpc('match_facts', { p_project_id: projectId, p_query: qvec, p_limit: K_FACTS }),
+        db.rpc('match_docs',  { p_project_id: projectId, p_query: qvec, p_limit: K_DOCS  })
       ]);
 
       console.log('✅ Vector search successful!');
@@ -235,8 +235,8 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
     // 6) Fallback if no embeddings yet or API hiccup:
     // Increased limits for better fallback coverage
     const [{ data: rFacts }, { data: rDocs }] = await Promise.all([
-      supabase.from('facts').select('type,key,value').eq('project_id', projectId).order('created_at', { ascending: false }).limit(FALLBACK_FACTS),
-      supabase.from('docs').select('title,content').eq('project_id', projectId).order('created_at', { ascending: false }).limit(FALLBACK_DOCS)
+      db.from('facts').select('type,key,value').eq('project_id', projectId).order('created_at', { ascending: false }).limit(FALLBACK_FACTS),
+      db.from('docs').select('title,content').eq('project_id', projectId).order('created_at', { ascending: false }).limit(FALLBACK_DOCS)
     ]);
     
     console.log('📅 Fallback facts:', rFacts?.length || 0, 'found -', rFacts?.map(f => f.key) || []);
@@ -252,7 +252,7 @@ export async function buildContext({ supabase, projectId, userMessage, branchId 
 
   // 7) Add recent conversation history from this branch (last 10 messages)
   console.log('💬 Fetching conversation history for branch:', branchId);
-  const { data: recentMessages } = await supabase
+  const { data: recentMessages } = await db
     .from('messages')
     .select('role, content')
     .eq('project_id', projectId)

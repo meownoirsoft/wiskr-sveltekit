@@ -85,7 +85,7 @@ async function denseTopK(queryEmbedding, projectId, topK, includeCards, includeD
 
     // Search cards
     if (includeCards) {
-      const { data: cardResults } = await supabase.rpc('search_cards_semantic', {
+      const { data: cardResults } = await db.rpc('search_cards_semantic', {
         query_embedding: queryEmbedding,
         project_id: projectId,
         match_threshold: 0.2, // Lower threshold for candidate generation
@@ -104,7 +104,7 @@ async function denseTopK(queryEmbedding, projectId, topK, includeCards, includeD
 
     // Search decks
     if (includeDecks) {
-      const { data: deckResults } = await supabase.rpc('search_decks_semantic', {
+      const { data: deckResults } = await db.rpc('search_decks_semantic', {
         query_embedding: queryEmbedding,
         match_threshold: 0.2,
         match_count: topK
@@ -122,7 +122,7 @@ async function denseTopK(queryEmbedding, projectId, topK, includeCards, includeD
 
     // Search deck sections
     if (includeSections) {
-      const { data: sectionResults } = await supabase.rpc('search_deck_sections_semantic', {
+      const { data: sectionResults } = await db.rpc('search_deck_sections_semantic', {
         query_embedding: queryEmbedding,
         match_threshold: 0.2,
         match_count: topK
@@ -158,7 +158,7 @@ async function sparseTopK(query, projectId, topK, includeCards, includeDecks, in
 
     // Search cards
     if (includeCards) {
-      const { data: cardResults } = await supabase
+      const { data: cardResults } = await db
         .from('cards')
         .select('id, title, content, tags, rarity, progress, created_at, deck_id, section_id')
         .eq('project_id', projectId)
@@ -177,7 +177,7 @@ async function sparseTopK(query, projectId, topK, includeCards, includeDecks, in
 
     // Search decks
     if (includeDecks) {
-      const { data: deckResults } = await supabase
+      const { data: deckResults } = await db
         .from('decks')
         .select('id, name, description, summary, tags, created_at')
         .eq('project_id', projectId)
@@ -196,10 +196,10 @@ async function sparseTopK(query, projectId, topK, includeCards, includeDecks, in
 
     // Search deck sections
     if (includeSections) {
-      const { data: sectionResults } = await supabase
+      const { data: sectionResults } = await db
         .from('deck_sections')
         .select('id, name, summary, tags, deck_id, created_at')
-        .eq('deck_id', supabase.from('decks').select('id').eq('project_id', projectId))
+        .eq('deck_id', db.from('decks').select('id').eq('project_id', projectId))
         .textSearch('searchable_text', searchTerms)
         .limit(topK);
 
@@ -227,7 +227,7 @@ async function sparseTopK(query, projectId, topK, includeCards, includeDecks, in
 async function graphTopK(query, projectId, relationshipTypes, topK) {
   try {
     // Find cards that match the query
-    const { data: matchingCards } = await supabase
+    const { data: matchingCards } = await db
       .from('cards')
       .select('id, deck_id, section_id')
       .eq('project_id', projectId)
@@ -239,7 +239,7 @@ async function graphTopK(query, projectId, relationshipTypes, topK) {
     const cardIds = matchingCards.map(card => card.id);
 
     // Find related cards through relationships
-    const { data: relationships } = await supabase
+    const { data: relationships } = await db
       .from('card_relationships')
       .select(`
         target_card_id,
@@ -253,7 +253,7 @@ async function graphTopK(query, projectId, relationshipTypes, topK) {
       .in('relationship_type', relationshipTypes);
 
     // Also get incoming relationships
-    const { data: incomingRelationships } = await supabase
+    const { data: incomingRelationships } = await db
       .from('card_relationships')
       .select(`
         source_card_id,
@@ -396,7 +396,7 @@ async function getStructuralContext(projectId) {
     // Get recent working set (last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: recentCards } = await supabase
+    const { data: recentCards } = await db
       .from('cards')
       .select('deck_id, section_id')
       .eq('project_id', projectId)

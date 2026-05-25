@@ -6,10 +6,10 @@ import { generateEmbedding } from './embeddings.js';
 /**
  * Extract unique terms and concepts from card content to build a world glossary
  */
-export async function extractGlossaryTerms(projectId, supabaseClient) {
+export async function extractGlossaryTerms(projectId, db) {
 	try {
 		// Get all cards for this project
-		const { data: cards, error } = await supabaseClient
+		const { data: cards, error } = await db
 			.from('cards')
 			.select('title, content')
 			.eq('project_id', projectId);
@@ -61,10 +61,10 @@ export async function extractGlossaryTerms(projectId, supabaseClient) {
 /**
  * Analyze card content to identify recurring themes and ideas
  */
-export async function extractThemes(projectId, supabaseClient) {
+export async function extractThemes(projectId, db) {
 	try {
 		// Get all cards for this project
-		const { data: cards, error } = await supabaseClient
+		const { data: cards, error } = await db
 			.from('cards')
 			.select('title, content, tags')
 			.eq('project_id', projectId);
@@ -116,12 +116,12 @@ export async function extractThemes(projectId, supabaseClient) {
 /**
  * Generate world context for a project
  */
-export async function generateWorldContext(projectId, supabaseClient) {
+export async function generateWorldContext(projectId, db) {
 	try {
 		console.log(`Generating world context for project ${projectId}`);
 
 		// Get project description
-		const { data: project, error: projectError } = await supabaseClient
+		const { data: project, error: projectError } = await db
 			.from('projects')
 			.select('description')
 			.eq('id', projectId)
@@ -131,8 +131,8 @@ export async function generateWorldContext(projectId, supabaseClient) {
 
 		// Extract glossary and themes
 		const [glossaryTerms, themes] = await Promise.all([
-			extractGlossaryTerms(projectId, supabaseClient),
-			extractThemes(projectId, supabaseClient)
+			extractGlossaryTerms(projectId, db),
+			extractThemes(projectId, db)
 		]);
 
 		// Generate embeddings
@@ -142,7 +142,7 @@ export async function generateWorldContext(projectId, supabaseClient) {
 		]);
 
 		// Update project with world context
-		const { error: updateError } = await supabaseClient
+		const { error: updateError } = await db
 			.from('projects')
 			.update({
 				world_glossary: glossaryTerms.join(', '),
@@ -176,10 +176,10 @@ export async function generateWorldContext(projectId, supabaseClient) {
 /**
  * Check if a project has enough content for world context generation
  */
-export async function getWorldContextReadiness(projectId, supabaseClient) {
+export async function getWorldContextReadiness(projectId, db) {
 	try {
 		// Count cards in project
-		const { count: cardCount, error } = await supabaseClient
+		const { count: cardCount, error } = await db
 			.from('cards')
 			.select('*', { count: 'exact', head: true })
 			.eq('project_id', projectId);
@@ -187,7 +187,7 @@ export async function getWorldContextReadiness(projectId, supabaseClient) {
 		if (error) throw error;
 
 		// Check if project has description
-		const { data: project, error: projectError } = await supabaseClient
+		const { data: project, error: projectError } = await db
 			.from('projects')
 			.select('description')
 			.eq('id', projectId)

@@ -107,7 +107,7 @@ Summary:`;
           model: modelConf.name,
           inputText,
           outputText: rawSummary,
-          supabase: db,
+          db,
           operation: 'admin-import-entity'
         });
 

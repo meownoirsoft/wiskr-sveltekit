@@ -76,7 +76,7 @@ async function denseSearch(queryEmbedding, projectId, limit) {
 
   try {
     // Search cards
-    const { data: cardResults } = await supabase.rpc('search_cards_semantic', {
+    const { data: cardResults } = await db.rpc('search_cards_semantic', {
       query_embedding: queryEmbedding,
       project_id: projectId,
       match_threshold: 0.3,
@@ -84,21 +84,21 @@ async function denseSearch(queryEmbedding, projectId, limit) {
     });
 
     // Search decks
-    const { data: deckResults } = await supabase.rpc('search_decks_semantic', {
+    const { data: deckResults } = await db.rpc('search_decks_semantic', {
       query_embedding: queryEmbedding,
       match_threshold: 0.3,
       match_count: limit
     });
 
     // Search deck sections
-    const { data: sectionResults } = await supabase.rpc('search_deck_sections_semantic', {
+    const { data: sectionResults } = await db.rpc('search_deck_sections_semantic', {
       query_embedding: queryEmbedding,
       match_threshold: 0.3,
       match_count: limit
     });
 
     // Search card chunks
-    const { data: chunkResults } = await supabase.rpc('search_card_chunks_semantic', {
+    const { data: chunkResults } = await db.rpc('search_card_chunks_semantic', {
       query_embedding: queryEmbedding,
       project_id: projectId,
       match_threshold: 0.3,
@@ -127,7 +127,7 @@ async function sparseSearch(query, projectId, limit) {
     if (!searchTerms) return [];
 
     // Search cards
-    const { data: cardResults } = await supabase
+    const { data: cardResults } = await db
       .from('cards')
       .select('id, title, content, tags, rarity, progress, created_at')
       .eq('project_id', projectId)
@@ -135,7 +135,7 @@ async function sparseSearch(query, projectId, limit) {
       .limit(limit);
 
     // Search decks
-    const { data: deckResults } = await supabase
+    const { data: deckResults } = await db
       .from('decks')
       .select('id, name, description, summary, tags, created_at')
       .eq('project_id', projectId)
@@ -143,15 +143,15 @@ async function sparseSearch(query, projectId, limit) {
       .limit(limit);
 
     // Search deck sections
-    const { data: sectionResults } = await supabase
+    const { data: sectionResults } = await db
       .from('deck_sections')
       .select('id, name, summary, tags, deck_id, created_at')
-      .eq('deck_id', supabase.from('decks').select('id').eq('project_id', projectId))
+      .eq('deck_id', db.from('decks').select('id').eq('project_id', projectId))
       .textSearch('searchable_text', searchTerms)
       .limit(limit);
 
     // Search world context
-    const { data: worldResults } = await supabase
+    const { data: worldResults } = await db
       .from('projects')
       .select('id, name, description, created_at')
       .eq('id', projectId)
@@ -177,7 +177,7 @@ async function sparseSearch(query, projectId, limit) {
 async function graphSearch(query, projectId, relationshipTypes, limit) {
   try {
     // First find cards that match the query
-    const { data: matchingCards } = await supabase
+    const { data: matchingCards } = await db
       .from('cards')
       .select('id')
       .eq('project_id', projectId)
@@ -189,7 +189,7 @@ async function graphSearch(query, projectId, relationshipTypes, limit) {
     const cardIds = matchingCards.map(card => card.id);
 
     // Find related cards through relationships
-    const { data: relationships } = await supabase
+    const { data: relationships } = await db
       .from('card_relationships')
       .select(`
         target_card_id,
@@ -203,7 +203,7 @@ async function graphSearch(query, projectId, relationshipTypes, limit) {
       .in('relationship_type', relationshipTypes);
 
     // Also get incoming relationships
-    const { data: incomingRelationships } = await supabase
+    const { data: incomingRelationships } = await db
       .from('card_relationships')
       .select(`
         source_card_id,
