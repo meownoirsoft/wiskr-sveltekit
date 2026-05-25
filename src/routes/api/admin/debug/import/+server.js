@@ -5,7 +5,7 @@ import { isAdmin } from '$lib/auth/admin';
 export const GET = async ({ locals, url }) => {
   try {
     // Check admin permissions
-    const adminCheck = await isAdmin(locals.supabase, locals.user);
+    const adminCheck = await isAdmin(locals.db, locals.user);
     if (!adminCheck.isAdmin) {
       return json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -47,7 +47,7 @@ export const GET = async ({ locals, url }) => {
     }
 
     // Check if user can see their own projects (with regular client)
-    const { data: userVisibleProjects, error: userError } = await locals.supabase
+    const { data: userVisibleProjects, error: userError } = await locals.db
       .from('projects')
       .select('id, name, created_at')
       .eq('user_id', userId);

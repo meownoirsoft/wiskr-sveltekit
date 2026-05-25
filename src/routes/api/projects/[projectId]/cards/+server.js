@@ -9,13 +9,14 @@ export async function GET({ params, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify user has access to the project
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -27,7 +28,7 @@ export async function GET({ params, locals }) {
     }
 
     // Get cards for the project
-    const { data: cards, error: cardsError } = await locals.supabase
+    const { data: cards, error: cardsError } = await locals.db
       .from('cards')
       .select('id, title, content, tags, rarity, progress, mana_cost, art_url, created_at, project_id')
       .eq('project_id', projectId)

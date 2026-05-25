@@ -11,7 +11,7 @@ export const POST = async ({ request, locals }) => {
   const body = await request.json();
   const { projectId, message, modelKey = 'speed', tz = 'UTC', branchId = 'main', sessionId, systemContext } = body;
 
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!projectId || !message?.trim()) return json({ message: 'Bad request' }, { status: 400 });
 
@@ -19,11 +19,11 @@ export const POST = async ({ request, locals }) => {
   const { config: modelConf, client: openai } = getModelConfig(modelKey);
 
   // 1) Build base context
-  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, supabase: locals.supabase });
+  const { messages: baseMessages } = await buildContext({ projectId, userMessage: message, branchId, supabase: locals.db });
 
   // 2) One-time overrides
   const nowISO = new Date().toISOString();
-  const { data: overrides } = await locals.supabase
+  const { data: overrides } = await locals.db
     .from('context_overrides')
     .select('*')
     .eq('project_id', projectId)
@@ -35,11 +35,11 @@ export const POST = async ({ request, locals }) => {
 
   let oFacts = [], oDocs = [];
   if (factIds.length) {
-    const { data } = await locals.supabase.from('facts').select('*').in('id', factIds);
+    const { data } = await locals.db.from('facts').select('*').in('id', factIds);
     oFacts = data || [];
   }
   if (docIds.length) {
-    const { data } = await locals.supabase.from('docs').select('*').in('id', docIds);
+    const { data } = await locals.db.from('docs').select('*').in('id', docIds);
     oDocs = data || [];
   }
 
@@ -66,7 +66,7 @@ export const POST = async ({ request, locals }) => {
   // 3) Soft daily cap (check BEFORE calling the model)
   const limit = Number(DAILY_TOKEN_LIMIT || 0) || 200_000;
   const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
-  const { data: todayRows } = await locals.supabase
+  const { data: todayRows } = await locals.db
     .from('usage_logs')
     .select('tokens_in,tokens_out')
     .eq('user_id', user.id)
@@ -91,7 +91,7 @@ export const POST = async ({ request, locals }) => {
   console.log('💾 Session ID type and value:', typeof sessionId, sessionId);
   console.log('💾 Branch ID type and value:', typeof branchId, branchId);
   
-  const { data: userMsgResult, error: userMsgError } = await locals.supabase.from('messages').insert({
+  const { data: userMsgResult, error: userMsgError } = await locals.db.from('messages').insert({
     project_id: projectId,
     session_id: sessionId,
     role: 'user',
@@ -132,7 +132,7 @@ export const POST = async ({ request, locals }) => {
         
         // 7) Save assistant message (with processed content)
         console.log('💾 Saving assistant message to DB:', { projectId, sessionId, branchId, role: 'assistant', contentLength: processedContent.length, modelKey, processed: processedContent !== full });
-        const { data: assistantMsgResult, error: assistantMsgError } = await locals.supabase.from('messages').insert({
+        const { data: assistantMsgResult, error: assistantMsgError } = await locals.db.from('messages').insert({
           project_id: projectId,
           session_id: sessionId,
           role: 'assistant',
@@ -149,7 +149,7 @@ export const POST = async ({ request, locals }) => {
 
         // 7.5) Auto-generate session title if needed (don't await, let it run in background)
         if (sessionId) {
-          autoUpdateSessionTitle(sessionId, projectId, locals.supabase, modelKey)
+          autoUpdateSessionTitle(sessionId, projectId, locals.db, modelKey)
             .then(newTitle => {
               if (newTitle) {
                 console.log('🏷️ Auto-generated session title:', newTitle);
@@ -175,7 +175,7 @@ export const POST = async ({ request, locals }) => {
         };
         
         // console.log('Inserting usage log:', usagePayload);
-        const { data: usageResult, error: usageError } = await locals.supabase.from('usage_logs').insert(usagePayload).select();
+        const { data: usageResult, error: usageError } = await locals.db.from('usage_logs').insert(usagePayload).select();
         
         if (usageError) {
           console.error('Usage log insertion error:', usageError);
@@ -185,7 +185,7 @@ export const POST = async ({ request, locals }) => {
 
         // 9) Clear one-time overrides
         if ((overrides || []).length) {
-          await locals.supabase
+          await locals.db
             .from('context_overrides')
             .delete()
             .eq('project_id', projectId)

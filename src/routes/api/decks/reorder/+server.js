@@ -1,8 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST({ request, locals }) {
   try {
@@ -14,7 +12,7 @@ export async function POST({ request, locals }) {
 
     // Update each deck's position
     const updatePromises = deckOrders.map(({ deckId, position }) => 
-      supabase
+      db
         .from('decks')
         .update({ position })
         .eq('id', deckId)

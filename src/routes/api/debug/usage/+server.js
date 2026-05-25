@@ -4,7 +4,7 @@ export const GET = async ({ url, locals }) => {
   const projectId = url.searchParams.get('projectId');
   const tz = url.searchParams.get('tz') || 'UTC';
 
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user || !projectId) return new Response('Bad Request', { status: 400 });
 
   // Get today's boundary
@@ -20,7 +20,7 @@ export const GET = async ({ url, locals }) => {
   });
 
   // Get all usage logs for today
-  const { data: todayLogs, error } = await locals.supabase
+  const { data: todayLogs, error } = await locals.db
     .from('usage_logs')
     .select('*')
     .eq('user_id', user.id)

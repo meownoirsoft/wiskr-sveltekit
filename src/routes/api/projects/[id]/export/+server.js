@@ -7,7 +7,7 @@ import { generateSingleMarkdown, generateMultipleMarkdown, generateDocx, generat
  */
 export async function GET({ params, locals, url }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -24,7 +24,7 @@ export async function GET({ params, locals, url }) {
     const includeCards = url.searchParams.get('includeCards') !== 'false';
 
     // Verify user has access to this project
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('*')
       .eq('id', projectId)
@@ -65,7 +65,7 @@ export async function GET({ params, locals, url }) {
 
     // Get project persona
     if (project.persona_id) {
-      const { data: persona } = await locals.supabase
+      const { data: persona } = await locals.db
         .from('personas')
         .select('*')
         .eq('id', project.persona_id)
@@ -82,7 +82,7 @@ export async function GET({ params, locals, url }) {
 
     // Get all sessions for this project
     if (includeSessions) {
-      const { data: sessions } = await locals.supabase
+      const { data: sessions } = await locals.db
         .from('conversation_sessions')
         .select('*')
         .eq('project_id', projectId)
@@ -98,7 +98,7 @@ export async function GET({ params, locals, url }) {
 
     // Get all branches for this project
     if (includeBranches) {
-      const { data: branches } = await locals.supabase
+      const { data: branches } = await locals.db
         .from('conversation_branches')
         .select('*')
         .eq('project_id', projectId)
@@ -114,7 +114,7 @@ export async function GET({ params, locals, url }) {
 
     // Get messages if requested
     if (includeMessages) {
-      const { data: messages } = await locals.supabase
+      const { data: messages } = await locals.db
         .from('messages')
         .select('*')
         .eq('project_id', projectId)
@@ -131,7 +131,7 @@ export async function GET({ params, locals, url }) {
     // Get facts if requested
     if (includeFacts) {
       // Get project fact types first
-      const { data: factTypes } = await locals.supabase
+      const { data: factTypes } = await locals.db
         .from('project_fact_types')
         .select('*')
         .eq('project_id', projectId)
@@ -145,7 +145,7 @@ export async function GET({ params, locals, url }) {
       }
 
       // Get facts (assuming there's a facts table)
-      const { data: facts } = await locals.supabase
+      const { data: facts } = await locals.db
         .from('facts')
         .select('*')
         .eq('project_id', projectId)
@@ -161,7 +161,7 @@ export async function GET({ params, locals, url }) {
 
     // Get docs if requested
     if (includeDocs) {
-      const { data: docs } = await locals.supabase
+      const { data: docs } = await locals.db
         .from('docs')
         .select('*')
         .eq('project_id', projectId)
@@ -177,7 +177,7 @@ export async function GET({ params, locals, url }) {
 
     // Get questions if requested
     if (includeQuestions) {
-      const { data: questions } = await locals.supabase
+      const { data: questions } = await locals.db
         .from('project_questions')
         .select('*')
         .eq('project_id', projectId)
@@ -193,7 +193,7 @@ export async function GET({ params, locals, url }) {
 
     // Get decks if requested
     if (includeDecks) {
-      const { data: decks } = await locals.supabase
+      const { data: decks } = await locals.db
         .from('decks')
         .select('*')
         .eq('project_id', projectId)
@@ -210,7 +210,7 @@ export async function GET({ params, locals, url }) {
 
     // Get deck sections if requested
     if (includeDecks) {
-      const { data: deckSections } = await locals.supabase
+      const { data: deckSections } = await locals.db
         .from('deck_sections')
         .select(`
           *,
@@ -231,7 +231,7 @@ export async function GET({ params, locals, url }) {
 
     // Get deck cards if requested
     if (includeDecks) {
-      const { data: deckCards } = await locals.supabase
+      const { data: deckCards } = await locals.db
         .from('deck_cards')
         .select(`
           *,
@@ -254,7 +254,7 @@ export async function GET({ params, locals, url }) {
 
     // Get cards if requested
     if (includeCards) {
-      const { data: cards } = await locals.supabase
+      const { data: cards } = await locals.db
         .from('cards')
         .select('*')
         .eq('project_id', projectId)

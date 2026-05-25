@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import { getContextScore } from '$lib/server/utils/contextScore.js';
 
 export const GET = async ({ params, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
   
   const { projectId } = params;
@@ -14,7 +14,7 @@ export const GET = async ({ params, locals }) => {
 
   try {
     // Check that user has access to this project (RLS will handle this)
-    const { data: project } = await locals.supabase
+    const { data: project } = await locals.db
       .from('projects')
       .select('id, name')
       .eq('id', projectId)
@@ -25,7 +25,7 @@ export const GET = async ({ params, locals }) => {
     }
 
     // Get the context score (cached or calculate fresh)
-    const score = await getContextScore(locals.supabase, projectId);
+    const score = await getContextScore(locals.db, projectId);
     
     return json({ 
       score,

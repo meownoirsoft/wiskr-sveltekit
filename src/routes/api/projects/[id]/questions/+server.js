@@ -3,16 +3,16 @@
 import { json, error } from '@sveltejs/kit';
 
 export async function GET({ params, locals }) {
-  const { supabase } = locals;
+  const { db } = locals;
   
-  if (!supabase) {
+  if (!db) {
     throw error(500, 'Database connection not available');
   }
 
   const projectId = params.id;
 
   try {
-    const { data: questions, error: fetchError } = await supabase
+    const { data: questions, error: fetchError } = await db
       .from('project_questions')
       .select('id, question, sort_order, completed, created_at, updated_at')
       .eq('project_id', projectId)
@@ -31,9 +31,9 @@ export async function GET({ params, locals }) {
 }
 
 export async function POST({ request, params, locals }) {
-  const { supabase } = locals;
+  const { db } = locals;
   
-  if (!supabase) {
+  if (!db) {
     throw error(500, 'Database connection not available');
   }
 
@@ -49,7 +49,7 @@ export async function POST({ request, params, locals }) {
       }
 
       // Get the highest sort_order for this project
-      const { data: maxOrder } = await supabase
+      const { data: maxOrder } = await db
         .from('project_questions')
         .select('sort_order')
         .eq('project_id', projectId)
@@ -58,7 +58,7 @@ export async function POST({ request, params, locals }) {
 
       const nextOrder = maxOrder && maxOrder.length > 0 ? maxOrder[0].sort_order + 1 : 0;
 
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await db
         .from('project_questions')
         .insert({
           project_id: projectId,
@@ -82,7 +82,7 @@ export async function POST({ request, params, locals }) {
       }
 
       // Delete all existing questions for this project
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await db
         .from('project_questions')
         .delete()
         .eq('project_id', projectId);
@@ -101,7 +101,7 @@ export async function POST({ request, params, locals }) {
         })).filter(q => q.question); // Filter out empty questions
 
         if (questionsToInsert.length > 0) {
-          const { error: insertError } = await supabase
+          const { error: insertError } = await db
             .from('project_questions')
             .insert(questionsToInsert);
 
@@ -113,7 +113,7 @@ export async function POST({ request, params, locals }) {
       }
 
       // Fetch and return the updated questions
-      const { data: updatedQuestions, error: fetchError } = await supabase
+      const { data: updatedQuestions, error: fetchError } = await db
         .from('project_questions')
         .select('*')
         .eq('project_id', projectId)
@@ -132,7 +132,7 @@ export async function POST({ request, params, locals }) {
         throw error(400, 'Question ID is required');
       }
 
-      const { data: updatedQuestion, error: updateError } = await supabase
+      const { data: updatedQuestion, error: updateError } = await db
         .from('project_questions')
         .update({ completed: completed })
         .eq('id', questionId)
@@ -161,9 +161,9 @@ export async function POST({ request, params, locals }) {
 }
 
 export async function DELETE({ request, params, locals }) {
-  const { supabase } = locals;
+  const { db } = locals;
   
-  if (!supabase) {
+  if (!db) {
     throw error(500, 'Database connection not available');
   }
 
@@ -176,7 +176,7 @@ export async function DELETE({ request, params, locals }) {
       throw error(400, 'Question ID is required');
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('project_questions')
       .delete()
       .eq('id', questionId)

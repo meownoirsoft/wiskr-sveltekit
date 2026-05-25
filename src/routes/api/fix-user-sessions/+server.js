@@ -7,7 +7,8 @@ import { json } from '@sveltejs/kit';
 export async function POST({ locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -15,7 +16,7 @@ export async function POST({ locals }) {
     console.log('🔧 Fixing sessions for user:', user.email);
 
     // Get user's projects
-    const { data: projects, error: projectsError } = await locals.supabase
+    const { data: projects, error: projectsError } = await locals.db
       .from('projects')
       .select('id, name')
       .eq('user_id', user.id);
@@ -39,7 +40,7 @@ export async function POST({ locals }) {
       console.log('🔍 Checking project:', project.name);
 
       // Check if project has sessions
-      const { data: existingSessions, error: sessionsError } = await locals.supabase
+      const { data: existingSessions, error: sessionsError } = await locals.db
         .from('conversation_sessions')
         .select('id, session_name')
         .eq('project_id', project.id);
@@ -64,7 +65,7 @@ export async function POST({ locals }) {
       console.log('🛠️ Creating session for project:', project.name);
 
       // Create main session
-      const { data: newSession, error: sessionError } = await locals.supabase
+      const { data: newSession, error: sessionError } = await locals.db
         .from('conversation_sessions')
         .insert({
           project_id: project.id,
@@ -90,7 +91,7 @@ export async function POST({ locals }) {
       console.log('✅ Created session:', newSession.session_name);
 
       // Create main branch
-      const { data: newBranch, error: branchError } = await locals.supabase
+      const { data: newBranch, error: branchError } = await locals.db
         .from('conversation_branches')
         .insert({
           project_id: project.id,

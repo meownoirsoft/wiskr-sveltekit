@@ -1,8 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function PATCH({ params, request }) {
   try {
@@ -20,7 +18,7 @@ export async function PATCH({ params, request }) {
     console.log('🔍 Updating section name:', sectionId, 'to:', name);
 
     // Update the section name
-    const { data: updatedSection, error: updateError } = await supabase
+    const { data: updatedSection, error: updateError } = await db
       .from('deck_sections')
       .update({ name: name.trim() })
       .eq('id', sectionId)

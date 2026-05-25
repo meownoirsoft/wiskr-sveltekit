@@ -8,7 +8,7 @@ export const POST = async ({ request, locals }) => {
   const body = await request.json();
   const { content, title, type, existingTags = [], projectId } = body;
 
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!content && !title) return json({ message: 'Bad request: content or title required' }, { status: 400 });
 
@@ -20,13 +20,13 @@ export const POST = async ({ request, locals }) => {
   try {
     if (projectId) {
       // Get existing tags from facts and docs for context
-      const { data: facts } = await locals.supabase
+      const { data: facts } = await locals.db
         .from('project_facts')
         .select('tags')
         .eq('project_id', projectId)
         .eq('user_id', user.id);
       
-      const { data: docs } = await locals.supabase
+      const { data: docs } = await locals.db
         .from('project_docs')
         .select('tags')
         .eq('project_id', projectId)
@@ -72,7 +72,7 @@ Return ONLY the suggested tags as a comma-separated list. Example: "authenticati
   const limit = Number(DAILY_TOKEN_LIMIT || 0) || 200_000;
   const tz = 'UTC';
   const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
-  const { data: todayRows } = await locals.supabase
+  const { data: todayRows } = await locals.db
     .from('usage_logs')
     .select('tokens_in,tokens_out')
     .eq('user_id', user.id)
@@ -121,7 +121,7 @@ Return ONLY the suggested tags as a comma-separated list. Example: "authenticati
         cost_usd: cost
       };
 
-      await locals.supabase.from('usage_logs').insert(usagePayload);
+      await locals.db.from('usage_logs').insert(usagePayload);
     }
 
     return json({

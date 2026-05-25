@@ -5,7 +5,7 @@ import { getRelatedIdeasLimit, canGenerateIdeas, getRemainingIdeas } from '$lib/
 import { getUserTier } from '$lib/utils/tiers.js';
 
 export const GET = async ({ url, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   // Get timezone from query parameter, default to UTC
@@ -20,7 +20,7 @@ export const GET = async ({ url, locals }) => {
   
   // Check daily Related Ideas usage - use user's timezone for proper day boundary
   const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
-  const { data: todayIdeas } = await locals.supabase
+  const { data: todayIdeas } = await locals.db
     .from('usage_logs')
     .select('id')
     .eq('user_id', user.id)

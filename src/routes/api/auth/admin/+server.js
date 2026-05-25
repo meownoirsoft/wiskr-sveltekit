@@ -7,12 +7,12 @@ import { isAdmin } from '$lib/auth/admin.js';
  */
 export async function GET({ locals }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { isAdmin: adminStatus, reason } = await isAdmin(locals.supabase, user);
+    const { isAdmin: adminStatus, reason } = await isAdmin(locals.db, user);
 
     return json({ 
       isAdmin: adminStatus,

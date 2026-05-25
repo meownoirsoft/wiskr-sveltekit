@@ -1,11 +1,10 @@
 import { redirect } from '@sveltejs/kit';
+import { destroySession, SESSION_COOKIE_NAME } from '$lib/server/auth.js';
 
-export const GET = async ({ locals, cookies }) => {
-  // Clear the cached session
-  cookies.delete('sb-session', { path: '/' });
-  
-  // Sign out from Supabase
-  await locals.supabase.auth.signOut();
-  
+export const GET = async ({ cookies }) => {
+  const sessionId = cookies.get(SESSION_COOKIE_NAME);
+  await destroySession(sessionId);
+  cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
+
   throw redirect(302, '/login');
 };

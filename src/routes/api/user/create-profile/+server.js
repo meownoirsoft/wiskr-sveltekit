@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function POST({ locals }) {
   try {
@@ -12,7 +12,7 @@ export async function POST({ locals }) {
     console.log('Creating profile for user:', userId);
 
     // Check if profile already exists
-    const { data: existingProfile, error: checkError } = await locals.supabase
+    const { data: existingProfile, error: checkError } = await locals.db
       .from('profiles')
       .select('id, user_id, tier')
       .eq('user_id', userId)
@@ -36,7 +36,7 @@ export async function POST({ locals }) {
     }
 
     // Create a new profile using admin client to bypass RLS
-    const { data: newProfile, error: createError } = await supabaseAdmin
+    const { data: newProfile, error: createError } = await db
       .from('profiles')
       .insert({
         user_id: userId,

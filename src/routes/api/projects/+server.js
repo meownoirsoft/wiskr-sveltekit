@@ -6,12 +6,12 @@ import { json } from '@sveltejs/kit';
  */
 export async function GET({ locals }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: projects, error } = await locals.supabase
+    const { data: projects, error } = await locals.db
       .from('projects')
       .select('id, name, description, created_at')
       .eq('user_id', user.id)

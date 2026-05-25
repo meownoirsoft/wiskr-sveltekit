@@ -1,9 +1,10 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function GET({ params, locals }) {
   try {
-    const user = await requireAuth(locals);
+    const user = locals.user;
+    if (!user) throw new Error("Unauthorized");
     const { cardId } = params;
 
     if (!cardId) {
@@ -11,7 +12,7 @@ export async function GET({ params, locals }) {
     }
 
     // Get decks that contain this card
-    const { data: cardDecks, error } = await supabaseAdmin
+    const { data: cardDecks, error } = await db
       .from('deck_cards')
       .select(`
         deck_id,

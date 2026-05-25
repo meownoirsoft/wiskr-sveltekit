@@ -14,7 +14,7 @@ const RAINBOW_COLORS = [
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
@@ -23,19 +23,19 @@ export async function POST({ request, locals }) {
     
     switch (action) {
       case 'create':
-        return await createBranch(locals.supabase, projectId, sessionId, messageId, branchName, branchId);
+        return await createBranch(locals.db, projectId, sessionId, messageId, branchName, branchId);
       case 'list':
-        return await listBranches(locals.supabase, projectId, sessionId);
+        return await listBranches(locals.db, projectId, sessionId);
       case 'listForMessage':
-        return await listBranchesForMessage(locals.supabase, projectId, sessionId, messageId);
+        return await listBranchesForMessage(locals.db, projectId, sessionId, messageId);
       case 'switch':
-        return await switchBranch(locals.supabase, projectId, sessionId, branchId);
+        return await switchBranch(locals.db, projectId, sessionId, branchId);
       case 'get-messages':
-        return await getMessages(locals.supabase, projectId, sessionId, branchId);
+        return await getMessages(locals.db, projectId, sessionId, branchId);
       case 'rename':
-        return await renameBranch(locals.supabase, projectId, sessionId, branchId, newName);
+        return await renameBranch(locals.db, projectId, sessionId, branchId, newName);
       case 'delete':
-        return await deleteBranch(locals.supabase, projectId, sessionId, branchId);
+        return await deleteBranch(locals.db, projectId, sessionId, branchId);
       default:
         return json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -45,10 +45,10 @@ export async function POST({ request, locals }) {
   }
 }
 
-async function createBranch(supabase, projectId, sessionId, parentMessageId, branchName, customBranchId = null) {
+async function createBranch(db, projectId, sessionId, parentMessageId, branchName, customBranchId = null) {
   // Check for duplicate branch name within the same parent message
   if (parentMessageId && branchName) {
-    const { data: existingBranch } = await supabase
+    const { data: existingBranch } = await db
       .from('conversation_branches')
       .select('branch_name')
       .eq('project_id', projectId)
@@ -67,7 +67,7 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
   const branchId = customBranchId || `branch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   // Get current branch count to assign rainbow color
-  const { data: existingBranches } = await supabase
+  const { data: existingBranches } = await db
     .from('conversation_branches')
     .select('color_index')
     .eq('project_id', projectId);
@@ -75,7 +75,7 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
   const colorIndex = existingBranches?.length % RAINBOW_COLORS.length || 0;
   
   // Create branch record
-  const { data: branch, error: branchError } = await supabase
+  const { data: branch, error: branchError } = await db
     .from('conversation_branches')
     .insert({
       project_id: projectId,
@@ -95,14 +95,14 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
 
   // Mark the parent message as a branch point
   if (parentMessageId) {
-    await supabase
+    await db
       .from('messages')
       .update({ branch_point: true })
       .eq('id', parentMessageId);
   }
 
   // Copy all messages up to the branch point to the new branch
-  const { data: messagesToCopy } = await supabase
+  const { data: messagesToCopy } = await db
     .from('messages')
     .select('*')
     .eq('project_id', projectId)
@@ -125,7 +125,7 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
         branch_point: msg.id === parentMessageId
       }));
 
-      await supabase.from('messages').insert(duplicatedMessages);
+      await db.from('messages').insert(duplicatedMessages);
     }
   }
 
@@ -138,8 +138,8 @@ async function createBranch(supabase, projectId, sessionId, parentMessageId, bra
   });
 }
 
-async function listBranches(supabase, projectId, sessionId) {
-  const { data: branches, error } = await supabase
+async function listBranches(db, projectId, sessionId) {
+  const { data: branches, error } = await db
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
@@ -162,9 +162,9 @@ async function listBranches(supabase, projectId, sessionId) {
   return json({ branches: branchesWithColors });
 }
 
-async function listBranchesForMessage(supabase, projectId, sessionId, messageId) {
+async function listBranchesForMessage(db, projectId, sessionId, messageId) {
   // Get branches that were created from this specific message
-  const { data: branches, error } = await supabase
+  const { data: branches, error } = await db
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
@@ -184,11 +184,11 @@ async function listBranchesForMessage(supabase, projectId, sessionId, messageId)
   return json({ branches: branchesWithColors });
 }
 
-async function switchBranch(supabase, projectId, sessionId, branchId) {
+async function switchBranch(db, projectId, sessionId, branchId) {
   console.log('🔧 API switchBranch called with:', { projectId, sessionId, branchId });
   
   // First, let's see what messages exist for this project
-  const { data: allMessages, error: allError } = await supabase
+  const { data: allMessages, error: allError } = await db
     .from('messages')
     .select('*')
     .eq('project_id', projectId)
@@ -201,7 +201,7 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
   }
   
   // Fetch messages for the specified branch
-  const { data: messages, error } = await supabase
+  const { data: messages, error } = await db
     .from('messages')
     .select('*')
     .eq('project_id', projectId)
@@ -231,7 +231,7 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
     };
   } else {
     // Fetch branch info from conversation_branches table for non-main branches
-    const { data: branchData, error: branchError } = await supabase
+    const { data: branchData, error: branchError } = await db
       .from('conversation_branches')
       .select('*')
       .eq('project_id', projectId)
@@ -283,9 +283,9 @@ async function switchBranch(supabase, projectId, sessionId, branchId) {
   });
 }
 
-async function getMessages(supabase, projectId, sessionId, branchId) {
+async function getMessages(db, projectId, sessionId, branchId) {
   // Fetch messages for the specified branch
-  const { data: messages, error } = await supabase
+  const { data: messages, error } = await db
     .from('messages')
     .select('*')
     .eq('project_id', projectId)
@@ -304,7 +304,7 @@ async function getMessages(supabase, projectId, sessionId, branchId) {
   });
 }
 
-async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
+async function renameBranch(db, projectId, sessionId, branchId, newName) {
   // Don't allow renaming the main branch
   if (branchId === 'main') {
     return json({ error: 'Cannot rename the main branch' }, { status: 400 });
@@ -315,7 +315,7 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
   }
   
   // Check if branch exists
-  const { data: existingBranch } = await supabase
+  const { data: existingBranch } = await db
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
@@ -328,7 +328,7 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
   
   // Check for duplicate name in the same parent message
   if (existingBranch.parent_message_id) {
-    const { data: duplicateBranch } = await supabase
+    const { data: duplicateBranch } = await db
       .from('conversation_branches')
       .select('branch_id')
       .eq('project_id', projectId)
@@ -345,7 +345,7 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
   }
   
   // Update branch name
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from('conversation_branches')
     .update({ branch_name: newName.trim() })
     .eq('project_id', projectId)
@@ -359,14 +359,14 @@ async function renameBranch(supabase, projectId, sessionId, branchId, newName) {
   return json({ success: true });
 }
 
-async function deleteBranch(supabase, projectId, sessionId, branchId) {
+async function deleteBranch(db, projectId, sessionId, branchId) {
   // Don't allow deleting the main branch
   if (branchId === 'main') {
     return json({ error: 'Cannot delete the main branch' }, { status: 400 });
   }
   
   // Check if branch exists
-  const { data: existingBranch } = await supabase
+  const { data: existingBranch } = await db
     .from('conversation_branches')
     .select('*')
     .eq('project_id', projectId)
@@ -378,7 +378,7 @@ async function deleteBranch(supabase, projectId, sessionId, branchId) {
   }
   
   // Delete all messages in this branch
-  const { error: messagesError } = await supabase
+  const { error: messagesError } = await db
     .from('messages')
     .delete()
     .eq('project_id', projectId)
@@ -390,7 +390,7 @@ async function deleteBranch(supabase, projectId, sessionId, branchId) {
   }
   
   // Delete branch record
-  const { error: branchError } = await supabase
+  const { error: branchError } = await db
     .from('conversation_branches')
     .delete()
     .eq('project_id', projectId)

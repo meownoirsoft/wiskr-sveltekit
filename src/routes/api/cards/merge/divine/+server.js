@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
-import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 import { getContextRings } from '$lib/server/context/contextRings.js';
 import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
@@ -13,10 +13,11 @@ export async function POST({ request, locals }) {
     }
 
     // Check authentication
-    const user = await requireAuth(locals);
+    const user = locals.user;
+    if (!user) throw new Error("Unauthorized");
 
     // Get source card
-    const { data: sourceCard, error: sourceError } = await supabaseAdmin
+    const { data: sourceCard, error: sourceError } = await db
       .from('cards')
       .select('*')
       .eq('id', sourceCardId)
@@ -28,7 +29,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get selected cards
-    const { data: selectedCards, error: selectedError } = await supabaseAdmin
+    const { data: selectedCards, error: selectedError } = await db
       .from('cards')
       .select('*')
       .in('id', selectedCardIds)
@@ -39,7 +40,7 @@ export async function POST({ request, locals }) {
     }
 
     // Generate divine cards using AI
-    const divineCards = await generateDivineCards(sourceCard, selectedCards, projectId, user.id, locals.supabase);
+    const divineCards = await generateDivineCards(sourceCard, selectedCards, projectId, user.id, locals.db);
 
     return json({ cards: divineCards });
 
@@ -73,13 +74,13 @@ function toTitleCase(text) {
     .join(' ');
 }
 
-async function generateDivineCards(sourceCard, selectedCards, projectId, userId, supabase) {
+async function generateDivineCards(sourceCard, selectedCards, projectId, userId, db) {
   try {
     const openai = createOpenAIClient();
 
     // Get context rings for merge operation
     const context = await getContextRings({
-      supabase: supabaseAdmin,
+      db: db,
       projectId,
       operation: 'merge',
       targetCards: [sourceCard, ...selectedCards],
@@ -131,7 +132,7 @@ Aspect 3: [Title] - [Content] - Tags: [tag1, tag2]`
       model: 'gpt-4o-mini',
       inputText,
       outputText: generatedContent,
-      supabase,
+      db,
       operation: 'divine'
     });
     

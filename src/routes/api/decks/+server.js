@@ -1,8 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function GET({ url, locals }) {
   try {
@@ -13,7 +11,7 @@ export async function GET({ url, locals }) {
     }
 
     // Get decks with sections and cards
-    const { data: decks, error: decksError } = await supabase
+    const { data: decks, error: decksError } = await db
       .from('decks')
       .select(`
         *,
@@ -70,7 +68,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get the next position for this project
-    const { data: maxPosition } = await supabase
+    const { data: maxPosition } = await db
       .from('decks')
       .select('position')
       .eq('project_id', project_id)
@@ -81,7 +79,7 @@ export async function POST({ request, locals }) {
     const nextPosition = (maxPosition?.position ?? -1) + 1;
 
     // Create deck
-    const { data: deck, error: deckError } = await supabase
+    const { data: deck, error: deckError } = await db
       .from('decks')
       .insert({
         project_id,
@@ -102,7 +100,7 @@ export async function POST({ request, locals }) {
       { name: 'New Section', position: 0 }
     ];
 
-    const { data: sections, error: sectionsError } = await supabase
+    const { data: sections, error: sectionsError } = await db
       .from('deck_sections')
       .insert(
         defaultSections.map(section => ({

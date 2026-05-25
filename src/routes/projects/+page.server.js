@@ -11,7 +11,7 @@ export const load = async ({ locals }) => {
     throw redirect(302, '/login');
   }
 
-  const { data: projects, error: projectsError } = await locals.supabase
+  const { data: projects, error: projectsError } = await locals.db
     .from('projects')
     .select('id, name, icon, color, brief_text, description, created_at')
     .order('created_at');
@@ -30,7 +30,7 @@ export const load = async ({ locals }) => {
     
     try {
       // First, ensure user has a persona (required for project creation)
-      let { data: persona } = await locals.supabase
+      let { data: persona } = await locals.db
         .from('personas')
         .select('*')
         .eq('user_id', user.id)
@@ -46,7 +46,7 @@ export const load = async ({ locals }) => {
           dont: ['guilt', 'walls of text']
         };
         
-        const { data: newPersona, error: personaError } = await locals.supabase
+        const { data: newPersona, error: personaError } = await locals.db
           .from('personas')
           .insert({ user_id: user.id, name: 'Default', style_json })
           .select('*')
@@ -61,7 +61,7 @@ export const load = async ({ locals }) => {
       }
       
       // Create the default project
-      const { data: newProject, error: projectError } = await locals.supabase
+      const { data: newProject, error: projectError } = await locals.db
         .from('projects')
         .insert({
           user_id: user.id,
@@ -82,7 +82,7 @@ export const load = async ({ locals }) => {
       console.log('✅ Created default project for new user:', newProject.name);
       
       // Create a main chat session for the new project
-      const { data: newSession, error: sessionError } = await locals.supabase
+      const { data: newSession, error: sessionError } = await locals.db
         .from('conversation_sessions')
         .insert({
           project_id: newProject.id,
@@ -101,7 +101,7 @@ export const load = async ({ locals }) => {
         console.log('✅ Created main chat session for new project:', newSession.id);
         
         // Create a main conversation branch for the session
-        const { data: newBranch, error: branchError } = await locals.supabase
+        const { data: newBranch, error: branchError } = await locals.db
           .from('conversation_branches')
           .insert({
             project_id: newProject.id,
@@ -130,13 +130,13 @@ export const load = async ({ locals }) => {
   // Note: Mock data removed - unauthenticated users are redirected to login above
 
   // Check if user has admin permissions
-  const adminCheck = user ? await isAdmin(locals.supabase, user) : { isAdmin: false };
+  const adminCheck = user ? await isAdmin(locals.db, user) : { isAdmin: false };
 
   // Load user preferences
   let userPreferences = { cards_grid_size: 3 };
   
   if (user) {
-    const { data: prefs } = await locals.supabase
+    const { data: prefs } = await locals.db
       .from('user_preferences')
       .select('*')
       .eq('user_id', user.id)

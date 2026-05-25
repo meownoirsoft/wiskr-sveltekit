@@ -1,13 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function GET({ url, locals }) {
   try {
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -18,7 +17,7 @@ export async function GET({ url, locals }) {
     }
 
     // Get section with its cards
-    const { data: section, error: sectionError } = await supabase
+    const { data: section, error: sectionError } = await db
       .from('deck_sections')
       .select(`
         id,

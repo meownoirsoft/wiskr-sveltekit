@@ -4,7 +4,7 @@ import { listUsers } from '$lib/server/auth.js';
 
 export const load = async ({ locals }) => {
   // Check admin permissions
-  const adminCheck = await isAdmin(locals.supabase, locals.user);
+  const adminCheck = await isAdmin(locals.db, locals.user);
   if (!adminCheck.isAdmin) {
     throw redirect(303, '/');
   }

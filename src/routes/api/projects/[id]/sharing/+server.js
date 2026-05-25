@@ -20,7 +20,7 @@ function verifyPassword(inputPassword, storedHash) {
 
 export const PUT = async ({ params, request, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -47,7 +47,7 @@ export const PUT = async ({ params, request, locals }) => {
 
     // If making public for the first time, ensure share_id exists
     if (isPublic) {
-      const { data: existingProject } = await locals.supabase
+      const { data: existingProject } = await locals.db
         .from('projects')
         .select('share_id')
         .eq('id', projectId)
@@ -62,7 +62,7 @@ export const PUT = async ({ params, request, locals }) => {
 
     console.log('Updating project with data:', updateData);
     
-    const { data: project, error } = await locals.supabase
+    const { data: project, error } = await locals.db
       .from('projects')
       .update(updateData)
       .eq('id', projectId)
@@ -94,14 +94,14 @@ export const PUT = async ({ params, request, locals }) => {
 
 export const GET = async ({ params, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const projectId = params.id;
 
-    const { data: project, error } = await locals.supabase
+    const { data: project, error } = await locals.db
       .from('projects')
       .select('id, name, share_id, is_public, share_password')
       .eq('id', projectId)
@@ -133,7 +133,7 @@ export const GET = async ({ params, locals }) => {
 // Reset share link (generate new share_id)
 export const POST = async ({ params, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -143,7 +143,7 @@ export const POST = async ({ params, locals }) => {
     // Generate a new share_id
     const newShareId = crypto.randomUUID();
     
-    const { data: project, error } = await locals.supabase
+    const { data: project, error } = await locals.db
       .from('projects')
       .update({ share_id: newShareId })
       .eq('id', projectId)

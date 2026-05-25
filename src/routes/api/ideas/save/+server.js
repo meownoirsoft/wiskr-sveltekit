@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 export const POST = async ({ request, locals }) => {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -15,12 +15,12 @@ export const POST = async ({ request, locals }) => {
       return json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
     const savedIdeas = [];
 
     // Save each idea to the database
     for (const idea of ideas) {
-      const { data: savedIdea, error } = await supabase
+      const { data: savedIdea, error } = await db
         .from('ideas')
         .insert({
           project_id: projectId,

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { generateSectionContext, getSectionContextReadiness } from '$lib/server/utils/deckContext.js';
-import { supabaseAdmin } from '$lib/server/supabaseAdmin.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function GET({ params, url, locals }) {
 	try {
@@ -8,20 +8,20 @@ export async function GET({ params, url, locals }) {
 		const action = url.searchParams.get('action');
 
 		// Check authentication
-		const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+		const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
 		if (userError || !user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const serverSupabase = supabaseAdmin();
 
 		if (action === 'readiness') {
-			const readiness = await getSectionContextReadiness(sectionId, serverSupabase);
+			const readiness = await getSectionContextReadiness(sectionId, db);
 			return json(readiness);
 		}
 
 		// Default: generate section context
-		const context = await generateSectionContext(sectionId, serverSupabase);
+		const context = await generateSectionContext(sectionId, db);
 		return json(context);
 	} catch (error) {
 		console.error('Error in section context API:', error);
@@ -34,13 +34,13 @@ export async function POST({ params, locals }) {
 		const { sectionId } = params;
 
 		// Check authentication
-		const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+		const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
 		if (userError || !user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const serverSupabase = supabaseAdmin();
-		const context = await generateSectionContext(sectionId, serverSupabase);
+		const context = await generateSectionContext(sectionId, db);
 		return json(context);
 	} catch (error) {
 		console.error('Error generating section context:', error);

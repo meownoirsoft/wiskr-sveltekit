@@ -14,7 +14,7 @@ export async function DELETE({ params, locals }) {
     }
 
     // Delete the card (RLS will ensure user can only delete their own cards)
-    const { error: deleteError } = await locals.supabase
+    const { error: deleteError } = await locals.db
       .from('cards')
       .delete()
       .eq('id', id)

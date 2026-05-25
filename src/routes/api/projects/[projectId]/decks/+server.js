@@ -1,9 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 import { generateDeckContext } from '$lib/server/utils/deckContext.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function GET({ params }) {
   try {
@@ -14,7 +12,7 @@ export async function GET({ params }) {
     }
 
     // Get decks for the project
-    const { data: decks, error: decksError } = await supabase
+    const { data: decks, error: decksError } = await db
       .from('decks')
       .select(`
         *,
@@ -107,7 +105,7 @@ export async function POST({ params, request }) {
     }
 
     // Get the next position for this project
-    const { data: maxPosition } = await supabase
+    const { data: maxPosition } = await db
       .from('decks')
       .select('position')
       .eq('project_id', projectId)
@@ -118,7 +116,7 @@ export async function POST({ params, request }) {
     const nextPosition = (maxPosition?.position ?? -1) + 1;
 
     // Create the deck with proper position
-    const { data: deck, error: deckError } = await supabase
+    const { data: deck, error: deckError } = await db
       .from('decks')
       .insert({
         project_id: projectId,
@@ -139,7 +137,7 @@ export async function POST({ params, request }) {
       { name: 'New Section' }
     ];
 
-    const { data: sections, error: sectionsError } = await supabase
+    const { data: sections, error: sectionsError } = await db
       .from('deck_sections')
       .insert(
         defaultSections.map(section => ({
@@ -155,7 +153,7 @@ export async function POST({ params, request }) {
     }
 
     // Generate context for the new deck in background
-    generateDeckContext(deck.id, supabase).catch(error => {
+    generateDeckContext(deck.id, db).catch(error => {
       console.error('Error generating context for new deck:', error);
     });
 

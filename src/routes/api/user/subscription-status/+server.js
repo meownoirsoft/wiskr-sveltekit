@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function GET({ locals }) {
   try {
@@ -11,7 +11,7 @@ export async function GET({ locals }) {
     const userId = locals.user.id;
 
     // Get user's profile with subscription details
-    const { data: profile, error: profileError } = await locals.supabase
+    const { data: profile, error: profileError } = await locals.db
       .from('profiles')
       .select('stripe_customer_id, stripe_subscription_id, tier, stripe_subscription_status, created_at, updated_at')
       .eq('user_id', userId)
@@ -29,7 +29,7 @@ export async function GET({ locals }) {
       // If no profile exists, try to create one
       console.log('No profile found for user:', userId, '- attempting to create one');
       
-      const { data: newProfile, error: createError } = await supabaseAdmin
+      const { data: newProfile, error: createError } = await db
         .from('profiles')
         .insert({
           user_id: userId,

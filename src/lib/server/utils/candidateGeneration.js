@@ -1,8 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { db } from '$lib/server/db/queries.js';
 import { generateEmbedding } from './embeddings.js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /**
  * Generate candidates using dense + sparse retrieval with structural boosts and MMR diversification

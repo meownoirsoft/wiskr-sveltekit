@@ -1,9 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function PUT({ params, request }) {
   console.log('🔍 saveDeckStructure API: Endpoint called');
@@ -14,7 +12,7 @@ export async function PUT({ params, request }) {
     console.log('🔍 saveDeckStructure API: Received sections:', sections.map(s => ({ id: s.id, name: s.name, position: sections.indexOf(s) })));
 
     // Test if position column exists by querying current sections
-    const { data: currentSections, error: queryError } = await supabase
+    const { data: currentSections, error: queryError } = await db
       .from('deck_sections')
       .select('id, name, position')
       .eq('deck_id', deckId);
@@ -33,7 +31,7 @@ export async function PUT({ params, request }) {
       const sectionsToDelete = currentSections.filter(s => !currentSectionIds.includes(s.id));
       if (sectionsToDelete.length > 0) {
         console.log('🔍 Deleting sections:', sectionsToDelete.map(s => s.id));
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await db
           .from('deck_sections')
           .delete()
           .in('id', sectionsToDelete.map(s => s.id));
@@ -59,7 +57,7 @@ export async function PUT({ params, request }) {
           position: index
         };
 
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('deck_sections')
           .insert(newDbSection)
           .select()
@@ -72,7 +70,7 @@ export async function PUT({ params, request }) {
       } else {
         // Existing section
         console.log(`🔍 Updating section ${section.id} to position ${index}`);
-        const { error } = await supabase
+        const { error } = await db
           .from('deck_sections')
           .update({ position: index, name: section.name })
           .eq('id', section.id);
@@ -87,7 +85,7 @@ export async function PUT({ params, request }) {
     }
 
     // Fetch the full updated deck structure to return
-    const { data: updatedDeck, error: fetchError } = await supabase
+    const { data: updatedDeck, error: fetchError } = await db
       .from('decks')
       .select(`
         *,

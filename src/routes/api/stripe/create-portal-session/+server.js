@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { stripe } from '$lib/server/stripe.js';
-import { supabaseAdmin } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function POST({ request, locals }) {
   try {
@@ -13,7 +13,7 @@ export async function POST({ request, locals }) {
     console.log('Creating portal session for user:', userId);
 
     // Get user's profile with more details for debugging using admin client
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await db
       .from('profiles')
       .select('stripe_customer_id, stripe_subscription_id, tier, stripe_subscription_status')
       .eq('user_id', userId)
@@ -27,7 +27,7 @@ export async function POST({ request, locals }) {
         console.log('No profile found for user:', userId, '- creating one');
         
         // Create a basic profile for the user using admin client to bypass RLS
-        const { data: newProfile, error: createError } = await supabaseAdmin
+        const { data: newProfile, error: createError } = await db
           .from('profiles')
           .insert({
             user_id: userId,
@@ -49,7 +49,7 @@ export async function POST({ request, locals }) {
             console.log('Profile already exists, fetching it...');
             
             // Try to fetch the existing profile
-            const { data: existingProfile, error: fetchError } = await supabaseAdmin
+            const { data: existingProfile, error: fetchError } = await db
               .from('profiles')
               .select('stripe_customer_id, stripe_subscription_id, tier, stripe_subscription_status')
               .eq('user_id', userId)

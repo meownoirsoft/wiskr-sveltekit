@@ -5,7 +5,8 @@ export async function POST({ request, locals }) {
     const { artUrl, cardId, reason, details } = await request.json();
     
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -15,7 +16,7 @@ export async function POST({ request, locals }) {
     }
 
     // Store feedback in database
-    const { error } = await locals.supabase
+    const { error } = await locals.db
       .from('art_feedback')
       .insert({
         user_id: user.id,

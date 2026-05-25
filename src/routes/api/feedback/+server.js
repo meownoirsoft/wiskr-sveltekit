@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
@@ -13,13 +13,13 @@ export async function POST({ request, locals }) {
     
     switch (action) {
       case 'submit-message-feedback':
-        return await submitMessageFeedback(locals.supabase, user.id, data);
+        return await submitMessageFeedback(locals.db, user.id, data);
       case 'submit-mr-wiskr-feedback':
-        return await submitMrWiskrFeedback(locals.supabase, user.id, data);
+        return await submitMrWiskrFeedback(locals.db, user.id, data);
       case 'get-message-feedback':
-        return await getMessageFeedback(locals.supabase, user.id, data.messageId);
+        return await getMessageFeedback(locals.db, user.id, data.messageId);
       case 'get-feedback-analytics':
-        return await getFeedbackAnalytics(locals.supabase, user.id, data.projectId);
+        return await getFeedbackAnalytics(locals.db, user.id, data.projectId);
       default:
         return json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -32,7 +32,7 @@ export async function POST({ request, locals }) {
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ url, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
@@ -41,9 +41,9 @@ export async function GET({ url, locals }) {
     const type = url.searchParams.get('type') || 'message'; // 'message' or 'analytics'
     
     if (type === 'analytics') {
-      return await getFeedbackAnalytics(locals.supabase, user.id, projectId);
+      return await getFeedbackAnalytics(locals.db, user.id, projectId);
     } else if (messageId) {
-      return await getMessageFeedback(locals.supabase, user.id, messageId);
+      return await getMessageFeedback(locals.db, user.id, messageId);
     } else {
       return json({ error: 'Missing required parameters' }, { status: 400 });
     }
@@ -54,13 +54,13 @@ export async function GET({ url, locals }) {
 }
 
 // Submit or update feedback for a specific message
-async function submitMessageFeedback(supabase, userId, { messageId, projectId, rating, comment }) {
+async function submitMessageFeedback(db, userId, { messageId, projectId, rating, comment }) {
   if (!messageId || !projectId || ![1, -1].includes(rating)) {
     return json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
   // Use upsert to handle both insert and update
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('message_feedback')
     .upsert({
       user_id: userId,
@@ -87,12 +87,12 @@ async function submitMessageFeedback(supabase, userId, { messageId, projectId, r
 }
 
 // Submit feedback for Mr Wiskr
-async function submitMrWiskrFeedback(supabase, userId, { projectId, rating, comment, context }) {
+async function submitMrWiskrFeedback(db, userId, { projectId, rating, comment, context }) {
   if (![1, -1].includes(rating)) {
     return json({ error: 'Invalid rating' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('mr_wiskr_feedback')
     .insert({
       user_id: userId,
@@ -117,12 +117,12 @@ async function submitMrWiskrFeedback(supabase, userId, { projectId, rating, comm
 }
 
 // Get feedback for a specific message
-async function getMessageFeedback(supabase, userId, messageId) {
+async function getMessageFeedback(db, userId, messageId) {
   if (!messageId) {
     return json({ error: 'Message ID required' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('message_feedback')
     .select('*')
     .eq('user_id', userId)
@@ -138,10 +138,10 @@ async function getMessageFeedback(supabase, userId, messageId) {
 }
 
 // Get feedback analytics for a project or user
-async function getFeedbackAnalytics(supabase, userId, projectId) {
+async function getFeedbackAnalytics(db, userId, projectId) {
   try {
     // Get message feedback analytics
-    let messageFeedbackQuery = supabase
+    let messageFeedbackQuery = db
       .from('message_feedback')
       .select(`
         rating,
@@ -168,7 +168,7 @@ async function getFeedbackAnalytics(supabase, userId, projectId) {
     }
 
     // Get Mr Wiskr feedback analytics
-    let mrWiskrQuery = supabase
+    let mrWiskrQuery = db
       .from('mr_wiskr_feedback')
       .select('rating, created_at, comment, context')
       .eq('user_id', userId);

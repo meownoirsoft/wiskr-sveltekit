@@ -2,13 +2,14 @@ import { error } from '@sveltejs/kit';
 
 export async function load({ params, locals }) {
   // Get the current user
-  const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+  const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
   if (userError || !user) {
     throw error(401, 'Unauthorized');
   }
 
   // Fetch project details
-  const { data: project, error: projectError } = await locals.supabase
+  const { data: project, error: projectError } = await locals.db
     .from('projects')
     .select('*')
     .eq('id', params.id)

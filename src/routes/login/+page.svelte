@@ -1,26 +1,17 @@
 <!-- src/routes/login/+page.svelte -->
 <script>
-  import { createBrowserClient } from '@supabase/ssr';
-  import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-  import { signInWithGoogle, signInWithDiscord, getOAuthErrorMessage } from '$lib/client/authHelpers.js';
   import { onMount } from 'svelte';
-  
-  const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
   export let data;
-  
+
   let email = '';
   let password = '';
-  let mode = 'signin'; // or 'signup'
+  let mode = 'signin';
   let msg = data?.error || '';
   let oauthLoading = false;
-  
+
   onMount(() => {
-    // Clear any URL parameters after component mounts
     if (data?.error && window.history.replaceState) {
-      console.log('🚨 Login page error detected:', data.error);
-      console.log('🚨 Full URL:', window.location.href);
-      console.log('🚨 Search params:', Object.fromEntries(new URLSearchParams(window.location.search)));
       window.history.replaceState(null, '', '/login');
     }
   });
@@ -28,55 +19,30 @@
   async function submit() {
     msg = '';
     try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        // some projects require email confirm; if so, check Auth settings in Supabase
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        
-        // Set cookie to indicate avatar refresh needed
-        document.cookie = 'wiskr_refresh_avatars=1;path=/;max-age=300';
-      }
+      const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Authentication failed');
+
+      document.cookie = 'wiskr_refresh_avatars=1;path=/;max-age=300';
       window.location.href = '/projects';
     } catch (e) {
       msg = e.message || String(e);
     }
   }
 
-  async function handleGoogleSignIn() {
-    msg = '';
+  function handleGoogleSignIn() {
     oauthLoading = true;
-    try {
-      const { error } = await signInWithGoogle('/projects');
-      if (error) {
-        msg = getOAuthErrorMessage(error);
-        oauthLoading = false;
-      }
-      // If no error, OAuth redirect is happening, keep loading state
-    } catch (e) {
-      msg = e.message || String(e);
-      oauthLoading = false;
-    }
+    window.location.href = '/api/auth/oauth/google?next=/projects';
   }
 
-  async function handleDiscordSignIn() {
-    msg = '';
+  function handleDiscordSignIn() {
     oauthLoading = true;
-    try {
-      const { error } = await signInWithDiscord('/projects');
-      if (error) {
-        console.error('Discord sign in failed:', error);
-        msg = getOAuthErrorMessage(error);
-        oauthLoading = false;
-      }
-      // If no error, OAuth redirect is happening, keep loading state
-    } catch (e) {
-      console.error('Discord sign in exception:', e);
-      msg = e.message || String(e);
-      oauthLoading = false;
-    }
+    window.location.href = '/api/auth/oauth/discord?next=/projects';
   }
 </script>
 

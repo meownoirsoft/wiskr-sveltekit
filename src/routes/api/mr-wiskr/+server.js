@@ -31,7 +31,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get user for authentication and usage tracking
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       throw error(401, 'Unauthorized');
     }
@@ -169,7 +169,7 @@ What do you think this actually means in practical terms?${contextInfo}`;
     };
 
     console.log('🐱 Mr Wiskr usage:', usagePayload);
-    const { error: usageError } = await locals.supabase.from('usage_logs').insert(usagePayload);
+    const { error: usageError } = await locals.db.from('usage_logs').insert(usagePayload);
     
     if (usageError) {
       console.error('❌ Mr Wiskr usage log error:', usageError);

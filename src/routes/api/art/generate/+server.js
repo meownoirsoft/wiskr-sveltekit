@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
 import { OPENAI_API_KEY, BUNNY_STORAGE_ZONE, BUNNY_PASSWORD, BUNNY_PULL_ZONE } from '$env/static/private';
-import { requireAuth } from '$lib/server/supabaseClient.js';
+
 import { trackUsage } from '$lib/server/utils/usageTracker.js';
 import { processCardArt, getImageMetadata } from '$lib/server/utils/imageProcessor.js';
 
 export async function POST({ request, locals }) {
   try {
-    const user = await requireAuth(locals);
+    const user = locals.user;
+    if (!user) throw new Error("Unauthorized");
     const { cardTitle, cardContent, cardTags, rarity, projectId } = await request.json();
 
     if (!OPENAI_API_KEY) {
@@ -90,7 +91,7 @@ Create a pure visual representation of the concept without any textual elements.
       tokensIn: 0, // DALL-E doesn't use tokens, but we track the generation
       tokensOut: 1, // Count as 1 generation
       costUsd: 0.04, // DALL-E 3 standard quality cost
-      supabase: locals.supabase,
+      supabase: locals.db,
       operation: 'art-generation'
     });
     

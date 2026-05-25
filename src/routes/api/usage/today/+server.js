@@ -1,13 +1,13 @@
 export const GET = async ({ url, locals }) => {
   const projectId = url.searchParams.get('projectId');
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user || !projectId) return new Response('Bad Request', { status: 400 });
 
   // start of “today” in the user’s local time is tricky; use UTC midnight for now
   const todayUTC = new Date();
   todayUTC.setUTCHours(0, 0, 0, 0);
 
-  const { data, error } = await locals.supabase
+  const { data, error } = await locals.db
     .from('usage_logs')
     .select('tokens_in,tokens_out,cost_usd')
     .eq('user_id', user.id)

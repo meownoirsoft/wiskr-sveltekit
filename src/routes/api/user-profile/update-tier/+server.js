@@ -17,8 +17,8 @@ export async function POST({ request, locals }) {
     
     console.log('Webhook updating user tier:', { userId, tier, stripeCustomerId, stripeSubscriptionId });
     
-    // Update user profile using locals.supabase (which has service role access)
-    const { data, error } = await locals.supabase
+    // Update user profile using locals.db (which has service role access)
+    const { data, error } = await locals.db
       .from('profiles')
       .update({ 
         tier: parseInt(tier),

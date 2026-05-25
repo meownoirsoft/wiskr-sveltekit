@@ -10,13 +10,14 @@ export async function POST({ request, locals }) {
     }
 
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get all cards without embeddings
-    const { data: cards, error: fetchError } = await locals.supabase
+    const { data: cards, error: fetchError } = await locals.db
       .from('cards')
       .select('id, title, content')
       .eq('project_id', projectId)
@@ -42,7 +43,7 @@ export async function POST({ request, locals }) {
         const embedding = await generateCardEmbedding(card.title, card.content);
         
         if (embedding) {
-          const { error: updateError } = await locals.supabase
+          const { error: updateError } = await locals.db
             .from('cards')
             .update({ embedding })
             .eq('id', card.id);

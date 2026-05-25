@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
@@ -28,7 +28,7 @@ export async function POST({ request, locals }) {
     
     // Only query the database if we have valid message IDs
     if (validMessageIds.length > 0) {
-      const { data: dbFeedbackData, error } = await locals.supabase
+      const { data: dbFeedbackData, error } = await locals.db
         .from('message_feedback')
         .select('*')
         .eq('user_id', user.id)

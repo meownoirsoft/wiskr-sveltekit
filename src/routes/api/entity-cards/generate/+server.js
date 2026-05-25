@@ -12,7 +12,7 @@ import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 export async function POST({ request, locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -26,7 +26,7 @@ export async function POST({ request, locals }) {
     console.log('🎯 EntityCards: Starting card generation for project:', projectId, 'mode:', mode);
 
     // Verify user owns this project
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('id, name')
       .eq('id', projectId)
@@ -37,7 +37,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get all cards for this project
-    const { data: cards, error: cardsError } = await locals.supabase
+    const { data: cards, error: cardsError } = await locals.db
       .from('cards')
       .select('*')
       .eq('project_id', projectId)
@@ -77,7 +77,7 @@ export async function POST({ request, locals }) {
     for (const entityData of entityCardsData) {
       try {
         // Check if entity card already exists
-        const { data: existingCard } = await locals.supabase
+        const { data: existingCard } = await locals.db
           .from('entity_cards')
           .select('id, updated_at')
           .eq('project_id', projectId)
@@ -151,7 +151,7 @@ Summary:`;
           model: modelConf.name,
           inputText,
           outputText: rawSummary,
-          supabase: locals.supabase,
+          supabase: locals.db,
           operation: 'entity-cards-generate'
         });
         
@@ -189,7 +189,7 @@ Summary:`;
           last_cards_check: new Date().toISOString()
         };
 
-        const { data: upsertedCard, error: upsertError } = await locals.supabase
+        const { data: upsertedCard, error: upsertError } = await locals.db
           .from('entity_cards')
           .upsert(cardData, { 
             onConflict: 'project_id,entity_name,entity_type',
@@ -204,7 +204,7 @@ Summary:`;
         }
 
         // Clear old entity-card relationships and insert new ones
-        await locals.supabase
+        await locals.db
           .from('entity_card_cards')
           .delete()
           .eq('entity_card_id', upsertedCard.id);
@@ -216,7 +216,7 @@ Summary:`;
         }));
 
         if (cardRelationships.length > 0) {
-          const { error: relationError } = await locals.supabase
+          const { error: relationError } = await locals.db
             .from('entity_card_cards')
             .insert(cardRelationships);
 
@@ -254,7 +254,7 @@ Summary:`;
  */
 export async function GET({ url, locals }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -265,7 +265,7 @@ export async function GET({ url, locals }) {
     }
 
     // Get entity cards with card counts
-    const { data: cards, error } = await locals.supabase
+    const { data: cards, error } = await locals.db
       .from('entity_cards')
       .select(`
         *,

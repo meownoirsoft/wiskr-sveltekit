@@ -10,7 +10,7 @@ export const POST = async ({ request, locals }) => {
   const body = await request.json();
   const { projectId, cards = [], docs = [], recentMessages = [], likedIdeasCount = 0, dismissedIdeas = [], tz = 'UTC' } = body;
 
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!projectId) return json({ message: 'Bad request' }, { status: 400 });
 
@@ -23,7 +23,7 @@ export const POST = async ({ request, locals }) => {
   
   // Check daily Related Ideas usage - use user's timezone for proper day boundary
   const startOfToday = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
-  const { data: todayIdeas } = await locals.supabase
+  const { data: todayIdeas } = await locals.db
     .from('usage_logs')
     .select('id')
     .eq('user_id', user.id)
@@ -77,7 +77,7 @@ export const POST = async ({ request, locals }) => {
   // Get user's preferred max ideas setting (default to 8 if not found)
   let maxIdeas = 8;
   try {
-    const { data: preferences } = await locals.supabase
+    const { data: preferences } = await locals.db
       .from('user_preferences')
       .select('max_related_ideas')
       .eq('user_id', user.id)
@@ -122,7 +122,7 @@ Focus on practical next steps, interesting questions to explore, related concept
   // Check daily token usage limit - also use user's timezone for consistency
   const limit = Number(DAILY_TOKEN_LIMIT || 0) || 200_000;
   const startOfTodayForTokens = DateTime.now().setZone(tz).startOf('day').toUTC().toISO();
-  const { data: todayRows } = await locals.supabase
+  const { data: todayRows } = await locals.db
     .from('usage_logs')
     .select('tokens_in,tokens_out')
     .eq('user_id', user.id)
@@ -173,7 +173,7 @@ Focus on practical next steps, interesting questions to explore, related concept
     };
 
     // Log the AI model usage
-    await locals.supabase.from('usage_logs').insert(usagePayload);
+    await locals.db.from('usage_logs').insert(usagePayload);
     
     // Also log the Related Ideas generation for rate limiting
     const ideasUsagePayload = {
@@ -185,7 +185,7 @@ Focus on practical next steps, interesting questions to explore, related concept
       cost_usd: 0
     };
     
-    await locals.supabase.from('usage_logs').insert(ideasUsagePayload);
+    await locals.db.from('usage_logs').insert(ideasUsagePayload);
 
     // Save generated ideas to the database for searchability
     try {
@@ -195,7 +195,7 @@ Focus on practical next steps, interesting questions to explore, related concept
         description: idea
       }));
 
-      const { error: saveError } = await locals.supabase
+      const { error: saveError } = await locals.db
         .from('ideas')
         .insert(
           ideasToSave.map(idea => ({

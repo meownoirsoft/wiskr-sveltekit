@@ -16,7 +16,8 @@ export async function GET({ params, url, locals }) {
     const stats = url.searchParams.get('stats') === 'true';
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -50,7 +51,8 @@ export async function POST({ params, request, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -81,7 +83,8 @@ export async function PUT({ params, request, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -105,7 +108,8 @@ export async function DELETE({ params, request, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }

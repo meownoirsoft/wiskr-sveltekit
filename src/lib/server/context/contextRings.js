@@ -2,7 +2,7 @@
 // Based on the strategy: 25% Global, 25% Local, 30-40% Target, 10-20% Neighbors
 
 import { generateEmbedding } from '../utils/embeddings.js';
-import { supabase } from '$lib/supabase.js';
+import { db } from '$lib/server/db/queries.js';
 
 // Token budget configurations
 const BUDGET_CONFIGS = {
@@ -39,7 +39,7 @@ const OPERATION_PRIORITIES = {
 /**
  * Build context using the rings strategy
  * @param {Object} params
- * @param {Object} params.supabase - Supabase client
+ * @param {Object} params.db - Supabase client
  * @param {string} params.projectId - Project ID
  * @param {string} params.operation - Operation type (create, edit, merge, split, search)
  * @param {Array} params.targetCards - Cards being acted upon
@@ -50,7 +50,7 @@ const OPERATION_PRIORITIES = {
  * @returns {Promise<Object>} Context object with rings and token usage
  */
 export async function buildContextRings({ 
-  supabase, 
+  db, 
   projectId, 
   operation = 'create',
   targetCards = [],
@@ -89,10 +89,10 @@ export async function buildContextRings({
   try {
     // Build each ring
     await Promise.all([
-      buildGlobalRing(supabase, projectId, context.rings.global),
-      buildLocalRing(supabase, projectId, deckId, sectionId, context.rings.local),
+      buildGlobalRing(db, projectId, context.rings.global),
+      buildLocalRing(db, projectId, deckId, sectionId, context.rings.local),
       buildTargetRing(targetCards, context.rings.target),
-      buildNeighborsRing(supabase, projectId, targetCards, userMessage, context.rings.neighbors)
+      buildNeighborsRing(db, projectId, targetCards, userMessage, context.rings.neighbors)
     ]);
     
     // Calculate total tokens
@@ -119,12 +119,12 @@ export async function buildContextRings({
 /**
  * Build Global Ring - World synopsis and essential glossary
  */
-async function buildGlobalRing(supabase, projectId, ring) {
+async function buildGlobalRing(db, projectId, ring) {
   console.log('🌍 Building Global Ring...');
   
   try {
     // Get project description and brief
-    const { data: project } = await supabase
+    const { data: project } = await db
       .from('projects')
       .select('name, description, brief_text')
       .eq('id', projectId)
@@ -151,7 +151,7 @@ async function buildGlobalRing(supabase, projectId, ring) {
     }
     
     // Get essential glossary terms (50-150 tokens)
-    const { data: pinnedCards } = await supabase
+    const { data: pinnedCards } = await db
       .from('cards')
       .select('title, content, tags')
       .eq('project_id', projectId)
@@ -167,7 +167,7 @@ async function buildGlobalRing(supabase, projectId, ring) {
       });
     } else {
       // If no pinned cards, get recent cards as fallback
-      const { data: recentCards } = await supabase
+      const { data: recentCards } = await db
         .from('cards')
         .select('title, content, tags')
         .eq('project_id', projectId)
@@ -204,7 +204,7 @@ async function buildGlobalRing(supabase, projectId, ring) {
 /**
  * Build Local Ring - Deck/section summaries
  */
-async function buildLocalRing(supabase, projectId, deckId, sectionId, ring) {
+async function buildLocalRing(db, projectId, deckId, sectionId, ring) {
   console.log('🏠 Building Local Ring...');
   
   try {
@@ -212,7 +212,7 @@ async function buildLocalRing(supabase, projectId, deckId, sectionId, ring) {
     
     // Get deck context if available
     if (deckId) {
-      const { data: deck } = await supabase
+      const { data: deck } = await db
         .from('decks')
         .select('name, description, context_summary')
         .eq('id', deckId)
@@ -232,7 +232,7 @@ async function buildLocalRing(supabase, projectId, deckId, sectionId, ring) {
     
     // Get section context if available
     if (sectionId) {
-      const { data: section } = await supabase
+      const { data: section } = await db
         .from('deck_sections')
         .select('name, description, context_summary')
         .eq('id', sectionId)
@@ -252,7 +252,7 @@ async function buildLocalRing(supabase, projectId, deckId, sectionId, ring) {
     
     // Get related decks/sections if no specific ones provided
     if (!deckId && !sectionId) {
-      const { data: recentDecks } = await supabase
+      const { data: recentDecks } = await db
         .from('decks')
         .select('name, description, context_summary')
         .eq('project_id', projectId)
@@ -268,7 +268,7 @@ async function buildLocalRing(supabase, projectId, deckId, sectionId, ring) {
       }
       
       // Also get recent cards for local context
-      const { data: recentCards } = await supabase
+      const { data: recentCards } = await db
         .from('cards')
         .select('title, content, tags, created_at')
         .eq('project_id', projectId)
@@ -355,7 +355,7 @@ async function buildTargetRing(targetCards, ring) {
 /**
  * Build Neighbors Ring - Related cards from semantic search
  */
-async function buildNeighborsRing(supabase, projectId, targetCards, userMessage, ring) {
+async function buildNeighborsRing(db, projectId, targetCards, userMessage, ring) {
   console.log('🔗 Building Neighbors Ring...');
   
   try {
@@ -373,7 +373,7 @@ async function buildNeighborsRing(supabase, projectId, targetCards, userMessage,
         
         if (queryEmbedding) {
           // Search for related cards
-          const { data: relatedCards } = await supabase.rpc('search_cards_semantic', {
+          const { data: relatedCards } = await db.rpc('search_cards_semantic', {
             query_embedding: queryEmbedding,
             project_id: projectId,
             match_threshold: 0.3,

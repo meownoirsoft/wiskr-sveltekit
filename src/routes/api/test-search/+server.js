@@ -10,17 +10,17 @@ export async function GET({ url, locals }) {
       return json({ error: 'Project ID required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Test 1: Check if we have any cards
-    const { data: allCards, error: allCardsError } = await supabase
+    const { data: allCards, error: allCardsError } = await db
       .from('cards')
       .select('id, title, content, embedding IS NOT NULL as has_embedding')
       .eq('project_id', projectId)
       .limit(5);
 
     // Test 2: Try text search
-    const { data: textResults, error: textError } = await supabase
+    const { data: textResults, error: textError } = await db
       .from('cards')
       .select('id, title, content')
       .eq('project_id', projectId)
@@ -33,7 +33,7 @@ export async function GET({ url, locals }) {
     try {
       const queryEmbedding = await generateCardEmbedding(searchTerm, '');
       if (queryEmbedding) {
-        const { data, error } = await supabase.rpc('search_cards_semantic', {
+        const { data, error } = await db.rpc('search_cards_semantic', {
           query_embedding: queryEmbedding,
           project_id: projectId,
           match_threshold: 0.3,

@@ -6,7 +6,7 @@ import { json } from '@sveltejs/kit';
 export async function GET({ url, locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -16,10 +16,10 @@ export async function GET({ url, locals }) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Verify user has access to this project
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await db
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -30,7 +30,7 @@ export async function GET({ url, locals }) {
     }
 
     // Get all sessions for this project, ordered by most recent first
-    const { data: sessions, error: sessionsError } = await supabase
+    const { data: sessions, error: sessionsError } = await db
       .from('conversation_sessions')
       .select('*')
       .eq('project_id', projectId)
@@ -54,7 +54,7 @@ export async function GET({ url, locals }) {
 export async function POST({ request, locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -65,10 +65,10 @@ export async function POST({ request, locals }) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Verify user has access to this project
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await db
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -85,7 +85,7 @@ export async function POST({ request, locals }) {
         }
 
         // Create new session
-        const { data: session, error: createError } = await supabase
+        const { data: session, error: createError } = await db
           .from('conversation_sessions')
           .insert({
             project_id: projectId,
@@ -103,7 +103,7 @@ export async function POST({ request, locals }) {
         }
 
         // Create default 'main' branch for the new session
-        const { error: branchError } = await supabase
+        const { error: branchError } = await db
           .from('conversation_branches')
           .insert({
             project_id: projectId,
@@ -132,7 +132,7 @@ export async function POST({ request, locals }) {
         if (topicSummary !== undefined) updates.topic_summary = topicSummary;
         updates.updated_at = new Date().toISOString();
 
-        const { data: session, error: updateError } = await supabase
+        const { data: session, error: updateError } = await db
           .from('conversation_sessions')
           .update(updates)
           .eq('id', sessionId)
@@ -154,7 +154,7 @@ export async function POST({ request, locals }) {
         }
 
         // Check if this is the only session for the project
-        const { data: sessionCount } = await supabase
+        const { data: sessionCount } = await db
           .from('conversation_sessions')
           .select('id', { count: 'exact' })
           .eq('project_id', projectId);
@@ -164,7 +164,7 @@ export async function POST({ request, locals }) {
         }
 
         // Delete the session (cascading deletes will handle messages and branches)
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await db
           .from('conversation_sessions')
           .delete()
           .eq('id', sessionId)
@@ -184,13 +184,13 @@ export async function POST({ request, locals }) {
         }
 
         // Deactivate all other sessions in this project
-        await supabase
+        await db
           .from('conversation_sessions')
           .update({ is_active: false })
           .eq('project_id', projectId);
 
         // Activate the specified session
-        const { data: session, error: activateError } = await supabase
+        const { data: session, error: activateError } = await db
           .from('conversation_sessions')
           .update({ is_active: true, updated_at: new Date().toISOString() })
           .eq('id', sessionId)
@@ -210,7 +210,7 @@ export async function POST({ request, locals }) {
         // Smart session creation based on conversation patterns
         // This will be called when the system detects a topic shift or daily boundary
         
-        const lastMessage = await supabase
+        const lastMessage = await db
           .from('messages')
           .select('content, created_at, session_id')
           .eq('project_id', projectId)
@@ -244,7 +244,7 @@ export async function POST({ request, locals }) {
 
         if (shouldCreateNew) {
           // Create the new session
-          const { data: session, error: createError } = await supabase
+          const { data: session, error: createError } = await db
             .from('conversation_sessions')
             .insert({
               project_id: projectId,
@@ -262,7 +262,7 @@ export async function POST({ request, locals }) {
           }
 
           // Create default 'main' branch
-          await supabase
+          await db
             .from('conversation_branches')
             .insert({
               project_id: projectId,
@@ -273,7 +273,7 @@ export async function POST({ request, locals }) {
             });
 
           // Deactivate previous sessions
-          await supabase
+          await db
             .from('conversation_sessions')
             .update({ is_active: false })
             .eq('project_id', projectId)

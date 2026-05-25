@@ -17,7 +17,7 @@ export async function load({ params, url, locals, cookies }) {
 
   try {
     // Fetch the shared project (RLS policy allows public access to is_public=true projects)
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('id, name, description, icon, color, brief_text, created_at, share_password, user_id')
       .eq('share_id', shareId)
@@ -51,7 +51,7 @@ export async function load({ params, url, locals, cookies }) {
     console.log('Fetching sessions for project_id:', project.id);
     
     // First, let's try a simple query without joins to see if sessions exist
-    const { data: simpleSessions, error: simpleError } = await locals.supabase
+    const { data: simpleSessions, error: simpleError } = await locals.db
       .from('conversation_sessions')
       .select('id, created_at')
       .eq('project_id', project.id);
@@ -59,7 +59,7 @@ export async function load({ params, url, locals, cookies }) {
     console.log('Simple sessions query:', { sessions: simpleSessions, error: simpleError });
     
     // Now try the full query
-    const { data: sessions, error: sessionsError } = await locals.supabase
+    const { data: sessions, error: sessionsError } = await locals.db
       .from('conversation_sessions')
       .select(`
         id,
@@ -84,7 +84,7 @@ export async function load({ params, url, locals, cookies }) {
     console.log('Number of sessions found:', sessions?.length || 0);
     
     // Let's also check if there are ANY sessions in the database
-    const { data: allSessions, error: allSessionsError } = await locals.supabase
+    const { data: allSessions, error: allSessionsError } = await locals.db
       .from('conversation_sessions')
       .select('id, project_id')
       .limit(10);
@@ -97,7 +97,7 @@ export async function load({ params, url, locals, cookies }) {
     }
 
     // Fetch project owner info for attribution
-    const { data: owner } = await locals.supabase
+    const { data: owner } = await locals.db
       .from('profiles') // Assuming you have a profiles table
       .select('full_name, avatar_url')
       .eq('id', project.user_id)
@@ -133,7 +133,7 @@ export const actions = {
 
     try {
       // Fetch the project to verify password
-      const { data: project, error: projectError } = await locals.supabase
+      const { data: project, error: projectError } = await locals.db
         .from('projects')
         .select('share_password')
         .eq('share_id', shareId)

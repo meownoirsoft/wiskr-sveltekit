@@ -14,7 +14,7 @@ export async function PUT({ params, request, locals }) {
       return json({ error: 'Note content is required' }, { status: 400 });
     }
 
-    const { data: note, error } = await locals.supabase
+    const { data: note, error } = await locals.db
       .from('card_notes')
       .update({
         content: content.trim(),
@@ -50,7 +50,7 @@ export async function DELETE({ params, locals }) {
       return json({ error: 'Card ID and Note ID are required' }, { status: 400 });
     }
 
-    const { error } = await locals.supabase
+    const { error } = await locals.db
       .from('card_notes')
       .delete()
       .eq('id', noteId)

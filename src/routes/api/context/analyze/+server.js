@@ -23,7 +23,7 @@ export const POST = async ({ request, locals }) => {
 
     // Enhanced buildContext that captures detailed analytics
     const analysis = await analyzeContext({
-      supabase: locals.supabase,
+      db: locals.db,
       projectId, 
       userMessage, 
       branchId 
@@ -42,7 +42,7 @@ export const POST = async ({ request, locals }) => {
   }
 };
 
-async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
+async function analyzeContext({ db, projectId, userMessage, branchId }) {
   const startTime = Date.now();
   const analysis = {
     projectId,
@@ -56,7 +56,7 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
 
   // Get project info
   console.log('📁 Querying project info for ID:', projectId);
-  const { data: project, error: projectError } = await supabase
+  const { data: project, error: projectError } = await db
     .from('projects')
     .select('name, description, brief_text')
     .eq('id', projectId)
@@ -87,8 +87,8 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   // 2) PINNED FACTS & DOCS
   console.log('🔍 Querying facts and docs for project:', projectId);
   const [{ data: pinnedFacts, error: factsError }, { data: pinnedDocs, error: docsError }] = await Promise.all([
-    supabase.from('facts').select('id,type,key,value,pinned').eq('project_id', projectId).eq('pinned', true).limit(50),
-    supabase.from('docs').select('id,title,content,pinned').eq('project_id', projectId).eq('pinned', true).limit(25)
+    db.from('facts').select('id,type,key,value,pinned').eq('project_id', projectId).eq('pinned', true).limit(50),
+    db.from('docs').select('id,title,content,pinned').eq('project_id', projectId).eq('pinned', true).limit(25)
   ]);
   
   console.log('📊 Pinned facts query result:', { 
@@ -134,7 +134,7 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
 
   // 3) ENTITY CARDS
   console.log('🎭 Querying entity cards...');
-  const { data: entityCards, error: entityCardsError } = await supabase
+  const { data: entityCards, error: entityCardsError } = await db
     .from('entity_cards')
     .select('id, entity_name, entity_type, summary, confidence_score, fact_count')
     .eq('project_id', projectId)
@@ -189,8 +189,8 @@ async function analyzeContext({ supabase, projectId, userMessage, branchId }) {
   // 5) Get total fact/doc counts for coverage metrics
   console.log('📊 Counting total facts and docs...');
   const [{ count: totalFactsCount, error: factsCountError }, { count: totalDocsCount, error: docsCountError }] = await Promise.all([
-    supabase.from('facts').select('*', { count: 'exact', head: true }).eq('project_id', projectId),
-    supabase.from('docs').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
+    db.from('facts').select('*', { count: 'exact', head: true }).eq('project_id', projectId),
+    db.from('docs').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
   ]);
   
   console.log('📊 Total counts result:', { 

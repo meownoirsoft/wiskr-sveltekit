@@ -7,7 +7,7 @@ import { generateSessionTitle, autoUpdateSessionTitle } from '$lib/server/servic
 export async function POST({ request, locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -18,10 +18,10 @@ export async function POST({ request, locals }) {
       return json({ error: 'Session ID and Project ID are required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Verify user has access to this project
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await db
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -32,7 +32,7 @@ export async function POST({ request, locals }) {
     }
 
     // Verify user has access to this session
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await db
       .from('conversation_sessions')
       .select('*')
       .eq('id', sessionId)
@@ -46,7 +46,7 @@ export async function POST({ request, locals }) {
     switch (action) {
       case 'generate': {
         // Auto-generate a title based on conversation content
-        const newTitle = await autoUpdateSessionTitle(sessionId, projectId, supabase, modelKey);
+        const newTitle = await autoUpdateSessionTitle(sessionId, projectId, db, modelKey);
         
         if (!newTitle) {
           return json({ 
@@ -65,7 +65,7 @@ export async function POST({ request, locals }) {
 
       case 'regenerate': {
         // Force regenerate title even if it's already custom
-        const { data: messages, error: messagesError } = await supabase
+        const { data: messages, error: messagesError } = await db
           .from('messages')
           .select('role, content, created_at')
           .eq('session_id', sessionId)
@@ -78,7 +78,7 @@ export async function POST({ request, locals }) {
         const newTitle = await generateSessionTitle(messages || [], modelKey);
         
         // Update session with new title
-        const { error: updateError } = await supabase
+        const { error: updateError } = await db
           .from('conversation_sessions')
           .update({ 
             session_name: newTitle,
@@ -108,7 +108,7 @@ export async function POST({ request, locals }) {
           return json({ error: 'Title too long (max 100 characters)' }, { status: 400 });
         }
 
-        const { error: updateError } = await supabase
+        const { error: updateError } = await db
           .from('conversation_sessions')
           .update({ 
             session_name: trimmedTitle,
@@ -142,7 +142,7 @@ export async function POST({ request, locals }) {
 export async function GET({ url, locals }) {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -154,10 +154,10 @@ export async function GET({ url, locals }) {
       return json({ error: 'Session ID and Project ID are required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Get session with title info
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await db
       .from('conversation_sessions')
       .select('id, session_name, created_at, updated_at, message_count')
       .eq('id', sessionId)

@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 export const GET = async ({ url, locals }) => {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -15,10 +15,10 @@ export const GET = async ({ url, locals }) => {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Check if ideas table exists and has data
-    const { data: ideas, error: ideasError, count } = await supabase
+    const { data: ideas, error: ideasError, count } = await db
       .from('ideas')
       .select('*', { count: 'exact' })
       .eq('project_id', projectId);
@@ -33,7 +33,7 @@ export const GET = async ({ url, locals }) => {
     }
 
     // Check table structure
-    const { data: tableInfo, error: tableError } = await supabase
+    const { data: tableInfo, error: tableError } = await db
       .from('information_schema.columns')
       .select('column_name, data_type, is_nullable')
       .eq('table_name', 'ideas');

@@ -5,7 +5,7 @@ import { generatePack } from '$lib/server/packs/packGenerator.js';
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -27,7 +27,7 @@ export async function POST({ request, locals }) {
 
     // If cardId is provided, get the card content to use as prompt
     if (cardId && !prompt) {
-      const { data: card, error: cardError } = await locals.supabase
+      const { data: card, error: cardError } = await locals.db
         .from('cards')
         .select('title, content, type')
         .eq('id', cardId)
@@ -48,14 +48,14 @@ Generate related and expanded ideas that build upon this concept. Consider diffe
     }
 
     // Get user context for better pack generation
-    const { data: userPreferences } = await locals.supabase
+    const { data: userPreferences } = await locals.db
       .from('user_preferences')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
     // Get existing cards in the world for context
-    const { data: existingCards } = await locals.supabase
+    const { data: existingCards } = await locals.db
       .from('cards')
       .select('title, content, tags, type, rarity')
       .eq('project_id', worldId)

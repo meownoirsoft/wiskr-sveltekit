@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 import { updateCardChunks } from '$lib/server/utils/cardChunks.js';
@@ -14,7 +14,8 @@ export async function POST({ params, request, locals }) {
     }
 
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -36,7 +37,7 @@ export async function POST({ params, request, locals }) {
     updateData.updated_at = new Date().toISOString();
 
     // Update the card
-    const { data: card, error: updateError } = await locals.supabase
+    const { data: card, error: updateError } = await locals.db
       .from('cards')
       .update(updateData)
       .eq('id', id)
@@ -59,7 +60,7 @@ export async function POST({ params, request, locals }) {
 
       // Update card with new embedding if generated
       if (embedding) {
-        const { error: embeddingError } = await locals.supabase
+        const { error: embeddingError } = await locals.db
           .from('cards')
           .update({ embedding })
           .eq('id', card.id);
@@ -79,7 +80,7 @@ export async function POST({ params, request, locals }) {
 
     // Update world context in background if content changed
     if (content !== undefined || title !== undefined) {
-      generateWorldContext(card.project_id, supabaseAdmin).catch(error => {
+      generateWorldContext(card.project_id, db).catch(error => {
         console.error('Error updating world context:', error);
       });
     }

@@ -9,7 +9,8 @@ export async function GET({ params, locals }) {
 
   try {
     // Check authentication securely
-    const { data, error: authError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const authError = !user ? { message: "Unauthorized" } : null;
     if (authError) {
       console.error('Auth error in card-types GET:', authError);
       return json({ error: 'Authentication failed' }, { status: 401 });
@@ -18,9 +19,9 @@ export async function GET({ params, locals }) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = locals.supabase;
+    const db = locals.db;
     // Fetch the card types for the project
-    const { data: cardTypes, error: typesError } = await supabase
+    const { data: cardTypes, error: typesError } = await db
       .from('project_card_types')
       .select('*')
       .eq('project_id', projectId)
@@ -47,7 +48,8 @@ export async function PUT({ params, request, locals }) {
 
   try {
     // Check authentication securely
-    const { data, error: authError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const authError = !user ? { message: "Unauthorized" } : null;
     if (authError) {
       console.error('Auth error in card-types PUT:', authError);
       return json({ error: 'Authentication failed' }, { status: 401 });
@@ -62,10 +64,10 @@ export async function PUT({ params, request, locals }) {
       return json({ error: 'cardTypes must be an array' }, { status: 400 });
     }
 
-    const supabase = locals.supabase;
+    const db = locals.db;
     
     // Use upsert to handle both updates and new inserts
-    const { data: upsertData, error: upsertError } = await supabase
+    const { data: upsertData, error: upsertError } = await db
       .from('project_card_types')
       .upsert(
         cardTypes.map(cardType => ({
@@ -88,7 +90,7 @@ export async function PUT({ params, request, locals }) {
     }
 
     // Fetch the updated card types to return them
-    const { data: updatedCardTypes, error: fetchError } = await supabase
+    const { data: updatedCardTypes, error: fetchError } = await db
       .from('project_card_types')
       .select('*')
       .eq('project_id', projectId)
@@ -115,7 +117,8 @@ export async function POST({ params, request, locals }) {
 
   try {
     // Check authentication securely
-    const { data, error: authError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const authError = !user ? { message: "Unauthorized" } : null;
     if (authError) {
       console.error('Auth error in card-types POST:', authError);
       return json({ error: 'Authentication failed' }, { status: 401 });
@@ -130,8 +133,8 @@ export async function POST({ params, request, locals }) {
       return json({ error: 'type_key and display_name are required' }, { status: 400 });
     }
 
-    const supabase = locals.supabase;
-    const { data: createdCardType, error } = await supabase
+    const db = locals.db;
+    const { data: createdCardType, error } = await db
       .from('project_card_types')
       .insert({
         project_id: projectId,

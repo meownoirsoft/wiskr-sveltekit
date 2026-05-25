@@ -3,7 +3,7 @@ import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export const POST = async ({ request, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
   const { project_id, title, content = '', tags = [], pinned = false } = await request.json();
@@ -11,7 +11,7 @@ export const POST = async ({ request, locals }) => {
     return json({ message: 'Missing required fields' }, { status: 400 });
   }
 
-  const { data: doc, error: insErr } = await locals.supabase
+  const { data: doc, error: insErr } = await locals.db
     .from('docs')
     .insert({ project_id, title: title.trim(), content, tags, pinned })
     .select('*')
@@ -42,7 +42,7 @@ export const POST = async ({ request, locals }) => {
       model: 'text-embedding-3-small',
       inputText: text,
       outputText: '', // Embeddings don't have output text
-      supabase: locals.supabase,
+      supabase: locals.db,
       operation: 'docs-create-embedding'
     });
   } catch (e) {
@@ -50,7 +50,7 @@ export const POST = async ({ request, locals }) => {
   }
 
   if (embedding) {
-    const { error: upErr } = await locals.supabase
+    const { error: upErr } = await locals.db
       .from('docs')
       .update({ embedding })
       .eq('id', doc.id);

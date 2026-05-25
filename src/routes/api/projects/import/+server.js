@@ -11,7 +11,7 @@ import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
  */
 export async function POST({ request, locals }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -56,7 +56,7 @@ export async function POST({ request, locals }) {
       }
 
       // Create new project
-      const { data: newProject, error: projectError } = await locals.supabase
+      const { data: newProject, error: projectError } = await locals.db
         .from('projects')
         .insert({
           name: options.projectName.trim(),
@@ -83,7 +83,7 @@ export async function POST({ request, locals }) {
       }
 
       // Verify user owns the target project
-      const { data: existingProject, error: projectError } = await locals.supabase
+      const { data: existingProject, error: projectError } = await locals.db
         .from('projects')
         .select('*')
         .eq('id', options.existingProjectId)
@@ -124,7 +124,7 @@ export async function POST({ request, locals }) {
     // Import sessions first (they're referenced by messages and branches) - DISABLED
     // if (importData.sessions && importData.sessions.length > 0) {
     //   for (const session of importData.sessions) {
-    //     const { data: newSession, error } = await locals.supabase
+    //     const { data: newSession, error } = await locals.db
     //       .from('conversation_sessions')
     //       .insert({
     //         project_id: targetProjectId,
@@ -148,7 +148,7 @@ export async function POST({ request, locals }) {
     // Import fact types before facts (they're referenced by facts) - DISABLED
     // if (importData.fact_types && importData.fact_types.length > 0) {
     //   for (const factType of importData.fact_types) {
-    //     const { data: newFactType, error } = await locals.supabase
+    //     const { data: newFactType, error } = await locals.db
     //       .from('project_fact_types')
     //       .insert({
     //         project_id: targetProjectId,
@@ -176,7 +176,7 @@ export async function POST({ request, locals }) {
     //   for (const branch of importData.branches) {
     //     const sessionId = sessionIdMapping.get(branch.session_id) || null;
 
-    //     const { data: newBranch, error } = await locals.supabase
+    //     const { data: newBranch, error } = await locals.db
     //       .from('conversation_branches')
     //       .insert({
     //         project_id: targetProjectId,
@@ -202,7 +202,7 @@ export async function POST({ request, locals }) {
     // Import facts - DISABLED
     // if (importData.facts && importData.facts.length > 0) {
     //   for (const fact of importData.facts) {
-    //     const { data: newFact, error } = await locals.supabase
+    //     const { data: newFact, error } = await locals.db
     //       .from('cards')
     //       .insert({
     //         project_id: targetProjectId,
@@ -229,7 +229,7 @@ export async function POST({ request, locals }) {
     // Import docs - DISABLED
     // if (importData.docs && importData.docs.length > 0) {
     //   for (const doc of importData.docs) {
-    //     const { data: newDoc, error } = await locals.supabase
+    //     const { data: newDoc, error } = await locals.db
     //       .from('docs')
     //       .insert({
     //         project_id: targetProjectId,
@@ -255,7 +255,7 @@ export async function POST({ request, locals }) {
     // Import questions - DISABLED
     // if (importData.questions && importData.questions.length > 0) {
     //   for (const question of importData.questions) {
-    //     const { data: newQuestion, error } = await locals.supabase
+    //     const { data: newQuestion, error } = await locals.db
     //       .from('project_questions')
     //       .insert({
     //         project_id: targetProjectId,
@@ -281,7 +281,7 @@ export async function POST({ request, locals }) {
       for (const card of importData.cards) {
         console.log(`🔄 Importing card: "${card.title}" (ID: ${card.id})`);
         
-        const { data: newCard, error } = await locals.supabase
+        const { data: newCard, error } = await locals.db
           .from('cards')
           .insert({
             project_id: targetProjectId,
@@ -325,7 +325,7 @@ export async function POST({ request, locals }) {
     // Import decks
     if (importData.decks && importData.decks.length > 0) {
       for (const deck of importData.decks) {
-        const { data: newDeck, error } = await locals.supabase
+        const { data: newDeck, error } = await locals.db
           .from('decks')
           .insert({
             project_id: targetProjectId,
@@ -358,7 +358,7 @@ export async function POST({ request, locals }) {
           continue;
         }
 
-        const { data: newSection, error } = await locals.supabase
+        const { data: newSection, error } = await locals.db
           .from('deck_sections')
           .insert({
             deck_id: deckId,
@@ -397,7 +397,7 @@ export async function POST({ request, locals }) {
           continue;
         }
 
-        const { data: newDeckCard, error } = await locals.supabase
+        const { data: newDeckCard, error } = await locals.db
           .from('deck_cards')
           .insert({
             deck_id: deckCard.deck_id ? deckIdMapping.get(deckCard.deck_id) : null,
@@ -426,7 +426,7 @@ export async function POST({ request, locals }) {
     //     const sessionId = sessionIdMapping.get(message.session_id) || null;
     //     const branchId = message.branch_id || 'main'; // Default to main branch
 
-    //     const { data: newMessage, error } = await locals.supabase
+    //     const { data: newMessage, error } = await locals.db
     //       .from('messages')
     //       .insert({
     //         project_id: targetProjectId,
@@ -456,7 +456,7 @@ export async function POST({ request, locals }) {
         console.log('🎯 Import: Auto-generating entity cards after importing', stats.facts_imported, 'facts...');
         
         // Get all facts for the project to generate entity cards
-        const { data: allFacts, error: factsError } = await locals.supabase
+        const { data: allFacts, error: factsError } = await locals.db
           .from('cards')
           .select('*')
           .eq('project_id', targetProjectId)
@@ -535,7 +535,7 @@ Summary:`;
                   model: modelConf.name,
                   inputText,
                   outputText: rawSummary,
-                  supabase: locals.supabase,
+                  supabase: locals.db,
                   operation: 'projects-import-entity'
                 });
                 
@@ -571,7 +571,7 @@ Summary:`;
                   last_facts_check: new Date().toISOString()
                 };
 
-                const { data: upsertedCard, error: upsertError } = await locals.supabase
+                const { data: upsertedCard, error: upsertError } = await locals.db
                   .from('entity_cards')
                   .upsert(cardData, { 
                     onConflict: 'project_id,entity_name,entity_type',
@@ -586,7 +586,7 @@ Summary:`;
                 }
 
                 // Clear old entity-fact relationships and insert new ones
-                await locals.supabase
+                await locals.db
                   .from('entity_card_facts')
                   .delete()
                   .eq('entity_card_id', upsertedCard.id);
@@ -598,7 +598,7 @@ Summary:`;
                 }));
 
                 if (factRelationships.length > 0) {
-                  const { error: relationError } = await locals.supabase
+                  const { error: relationError } = await locals.db
                     .from('entity_card_facts')
                     .insert(factRelationships);
 
@@ -627,7 +627,7 @@ Summary:`;
 
     // Refresh project quality score after import (especially if entity cards were generated)
     try {
-      const updatedScore = await refreshContextScore(locals.supabase, targetProjectId);
+      const updatedScore = await refreshContextScore(locals.db, targetProjectId);
       console.log('📊 Import: Updated context quality score:', updatedScore);
     } catch (scoreError) {
       console.warn('⚠️ Import: Failed to update context score:', scoreError.message, 'but import was successful');

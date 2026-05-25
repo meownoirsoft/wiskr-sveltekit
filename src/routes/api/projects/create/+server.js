@@ -4,7 +4,7 @@ import { canCreateProject, getTierConfig } from '$lib/tiers.js';
 
 export const POST = async ({ request, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
     const { name, icon = '🌐', color = '#6366f1', brief_text = '', description = '' } = await request.json();
@@ -14,7 +14,7 @@ export const POST = async ({ request, locals }) => {
     const effectiveTier = locals.effectiveTier || 0;
     
     // Check current project count
-    const { count: projectCount, error: countError } = await locals.supabase
+    const { count: projectCount, error: countError } = await locals.db
       .from('projects')
       .select('id', { count: 'exact' })
       .eq('user_id', user.id);
@@ -38,7 +38,7 @@ export const POST = async ({ request, locals }) => {
     }
 
     // persona: get or create
-    let { data: persona } = await locals.supabase
+    let { data: persona } = await locals.db
       .from('personas').select('*')
       .eq('user_id', user.id).limit(1);
     persona = persona?.[0];
@@ -47,7 +47,7 @@ export const POST = async ({ request, locals }) => {
         tone: 'chaotic-hype', emoji_level: 'med', sentence_length: 'short',
         do: ['celebrate small wins', 'offer 3 options'], dont: ['guilt', 'walls of text']
       };
-      const ret = await locals.supabase
+      const ret = await locals.db
         .from('personas')
         .insert({ user_id: user.id, name: 'Default', style_json })
         .select('*').single();
@@ -55,7 +55,7 @@ export const POST = async ({ request, locals }) => {
       persona = ret.data;
     }
 
-    const { data: project, error: pErr } = await locals.supabase
+    const { data: project, error: pErr } = await locals.db
       .from('projects')
       .insert({ user_id: user.id, persona_id: persona.id, name: name.trim(), icon, color, brief_text, description: description.trim() })
       .select('id, name, icon, color, brief_text, description, created_at')

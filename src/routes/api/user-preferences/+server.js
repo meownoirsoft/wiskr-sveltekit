@@ -4,12 +4,12 @@ import { json } from '@sveltejs/kit';
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
     // Get user preferences
-    const { data: preferences, error } = await locals.supabase
+    const { data: preferences, error } = await locals.db
       .from('user_preferences')
       .select('*')
       .eq('user_id', user.id)
@@ -49,7 +49,7 @@ export async function GET({ locals }) {
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
@@ -94,7 +94,7 @@ export async function POST({ request, locals }) {
     }
 
     // Check if preferences already exist
-    const { data: existing } = await locals.supabase
+    const { data: existing } = await locals.db
       .from('user_preferences')
       .select('id')
       .eq('user_id', user.id)
@@ -111,7 +111,7 @@ export async function POST({ request, locals }) {
       if (avatar_value !== undefined) updateData.avatar_value = avatar_value;
       if (cards_grid_size !== undefined) updateData.cards_grid_size = cards_grid_size;
       
-      const { data, error } = await locals.supabase
+      const { data, error } = await locals.db
         .from('user_preferences')
         .update(updateData)
         .eq('user_id', user.id)
@@ -129,7 +129,7 @@ export async function POST({ request, locals }) {
       if (avatar_value !== undefined) insertData.avatar_value = avatar_value;
       if (cards_grid_size !== undefined) insertData.cards_grid_size = cards_grid_size;
       
-      const { data, error } = await locals.supabase
+      const { data, error } = await locals.db
         .from('user_preferences')
         .insert(insertData)
         .select()

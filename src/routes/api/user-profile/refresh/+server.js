@@ -10,7 +10,7 @@ export async function POST({ request, locals }) {
     const userId = locals.user.id;
     
     // Fetch the latest user profile from the database
-    const { data: profile, error } = await locals.supabase
+    const { data: profile, error } = await locals.db
       .from('profiles')
       .select('*')
       .eq('user_id', userId)

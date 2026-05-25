@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 
 export const PUT = async ({ params, request, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -15,7 +15,7 @@ export const PUT = async ({ params, request, locals }) => {
     }
 
     // First, verify the project exists and user has access
-    const { data: existingProject, error: fetchError } = await locals.supabase
+    const { data: existingProject, error: fetchError } = await locals.db
       .from('projects')
       .select('id, user_id')
       .eq('id', projectId)
@@ -35,7 +35,7 @@ export const PUT = async ({ params, request, locals }) => {
     }
 
     // Update the project
-    const { data: projects, error } = await locals.supabase
+    const { data: projects, error } = await locals.db
       .from('projects')
       .update({ 
         name: name.trim(), 
@@ -65,7 +65,7 @@ export const PUT = async ({ params, request, locals }) => {
 
 export const GET = async ({ params, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     console.log(user)
     if (!user) {
       return json({ message: 'Unauthorized' }, { status: 401 });
@@ -74,7 +74,7 @@ export const GET = async ({ params, locals }) => {
     const projectId = params.id;
 
     // Get the project
-    const { data: project, error } = await locals.supabase
+    const { data: project, error } = await locals.db
       .from('projects')
       .select('id, name, description, icon, color, brief_text, created_at')
       .eq('id', projectId)

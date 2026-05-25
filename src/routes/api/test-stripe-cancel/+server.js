@@ -11,7 +11,7 @@ export async function GET({ locals }) {
     const userId = locals.user.id;
 
     // Get user's Stripe customer ID from database
-    const { data: profile, error: profileError } = await locals.supabase
+    const { data: profile, error: profileError } = await locals.db
       .from('profiles')
       .select('stripe_customer_id, stripe_subscription_id, tier')
       .eq('user_id', userId)

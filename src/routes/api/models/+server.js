@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { getAvailableModels } from '$lib/server/openrouter.js';
 import { getAllModelsWithTierInfo, getEffectiveTier } from '$lib/config/tiers.js';
-import { supabase } from '$lib/supabase.js';
+import { db } from '$lib/server/db/queries.js';
 
 export async function GET({ url, locals }) {
   try {

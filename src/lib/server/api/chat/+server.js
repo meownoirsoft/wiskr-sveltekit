@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import OpenAI from 'openai';
 import { buildContext } from '$lib/server/context/buildContext.js';
-import { supabaseAdmin } from '$lib/server/supabaseAdmin.js';
+import { db } from '$lib/server/db/queries.js';
+const db = () => db;
 
 export const POST = async ({ request, locals }) => {
   const { projectId, message } = await request.json();
@@ -12,8 +13,7 @@ export const POST = async ({ request, locals }) => {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   // Save the user message immediately
-  const sb = supabaseAdmin();
-  await sb.from('messages').insert({ project_id: projectId, role: 'user', content: message });
+  await db.from('messages').insert({ project_id: projectId, role: 'user', content: message });
 
   const stream = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -31,7 +31,7 @@ export const POST = async ({ request, locals }) => {
       const { value, done } = await stream.next();
       if (done) {
         // persist assistant message at end
-        await sb.from('messages').insert({ project_id: projectId, role: 'assistant', content: full });
+        await db.from('messages').insert({ project_id: projectId, role: 'assistant', content: full });
         controller.enqueue(encoder.encode('[DONE]'));
         controller.close();
         return;

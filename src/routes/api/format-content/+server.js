@@ -190,7 +190,7 @@ const PLATFORM_RULES = {
 
 export async function POST({ request, locals }) {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) return new Response('Unauthorized', { status: 401 });
     
     const { content, platform, projectId } = await request.json();
@@ -249,7 +249,7 @@ Format the content to be ready to post on ${platformConfig.name}.`;
       model: modelConf.name,
       inputText,
       outputText: formatted,
-      supabase: locals.supabase,
+      supabase: locals.db,
       operation: 'format-content'
     });
     
@@ -279,7 +279,7 @@ Format the content to be ready to post on ${platformConfig.name}.`;
         model: modelConf.name,
         inputText: shortenInputText,
         outputText: shorterFormatted,
-        supabase: locals.supabase,
+        supabase: locals.db,
         operation: 'format-content-shorten'
       });
       

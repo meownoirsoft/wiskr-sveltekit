@@ -14,7 +14,8 @@ export async function POST({ request, locals }) {
     } = await request.json();
     
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -26,7 +27,7 @@ export async function POST({ request, locals }) {
     
     // Build context rings
     const context = await getContextRings({
-      supabase: locals.supabase,
+      supabase: locals.db,
       projectId,
       operation,
       targetCards,

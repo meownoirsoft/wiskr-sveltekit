@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 import { generateCardEmbedding } from '$lib/server/utils/embeddings.js';
 import { generateWorldContext } from '$lib/server/utils/worldContext.js';
 import { createCardChunks } from '$lib/server/utils/cardChunks.js';
@@ -15,10 +15,11 @@ export async function POST({ request, locals }) {
     }
 
     // Get user from session
-    const user = await requireAuth(locals);
+    const user = locals.user;
+    if (!user) throw new Error("Unauthorized");
 
     // Insert new card
-    const { data: card, error: insertError } = await supabaseAdmin
+    const { data: card, error: insertError } = await db
       .from('cards')
       .insert({
         project_id,
@@ -49,7 +50,7 @@ export async function POST({ request, locals }) {
 
     // Update card with embedding if generated
     if (embedding) {
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await db
         .from('cards')
         .update({ embedding })
         .eq('id', card.id);
@@ -67,7 +68,7 @@ export async function POST({ request, locals }) {
     }
 
     // Update world context in background (don't await to avoid blocking)
-    generateWorldContext(project_id, supabaseAdmin).catch(error => {
+    generateWorldContext(project_id, db).catch(error => {
       console.error('Error updating world context:', error);
     });
 

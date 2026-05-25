@@ -29,13 +29,14 @@ export async function POST({ request, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify user has access to the project
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -87,13 +88,14 @@ export async function GET({ url, locals }) {
     }
 
     // Check authentication
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify user has access to the project
-    const { data: project, error: projectError } = await locals.supabase
+    const { data: project, error: projectError } = await locals.db
       .from('projects')
       .select('id')
       .eq('id', projectId)

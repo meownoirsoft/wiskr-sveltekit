@@ -52,13 +52,13 @@ export async function GET({ url, locals }) {
     }
     
     const results = [];
-    const { supabase } = locals;
+    const { db } = locals;
     
     // Search cards using semantic search
     if (includeTypes.includes('cards')) {
       try {
         // First try semantic search
-        const { data: semanticCards, error: semanticError } = await supabase.rpc('search_cards_semantic', {
+        const { data: semanticCards, error: semanticError } = await db.rpc('search_cards_semantic', {
           query_embedding: await generateCardEmbedding(searchTerm, ''),
           project_id: currentProjectId,
           match_threshold: 0.3, // Lower threshold for broader results
@@ -83,7 +83,7 @@ export async function GET({ url, locals }) {
           });
         } else {
           // Fallback to text search if semantic search fails or returns no results
-          const { data: cards, error: cardsError } = await supabase
+          const { data: cards, error: cardsError } = await db
             .from('cards')
             .select('*')
             .eq('project_id', currentProjectId)
@@ -111,7 +111,7 @@ export async function GET({ url, locals }) {
       } catch (error) {
         console.error('Card search error:', error);
         // Fallback to text search on error
-        const { data: cards, error: cardsError } = await supabase
+        const { data: cards, error: cardsError } = await db
           .from('cards')
           .select('*')
           .eq('project_id', currentProjectId)
@@ -142,7 +142,7 @@ export async function GET({ url, locals }) {
     // Search chat messages
     if (includeTypes.includes('chats')) {
       // First, get the basic messages
-      const { data: messages, error: messagesError } = await supabase
+      const { data: messages, error: messagesError } = await db
         .from('messages')
         .select('*')
         .eq('project_id', currentProjectId)
@@ -162,7 +162,7 @@ export async function GET({ url, locals }) {
         const branchIds = messages.map(m => m.branch_id).filter(id => id);
         
         // Get branch info by looking up branch_id (not the UUID primary key)
-        const { data: branches, error: branchesError } = await supabase
+        const { data: branches, error: branchesError } = await db
           .from('conversation_branches')
           .select('id, branch_id, branch_name, session_id')
           .in('branch_id', branchIds);
@@ -173,7 +173,7 @@ export async function GET({ url, locals }) {
         
         // Get session info
         const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
-        const { data: sessions, error: sessionsError } = await supabase
+        const { data: sessions, error: sessionsError } = await db
           .from('conversation_sessions')
           .select('id, session_name')
           .in('id', sessionIds);
@@ -279,7 +279,7 @@ export async function GET({ url, locals }) {
     
     // Search ideas
     if (includeTypes.includes('ideas')) {
-      const { data: ideas, error: ideasError } = await supabase
+      const { data: ideas, error: ideasError } = await db
         .from('ideas')
         .select('*')
         .eq('project_id', currentProjectId)
@@ -409,14 +409,14 @@ export async function POST({ request, locals }) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
     
-    const { supabase } = locals;
+    const { db } = locals;
     
     
     // Search cards using semantic search
     if (includeTypes.includes('cards')) {
       try {
         // First try semantic search
-        const { data: semanticCards, error: semanticError } = await supabase.rpc('search_cards_semantic', {
+        const { data: semanticCards, error: semanticError } = await db.rpc('search_cards_semantic', {
           query_embedding: await generateCardEmbedding(searchTerm, ''),
           project_id: currentProjectId,
           match_threshold: 0.3, // Lower threshold for broader results
@@ -441,7 +441,7 @@ export async function POST({ request, locals }) {
           });
         } else {
           // Fallback to text search if semantic search fails or returns no results
-          const { data: cards, error: cardsError } = await supabase
+          const { data: cards, error: cardsError } = await db
             .from('cards')
             .select('*')
             .eq('project_id', currentProjectId)
@@ -469,7 +469,7 @@ export async function POST({ request, locals }) {
       } catch (error) {
         console.error('Card search error:', error);
         // Fallback to text search on error
-        const { data: cards, error: cardsError } = await supabase
+        const { data: cards, error: cardsError } = await db
           .from('cards')
           .select('*')
           .eq('project_id', currentProjectId)
@@ -500,7 +500,7 @@ export async function POST({ request, locals }) {
     // Search chat messages
     if (includeTypes.includes('chats')) {
       // First, get the basic messages with session_id included
-      const { data: messages, error: messagesError } = await supabase
+      const { data: messages, error: messagesError } = await db
         .from('messages')
         .select('id, content, branch_id, session_id, created_at')
         .eq('project_id', currentProjectId)
@@ -520,7 +520,7 @@ export async function POST({ request, locals }) {
         const branchIds = messages.map(m => m.branch_id).filter(id => id);
         
         // Get branch info by looking up branch_id (not the UUID primary key)
-        const { data: branches, error: branchesError } = await supabase
+        const { data: branches, error: branchesError } = await db
           .from('conversation_branches')
           .select('id, branch_id, branch_name, session_id')
           .in('branch_id', branchIds);
@@ -531,7 +531,7 @@ export async function POST({ request, locals }) {
         
         // Get session info
         const sessionIds = branches?.map(b => b.session_id).filter(id => id) || [];
-        const { data: sessions, error: sessionsError } = await supabase
+        const { data: sessions, error: sessionsError } = await db
           .from('conversation_sessions')
           .select('id, session_name')
           .in('id', sessionIds);

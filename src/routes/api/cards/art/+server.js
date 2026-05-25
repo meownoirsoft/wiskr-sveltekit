@@ -13,7 +13,7 @@ export async function POST({ request, locals }) {
 
     // Get the current card data
     console.log('🔍 Fetching card from database:', cardId);
-    const { data: currentCard, error: fetchError } = await locals.supabase
+    const { data: currentCard, error: fetchError } = await locals.db
       .from('cards')
       .select('*')
       .eq('id', cardId)
@@ -34,7 +34,7 @@ export async function POST({ request, locals }) {
       updateData.art_model = artModel;
     }
 
-    const { data: updatedCard, error: updateError } = await locals.supabase
+    const { data: updatedCard, error: updateError } = await locals.db
       .from('cards')
       .update(updateData)
       .eq('id', cardId)

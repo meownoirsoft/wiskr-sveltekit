@@ -1,7 +1,6 @@
 // Pack generation system for MTG-style idea cards
 import { db } from '$lib/server/db/queries.js';
 
-const supabase = db;
 
 // Rarity distribution weights (percentages)
 const RARITY_DISTRIBUTION = {
@@ -402,7 +401,7 @@ async function analyzeIdeaQuality(idea, worldId, context) {
   let score = 50; // Base score
   
   // Check for existing similar ideas (uniqueness)
-  const { data: similarIdeas } = await supabase
+  const { data: similarIdeas } = await db
     .from('cards')
     .select('content, tags')
     .eq('project_id', worldId)
@@ -564,7 +563,7 @@ async function savePackCards(packCards, worldId, userId) {
     created_at: card.created_at
   }));
   
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('cards')
     .insert(cardsToInsert)
     .select();
@@ -586,7 +585,7 @@ async function savePackCards(packCards, worldId, userId) {
  */
 async function filterDuplicateCards(packCards, worldId, userId) {
   // Get existing cards in the project
-  const { data: existingCards } = await supabase
+  const { data: existingCards } = await db
     .from('cards')
     .select('title, content')
     .eq('project_id', worldId)

@@ -1,84 +1,43 @@
 <script>
-  import { createBrowserClient } from '@supabase/ssr';
-  import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-  import { browser } from '$app/environment';
-  
-  const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
-  
   let email = '';
   let password = '';
   let msg = '';
   let loading = false;
   let oauthLoading = false;
-  
+
   async function submit() {
     if (!email || !password) {
       msg = 'Please enter both email and password';
       return;
     }
-    
+
     msg = '';
     loading = true;
-    
+
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      msg = 'Check your email for a confirmation link!';
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Signup failed');
+      window.location.href = '/projects';
     } catch (e) {
       msg = e.message || String(e);
     } finally {
       loading = false;
     }
   }
-  
-  async function handleGoogleSignIn() {
-    if (!browser) return;
-    
-    msg = '';
+
+  function handleGoogleSignIn() {
     oauthLoading = true;
-    
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/projects`
-        }
-      });
-      
-      if (error) {
-        msg = error.message || 'Google sign in failed';
-        oauthLoading = false;
-      }
-      // If successful, redirect happens automatically
-    } catch (e) {
-      msg = e.message || 'Google sign in failed';
-      oauthLoading = false;
-    }
+    window.location.href = '/api/auth/oauth/google?next=/projects';
   }
-  
-  async function handleDiscordSignIn() {
-    if (!browser) return;
-    
-    msg = '';
+
+  function handleDiscordSignIn() {
     oauthLoading = true;
-    
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'discord',
-        options: {
-          redirectTo: `${window.location.origin}/projects`
-        }
-      });
-      
-      if (error) {
-        msg = error.message || 'Discord sign in failed';
-        oauthLoading = false;
-      }
-      // If successful, redirect happens automatically
-    } catch (e) {
-      msg = e.message || 'Discord sign in failed';
-      oauthLoading = false;
-    }
+    window.location.href = '/api/auth/oauth/discord?next=/projects';
   }
 </script>
 

@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabaseAdmin.js';
+import { db } from '$lib/server/db/queries.js';
+const db = () => db;
 
 /**
  * One-time setup endpoint to create initial admin user
@@ -20,10 +21,9 @@ export async function POST({ request }) {
       return json({ error: 'Email is required' }, { status: 400 });
     }
     
-    const adminClient = supabaseAdmin();
     
     // Find user by email
-    const { data: users, error: listError } = await adminClient.auth.admin.listUsers();
+    const { data: users, error: listError } = await db.auth.admin.listUsers();
     
     if (listError) {
       return json({ error: 'Failed to list users: ' + listError.message }, { status: 500 });
@@ -36,7 +36,7 @@ export async function POST({ request }) {
     }
     
     // Set admin metadata
-    const { error: updateError } = await adminClient.auth.admin.updateUserById(
+    const { error: updateError } = await db.auth.admin.updateUserById(
       user.id,
       {
         user_metadata: {

@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 export const GET = async ({ url, locals }) => {
   try {
     // Verify user is authenticated
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -15,10 +15,10 @@ export const GET = async ({ url, locals }) => {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { supabase } = locals;
+    const { db } = locals;
 
     // Load ideas from database for this project
-    const { data: ideas, error } = await supabase
+    const { data: ideas, error } = await db
       .from('ideas')
       .select('*')
       .eq('project_id', projectId)

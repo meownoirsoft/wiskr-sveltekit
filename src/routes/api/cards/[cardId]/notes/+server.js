@@ -9,7 +9,7 @@ export async function GET({ params, locals }) {
       return json({ error: 'Card ID is required' }, { status: 400 });
     }
 
-    const { data: notes, error } = await locals.supabase
+    const { data: notes, error } = await locals.db
       .from('card_notes')
       .select('*')
       .eq('card_id', cardId)
@@ -41,7 +41,7 @@ export async function POST({ params, request, locals }) {
       return json({ error: 'Note content is required' }, { status: 400 });
     }
 
-    const { data: note, error } = await locals.supabase
+    const { data: note, error } = await locals.db
       .from('card_notes')
       .insert({
         card_id: cardId,

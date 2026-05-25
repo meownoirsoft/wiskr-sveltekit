@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
 export const GET = async ({ locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   return json({ user });
 };

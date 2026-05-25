@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 export async function POST({ request, locals }) {
   try {
     // Check admin permissions
-    const adminCheck = await isAdmin(locals.supabase, locals.user);
+    const adminCheck = await isAdmin(locals.db, locals.user);
     if (!adminCheck.isAdmin) {
       return json({ error: 'Unauthorized' }, { status: 403 });
     }

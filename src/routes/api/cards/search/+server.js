@@ -10,7 +10,8 @@ export async function POST({ request, locals }) {
     }
 
     // Get user from session
-    const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+    const user = locals.user;
+    const userError = !user ? { message: "Unauthorized" } : null;
     if (userError || !user) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,7 +24,7 @@ export async function POST({ request, locals }) {
     }
 
     // Perform semantic search using vector similarity
-    const { data: cards, error: searchError } = await locals.supabase.rpc('search_cards_semantic', {
+    const { data: cards, error: searchError } = await locals.db.rpc('search_cards_semantic', {
       query_embedding: queryEmbedding,
       project_id: project_id,
       match_threshold: threshold,

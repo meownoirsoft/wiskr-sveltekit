@@ -6,7 +6,7 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 export const POST = async ({ params, request, locals }) => {
   const { id } = params;
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
   const {
@@ -18,7 +18,7 @@ export const POST = async ({ params, request, locals }) => {
   } = await request.json();
 
   // Load current
-  const { data: current, error: curErr } = await locals.supabase
+  const { data: current, error: curErr } = await locals.db
     .from('docs')
     .select('id, project_id, title, content, tags, pinned')
     .eq('id', id)
@@ -42,7 +42,7 @@ export const POST = async ({ params, request, locals }) => {
   if (typeof tags    !== 'undefined') patch.tags    = tags;
   if (typeof pinned  !== 'undefined') patch.pinned  = !!pinned;
 
-  const { data: updated, error: upErr } = await locals.supabase
+  const { data: updated, error: upErr } = await locals.db
     .from('docs')
     .update(patch)
     .eq('id', id)
@@ -75,7 +75,7 @@ export const POST = async ({ params, request, locals }) => {
     });
     const embedding = emb.data[0]?.embedding || null;
     if (embedding) {
-      const { error: embErr } = await locals.supabase
+      const { error: embErr } = await locals.db
         .from('docs')
         .update({ embedding })
         .eq('id', id);

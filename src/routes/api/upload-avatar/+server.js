@@ -9,11 +9,11 @@ import { getUserTier } from '$lib/utils/tiers.js';
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   // Check user tier - only Pro+ users can upload custom avatars
-  const userTier = await getUserTier(locals.supabase, user.id);
+  const userTier = await getUserTier(locals.db, user.id);
   if (userTier < 1) {
     return json({ error: 'Custom avatar upload requires Pro subscription' }, { status: 403 });
   }

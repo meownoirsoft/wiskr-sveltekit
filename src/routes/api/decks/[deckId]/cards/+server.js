@@ -1,9 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
 import { generateDeckContext, generateSectionContext } from '$lib/server/utils/deckContext.js';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST({ params, request }) {
   try {
@@ -15,7 +13,7 @@ export async function POST({ params, request }) {
     }
 
     // Remove card from any other deck first (since cards can only be in one deck)
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('deck_cards')
       .delete()
       .eq('card_id', card_id);
@@ -26,7 +24,7 @@ export async function POST({ params, request }) {
     }
 
     // Add card to the specified deck and section
-    const { data: deckCard, error: insertError } = await supabase
+    const { data: deckCard, error: insertError } = await db
       .from('deck_cards')
       .insert({
         deck_id: deckId,
@@ -63,7 +61,7 @@ export async function DELETE({ params, request }) {
     }
 
     // Remove card from deck
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('deck_cards')
       .delete()
       .eq('deck_id', deckId)

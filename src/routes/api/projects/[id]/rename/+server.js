@@ -1,14 +1,14 @@
 import { json } from '@sveltejs/kit';
 
 export const POST = async ({ params, request, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;
   const { name } = await request.json();
   if (!name?.trim()) return json({ message: 'Name required' }, { status: 400 });
 
-  const { data, error } = await locals.supabase
+  const { data, error } = await locals.db
     .from('projects')
     .update({ name: name.trim() })
     .eq('id', id)

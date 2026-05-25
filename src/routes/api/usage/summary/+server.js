@@ -4,7 +4,7 @@ export const GET = async ({ url, locals }) => {
   const projectId = url.searchParams.get('projectId');
   const tz = url.searchParams.get('tz') || 'UTC';
 
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return new Response('Bad Request', { status: 400 });
 
   // Boundaries in the user's timezone, then converted to UTC for querying
@@ -25,17 +25,17 @@ export const GET = async ({ url, locals }) => {
   );
 
   const [todayRes, weekRes, monthRes] = await Promise.all([
-    locals.supabase.from('usage_logs')
+    locals.db.from('usage_logs')
       .select('tokens_in,tokens_out,cost_usd,created_at')
       .eq('user_id', user.id)
       .gte('created_at', startOfToday),
 
-    locals.supabase.from('usage_logs')
+    locals.db.from('usage_logs')
       .select('tokens_in,tokens_out,cost_usd,created_at')
       .eq('user_id', user.id)
       .gte('created_at', startOfWeek),
 
-    locals.supabase.from('usage_logs')
+    locals.db.from('usage_logs')
       .select('tokens_in,tokens_out,cost_usd,created_at')
       .eq('user_id', user.id)
       .gte('created_at', startOfMonth)

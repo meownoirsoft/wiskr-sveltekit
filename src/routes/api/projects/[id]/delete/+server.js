@@ -1,12 +1,12 @@
 import { json } from '@sveltejs/kit';
 
 export const POST = async ({ params, locals }) => {
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) return json({ message: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;
 
-  const { error } = await locals.supabase
+  const { error } = await locals.db
     .from('projects')
     .delete()
     .eq('id', id)

@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
   // Check authentication
-  const { data: { user } } = await locals.supabase.auth.getUser();
+  const user = locals.user;
   if (!user) {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -29,7 +29,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get the current card
-    const { data: currentCard, error: fetchError } = await locals.supabase
+    const { data: currentCard, error: fetchError } = await locals.db
       .from('cards')
       .select('*')
       .eq('id', cardId)
@@ -49,7 +49,7 @@ export async function POST({ request, locals }) {
     // Update the rarity directly in the cards table
     console.log('🔄 API: Updating card rarity in database:', newRarity);
     
-    const { data: updatedCard, error: updateError } = await locals.supabase
+    const { data: updatedCard, error: updateError } = await locals.db
       .from('cards')
       .update({
         rarity: newRarity

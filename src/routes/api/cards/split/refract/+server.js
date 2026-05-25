@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
-import { supabaseAdmin, requireAuth } from '$lib/server/supabaseClient.js';
+import { db } from '$lib/server/db/queries.js';
 import { createOpenAIClient } from '$lib/server/openrouter.js';
 import { getContextRings } from '$lib/server/context/contextRings.js';
 import { trackAIUsage } from '$lib/server/utils/usageTracker.js';
 
 export async function POST({ request, locals }) {
   try {
-    const user = await requireAuth(locals);
+    const user = locals.user;
+    if (!user) throw new Error("Unauthorized");
     const { cardId, projectId } = await request.json();
 
     if (!cardId || !projectId) {
@@ -14,7 +15,7 @@ export async function POST({ request, locals }) {
     }
 
     // Get the source card
-    const { data: card, error: cardError } = await supabaseAdmin
+    const { data: card, error: cardError } = await db
       .from('cards')
       .select('*')
       .eq('id', cardId)
@@ -26,7 +27,7 @@ export async function POST({ request, locals }) {
 
     // Get context rings for split operation
     const context = await getContextRings({
-      supabase: supabaseAdmin,
+      db: db,
       projectId,
       operation: 'split',
       targetCards: [card],
@@ -101,7 +102,7 @@ Tags: [tag1, tag2, tag3]
       model: 'gpt-4o-mini',
       inputText,
       outputText: response,
-      supabase: locals.supabase,
+      db: locals.db,
       operation: 'split-refract'
     });
     
