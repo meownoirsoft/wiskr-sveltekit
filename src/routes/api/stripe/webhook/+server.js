@@ -1,21 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { stripe } from '$lib/server/stripe.js';
-import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { db } from '$lib/server/db/queries.js';
+import { updateUserMetadata } from '$lib/server/auth.js';
 
 export async function POST({ request }) {
-  // Create Supabase client with service role for webhook operations
-  const supabase = createClient(
-    PUBLIC_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
 
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
@@ -64,37 +52,37 @@ export async function POST({ request }) {
     switch (event.type) {
       case 'checkout.session.completed':
         console.log('Processing checkout.session.completed event');
-        await handleCheckoutSessionCompleted(event.data.object, supabase);
+        await handleCheckoutSessionCompleted(event.data.object, db);
         break;
       
       case 'customer.subscription.updated':
         console.log('Processing customer.subscription.updated event');
-        await handleSubscriptionUpdated(event.data.object, supabase);
+        await handleSubscriptionUpdated(event.data.object, db);
         break;
       
       case 'customer.subscription.deleted':
         console.log('Processing customer.subscription.deleted event');
-        await handleSubscriptionDeleted(event.data.object, supabase);
+        await handleSubscriptionDeleted(event.data.object, db);
         break;
       
       case 'invoice.payment_succeeded':
         console.log('Processing invoice.payment_succeeded event');
-        await handleInvoicePaymentSucceeded(event.data.object, supabase);
+        await handleInvoicePaymentSucceeded(event.data.object, db);
         break;
       
       case 'invoice.payment_failed':
         console.log('Processing invoice.payment_failed event');
-        await handleInvoicePaymentFailed(event.data.object, supabase);
+        await handleInvoicePaymentFailed(event.data.object, db);
         break;
       
       case 'payment_intent.created':
         console.log('Processing payment_intent.created event');
-        await handlePaymentIntentCreated(event.data.object, supabase);
+        await handlePaymentIntentCreated(event.data.object, db);
         break;
       
       case 'payment_intent.succeeded':
         console.log('Processing payment_intent.succeeded event');
-        await handlePaymentIntentSucceeded(event.data.object, supabase);
+        await handlePaymentIntentSucceeded(event.data.object, db);
         break;
       
       default:
@@ -108,7 +96,7 @@ export async function POST({ request }) {
   }
 }
 
-async function handleCheckoutSessionCompleted(session, supabase) {
+async function handleCheckoutSessionCompleted(session, db) {
   console.log('Checkout session completed:', session.id);
   console.log('Session metadata:', session.metadata);
   
@@ -132,7 +120,7 @@ async function handleCheckoutSessionCompleted(session, supabase) {
     console.log('About to execute database update query...');
     
     // First, check if the user exists in profiles table
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data: existingUser, error: fetchError } = await db
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
@@ -143,7 +131,7 @@ async function handleCheckoutSessionCompleted(session, supabase) {
       if (fetchError.code === 'PGRST116') {
         console.log('User does not exist in profiles table, creating new profile...');
         // Create new profile for existing user
-        const { data: newProfile, error: createError } = await supabase
+        const { data: newProfile, error: createError } = await db
           .from('profiles')
           .insert({
             user_id: userId, // Use user_id as the primary identifier
@@ -167,7 +155,7 @@ async function handleCheckoutSessionCompleted(session, supabase) {
     }
     
     // Update existing profile
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('profiles')
       .update({ 
         tier: parseInt(tier),
@@ -178,18 +166,11 @@ async function handleCheckoutSessionCompleted(session, supabase) {
       .eq('user_id', userId)
       .select();
 
-    // Also update the user's metadata in auth.users
+    // Also update the user's metadata in users table
     if (!error) {
       try {
-        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-          user_metadata: { tier: parseInt(tier) }
-        });
-        
-        if (authError) {
-          console.error('Error updating user metadata:', authError);
-        } else {
-          console.log('User metadata updated successfully');
-        }
+        await updateUserMetadata(userId, { tier: parseInt(tier) });
+        console.log('User metadata updated successfully');
       } catch (authError) {
         console.error('Error updating user metadata:', authError);
       }
@@ -211,7 +192,7 @@ async function handleCheckoutSessionCompleted(session, supabase) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription, supabase) {
+async function handleSubscriptionUpdated(subscription, db) {
   console.log('Subscription updated:', subscription.id);
   console.log('Full subscription object:', JSON.stringify(subscription, null, 2));
   
@@ -237,7 +218,7 @@ async function handleSubscriptionUpdated(subscription, supabase) {
     console.log('About to execute subscription update query...');
     
     // First, check if the user exists in profiles table
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data: existingUser, error: fetchError } = await db
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
@@ -248,7 +229,7 @@ async function handleSubscriptionUpdated(subscription, supabase) {
       if (fetchError.code === 'PGRST116') {
         console.log('User does not exist in profiles table, creating new profile...');
         // Create new profile for existing user
-        const { data: newProfile, error: createError } = await supabase
+        const { data: newProfile, error: createError } = await db
           .from('profiles')
           .insert({
             user_id: userId, // Use user_id as the primary identifier
@@ -273,7 +254,7 @@ async function handleSubscriptionUpdated(subscription, supabase) {
     }
     
     // Update existing profile
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('profiles')
       .update({ 
         tier: parseInt(tier),
@@ -285,18 +266,11 @@ async function handleSubscriptionUpdated(subscription, supabase) {
       .eq('user_id', userId)
       .select();
 
-    // Also update the user's metadata in auth.users
+    // Also update the user's metadata in users table
     if (!error) {
       try {
-        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-          user_metadata: { tier: parseInt(tier) }
-        });
-        
-        if (authError) {
-          console.error('Error updating user metadata:', authError);
-        } else {
-          console.log('User metadata updated successfully');
-        }
+        await updateUserMetadata(userId, { tier: parseInt(tier) });
+        console.log('User metadata updated successfully');
       } catch (authError) {
         console.error('Error updating user metadata:', authError);
       }
@@ -318,7 +292,7 @@ async function handleSubscriptionUpdated(subscription, supabase) {
   }
 }
 
-async function handleSubscriptionDeleted(subscription, supabase) {
+async function handleSubscriptionDeleted(subscription, db) {
   console.log('Subscription deleted:', subscription.id);
   
   const { userId } = subscription.metadata;
@@ -329,7 +303,7 @@ async function handleSubscriptionDeleted(subscription, supabase) {
 
   try {
     // Downgrade user to free tier
-    const { error } = await supabase
+    const { error } = await db
       .from('profiles')
       .update({ 
         tier: 0,
@@ -349,27 +323,27 @@ async function handleSubscriptionDeleted(subscription, supabase) {
   }
 }
 
-async function handleInvoicePaymentSucceeded(invoice, supabase) {
+async function handleInvoicePaymentSucceeded(invoice, db) {
   console.log('Invoice payment succeeded:', invoice.id);
   
   // Handle successful payment - could update usage limits, send confirmation emails, etc.
   // For now, just log the event
 }
 
-async function handleInvoicePaymentFailed(invoice, supabase) {
+async function handleInvoicePaymentFailed(invoice, db) {
   console.log('Invoice payment failed:', invoice.id);
   
   // Handle failed payment - could send dunning emails, update subscription status, etc.
   // For now, just log the event
 }
 
-async function handlePaymentIntentCreated(paymentIntent, supabase) {
+async function handlePaymentIntentCreated(paymentIntent, db) {
   console.log('Payment intent created:', paymentIntent.id);
   console.log('Payment intent metadata:', paymentIntent.metadata);
   // This event doesn't contain user tier info, so we can't update the profile yet
 }
 
-async function handlePaymentIntentSucceeded(paymentIntent, supabase) {
+async function handlePaymentIntentSucceeded(paymentIntent, db) {
   console.log('Payment intent succeeded:', paymentIntent.id);
   console.log('Payment intent metadata:', paymentIntent.metadata);
   
@@ -385,7 +359,7 @@ async function handlePaymentIntentSucceeded(paymentIntent, supabase) {
         stripeSubscriptionId: paymentIntent.metadata.subscriptionId
       });
       
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('profiles')
         .update({ 
           tier: parseInt(paymentIntent.metadata.tier),

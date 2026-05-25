@@ -1,13 +1,11 @@
 // src/routes/api/context/analyze/+server.js
 import { json } from '@sveltejs/kit';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-import { isAdmin } from '$lib/auth/admin';
+import { db } from '$lib/server/db/queries.js';
 import { calculateContextQualityScore, calculateDescriptionQualityScore } from '$lib/server/utils/contextScore.js';
 
 export const POST = async ({ request, locals }) => {
   try {
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const user = locals.user;
     if (!user) {
       console.log('❌ Context analysis: No authenticated user');
       return new Response(JSON.stringify({ error: 'Authentication required' }), { 
@@ -23,20 +21,9 @@ export const POST = async ({ request, locals }) => {
       return json({ error: 'Missing projectId' }, { status: 400 });
     }
 
-    // Check if user is admin - if so, use admin client for broader access
-    const adminCheck = await isAdmin(locals.supabase, user);
-    let supabaseClient = locals.supabase;
-    
-    if (adminCheck.isAdmin) {
-      console.log('🔑 Admin user detected - using service role client for broader access');
-      supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    } else {
-      console.log('👤 Regular user - using normal client with RLS');
-    }
-
     // Enhanced buildContext that captures detailed analytics
-    const analysis = await analyzeContext({ 
-      supabase: supabaseClient, 
+    const analysis = await analyzeContext({
+      supabase: locals.supabase,
       projectId, 
       userMessage, 
       branchId 

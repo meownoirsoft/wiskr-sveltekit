@@ -1,16 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { db } from '$lib/server/db/queries.js';
 import { createOpenAIClient } from '../openrouter.js';
 import { generateEmbedding } from './embeddings.js';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
-// Create a server-side Supabase client with service role key for admin operations
-const createServerSupabaseClient = () => {
-	return createClient(
-		PUBLIC_SUPABASE_URL,
-		SUPABASE_SERVICE_ROLE_KEY
-	);
-};
 
 /**
  * Extract unique terms and concepts from card content to build a world glossary

@@ -215,13 +215,9 @@ export async function refreshContextScore(supabase, projectId) {
     // Import buildContextRings to get raw rings data for scoring
     const { buildContextRings } = await import('../context/contextRings.js');
     
-    // Import supabaseAdmin for consistent database access
-    const { supabaseAdmin } = await import('../supabaseClient.js');
-    
     // Get raw context rings for scoring (not formatted for AI)
-    
     const contextData = await buildContextRings({
-      supabase: supabaseAdmin,
+      supabase,
       projectId,
       operation: 'create', // Use 'create' as a general context assessment
       targetCards: [],
