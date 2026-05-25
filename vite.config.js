@@ -24,13 +24,12 @@ export default defineConfig({
 			'lucide-svelte',
 			'lodash-es',
 			'marked',
-			'@supabase/supabase-js',
 			'@floating-ui/dom',
 			'luxon',
 			'jszip'
 		],
 		// Exclude problematic dependencies that should not be pre-bundled
-		exclude: ['@supabase/auth-helpers-sveltekit'],
+		exclude: [],
 		// Force re-optimization on dep changes
 		force: process.env.NODE_ENV === 'development'
 	},

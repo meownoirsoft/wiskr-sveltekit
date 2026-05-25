@@ -13,6 +13,8 @@ function getSql() {
     max: 20,
     idle_timeout: 20,
     connect_timeout: 10,
+    // The database requires SSL; 'require' skips cert verification (PgBouncer-friendly)
+    ssl: url.includes('localhost') || url.includes('127.0.0.1') ? false : 'require',
     types: {
       // Support pgvector type round-tripping
       bigint: postgres.BigInt
