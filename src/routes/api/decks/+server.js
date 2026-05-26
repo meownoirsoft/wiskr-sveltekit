@@ -1,54 +1,62 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db/queries.js';
-
+import sql from '$lib/server/db.js';
 
 export async function GET({ url, locals }) {
   try {
     const projectId = url.searchParams.get('project_id');
-    
-    if (!projectId) {
-      return json({ error: 'Project ID is required' }, { status: 400 });
+    if (!projectId) return json({ error: 'Project ID is required' }, { status: 400 });
+
+    const decks = await sql`
+      SELECT id, name, description, is_pinned, position
+      FROM decks
+      WHERE project_id = ${projectId}
+      ORDER BY position ASC NULLS FIRST, created_at ASC
+    `;
+
+    if (!decks.length) return json({ decks: [] });
+
+    const deckIds = decks.map(d => d.id);
+
+    const sections = await sql`
+      SELECT id, deck_id, name, position
+      FROM deck_sections
+      WHERE deck_id = ANY(${deckIds})
+      ORDER BY position ASC
+    `;
+
+    const sectionIds = sections.map(s => s.id);
+
+    const deckCards = sectionIds.length ? await sql`
+      SELECT dc.id, dc.section_id, dc.position, c.*
+      FROM deck_cards dc
+      JOIN cards c ON c.id = dc.card_id
+      WHERE dc.section_id = ANY(${sectionIds})
+      ORDER BY dc.position ASC
+    ` : [];
+
+    // Assemble nested structure
+    const cardsBySection = {};
+    for (const dc of deckCards) {
+      (cardsBySection[dc.section_id] ??= []).push(dc);
     }
 
-    // Get decks with sections and cards
-    const { data: decks, error: decksError } = await db
-      .from('decks')
-      .select(`
-        *,
-        deck_sections (
-          *,
-          deck_cards (
-            *,
-            cards (*)
-          )
-        )
-      `)
-      .eq('project_id', projectId)
-      .order('position', { ascending: true, nullsFirst: true })
-      .order('created_at', { ascending: true });
-
-    if (decksError) {
-      console.error('Error fetching decks:', decksError);
-      return json({ error: 'Failed to fetch decks' }, { status: 500 });
+    const sectionsByDeck = {};
+    for (const s of sections) {
+      (sectionsByDeck[s.deck_id] ??= []).push({
+        id: s.id,
+        name: s.name,
+        position: s.position,
+        cards: (cardsBySection[s.id] ?? [])
+      });
     }
 
-    // Transform the data to match our frontend structure
     const transformedDecks = decks.map(deck => ({
       id: deck.id,
       name: deck.name,
       description: deck.description,
       isPinned: deck.is_pinned,
-      cardCount: deck.deck_sections.reduce((total, section) => total + section.deck_cards.length, 0),
-      sections: deck.deck_sections
-        .sort((a, b) => a.position - b.position)
-        .map(section => ({
-          id: section.id,
-          name: section.name,
-          position: section.position,
-          cards: section.deck_cards
-            .sort((a, b) => a.position - b.position)
-            .map(deckCard => deckCard.cards)
-        }))
+      cardCount: (sectionsByDeck[deck.id] ?? []).reduce((n, s) => n + s.cards.length, 0),
+      sections: sectionsByDeck[deck.id] ?? []
     }));
 
     return json({ decks: transformedDecks });
