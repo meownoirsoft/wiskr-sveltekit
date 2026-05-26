@@ -330,10 +330,13 @@
   }
 
   function handleBackgroundClick(event) {
-    // Only close modal if not in edit mode
-    if (!isEditing) {
-      closeModal();
+    // If editing and there's content worth saving, do nothing — force the X button.
+    // If there's no meaningful content yet (new card, blank body) close freely.
+    const hasContent = content?.trim().length > 0 || title?.trim().length > 0 && title.trim() !== 'Untitled Card';
+    if (isEditing && hasContent) {
+      return; // force X to close
     }
+    closeModal();
   }
 
   function handleRarityUpgrade() {
@@ -768,6 +771,7 @@
                 class="card-title w-full text-lg font-bold bg-transparent border-none outline-none truncate"
                 style="color: {rarity.textColor}; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
                 placeholder="Card title..."
+                on:focus={(e) => e.target.select()}
               />
             {:else}
               <h3 

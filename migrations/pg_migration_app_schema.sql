@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS cards (
   title             TEXT NOT NULL,
   content           TEXT NOT NULL DEFAULT '',
   tags              TEXT[] NOT NULL DEFAULT '{}',
-  rarity            TEXT NOT NULL DEFAULT 'common' CHECK (rarity IN ('common','uncommon','rare','epic','legendary')),
+  rarity            TEXT NOT NULL DEFAULT 'common' CHECK (rarity IN ('common','special','rare','legendary')),
   progress          INTEGER NOT NULL DEFAULT 1,
   mana_cost         INTEGER NOT NULL DEFAULT 1,
   art_url           TEXT,
