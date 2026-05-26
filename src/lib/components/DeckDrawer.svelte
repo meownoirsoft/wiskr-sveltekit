@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { X, Plus, GripVertical, Search } from 'lucide-svelte';
+  import { X, Plus, GripVertical, Search, Trash2 } from 'lucide-svelte';
 
   export let isOpen = false;
   export let currentWorld = 'Bednomancer World';
@@ -29,6 +29,18 @@
     // Always use the actual order from the parent (respects drag and drop)
     return [...filteredDecks];
   })();
+
+  async function deleteDeck(e, deck) {
+    e.stopPropagation();
+    if (!confirm(`Delete "${deck.name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/decks/${deck.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      dispatch('deck-deleted', { deckId: deck.id });
+    } catch (err) {
+      alert('Failed to delete deck. Please try again.');
+    }
+  }
 
   function toggleDrawer() {
     isOpen = !isOpen;
@@ -213,6 +225,13 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400">{deck.cardCount} cards</div>
               </div>
             </div>
+            <button
+              class="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
+              on:click={(e) => deleteDeck(e, deck)}
+              title="Delete deck"
+            >
+              <Trash2 size="14" />
+            </button>
           </div>
         {/each}
       </div>

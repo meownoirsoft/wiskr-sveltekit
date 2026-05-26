@@ -3461,6 +3461,7 @@ function handleTextAddToDocs(event) {
   on:view-deck={handleViewDeck}
   on:toggle-pin={handleTogglePin}
   on:reorder-deck={handleReorderDeck}
+  on:deck-deleted={(e) => { decks = decks.filter(d => d.id !== e.detail.deckId); }}
 />
 
 <!-- Text Selection Menu -->
