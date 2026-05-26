@@ -196,24 +196,40 @@ CREATE TABLE IF NOT EXISTS decks (
   name        TEXT NOT NULL,
   description TEXT,
   position    INTEGER NOT NULL DEFAULT 0,
+  is_pinned   BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS decks_project_id_idx ON decks(project_id);
 
 -- ---------------------------------------------------------------------------
--- deck_cards (junction: decks ↔ cards)
+-- deck_sections
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS deck_sections (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deck_id     UUID NOT NULL REFERENCES decks(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  position    INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS deck_sections_deck_id_idx ON deck_sections(deck_id);
+
+-- ---------------------------------------------------------------------------
+-- deck_cards (junction: deck_sections ↔ cards)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS deck_cards (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deck_id     UUID NOT NULL REFERENCES decks(id) ON DELETE CASCADE,
+  section_id  UUID REFERENCES deck_sections(id) ON DELETE CASCADE,
   card_id     UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
   position    INTEGER NOT NULL DEFAULT 0,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(deck_id, card_id)
 );
-CREATE INDEX IF NOT EXISTS deck_cards_deck_id_idx ON deck_cards(deck_id);
-CREATE INDEX IF NOT EXISTS deck_cards_card_id_idx ON deck_cards(card_id);
+CREATE INDEX IF NOT EXISTS deck_cards_deck_id_idx    ON deck_cards(deck_id);
+CREATE INDEX IF NOT EXISTS deck_cards_section_id_idx ON deck_cards(section_id);
+CREATE INDEX IF NOT EXISTS deck_cards_card_id_idx    ON deck_cards(card_id);
 
 -- ---------------------------------------------------------------------------
 -- entity_cards
