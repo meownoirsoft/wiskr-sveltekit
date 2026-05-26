@@ -1,91 +1,79 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db/queries.js';
+import sql from '$lib/server/db.js';
 import { generateDeckContext } from '$lib/server/utils/deckContext.js';
-
 
 export async function GET({ params }) {
   try {
     const { projectId } = params;
+    if (!projectId) return json({ error: 'Project ID is required' }, { status: 400 });
 
-    if (!projectId) {
-      return json({ error: 'Project ID is required' }, { status: 400 });
+    const decks = await sql`
+      SELECT id, name, description, is_pinned, position
+      FROM decks
+      WHERE project_id = ${projectId}
+      ORDER BY position ASC NULLS FIRST, created_at ASC
+    `;
+
+    if (!decks.length) return json({ decks: [] });
+
+    const deckIds = decks.map(d => d.id);
+
+    const sections = await sql`
+      SELECT id, deck_id, name, position
+      FROM deck_sections
+      WHERE deck_id = ANY(${deckIds})
+      ORDER BY position ASC
+    `;
+
+    const sectionIds = sections.map(s => s.id);
+
+    const deckCards = sectionIds.length ? await sql`
+      SELECT dc.id, dc.section_id, dc.position,
+             c.id as card_id, c.title, c.content, c.tags, c.rarity,
+             c.progress, c.mana_cost, c.art_url, c.generation_model,
+             c.art_model, c.created_at as card_created_at
+      FROM deck_cards dc
+      JOIN cards c ON c.id = dc.card_id
+      WHERE dc.section_id = ANY(${sectionIds})
+      ORDER BY dc.position ASC
+    ` : [];
+
+    const cardsBySection = {};
+    for (const dc of deckCards) {
+      (cardsBySection[dc.section_id] ??= []).push({
+        id: dc.card_id,
+        title: dc.title,
+        content: dc.content,
+        tags: dc.tags || [],
+        rarity: dc.rarity || 'common',
+        progress: dc.progress || 1,
+        mana_cost: dc.mana_cost || 1,
+        art_url: dc.art_url,
+        generation_model: dc.generation_model || 'GPT-4o',
+        art_model: dc.art_model || 'Midjourney',
+        created_at: dc.card_created_at
+      });
     }
 
-    // Get decks for the project
-    const { data: decks, error: decksError } = await db
-      .from('decks')
-      .select(`
-        *,
-        deck_sections (
-          id,
-          name,
-          position,
-          deck_cards (
-            id,
-            position,
-            cards (
-              id,
-              title,
-              content,
-              tags,
-              rarity,
-              progress,
-              mana_cost,
-              art_url
-            )
-          )
-        )
-      `)
-      .eq('project_id', projectId)
-      .order('position', { ascending: true, nullsFirst: true })
-      .order('created_at', { ascending: true });
-
-    if (decksError) {
-      console.error('Error fetching decks:', decksError);
-      return json({ error: 'Failed to fetch decks' }, { status: 500 });
+    const sectionsByDeck = {};
+    for (const s of sections) {
+      (sectionsByDeck[s.deck_id] ??= []).push({
+        id: s.id,
+        name: s.name,
+        position: s.position,
+        cards: cardsBySection[s.id] ?? []
+      });
     }
 
-    // Transform the data to match the expected format
-    const transformedDecks = decks.map(deck => {
-      // Sort sections by position
-      const sortedSections = deck.deck_sections?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
-      
-      return {
-        id: deck.id,
-        name: deck.name,
-        description: deck.description,
-        isPinned: deck.is_pinned || false,
-        cardCount: sortedSections.reduce((total, section) => 
-          total + (section.deck_cards?.length || 0), 0),
-        sections: sortedSections.map(section => {
-          // Sort cards by position within each section
-          const sortedCards = section.deck_cards?.sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
-          
-          return {
-            id: section.id,
-            name: section.name,
-            cards: sortedCards.map(deckCard => {
-              // Use the card data directly from the cards table
-              const card = deckCard.cards;
-              
-              return {
-                id: card.id,
-                title: card.title,
-                content: card.content,
-                tags: card.tags || [],
-                rarity: card.rarity || 'common',
-                progress: card.progress || 1,
-                mana_cost: card.mana_cost || 1,
-                art_url: card.art_url,
-                generation_model: card.generation_model || 'GPT-4o',
-                art_model: card.art_model || 'Midjourney',
-                created_at: card.created_at
-              };
-            })
-          };
-        })
-      };
-    });
+    const transformedDecks = decks.map(deck => ({
+      id: deck.id,
+      name: deck.name,
+      description: deck.description,
+      isPinned: deck.is_pinned,
+      cardCount: (sectionsByDeck[deck.id] ?? []).reduce((n, s) => n + s.cards.length, 0),
+      sections: sectionsByDeck[deck.id] ?? []
+    }));
 
     return json({ decks: transformedDecks });
 
